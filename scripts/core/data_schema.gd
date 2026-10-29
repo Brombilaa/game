@@ -70,6 +70,7 @@ const FIELDS := {
 		"tipo": {"t": "texto", "nulo": false, "valores": ["distancia", "corpo_a_corpo"]},
 		"arma_longa": {"t": "bool", "nulo": false},
 		"dano": {"t": "faixa", "nulo": true, "inteiro": true},
+		"custo_pa": PA,
 		"precisao_base": PERCENT,
 		"alcance_maximo": {"t": "num", "nulo": true, "min": 0.0},
 		"distancia_ideal": {"t": "faixa", "nulo": true},

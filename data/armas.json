@@ -1,26 +1,165 @@
 [
   {
-    "id": "pistola_teste", "nome": "Pistola (teste)", "provisorio": true,
-    "tipo": "distancia", "arma_longa": false,
-    "dano": [8, 12], "precisao_base": 0.7,
-    "alcance_maximo": 20.0, "distancia_ideal": [3.0, 10.0],
-    "carregador": 12, "reserva_maxima": 36,
-    "efeitos_criticos": ["sangrando"]
+    "id": "pistola_teste",
+    "nome": "Pistola (teste)",
+    "provisorio": true,
+    "tipo": "distancia",
+    "arma_longa": false,
+    "dano": [
+      8,
+      12
+    ],
+    "precisao_base": 0.7,
+    "alcance_maximo": 20.0,
+    "distancia_ideal": [
+      3.0,
+      10.0
+    ],
+    "carregador": 12,
+    "reserva_maxima": 36,
+    "efeitos_criticos": [
+      "sangrando"
+    ],
+    "custo_pa": null
   },
   {
-    "id": "rifle_teste", "nome": "Rifle (teste)", "provisorio": true,
-    "tipo": "distancia", "arma_longa": true,
-    "dano": [12, 18], "precisao_base": 0.75,
-    "alcance_maximo": 40.0, "distancia_ideal": [10.0, 30.0],
-    "carregador": 5, "reserva_maxima": 20,
+    "id": "rifle_teste",
+    "nome": "Rifle (teste)",
+    "provisorio": true,
+    "tipo": "distancia",
+    "arma_longa": true,
+    "dano": [
+      12,
+      18
+    ],
+    "precisao_base": 0.75,
+    "alcance_maximo": 40.0,
+    "distancia_ideal": [
+      10.0,
+      30.0
+    ],
+    "carregador": 5,
+    "reserva_maxima": 20,
+    "efeitos_criticos": [],
+    "custo_pa": null
+  },
+  {
+    "id": "faca_teste",
+    "nome": "Faca (teste)",
+    "provisorio": true,
+    "tipo": "corpo_a_corpo",
+    "arma_longa": false,
+    "dano": [
+      6,
+      10
+    ],
+    "precisao_base": 0.8,
+    "alcance_maximo": 1.0,
+    "distancia_ideal": [
+      0.0,
+      1.0
+    ],
+    "carregador": 0,
+    "reserva_maxima": 0,
+    "efeitos_criticos": [
+      "sangrando"
+    ],
+    "custo_pa": null
+  },
+  {
+    "id": "pistola",
+    "nome": "Pistola",
+    "provisorio": true,
+    "tipo": "distancia",
+    "arma_longa": false,
+    "dano": [
+      3,
+      5
+    ],
+    "custo_pa": 1,
+    "precisao_base": 0.75,
+    "alcance_maximo": null,
+    "distancia_ideal": null,
+    "carregador": null,
+    "reserva_maxima": null,
     "efeitos_criticos": []
   },
   {
-    "id": "faca_teste", "nome": "Faca (teste)", "provisorio": true,
-    "tipo": "corpo_a_corpo", "arma_longa": false,
-    "dano": [6, 10], "precisao_base": 0.8,
-    "alcance_maximo": 1.0, "distancia_ideal": [0.0, 1.0],
-    "carregador": 0, "reserva_maxima": 0,
-    "efeitos_criticos": ["sangrando"]
+    "id": "escopeta",
+    "nome": "Escopeta",
+    "provisorio": true,
+    "tipo": "distancia",
+    "arma_longa": true,
+    "dano": [
+      6,
+      10
+    ],
+    "custo_pa": 2,
+    "precisao_base": 0.75,
+    "alcance_maximo": null,
+    "distancia_ideal": null,
+    "carregador": null,
+    "reserva_maxima": null,
+    "efeitos_criticos": []
+  },
+  {
+    "id": "soco",
+    "nome": "Soco",
+    "provisorio": true,
+    "tipo": "corpo_a_corpo",
+    "arma_longa": false,
+    "dano": [
+      1,
+      2
+    ],
+    "custo_pa": 1,
+    "precisao_base": 0.75,
+    "alcance_maximo": 1.0,
+    "distancia_ideal": [
+      0.0,
+      1.0
+    ],
+    "carregador": 0,
+    "reserva_maxima": 0,
+    "efeitos_criticos": []
+  },
+  {
+    "id": "faca_cultista",
+    "nome": "Faca do cultista",
+    "provisorio": true,
+    "tipo": "corpo_a_corpo",
+    "arma_longa": false,
+    "dano": [
+      3,
+      5
+    ],
+    "custo_pa": 1,
+    "precisao_base": 0.75,
+    "alcance_maximo": 1.0,
+    "distancia_ideal": [
+      0.0,
+      1.0
+    ],
+    "carregador": 0,
+    "reserva_maxima": 0,
+    "efeitos_criticos": []
+  },
+  {
+    "id": "tiro_atirador",
+    "nome": "Tiro do atirador",
+    "provisorio": true,
+    "tipo": "distancia",
+    "arma_longa": false,
+    "dano": [
+      5,
+      8
+    ],
+    "custo_pa": 2,
+    "precisao_base": 0.75,
+    "alcance_maximo": 12.0,
+    "distancia_ideal": null,
+    "carregador": null,
+    "reserva_maxima": null,
+    "efeitos_criticos": []
   }
 ]
