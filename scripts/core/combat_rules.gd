@@ -109,16 +109,17 @@ func _range_penalty(w: Dictionary, distance: float) -> float:
 	return over / 100.0 * cfg.value("range_falloff_per_100px")
 
 
-# Motivo pelo qual o ataque não pode ser feito, ou "" se pode.
+# Motivo pelo qual o ataque não pode ser feito, ou "" se pode. Os códigos são os
+# mesmos do HUD (HudText.REJECTION_MESSAGES).
 func attack_blocker(attacker: Combatant, target: Combatant, walls: Array[Rect2]) -> String:
 	if not attacker.is_alive() or not target.is_alive():
-		return "unidade fora de combate"
+		return "requirement"
 	if attacker.pa < int(attacker.weapon["pa_cost"]):
-		return "PA insuficientes"
+		return "no_pa"
 	if gap(attacker, target) > float(attacker.weapon["max_range"]):
-		return "fora de alcance"
+		return "out_of_range"
 	if not Pathfinder.has_line_of_sight(attacker.pos, target.pos, walls):
-		return "sem linha de visão"
+		return "no_line_of_sight"
 	return ""
 
 
@@ -160,13 +161,13 @@ func attack_cover(attacker: Combatant, cover: Cover, walls: Array[Rect2]) -> Dic
 	var result := {"ok": false, "reason": "", "chance": 0.0, "hit": false, "damage": 0, "destroyed": false}
 	var aim := Vector2(clampf(attacker.pos.x, cover.rect.position.x, cover.rect.end.x), clampf(attacker.pos.y, cover.rect.position.y, cover.rect.end.y))
 	if cover.is_destroyed():
-		result.reason = "cobertura já destruída"
+		result.reason = "requirement"
 	elif attacker.pa < int(attacker.weapon["pa_cost"]):
-		result.reason = "PA insuficientes"
+		result.reason = "no_pa"
 	elif maxf(attacker.pos.distance_to(aim) - attacker.radius, 0.0) > float(attacker.weapon["max_range"]):
-		result.reason = "fora de alcance"
+		result.reason = "out_of_range"
 	elif not Pathfinder.has_line_of_sight(attacker.pos, aim, walls):
-		result.reason = "sem linha de visão"
+		result.reason = "no_line_of_sight"
 	if result.reason != "":
 		return result
 	result.ok = true

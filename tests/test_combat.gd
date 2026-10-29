@@ -131,14 +131,14 @@ func _test_attack() -> void:
 	var a := _unit("agente", "A", 1, Vector2(0, 0))
 	var e := _unit("criatura", "E", 1, Vector2(400, 0))
 	a.pa = 3
-	_check(rules.attack(a, e, walls, []).reason == "sem linha de visão", "parede bloqueia o ataque")
+	_check(rules.attack(a, e, walls, []).reason == "no_line_of_sight", "parede bloqueia o ataque")
 	_check(a.pa == 3, "ataque recusado não gasta PA")
 	e.pos = Vector2(100, 0)
 	a.pa = 0
-	_check(rules.attack(a, e, walls, []).reason == "PA insuficientes", "sem PA não ataca")
+	_check(rules.attack(a, e, walls, []).reason == "no_pa", "sem PA não ataca")
 	var claw := _unit("criatura", "C", 1, Vector2(100, 0))
 	claw.pa = 3
-	_check(rules.attack(claw, a, [] as Array[Rect2], []).reason == "fora de alcance", "corpo a corpo exige estar perto")
+	_check(rules.attack(claw, a, [] as Array[Rect2], []).reason == "out_of_range", "corpo a corpo exige estar perto")
 
 	var hits := 0
 	var damage_ok := true
