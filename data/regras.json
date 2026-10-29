@@ -10,7 +10,7 @@
   "dano_corpo_a_corpo": null,
   "precisao_corpo_a_corpo": null,
   "bonus_altura": null,
-  "pv_ganho_por_nivel_por_vig": null,
+  "pv_ganho_por_nivel_por_vig": 1.0,
   "san_ganho_por_nivel_por_pre": null,
   "descanso_normal_percentual": null,
   "descanso_completo_percentual": 1.0
