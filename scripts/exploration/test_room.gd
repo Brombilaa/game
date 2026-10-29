@@ -29,8 +29,6 @@ const FOLLOW_DISTANCE := 60.0  # distância fixa do seguidor ao líder (provisó
 const FOLLOW_SPREAD := 1.0  # variação do ângulo do seguidor em radianos (provisório)
 const REVIVE_REACH := 16.0  # borda a borda: "adjacente" para reanimar
 const SHEET_SIZE := Vector2(212, 72)
-const MINIMAP_CENTER := Vector2(888, 82)  # minimapa redondo no canto superior direito (tela)
-const MINIMAP_RADIUS := 62.0  # ficha do personagem no HUD (A, escolhida pelo Léo)
 const POPUP_SECONDS := 1.2
 const WALK_FRAME_SECONDS := 0.11
 const IDLE_FRAME_SECONDS := 0.7
@@ -98,6 +96,7 @@ var path := PackedVector2Array()
 var moving_unit: Combatant = null
 var pending_door := false
 var door_open := false
+var discovered := {}  # regiões da sala já vistas (minimapa)
 var pathfinder := Pathfinder.new()
 var mode := Mode.EXPLORATION
 var busy := false  # animação ou turno inimigo em andamento: entrada do jogador ignorada
@@ -279,6 +278,7 @@ func _start_move(unit: Combatant, new_path: PackedVector2Array) -> void:
 
 
 func _process(delta: float) -> void:
+	_update_discovered()
 	if not popups.is_empty():
 		for p in popups:
 			p.time -= delta
@@ -975,40 +975,155 @@ func _draw_actions(font: Font, to_world: Transform2D) -> void:
 
 
 
-# Minimapa redondo (referência do HUD): a sala inteira em losango, paredes, porta,
-# coberturas, o grupo (o controlado maior) e os inimigos que estão à vista.
-# Com a porta fechada, o outro lado da sala fica apagado, como na tela.
-func _draw_minimap(font: Font, to_world: Transform2D) -> void:
-	var center := to_world * MINIMAP_CENTER
-	var room_mid := _iso(Vector2(ROOM_SIZE) * 0.5)
-	var scale := MINIMAP_RADIUS * 1.8 / (_iso(Vector2(ROOM_SIZE.x, 0)).x - _iso(Vector2(0, ROOM_SIZE.y)).x)
-	var to_map := func(p: Vector2) -> Vector2: return center + (_iso(p) - room_mid) * scale
-	var dim := Color(0.09, 0.07, 0.05, 0.9)
-	draw_circle(center, MINIMAP_RADIUS, dim)
-	for side in [Rect2(0, 0, door.get_center().x, ROOM_SIZE.y), Rect2(door.get_center().x, 0, ROOM_SIZE.x - door.get_center().x, ROOM_SIZE.y)]:
-		if not _visible(side.get_center()):
-			continue
-		var r: Rect2 = side
-		var floor := PackedVector2Array([to_map.call(r.position), to_map.call(Vector2(r.end.x, r.position.y)), to_map.call(r.end), to_map.call(Vector2(r.position.x, r.end.y))])
-		draw_colored_polygon(floor, Color(0.29, 0.23, 0.17))
-	for w in walls:
-		if _visible(w.get_center()):
-			_draw_map_rect(to_map, w, Color(0.75, 0.66, 0.5))
-	if not door_open:
-		_draw_map_rect(to_map, door, Color(0.55, 0.36, 0.2))
-	for c: Cover in covers:
-		if _visible(c.rect.get_center()):
-			_draw_map_rect(to_map, c.rect, Color(0.5, 0.42, 0.32))
-	for e in enemies:
-		if e.is_alive() and _visible(e.pos):
-			draw_circle(to_map.call(e.pos), 2.5, Color(0.85, 0.2, 0.2))
+# Minimapa: radar redondo visto de cima, centrado no controlado (Léo escolheu, 29/10/2026).
+# Só desenha o que o grupo já descobriu: o outro lado de uma porta nunca aberta não aparece,
+# e inimigos só aparecem enquanto estão à vista.
+const RADAR_CENTER := Vector2(888, 72)  # pixels da tela
+const RADAR_RADIUS := 56.0
+const RADAR_SCALE := 0.11  # pixels do radar por unidade da sala
+const RADAR_GRID := 64.0  # um losango do chão, em unidades da sala
+const RADAR_INK := Color(0.07, 0.05, 0.04)
+const RADAR_FLOOR := Color(0.25, 0.2, 0.15)
+const RADAR_WALL := Color(0.84, 0.76, 0.6)
+const RADAR_DOOR := Color(0.66, 0.4, 0.2)
+const RADAR_ENEMY := Color(0.86, 0.2, 0.2)
+const RADAR_BRONZE := Color(0.55, 0.43, 0.27)
+
+
+# Regiões da sala já vistas pelo grupo (0 e 1: os lados da porta; ver _region).
+func _update_discovered() -> void:
 	for m in party:
-		if not m.dead:
-			draw_circle(to_map.call(m.pos), 3.5 if m == player else 2.5, PlaceholderArt.color("destaque") if m.is_alive() else Color(0.5, 0.5, 0.5))
-	draw_arc(center, MINIMAP_RADIUS, 0.0, TAU, 64, Color(0.43, 0.34, 0.24), 2.0)
-	draw_string(font, center + Vector2(-MINIMAP_RADIUS, -MINIMAP_RADIUS - 6), "SALA DE TESTE", HORIZONTAL_ALIGNMENT_CENTER, MINIMAP_RADIUS * 2, 11, Color(0.93, 0.89, 0.8))
+		if not m.dead and _region(m.pos) >= 0:
+			discovered[_region(m.pos)] = true
+	if door_open:
+		discovered[0] = true
+		discovered[1] = true
 
 
-func _draw_map_rect(to_map: Callable, r: Rect2, color: Color) -> void:
-	var pts := PackedVector2Array([to_map.call(r.position), to_map.call(Vector2(r.end.x, r.position.y)), to_map.call(r.end), to_map.call(Vector2(r.position.x, r.end.y))])
-	draw_colored_polygon(pts, color)
+# Partes da sala que o minimapa pode mostrar, em unidades da sala.
+func _known_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if discovered.has(0):
+		out.append(Rect2(0, 0, door.position.x, ROOM_SIZE.y))
+	if discovered.has(1):
+		out.append(Rect2(door.end.x, 0, ROOM_SIZE.x - door.end.x, ROOM_SIZE.y))
+	if not out.is_empty():
+		out.append(Rect2(door.position.x, 0, door.size.x, ROOM_SIZE.y))  # a parede da porta
+	return out
+
+
+func _map_poly(to_map: Callable, r: Rect2) -> PackedVector2Array:
+	return PackedVector2Array([to_map.call(r.position), to_map.call(Vector2(r.end.x, r.position.y)), to_map.call(r.end), to_map.call(Vector2(r.position.x, r.end.y))])
+
+
+# Ângulo (na planta) para onde o personagem olha, a partir da direção do sprite na tela.
+func _facing_angle(m: Combatant) -> float:
+	var screen := {
+		CharacterSheet.Dir.E: Vector2(1, 0), CharacterSheet.Dir.SE: Vector2(1, 0.5), CharacterSheet.Dir.S: Vector2(0, 1),
+		CharacterSheet.Dir.SW: Vector2(-1, 0.5), CharacterSheet.Dir.W: Vector2(-1, 0), CharacterSheet.Dir.NW: Vector2(-1, -0.5),
+		CharacterSheet.Dir.N: Vector2(0, -1), CharacterSheet.Dir.NE: Vector2(1, -0.5),
+	}
+	var v: Vector2 = screen.get(facing8.get(m, CharacterSheet.Dir.SE), Vector2(1, 0.5))
+	return _uniso(v * 100.0).angle()
+
+
+func _draw_minimap(font: Font, to_world: Transform2D) -> void:
+	var center := to_world * RADAR_CENTER
+	var focus := player
+	var to_map := func(p: Vector2) -> Vector2: return center + (p - focus.pos) * RADAR_SCALE
+	var disc := PackedVector2Array()
+	for k in 64:
+		disc.append(center + Vector2.RIGHT.rotated(TAU * k / 64.0) * RADAR_RADIUS)
+	var known := _known_rects()
+	# Recorta um retângulo da sala pelo que já foi descoberto e pelo círculo do radar.
+	var fill := func(r: Rect2, color: Color) -> void:
+		for k: Rect2 in known:
+			var part := r.intersection(k)
+			if part.has_area():
+				for piece in Geometry2D.intersect_polygons(_map_poly(to_map, part), disc):
+					draw_colored_polygon(piece, color)
+	var line := func(a: Vector2, b: Vector2, color: Color, width: float) -> void:
+		for seg in Geometry2D.intersect_polyline_with_polygon(PackedVector2Array([to_map.call(a), to_map.call(b)]), disc):
+			draw_polyline(seg, color, width)
+
+	# Fundo: escuro, com a borda ainda mais escura.
+	draw_circle(center, RADAR_RADIUS, Color(0.04, 0.03, 0.02, 0.94))
+	for c in known:
+		fill.call(c, RADAR_FLOOR)
+		# Grade fraca de losangos do chão, só no que já foi visto.
+		var x := ceilf(c.position.x / RADAR_GRID) * RADAR_GRID
+		while x < c.end.x:
+			line.call(Vector2(x, c.position.y), Vector2(x, c.end.y), Color(1, 1, 1, 0.05), 1.0)
+			x += RADAR_GRID
+		var y := ceilf(c.position.y / RADAR_GRID) * RADAR_GRID
+		while y < c.end.y:
+			line.call(Vector2(c.position.x, y), Vector2(c.end.x, y), Color(1, 1, 1, 0.05), 1.0)
+			y += RADAR_GRID
+	for c: Cover in covers:
+		if c.kind == "full":
+			fill.call(c.rect, RADAR_WALL.darkened(0.25))
+		else:
+			fill.call(c.rect, RADAR_FLOOR.lightened(0.25))
+	for w in walls:
+		fill.call(w, RADAR_WALL)
+	if door_open:
+		fill.call(door, RADAR_FLOOR)
+		var hinge: Vector2 = door.position + Vector2(door.size.x * 0.5, 0)
+		line.call(hinge, hinge + Vector2(door.size.y * 0.7, door.size.y * 0.7), RADAR_DOOR, 1.5)
+	elif not known.is_empty():
+		fill.call(door, RADAR_DOOR)
+	for k in range(1, 3):
+		draw_arc(center, RADAR_RADIUS * k / 3.0, 0.0, TAU, 48, Color(0.83, 0.67, 0.31, 0.12), 1.0)
+
+	# Inimigos: só os que estão à vista agora. Fora do alcance do radar, viram seta na borda.
+	for e in enemies:
+		if not (e.is_alive() and _visible(e.pos)):
+			continue
+		var at: Vector2 = to_map.call(e.pos)
+		if at.distance_to(center) <= RADAR_RADIUS - 5:
+			draw_circle(at, 3.2, RADAR_INK)
+			draw_circle(at, 2.3, RADAR_ENEMY)
+		else:
+			var d := (at - center).normalized()
+			var tip := center + d * (RADAR_RADIUS - 3)
+			var arrow := PackedVector2Array([tip, tip - d * 7 + d.orthogonal() * 4, tip - d * 7 - d.orthogonal() * 4])
+			draw_colored_polygon(arrow, RADAR_ENEMY)
+			arrow.append(arrow[0])
+			draw_polyline(arrow, RADAR_INK, 1.0)
+	for m in party:
+		if m == focus:
+			continue
+		var at: Vector2 = to_map.call(m.pos)
+		if at.distance_to(center) > RADAR_RADIUS - 4:
+			continue
+		if m.dead:
+			continue
+		if m.is_alive():
+			draw_circle(at, 3.2, RADAR_INK)
+			draw_circle(at, 2.3, PlaceholderArt.color("destaque"))
+		else:  # caído: X cinza até ser reanimado
+			draw_line(at + Vector2(-2.5, -2.5), at + Vector2(2.5, 2.5), Color(0.6, 0.58, 0.54), 1.5)
+			draw_line(at + Vector2(-2.5, 2.5), at + Vector2(2.5, -2.5), Color(0.6, 0.58, 0.54), 1.5)
+	# Controlado: seta no centro, apontando para onde olha.
+	var dir := Vector2.RIGHT.rotated(_facing_angle(focus))
+	var side := dir.orthogonal()
+	var tri := PackedVector2Array([center + dir * 6.5, center - dir * 4 + side * 4.5, center - dir * 2 , center - dir * 4 - side * 4.5])
+	draw_colored_polygon(tri, PlaceholderArt.color("destaque"))
+	tri.append(tri[0])
+	draw_polyline(tri, RADAR_INK, 1.0)
+
+	# Moldura: aro escuro, aro de bronze, marcas dos pontos cardeais e o N no topo.
+	draw_arc(center, RADAR_RADIUS + 1.5, 0.0, TAU, 64, RADAR_INK, 3.0)
+	draw_arc(center, RADAR_RADIUS - 0.5, 0.0, TAU, 64, RADAR_BRONZE, 1.5)
+	for k in 4:
+		var d := Vector2.UP.rotated(TAU * k / 4.0)
+		draw_line(center + d * (RADAR_RADIUS - 5), center + d * (RADAR_RADIUS - 1), RADAR_BRONZE, 1.5)
+	var n_at := center + Vector2(0, -RADAR_RADIUS - 1)
+	draw_circle(n_at, 6.5, RADAR_INK)
+	draw_arc(n_at, 6.5, 0.0, TAU, 24, RADAR_BRONZE, 1.0)
+	draw_string(font, n_at + Vector2(-6.5, 4), "N", HORIZONTAL_ALIGNMENT_CENTER, 13, 10, Color(0.83, 0.67, 0.31))
+	# Placa com o nome do local logo abaixo.
+	var plate := Rect2(center + Vector2(-46, RADAR_RADIUS + 4), Vector2(92, 15))
+	draw_rect(plate, Color(0.07, 0.05, 0.04, 0.9))
+	draw_rect(plate, RADAR_BRONZE, false, 1.0)
+	draw_string(font, plate.position + Vector2(0, 11), "SALA DE TESTE", HORIZONTAL_ALIGNMENT_CENTER, plate.size.x, 10, Color(0.93, 0.89, 0.8))

@@ -148,8 +148,11 @@ func _test_party() -> void:
 	room._switch_to(seguidor)
 	_check(room.player == seguidor, "troca o personagem controlado")
 	room._switch_to(lider)
-
+	_check(room.discovered.keys() == [0], "minimapa: só o lado do grupo é descoberto com a porta fechada")
 	room.door_open = true
+	await process_frame
+	_check(room.discovered.has(0) and room.discovered.has(1), "minimapa: abrir a porta descobre o outro lado")
+
 	room.enemies[1].pv = 0
 	lider.pos = Vector2(650, 360)
 	seguidor.pos = Vector2(650, 384)
