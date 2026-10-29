@@ -42,7 +42,6 @@ const FIELDS := {
 		"pv_por_nivel": {"t": "int", "nulo": true, "min": 0},  # fixo; o Vigor soma de novo a cada nível
 		"san_base": {"t": "int", "nulo": true, "min": 0},
 		"san_por_nivel": {"t": "int", "nulo": true, "min": 0},
-		"iniciativa_base": {"t": "int", "nulo": true},
 	},
 	"personagens": {
 		"id": {"t": "texto", "nulo": false},
@@ -96,9 +95,9 @@ const FIELDS := {
 		"nome": {"t": "texto", "nulo": false},
 		"pv": {"t": "int", "nulo": true, "min": 1},
 		"pa": {"t": "int", "nulo": true, "min": 0},
-		"iniciativa": {"t": "int", "nulo": true},
+		"agi": {"t": "int", "nulo": true, "min": 0},  # AGI define a ordem dos turnos (maior age primeiro)
 		"precisao": {"t": "int", "nulo": true},
-		"defesa": {"t": "int", "nulo": true},
+		"defesa": PERCENT,  # redução percentual do dano recebido
 		"ataques": {"t": "lista", "nulo": false, "ref": "armas"},
 		"comportamento": {"t": "texto", "nulo": true},
 		"resistencias": {"t": "lista", "nulo": false},

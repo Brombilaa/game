@@ -38,10 +38,10 @@ const BLOCK_CENTER := Vector2(460, 220)  # centro do Rect2(400, 200, 120, 40) de
 const WALL_BACK := 0  # eixo x, voltada para +y (norte da sala)
 const DOOR_OFFSET := Vector2(8, 0)  # ajuste fino da porta dentro do vão da parede
 const WALL_SIDE := 1  # eixo y, voltada para +x (oeste da sala e parede da porta)
-const AGENT_SHEETS := [
+const AGENT_SHEETS := [  # o protótipo começa com o Fernando; Tab alterna
+	"res://assets/sprites/personagens/fernando",
 	"res://assets/sprites/personagens/nikolai",
 	"res://assets/sprites/personagens/miguel",
-	"res://assets/sprites/personagens/fernando",
 ]
 const ROOM_SIZE := Vector2i(1280, 720)
 const ENEMY_VARIANTS := ["cultista", "atirador"]  # mesma ordem de `enemies`
@@ -58,7 +58,7 @@ var walls: Array[Rect2] = [
 	Rect2(400, 200, 120, 40),
 ]
 var door := Rect2(600, 336, 24, 72)  # 72 unidades: pouco mais de um losango, ~2× a largura de um herói
-# Resistência da estrutura por material (valores provisórios).
+# Coberturas: parcial (caixote, mureta, -20% de acerto) e total (bloqueia o tiro). Não destrutíveis por ora.
 var covers: Array = [
 	Cover.new(Rect2(300, 450, 40, 40), "partial", 20),
 	Cover.new(Rect2(960, 300, 40, 40), "partial", 20),
@@ -69,8 +69,8 @@ var cfg := CombatConfig.load_file()
 var rules := CombatRules.new(cfg)
 var player: Combatant = cfg.make_unit("agente", "Agente", Vector2(160, 360))
 var enemies: Array[Combatant] = [
-	cfg.make_enemy("cultista_teste", Vector2(800, 360)),
-	cfg.make_enemy("atirador_teste", Vector2(1100, 200)),
+	cfg.make_enemy("cultista", Vector2(800, 360)),
+	cfg.make_enemy("atirador", Vector2(1100, 200)),
 ]
 var turns: TurnManager
 
@@ -336,16 +336,8 @@ func _combat_click(click: Vector2) -> void:
 		_show_attack(player, target, rules.attack(player, target, _sight_blockers(), covers))
 		_after_player_action()
 		return
-	var cover := _cover_at(click)
-	if cover:
-		var r := rules.attack_cover(player, cover, _sight_blockers())
-		if not r.ok:
-			_reject(r.reason)
-		else:
-			var center := cover.rect.get_center()
-			_popup(center, ("-%d" % r.damage if r.hit else "Errou") + (" DESTRUÍDA" if r.destroyed else ""))
-		_after_player_action()
-		return
+	if _cover_at(click):
+		return  # coberturas não podem ser destruídas por enquanto (Léo)
 	await _player_move(click)
 
 
@@ -417,7 +409,7 @@ func _run_enemy_turn(unit: Combatant) -> void:
 		await get_tree().create_timer(ENEMY_STEP_SECONDS).timeout
 		if not turns.is_turn_of(unit):
 			break
-		if rules.attack_blocker(unit, player, _sight_blockers()) == "":
+		if rules.attack_blocker(unit, player, _sight_blockers(), covers) == "":
 			_show_attack(unit, player, rules.attack(unit, player, _sight_blockers(), covers))
 			turns.action_done()
 			continue
@@ -519,7 +511,7 @@ func _draw() -> void:
 			scenery.draw(self, it.prop, _iso(it.at))
 			if it.has("cover"):
 				var c: Cover = it.cover
-				var label := "%s %d" % ["P" if c.kind == "partial" else "C", c.hp]
+				var label := "P" if c.kind == "partial" else "C"
 				draw_string(font, _iso(it.at) + Vector2(-14, -scenery.height_of(it.prop) - 6), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.8))
 		else:
 			_draw_box(it.block, it.front, it.top, it.height)
@@ -636,11 +628,11 @@ func _draw_preview(font: Font) -> void:
 	var target := _enemy_at(mouse)
 	var text := ""
 	if target:
-		var blocker := rules.attack_blocker(player, target, _sight_blockers())
+		var blocker := rules.attack_blocker(player, target, _sight_blockers(), covers)
 		if blocker != "":
 			text = HudText.rejection_message(blocker)
 		else:
-			text = "%d%%" % roundi(rules.hit_chance(player, target) * 100.0)
+			text = "%d%%" % roundi(rules.hit_chance(player, target, covers) * 100.0)
 			var c := rules.cover_between(player.pos, target, covers)
 			if c:
 				text += " (cobertura %s)" % ("parcial" if c.kind == "partial" else "completa")

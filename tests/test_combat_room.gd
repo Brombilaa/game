@@ -22,7 +22,7 @@ func _run() -> void:
 	await process_frame
 	_check(room.mode == room.Mode.COMBAT, "detecção inicia o combate")
 	_check(room.turns.order.size() == 3, "todos os inimigos vivos entram no combate")
-	_check(room.turns.current == room.player and room.player.pa == 3, "agente tem a maior iniciativa e 3 PA")
+	_check(room.turns.current == room.player and room.player.pa == 3, "agente age primeiro (empate de AGI favorece o grupo) com 3 PA")
 
 	# Ataque fora do turno do inimigo: clique em lugar nenhum não gasta PA.
 	room._combat_click(Vector2(-50, -50))
@@ -35,9 +35,9 @@ func _run() -> void:
 
 	# Mover gasta PA proporcional e anda até o fim da rota.
 	var pa_before: int = room.player.pa
-	room._combat_click(room.player.pos + Vector2(0, -100))
+	room._combat_click(room.player.pos + Vector2(0, -60))
 	await _wait(func() -> bool: return not room.busy, 5.0)
-	_check(room.player.pa == pa_before - 1 and room.player.pos.is_equal_approx(Vector2(650, 260)), "movimento gasta 1 PA e chega ao destino")
+	_check(room.player.pa == pa_before - 1 and room.player.pos.is_equal_approx(Vector2(650, 300)), "movimento de até 2 m gasta 1 PA e chega ao destino")
 
 	# Agente resistente para o teste não depender da sorte dos inimigos.
 	room.player.pv = 999
@@ -52,7 +52,7 @@ func _run() -> void:
 	if room.mode == room.Mode.COMBAT:
 		for e in room.enemies:
 			e.pv = 1
-		room.player.precision = 100
+		room.player.hit_bonus = 1.0
 		var guard := 0
 		while room.mode == room.Mode.COMBAT and guard < 5000:
 			guard += 1

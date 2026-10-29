@@ -1,7 +1,8 @@
 class_name Cover
 extends RefCounted
-# Estrutura de cobertura: parcial ou completa, sólida para movimento e destrutível.
-# Não bloqueia a linha de visão; protege quem está encostado nela (ver AttackRules).
+# Estrutura de cobertura: parcial ou completa, sólida para movimento. A parcial protege
+# quem está encostado nela (-20% de acerto); a completa bloqueia o tiro (ver CombatRules).
+# O hp fica para quando a destruição entrar no jogo (Léo: nenhuma é destrutível ainda).
 
 var rect := Rect2()
 var kind := "partial"  # "partial" ou "full", chaves de "cover" em combat.json
