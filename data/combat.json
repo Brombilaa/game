@@ -21,6 +21,8 @@
 	"attack_pa_cost": 2,
 	"enemy_defense": 0.0,
 	"enemy_perception_px": 300,
+	"game_over_fade_seconds": 3.0,
+	"_game_over": "Léo: sem tela própria; a tela escurece bem devagar e volta ao último save. 3 s é provisório do Claude.",
 	"crouch_perception_factor": 0.5,
 	"stealth_hit_bonus": 0.25,
 	"stealth_damage_multiplier": 2.0,

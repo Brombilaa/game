@@ -85,6 +85,8 @@ var popups: Array = []  # textos de acerto/erro/dano flutuando sobre as unidades
 var hud := CombatHud.new()
 var audio := AudioDirector.new()
 var camera := Camera2D.new()
+var fade_layer := CanvasLayer.new()
+var fade := ColorRect.new()  # escurece a tela no Game Over
 var facing := {}  # Combatant -> PlaceholderArt.Dir
 var facing8 := {}  # Combatant -> CharacterSheet.Dir (8 direções; o agente começa virado para SE)
 var walk_time := 0.0
@@ -321,6 +323,13 @@ func _start_combat() -> void:
 	hud.on_combat_started()
 	audio.on_combat_started()
 	turns = TurnManager.new(int(cfg.value("pa_per_turn")))
+	turns.turn_effects = func(u: Combatant) -> bool:
+		var fx := rules.start_turn_effects(u)
+		if fx.damage > 0:
+			_popup(u.pos, "-%d" % fx.damage)
+		if fx.skip and u.is_alive():
+			_popup(u.pos, "Atordoado")
+		return fx.skip
 	turns.turn_started.connect(_on_turn_started)
 	turns.turn_ended.connect(func(_u: Combatant) -> void: hud.on_turn_ended())
 	turns.combat_ended.connect(_on_combat_ended)
@@ -349,8 +358,25 @@ func _on_combat_ended(result: TurnManager.Result) -> void:
 		hud.on_combat_ended()
 	else:
 		mode = Mode.GAME_OVER
-		hud.show_notice("Game Over")
+		_game_over_fade()
 	queue_redraw()
+
+
+# Game Over (Léo): sem tela própria; a tela escurece bem devagar e o jogo volta ao último
+# save. A sala de teste ainda não carrega saves, então recarregar a cena é voltar ao início.
+func _game_over_fade() -> void:
+	fade_layer.layer = 100
+	fade.color = Color(0, 0, 0, 0)
+	fade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if not fade.get_parent():
+		fade_layer.add_child(fade)
+		add_child(fade_layer)
+	var tween := create_tween()
+	tween.tween_property(fade, "color:a", 1.0, cfg.value("game_over_fade_seconds"))
+	await tween.finished
+	if get_tree().current_scene == self:
+		get_tree().reload_current_scene()
 
 
 # --- Turno do jogador --------------------------------------------------------
@@ -554,8 +580,6 @@ func _draw() -> void:
 		draw_string(font, footer, "Rodada %d  |  Espaço passa, D atrasa, R reinicia" % turns.round_number, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 1, 0.6))
 	elif mode == Mode.EXPLORATION:
 		draw_string(font, footer, ("AGACHADO  |  " if player.crouched else "") + "C agacha, clique no inimigo ataca de surpresa", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 1, 0.6))
-	elif mode == Mode.GAME_OVER:
-		draw_string(font, footer, "Game Over (R reinicia)", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 0.5, 0.5))
 	for p in popups:
 		draw_string(font, p.pos, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 0.7, clampf(p.time / POPUP_SECONDS * 2.0, 0.0, 1.0)))
 

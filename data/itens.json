@@ -1,6 +1,8 @@
 [
-  { "id": "colete", "nome": "Colete", "categoria": "equipamento", "consumivel": false, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": "defesa", "valor": null },
-  { "id": "kit_primeiros_socorros", "nome": "Kit de primeiros socorros", "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": "salvar_da_morte", "valor": null },
-  { "id": "curativo", "nome": "Curativo", "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": "curar_pv", "valor": null },
-  { "id": "componente_ritual", "nome": "Componente de ritual", "categoria": "recurso", "consumivel": true, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": "ritual", "valor": null }
+  {"id": "colete", "nome": "Colete", "categoria": "equipamento", "consumivel": false, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": "defesa", "valor": null},
+  {"id": "kit_primeiros_socorros", "nome": "Kit de primeiros socorros", "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": 5, "custo_pa_combate": 2, "efeito": "reanimar", "valor": 0.5, "provisorio": true},
+  {"id": "curativo", "nome": "Curativo", "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": "curar_pv", "valor": null},
+  {"id": "componente_ritual", "nome": "Componente de ritual", "categoria": "recurso", "consumivel": true, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": "ritual", "valor": null},
+  {"id": "bandagem", "nome": "Bandagem", "provisorio": true, "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": 5, "custo_pa_combate": 1, "efeito": "remover_sangrando", "valor": null},
+  {"id": "antidoto", "nome": "Antídoto", "provisorio": true, "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": 5, "custo_pa_combate": 1, "efeito": "remover_envenenado", "valor": null}
 ]

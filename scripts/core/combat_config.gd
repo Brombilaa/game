@@ -48,7 +48,15 @@ func weapon(id: String) -> Dictionary:
 		"max_range": float(max_range if max_range != null else value("default_max_range_m")) * ppm,
 		"damage_min": int(w["dano"][0]),
 		"damage_max": int(w["dano"][1]),
+		"crit_conditions": w["efeitos_criticos"],
 	}
+
+
+# Condição de condicoes.json.
+func condition(id: String) -> Dictionary:
+	var c := game_data.get_entry("condicoes", id)
+	assert(not c.is_empty(), "condição inexistente: " + id)
+	return c
 
 
 # Cria um protagonista de teste a partir da ficha em "units" de combat.json

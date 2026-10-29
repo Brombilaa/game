@@ -60,9 +60,13 @@ const FIELDS := {
 		"nome": {"t": "texto", "nulo": false},
 		"duracao": {"t": "texto", "nulo": true, "valores": ["rodadas", "ate_remocao", "situacional"]},
 		"rodadas": {"t": "int", "nulo": true, "min": 1},
+		"rodadas_max": {"t": "int", "nulo": true, "min": 1},  # duração sorteada entre rodadas e rodadas_max
 		"efeito": {"t": "texto", "nulo": true},
+		"dano_por_turno": PERCENT,  # fração do PV máximo perdida no início do turno, por acúmulo
 		"acumula": {"t": "bool", "nulo": true},
-		"remocao": {"t": "texto", "nulo": true},
+		"acumulo_max": {"t": "int", "nulo": true, "min": 1},
+		"remocao": {"t": "texto", "nulo": true},  # item que remove a condição
+		"pula_turno": {"t": "bool", "nulo": false},
 	},
 	"armas": {
 		"id": {"t": "texto", "nulo": false},

@@ -28,7 +28,7 @@ func _init() -> void:
 	_check("regras.custo_ataque_distancia_pa" in data.pending, "custo de ataque à distância fica pendente")
 	_check(typeof(data.get_entry("inimigos", "cultista_teste")["defesa"]) == TYPE_FLOAT, "defesa do inimigo é percentual (float)")
 	_check(data.get_entry("personagens", "fernando")["morte_roteirizada"], "Fernando tem morte roteirizada")
-	_check(data.ids("condicoes").size() == 6, "seis condições")
+	_check(data.ids("condicoes") == ["sangrando", "atordoado", "em_chamas", "envenenado", "caido"], "condições do Léo: sangrando, atordoado, em chamas, envenenado (e caído)")
 	_check(data.ids("arvores").filter(func(id): return data.get_entry("arvores", id)["tipo"] == "compartilhada").size() == 5, "cinco árvores compartilhadas")
 	var pistola := data.get_entry("armas", "pistola_teste")
 	_check(pistola["dano"] == [8, 12] and typeof(pistola["dano"][0]) == TYPE_INT, "dano da pistola é faixa de inteiros")
