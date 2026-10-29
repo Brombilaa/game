@@ -37,6 +37,8 @@ const AGENT_SHEETS := [
 ]
 const ROOM_SIZE := Vector2i(1280, 720)
 const ENEMY_VARIANTS := ["cultista", "atirador"]  # mesma ordem de `enemies`
+# Variantes que já têm folha real; as outras seguem com PlaceholderArt.
+const ENEMY_SHEETS := {"cultista": "res://assets/sprites/personagens/cultista"}
 
 var walls: Array[Rect2] = [
 	Rect2(0, 0, 1280, 16),
@@ -81,6 +83,7 @@ var walk_time := 0.0
 var idle_frame := 0
 var agent_sheets: Array[CharacterSheet] = []
 var agent_look := 0
+var enemy_sheets := {}  # variante -> CharacterSheet
 
 
 func _ready() -> void:
@@ -89,6 +92,8 @@ func _ready() -> void:
 	add_child(audio)
 	for path in AGENT_SHEETS:
 		agent_sheets.append(CharacterSheet.new(path))
+	for variant in ENEMY_SHEETS:
+		enemy_sheets[variant] = CharacterSheet.new(ENEMY_SHEETS[variant])
 	var corners := [_iso(Vector2.ZERO), _iso(Vector2(ROOM_SIZE.x, 0)), _iso(Vector2(0, ROOM_SIZE.y)), _iso(Vector2(ROOM_SIZE))]
 	camera.limit_left = int(corners[2].x) - 16
 	camera.limit_right = int(corners[1].x) + 16
@@ -574,10 +579,16 @@ func _draw_unit(u: Combatant) -> void:
 		var n := int(walk_time / WALK_FRAME_SECONDS) % frames.size() if walking else idle_frame
 		agent_sheets[agent_look].draw(self, at, frames[n], facing8.get(u, CharacterSheet.Dir.SE))
 	else:
-		var frame := 1 + int(walk_time / WALK_FRAME_SECONDS) % 2 if walking else 0
-		var tex := PlaceholderArt.character_texture(ENEMY_VARIANTS[i % ENEMY_VARIANTS.size()], facing.get(u, PlaceholderArt.Dir.SOUTH), frame)
-		var size := Vector2(PlaceholderArt.FRAME_SIZE * PLACEHOLDER_SCALE)
-		draw_texture_rect(tex, Rect2((at - PlaceholderArt.PIVOT * PLACEHOLDER_SCALE).round(), size), false)
+		var variant: String = ENEMY_VARIANTS[i % ENEMY_VARIANTS.size()]
+		if enemy_sheets.has(variant):
+			var frames: Array = CharacterSheet.WALK_FRAMES if walking else CharacterSheet.IDLE_FRAMES
+			var n := int(walk_time / WALK_FRAME_SECONDS) % frames.size() if walking else idle_frame
+			enemy_sheets[variant].draw(self, at, frames[n], facing8.get(u, CharacterSheet.Dir.SW))
+		else:
+			var frame := 1 + int(walk_time / WALK_FRAME_SECONDS) % 2 if walking else 0
+			var tex := PlaceholderArt.character_texture(variant, facing.get(u, PlaceholderArt.Dir.SOUTH), frame)
+			var size := Vector2(PlaceholderArt.FRAME_SIZE * PLACEHOLDER_SCALE)
+			draw_texture_rect(tex, Rect2((at - PlaceholderArt.PIVOT * PLACEHOLDER_SCALE).round(), size), false)
 	if mode != Mode.EXPLORATION:
 		var bar := Rect2(at + Vector2(-20, -CharacterSheet.HEIGHT - 8), Vector2(40, 4))
 		draw_rect(bar, Color(0.2, 0.2, 0.2))
