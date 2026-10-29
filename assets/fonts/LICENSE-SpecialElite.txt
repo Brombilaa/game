@@ -1,0 +1,4 @@
+Special Elite
+Copyright 2011 The Special Elite Project Authors (https://github.com/astiller/special-elite)
+Licenciada sob a Apache License, Version 2.0: https://www.apache.org/licenses/LICENSE-2.0
+Fonte baixada do Google Fonts: https://fonts.google.com/specimen/Special+Elite
