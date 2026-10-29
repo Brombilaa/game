@@ -1,14 +1,74 @@
 [
   {
-    "id": "cultista_teste", "nome": "Cultista (teste)", "provisorio": true,
-    "pv": 20, "pa": 3, "iniciativa": 10, "precisao": 0, "defesa": 0,
-    "ataques": ["faca_teste"], "comportamento": "agressivo",
-    "resistencias": [], "fraquezas": [], "chefe": false, "fases": []
+    "id": "cultista_teste",
+    "nome": "Cultista (teste)",
+    "provisorio": true,
+    "pv": 20,
+    "pa": 3,
+    "iniciativa": 10,
+    "precisao": 0,
+    "defesa": 0,
+    "ataques": [
+      "faca_teste"
+    ],
+    "comportamento": "agressivo",
+    "resistencias": [],
+    "fraquezas": [],
+    "chefe": false,
+    "fases": []
   },
   {
-    "id": "atirador_teste", "nome": "Atirador (teste)", "provisorio": true,
-    "pv": 16, "pa": 3, "iniciativa": 8, "precisao": 0, "defesa": 0,
-    "ataques": ["pistola_teste"], "comportamento": "agressivo",
-    "resistencias": [], "fraquezas": [], "chefe": false, "fases": []
+    "id": "atirador_teste",
+    "nome": "Atirador (teste)",
+    "provisorio": true,
+    "pv": 16,
+    "pa": 3,
+    "iniciativa": 8,
+    "precisao": 0,
+    "defesa": 0,
+    "ataques": [
+      "pistola_teste"
+    ],
+    "comportamento": "agressivo",
+    "resistencias": [],
+    "fraquezas": [],
+    "chefe": false,
+    "fases": []
+  },
+  {
+    "id": "cultista",
+    "nome": "Cultista",
+    "provisorio": true,
+    "pv": 20,
+    "pa": 3,
+    "iniciativa": 10,
+    "precisao": 0,
+    "defesa": 0,
+    "ataques": [
+      "faca_cultista"
+    ],
+    "comportamento": "agressivo",
+    "resistencias": [],
+    "fraquezas": [],
+    "chefe": false,
+    "fases": []
+  },
+  {
+    "id": "atirador",
+    "nome": "Atirador",
+    "provisorio": true,
+    "pv": 14,
+    "pa": 3,
+    "iniciativa": 8,
+    "precisao": 0,
+    "defesa": 0,
+    "ataques": [
+      "tiro_atirador"
+    ],
+    "comportamento": "agressivo",
+    "resistencias": [],
+    "fraquezas": [],
+    "chefe": false,
+    "fases": []
   }
 ]

@@ -50,6 +50,7 @@ const FIELDS := {
 		"papel": {"t": "texto", "nulo": false},
 		"classe": {"t": "texto", "nulo": true, "ref": "classes"},
 		"arma_inicial": {"t": "texto", "nulo": true, "ref": "armas"},
+		"arma_secundaria": {"t": "texto", "nulo": true, "ref": "armas"},
 		"atributos": {"t": "atributos", "nulo": false},
 		"arvores_exclusivas": {"t": "lista", "nulo": false, "ref": "arvores"},
 		"morte_roteirizada": {"t": "bool", "nulo": false},
@@ -70,6 +71,8 @@ const FIELDS := {
 		"tipo": {"t": "texto", "nulo": false, "valores": ["distancia", "corpo_a_corpo"]},
 		"arma_longa": {"t": "bool", "nulo": false},
 		"dano": {"t": "faixa", "nulo": true, "inteiro": true},
+		"custo_pa": PA,
+		"bonus_mira": PERCENT,  # por arma; null = vale bonus_mira_precisao de regras
 		"precisao_base": PERCENT,
 		"alcance_maximo": {"t": "num", "nulo": true, "min": 0.0},
 		"distancia_ideal": {"t": "faixa", "nulo": true},
