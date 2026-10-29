@@ -1,0 +1,24 @@
+# Godot 4
+.godot/
+.import/
+*.translation
+export.cfg
+export_credentials.cfg
+.mono/
+data_*/
+mono_crash.*.json
+
+# Builds exportados (publicar via GitHub Releases / itch.io)
+build/
+builds/
+*.exe
+*.pck
+*.apk
+*.aab
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.tmp
