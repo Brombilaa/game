@@ -1,35 +1,13 @@
 extends SceneTree
-# Teste headless da folha de poses do Nikolai. Rodar com:
+# Teste headless das folhas de poses do Nikolai e do Miguel. Rodar com:
 #   godot --headless --path . -s tests/test_character_sheet.gd
 
 var failures := 0
 
 
 func _init() -> void:
-	var sheet := CharacterSheet.new("res://assets/sprites/personagens/nikolai")
-	_check(sheet.frame_count() == 8, "8 quadros na folha")
-	_check(sheet.textures["e"].get_height() == CharacterSheet.FRAME, "folha de uma fila só")
-
-	var used := {}
-	for name in sheet.textures:
-		var tex: Texture2D = sheet.textures[name]
-		_check(tex.get_width() == 8 * CharacterSheet.FRAME, "%s: 8 quadros" % name)
-		var img := tex.get_image()
-		for f in sheet.frame_count():
-			var feet_ok := false
-			var top := -1
-			for y in CharacterSheet.FRAME:
-				for x in CharacterSheet.FRAME:
-					var c := img.get_pixel(f * CharacterSheet.FRAME + x, y)
-					if c.a > 0.0:
-						if top < 0:
-							top = y
-						if y == int(CharacterSheet.PIVOT.y) and absi(x - int(CharacterSheet.PIVOT.x)) < 40:
-							feet_ok = true
-						used[c] = true
-			_check(feet_ok, "%s: quadro %d tem os pés na linha do pivô" % [name, f])
-			_check(top >= 0 and CharacterSheet.PIVOT.y - top <= CharacterSheet.HEIGHT, "%s: quadro %d cabe na altura declarada" % [name, f])
-	_check(used.size() <= 32, "paleta única de até 32 cores (%d)" % used.size())
+	for who in ["nikolai", "miguel"]:
+		_check_sheet(who)
 
 	var D := CharacterSheet.Dir
 	_check(CharacterSheet.dir_from_vector(Vector2(1, 0)) == D.E, "vetor (1,0) = leste")
@@ -47,6 +25,33 @@ func _init() -> void:
 	print("Falhas: %d" % failures)
 	quit(1 if failures > 0 else 0)
 
+
+
+func _check_sheet(who: String) -> void:
+	var sheet := CharacterSheet.new("res://assets/sprites/personagens/" + who)
+	_check(sheet.frame_count() == 8, "%s: 8 quadros na folha" % who)
+	_check(sheet.textures["e"].get_height() == CharacterSheet.FRAME, "%s: folha de uma fila só" % who)
+
+	var used := {}
+	for name in sheet.textures:
+		var tex: Texture2D = sheet.textures[name]
+		_check(tex.get_width() == 8 * CharacterSheet.FRAME, "%s %s: 8 quadros" % [who, name])
+		var img := tex.get_image()
+		for f in sheet.frame_count():
+			var feet_ok := false
+			var top := -1
+			for y in CharacterSheet.FRAME:
+				for x in CharacterSheet.FRAME:
+					var c := img.get_pixel(f * CharacterSheet.FRAME + x, y)
+					if c.a > 0.0:
+						if top < 0:
+							top = y
+						if y == int(CharacterSheet.PIVOT.y) and absi(x - int(CharacterSheet.PIVOT.x)) < 40:
+							feet_ok = true
+						used[c] = true
+			_check(feet_ok, "%s %s: quadro %d tem os pés na linha do pivô" % [who, name, f])
+			_check(top >= 0 and CharacterSheet.PIVOT.y - top <= CharacterSheet.HEIGHT, "%s %s: quadro %d cabe na altura declarada" % [who, name, f])
+	_check(used.size() <= 32, "%s: paleta única de até 32 cores (%d)" % [who, used.size()])
 
 func _check(ok: bool, label: String) -> void:
 	if not ok:

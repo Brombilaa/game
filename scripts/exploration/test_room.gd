@@ -4,10 +4,10 @@ extends Node2D
 # Inimigo que vê o personagem (alcance + linha de visão) inicia o combate na hora.
 # Combate por turnos (TurnManager + CombatRules): no turno do agente, clique no chão
 # move (gasta PA), clique no inimigo ataca, clique na cobertura mira a estrutura,
-# Espaço passa o turno e D atrasa. R reinicia a sala.
+# Espaço passa o turno e D atrasa. R reinicia a sala. Tab troca o visual do agente (Nikolai/Miguel).
 # Visual provisório: resolução interna 960×540 (DEC-2026-10-29-10), câmera segue a unidade
 # em foco e a sala de 1280×720 rola; unidades desenhadas por ordem de profundidade (y).
-# O agente usa a folha real do Nikolai (CharacterSheet); inimigos e chão ainda são
+# O agente usa a folha real do Nikolai ou do Miguel (CharacterSheet; só o visual muda); inimigos e chão ainda são
 # PlaceholderArt, ampliado 2× para ficar na escala do personagem de ~96 px.
 
 enum Mode { EXPLORATION, COMBAT, GAME_OVER }
@@ -22,7 +22,7 @@ const POPUP_SECONDS := 1.2
 const WALK_FRAME_SECONDS := 0.11
 const IDLE_FRAME_SECONDS := 0.7
 const PLACEHOLDER_SCALE := 2  # arte provisória de 32×48 ampliada para ~96 px
-const AGENT_SHEET := "res://assets/sprites/personagens/nikolai"
+const AGENT_SHEETS := ["res://assets/sprites/personagens/nikolai", "res://assets/sprites/personagens/miguel"]
 const WALL_TOP := 9.0  # faixa clara no topo da parede, para a leitura em 3/4
 const ROOM_SIZE := Vector2i(1280, 720)
 const ENEMY_VARIANTS := ["cultista", "atirador"]  # mesma ordem de `enemies`
@@ -68,13 +68,15 @@ var facing := {}  # Combatant -> PlaceholderArt.Dir
 var facing8 := {}  # Combatant -> CharacterSheet.Dir (8 direções; o agente começa virado para SE)
 var walk_time := 0.0
 var idle_frame := 0
-var agent_sheet: CharacterSheet
+var agent_sheets: Array[CharacterSheet] = []
+var agent_look := 0
 
 
 func _ready() -> void:
 	add_child(hud)
 	add_child(audio)
-	agent_sheet = CharacterSheet.new(AGENT_SHEET)
+	for path in AGENT_SHEETS:
+		agent_sheets.append(CharacterSheet.new(path))
 	camera.limit_left = 0
 	camera.limit_top = 0
 	camera.limit_right = ROOM_SIZE.x
@@ -91,6 +93,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_tree().reload_current_scene()
 		elif event.pressed and event.keycode == KEY_SPACE:
 			_player_pass()
+		elif event.pressed and event.keycode == KEY_TAB:
+			agent_look = (agent_look + 1) % agent_sheets.size()
+			queue_redraw()
 		elif event.pressed and event.keycode == KEY_D:
 			_player_delay()
 		return
@@ -442,7 +447,7 @@ func _draw_unit(u: Combatant) -> void:
 	if i < 0:
 		var frames: Array = CharacterSheet.WALK_FRAMES if walking else CharacterSheet.IDLE_FRAMES
 		var n := int(walk_time / WALK_FRAME_SECONDS) % frames.size() if walking else idle_frame
-		agent_sheet.draw(self, u.pos, frames[n], facing8.get(u, CharacterSheet.Dir.SE))
+		agent_sheets[agent_look].draw(self, u.pos, frames[n], facing8.get(u, CharacterSheet.Dir.SE))
 	else:
 		var frame := 1 + int(walk_time / WALK_FRAME_SECONDS) % 2 if walking else 0
 		var tex := PlaceholderArt.character_texture(ENEMY_VARIANTS[i % ENEMY_VARIANTS.size()], facing.get(u, PlaceholderArt.Dir.SOUTH), frame)
