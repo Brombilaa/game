@@ -71,6 +71,7 @@ const FIELDS := {
 		"arma_longa": {"t": "bool", "nulo": false},
 		"dano": {"t": "faixa", "nulo": true, "inteiro": true},
 		"custo_pa": PA,
+		"bonus_mira": PERCENT,  # por arma; null = vale bonus_mira_precisao de regras
 		"precisao_base": PERCENT,
 		"alcance_maximo": {"t": "num", "nulo": true, "min": 0.0},
 		"distancia_ideal": {"t": "faixa", "nulo": true},

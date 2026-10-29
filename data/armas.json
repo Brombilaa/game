@@ -20,7 +20,8 @@
     "efeitos_criticos": [
       "sangrando"
     ],
-    "custo_pa": null
+    "custo_pa": null,
+    "bonus_mira": null
   },
   {
     "id": "rifle_teste",
@@ -41,7 +42,8 @@
     "carregador": 5,
     "reserva_maxima": 20,
     "efeitos_criticos": [],
-    "custo_pa": null
+    "custo_pa": null,
+    "bonus_mira": null
   },
   {
     "id": "faca_teste",
@@ -64,7 +66,8 @@
     "efeitos_criticos": [
       "sangrando"
     ],
-    "custo_pa": null
+    "custo_pa": null,
+    "bonus_mira": null
   },
   {
     "id": "pistola",
@@ -82,7 +85,8 @@
     "distancia_ideal": null,
     "carregador": null,
     "reserva_maxima": null,
-    "efeitos_criticos": []
+    "efeitos_criticos": [],
+    "bonus_mira": null
   },
   {
     "id": "escopeta",
@@ -100,7 +104,8 @@
     "distancia_ideal": null,
     "carregador": null,
     "reserva_maxima": null,
-    "efeitos_criticos": []
+    "efeitos_criticos": [],
+    "bonus_mira": null
   },
   {
     "id": "soco",
@@ -121,7 +126,8 @@
     ],
     "carregador": 0,
     "reserva_maxima": 0,
-    "efeitos_criticos": []
+    "efeitos_criticos": [],
+    "bonus_mira": null
   },
   {
     "id": "faca_cultista",
@@ -142,7 +148,8 @@
     ],
     "carregador": 0,
     "reserva_maxima": 0,
-    "efeitos_criticos": []
+    "efeitos_criticos": [],
+    "bonus_mira": null
   },
   {
     "id": "tiro_atirador",
@@ -158,6 +165,51 @@
     "precisao_base": 0.75,
     "alcance_maximo": 12.0,
     "distancia_ideal": null,
+    "carregador": null,
+    "reserva_maxima": null,
+    "efeitos_criticos": [],
+    "bonus_mira": null
+  },
+  {
+    "id": "espada",
+    "nome": "Espada",
+    "provisorio": true,
+    "tipo": "corpo_a_corpo",
+    "arma_longa": false,
+    "dano": [
+      4,
+      6
+    ],
+    "custo_pa": 1,
+    "precisao_base": 0.75,
+    "alcance_maximo": 1.0,
+    "distancia_ideal": [
+      0.0,
+      1.0
+    ],
+    "carregador": 0,
+    "reserva_maxima": 0,
+    "efeitos_criticos": [],
+    "bonus_mira": null
+  },
+  {
+    "id": "fuzil_precisao",
+    "nome": "Fuzil de precisão",
+    "provisorio": true,
+    "tipo": "distancia",
+    "arma_longa": true,
+    "dano": [
+      9,
+      13
+    ],
+    "custo_pa": 2,
+    "bonus_mira": 0.2,
+    "precisao_base": 0.75,
+    "alcance_maximo": 30.0,
+    "distancia_ideal": [
+      0.0,
+      18.0
+    ],
     "carregador": null,
     "reserva_maxima": null,
     "efeitos_criticos": []
