@@ -73,11 +73,11 @@ The coat sways slightly with each step. Same character in all 8 poses.
 
 | Direção | Valor para `[DIRECTION]` | Fase |
 | --- | --- | --- |
-| SE | `SOUTH-EAST: toward the lower-right corner of the screen, three-quarter front view` | 1ª leva |
-| NE | `NORTH-EAST: toward the upper-right corner of the screen, three-quarter back view, mostly his back and right shoulder` | 1ª leva |
-| E | `EAST: toward the right of the screen, pure side view` | depois |
-| S | `SOUTH: toward the camera, straight front view` | depois |
-| N | `NORTH: away from the camera, straight back view` | depois |
+| SE | `SOUTH-EAST: toward the lower-right corner of the screen, three-quarter front view` | 1ª leva (Nikolai: pronto) |
+| NE | `NORTH-EAST: toward the upper-right corner of the screen, three-quarter back view, mostly his back and right shoulder` | 1ª leva (Nikolai: pronto) |
+| E | `EAST: toward the right of the screen, pure side view` | depois (Nikolai: pronto) |
+| S | `SOUTH: toward the camera, straight front view` | depois (Nikolai: pronto) |
+| N | `NORTH: away from the camera, straight back view` | depois (Nikolai: pronto) |
 
 ## 5. Primeiro teste
 
@@ -85,9 +85,9 @@ Envie ao ChatGPT a ficha do Nikolai, cole o bloco de regras (seção 3), o bloco
 Vou mostrar no jogo e dizer se a escala, o alinhamento e a paleta ficaram bons. Se o ChatGPT trocar a roupa entre os quadros,
 peça "regenerate keeping exactly the same outfit as pose 1".
 
-Resultado do primeiro teste (Nikolai, 29/10/2026), já convertido e no jogo: o fundo magenta, as 8 poses na grade e o alinhamento funcionaram e a
-conversão ficou boa (`tools/sprites/converter.py`). A imagem veio virada para **leste** (de lado, para a direita) e não para
-sudeste, então vale como a direção E; para SE, acrescente ao pedido "we see his chest and both shoulders, body turned toward the camera".
+Resultado (Nikolai, 29/10/2026): o fundo magenta, as 8 poses na grade e o alinhamento funcionaram em todas as direções e a conversão ficou boa
+(`tools/sprites/converter.py`). Léo mandou as cinco direções (NE, SE, E, S, N) e as cinco estão no jogo; SO, O e NO usam o espelho.
+Para os próximos personagens, peça as cinco direções na ordem da tabela, sempre na mesma conversa com a ficha.
 
 ## 6. Nome dos arquivos
 

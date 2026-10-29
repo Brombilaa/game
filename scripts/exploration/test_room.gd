@@ -22,7 +22,7 @@ const POPUP_SECONDS := 1.2
 const WALK_FRAME_SECONDS := 0.11
 const IDLE_FRAME_SECONDS := 0.7
 const PLACEHOLDER_SCALE := 2  # arte provisória de 32×48 ampliada para ~96 px
-const AGENT_SHEET := "res://assets/sprites/personagens/nikolai_e.png"
+const AGENT_SHEET := "res://assets/sprites/personagens/nikolai"
 const WALL_TOP := 9.0  # faixa clara no topo da parede, para a leitura em 3/4
 const ROOM_SIZE := Vector2i(1280, 720)
 const ENEMY_VARIANTS := ["cultista", "atirador"]  # mesma ordem de `enemies`
@@ -65,7 +65,7 @@ var hud := CombatHud.new()
 var audio := AudioDirector.new()
 var camera := Camera2D.new()
 var facing := {}  # Combatant -> PlaceholderArt.Dir
-var flipped := {}  # Combatant -> true se está olhando para a esquerda
+var facing8 := {}  # Combatant -> CharacterSheet.Dir (8 direções; o agente começa virado para SE)
 var walk_time := 0.0
 var idle_frame := 0
 var agent_sheet: CharacterSheet
@@ -166,10 +166,7 @@ func _process(delta: float) -> void:
 	if moving_unit and not path.is_empty():
 		var dir := PlaceholderArt.dir_from_vector(path[0] - moving_unit.pos)
 		facing[moving_unit] = dir
-		if dir == PlaceholderArt.Dir.EAST:
-			flipped[moving_unit] = false
-		elif dir == PlaceholderArt.Dir.WEST:
-			flipped[moving_unit] = true  # subindo ou descendo mantém o lado anterior
+		facing8[moving_unit] = CharacterSheet.dir_from_vector(path[0] - moving_unit.pos)
 		walk_time += delta
 		moving_unit.pos = moving_unit.pos.move_toward(path[0], SPEED * delta)
 		if moving_unit.pos.is_equal_approx(path[0]):
@@ -445,7 +442,7 @@ func _draw_unit(u: Combatant) -> void:
 	if i < 0:
 		var frames: Array = CharacterSheet.WALK_FRAMES if walking else CharacterSheet.IDLE_FRAMES
 		var n := int(walk_time / WALK_FRAME_SECONDS) % frames.size() if walking else idle_frame
-		agent_sheet.draw(self, u.pos, frames[n], flipped.get(u, false))
+		agent_sheet.draw(self, u.pos, frames[n], facing8.get(u, CharacterSheet.Dir.SE))
 	else:
 		var frame := 1 + int(walk_time / WALK_FRAME_SECONDS) % 2 if walking else 0
 		var tex := PlaceholderArt.character_texture(ENEMY_VARIANTS[i % ENEMY_VARIANTS.size()], facing.get(u, PlaceholderArt.Dir.SOUTH), frame)

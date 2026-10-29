@@ -1,8 +1,15 @@
 class_name CharacterSheet
 extends RefCounted
 # Folha de poses de um personagem feita a partir de uma imagem do ChatGPT (tools/sprites/converter.py).
-# Uma fila de 8 quadros de 144×144: 0 e 1 parado, 2 a 7 andando. Desenhada virada para a direita
-# (leste); para a esquerda o quadro é espelhado. Direções diagonais e de costas ainda não existem.
+# Cinco folhas (`<prefixo>_se|e|ne|s|n.png`), cada uma com uma fila de 8 quadros de 144×144:
+# 0 e 1 parado, 2 a 7 andando. As 8 direções da tela saem delas: SO, O e NO são o espelho de SE, E e NE.
+
+enum Dir { E, SE, S, SW, W, NW, N, NE }
+# Folha de cada direção e se ela é espelhada.
+const SHEET_OF := {
+	Dir.E: ["e", false], Dir.SE: ["se", false], Dir.S: ["s", false], Dir.SW: ["se", true],
+	Dir.W: ["e", true], Dir.NW: ["ne", true], Dir.N: ["n", false], Dir.NE: ["ne", false],
+}
 
 const FRAME := 144
 const IDLE_FRAMES := [0, 1]
@@ -12,23 +19,33 @@ const PIVOT := Vector2(72, 135)
 # Altura do personagem acima do pivô, para posicionar barras de vida.
 const HEIGHT := 100.0
 
-var texture: Texture2D
+var textures := {}  # "se" -> Texture2D
 
 
-func _init(path: String) -> void:
-	texture = load(path)
+func _init(prefix: String) -> void:
+	for name in ["se", "e", "ne", "s", "n"]:
+		textures[name] = load("%s_%s.png" % [prefix, name])
 
 
 func frame_count() -> int:
-	return int(texture.get_width() / FRAME)
+	return int(textures["e"].get_width() / FRAME)
 
 
-# Desenha o quadro `frame` com os pés em `pos`. `flip` espelha para a esquerda.
-func draw(canvas: CanvasItem, pos: Vector2, frame: int, flip: bool) -> void:
+# Direção da tela (y para baixo) mais próxima de um vetor de movimento: setores de 45°.
+static func dir_from_vector(v: Vector2) -> Dir:
+	return int(posmod(roundi(v.angle() / (PI / 4.0)), 8)) as Dir
+
+
+# Desenha o quadro `frame` virado para `dir`, com os pés em `pos`.
+func draw(canvas: CanvasItem, pos: Vector2, frame: int, dir: Dir) -> void:
+	var info: Array = SHEET_OF[dir]
+	var tex: Texture2D = textures[info[0]]
 	var src := Rect2(frame * FRAME, 0, FRAME, FRAME)
 	var origin := (pos - PIVOT).round()
-	if flip:
-		# Espelha em torno do pivô: largura negativa mantém o pé no mesmo lugar.
-		canvas.draw_texture_rect_region(texture, Rect2(origin + Vector2(FRAME, 0), Vector2(-FRAME, FRAME)), src)
+	if info[1]:
+		# Espelha em torno do pivô: o pé fica no mesmo lugar.
+		canvas.draw_set_transform(Vector2(origin.x + PIVOT.x, origin.y), 0.0, Vector2(-1, 1))
+		canvas.draw_texture_rect_region(tex, Rect2(Vector2(-PIVOT.x, 0), Vector2(FRAME, FRAME)), src)
+		canvas.draw_set_transform(Vector2.ZERO)
 	else:
-		canvas.draw_texture_rect_region(texture, Rect2(origin, Vector2(FRAME, FRAME)), src)
+		canvas.draw_texture_rect_region(tex, Rect2(origin, Vector2(FRAME, FRAME)), src)
