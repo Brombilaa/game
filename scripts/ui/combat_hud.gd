@@ -86,7 +86,7 @@ func _build() -> void:
 	mode_label.anchor_right = 1.0
 	mode_label.offset_left = -220
 	mode_label.offset_right = -16
-	mode_label.offset_top = 12
+	mode_label.offset_top = 156  # abaixo do minimapa
 	mode_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	mode_label.add_theme_font_size_override("font_size", 18)
 	add_child(mode_label)
