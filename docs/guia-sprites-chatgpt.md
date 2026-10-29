@@ -23,8 +23,8 @@ imagem eu ajusto o processo e o prompt antes de você gastar tempo com os outros
 | Item | Valor |
 | --- | --- |
 | Vista | Isométrica 2:1, câmera olhando de cima uns 30 graus (como Baldur's Gate ou Fallout 2) |
-| Altura final do personagem | 96 px na tela interna de 960×540 (DEC-2026-10-29-10) |
-| Quadro final | 144×144 px, pés no centro, 8 px acima da borda de baixo |
+| Altura final do personagem | 128 px na tela interna de 960×540 (DEC-2026-10-29-11, antes 96 px) |
+| Quadro final | 192×192 px, pés no centro, 12 px acima da borda de baixo |
 | Direções | 8 no total, mas só 5 são desenhadas (S, SE, E, NE, N); as outras 3 são o espelho |
 | Primeira leva (DEC-03) | As 4 diagonais da tela (SE, SW, NW, NE) = só 2 desenhos: SE e NE |
 | Animações da primeira leva | Parado (2 quadros) e andando (6 quadros) |

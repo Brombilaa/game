@@ -2,7 +2,7 @@
 
 Uso:
   python3 -I tools/sprites/converter.py saida/ se=nikolai_se_raw.png e=nikolai_e_raw.png ... \
-      --prefixo nikolai --altura 96 --quadro 144 --cores 32
+      --prefixo nikolai --altura 128 --quadro 192 --pes 12 --cores 32
 
 Cada entrada é `direcao=arquivo.png`. Para cada uma grava `<prefixo>_<direcao>.png` com os
 8 quadros em fila (2 parado, 6 andando). Passos: remove o magenta, separa as figuras, alinha
@@ -22,6 +22,7 @@ ap.add_argument("--prefixo", required=True)
 ap.add_argument("--altura", type=int, default=96)
 ap.add_argument("--cores", type=int, default=32)
 ap.add_argument("--quadro", type=int, default=144)
+ap.add_argument("--pes", type=int, default=8, help="folga entre os pés e a borda de baixo do quadro")
 ap.add_argument("--colunas", type=int, default=4)
 ap.add_argument("--linhas", type=int, default=2)
 a = ap.parse_args()
@@ -80,7 +81,7 @@ for nome, (arr, figs) in folhas.items():
         lado = int(round(a.quadro / escala))
         tela = Image.new("RGBA", (lado, lado), (0, 0, 0, 0))
         ox = int(round(lado / 2 - cx))
-        oy = int(round(lado - 8 / escala - 1 - y1))  # pés 8 px acima da borda de baixo
+        oy = int(round(lado - a.pes / escala - 1 - y1))  # pés `--pes` px acima da borda de baixo
         tela.paste(Image.fromarray(rgba), (ox, oy))
         lst.append(tela.resize((a.quadro, a.quadro), Image.BOX))  # média de área
     quadros[nome] = lst
