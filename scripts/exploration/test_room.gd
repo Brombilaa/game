@@ -2,7 +2,7 @@ extends Node2D
 # Sala de teste da exploração: clique para mover, uma porta e um inimigo.
 # A rota contorna obstáculos via Pathfinder; destino inacessível é ignorado.
 # Inimigo que vê o personagem (alcance + linha de visão) inicia o combate na hora.
-# Combate em si ainda não existe: só o estado COMBAT é ativado. R reinicia a sala.
+# Combate em si ainda não existe: só o estado COMBAT é ativado e o HUD avisa. R reinicia a sala.
 
 enum Mode { EXPLORATION, COMBAT }
 
@@ -30,6 +30,11 @@ var pending_door := false
 var door_open := false
 var pathfinder := Pathfinder.new()
 var mode := Mode.EXPLORATION
+var hud := CombatHud.new()
+
+
+func _ready() -> void:
+	add_child(hud)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -93,6 +98,7 @@ func _check_detection() -> void:
 	mode = Mode.COMBAT
 	path = PackedVector2Array()
 	pending_door = false
+	hud.on_combat_started()
 	queue_redraw()
 
 
@@ -108,4 +114,4 @@ func _draw() -> void:
 	draw_circle(enemy_pos, ENEMY_RADIUS, Color(0.85, 0.2, 0.2))
 	draw_circle(player_pos, PLAYER_RADIUS, Color(0.3, 0.6, 1.0))
 	if mode == Mode.COMBAT:
-		draw_string(ThemeDB.fallback_font, Vector2(32, 56), "COMBATE (R reinicia)", HORIZONTAL_ALIGNMENT_LEFT, -1, 32, Color.WHITE)
+		draw_string(ThemeDB.fallback_font, Vector2(32, 690), "R reinicia", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(1, 1, 1, 0.6))
