@@ -10,7 +10,7 @@
 - `scripts/audio/`: efeitos e música por evento sonoro (`data/audio_cues.json`).
 - `assets/`: arte, áudio e fontes (versionados com Git LFS).
 - `data/`: valores de balanceamento editáveis (armas, inimigos, itens).
-- `tests/`: testes automatizados das regras.
+- `tests/`: testes automatizados das regras. Rodam no GitHub Actions a cada PR (`.github/workflows/tests.yml`); localmente: `godot --headless --path . -s tests/test_<nome>.gd`.
 
 ## Engine
 

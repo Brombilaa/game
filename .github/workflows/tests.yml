@@ -1,0 +1,40 @@
+name: Testes
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  godot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GODOT_VERSION: 4.3-stable
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Baixar a Godot
+        run: |
+          cd "$RUNNER_TEMP"
+          curl -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          unzip -q godot.zip
+          echo "GODOT=$RUNNER_TEMP/Godot_v${GODOT_VERSION}_linux.x86_64" >> "$GITHUB_ENV"
+
+      # Gera o cache de class_name (.godot/) que os testes usam.
+      - name: Importar o projeto
+        run: timeout 120 "$GODOT" --headless --path . --import || true
+
+      - name: Rodar os testes
+        run: |
+          set -o pipefail
+          status=0
+          for t in tests/test_*.gd; do
+            echo "== $t"
+            if ! timeout 60 "$GODOT" --headless --path . -s "$t" 2>&1 | tee out.log; then
+              status=1
+            elif grep -qE "SCRIPT ERROR|Parse Error" out.log; then
+              status=1
+            fi
+          done
+          exit $status
