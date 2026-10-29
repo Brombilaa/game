@@ -1,0 +1,8 @@
+[
+  {
+    "id": "cultista_teste", "nome": "Cultista (teste)", "provisorio": true,
+    "pv": 20, "pa": 3, "iniciativa": 10,
+    "ataques": ["faca_teste"], "comportamento": "agressivo",
+    "resistencias": [], "fraquezas": [], "chefe": false, "fases": []
+  }
+]

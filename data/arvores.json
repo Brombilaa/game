@@ -1,0 +1,10 @@
+[
+  { "id": "arvore_for", "nome": "Força", "tipo": "compartilhada", "atributo": "FOR", "personagem": null, "habilidades": [] },
+  { "id": "arvore_agi", "nome": "Agilidade", "tipo": "compartilhada", "atributo": "AGI", "personagem": null, "habilidades": [] },
+  { "id": "arvore_int", "nome": "Intelecto", "tipo": "compartilhada", "atributo": "INT", "personagem": null, "habilidades": [] },
+  { "id": "arvore_pre", "nome": "Presença", "tipo": "compartilhada", "atributo": "PRE", "personagem": null, "habilidades": [] },
+  { "id": "arvore_vig", "nome": "Vigor", "tipo": "compartilhada", "atributo": "VIG", "personagem": null, "habilidades": [] },
+  { "id": "exclusiva_rafael", "nome": "Rafael", "tipo": "exclusiva", "atributo": null, "personagem": "rafael", "habilidades": [] },
+  { "id": "exclusiva_miguel", "nome": "Miguel", "tipo": "exclusiva", "atributo": null, "personagem": "miguel", "habilidades": [] },
+  { "id": "exclusiva_nikolai", "nome": "Nikolai", "tipo": "exclusiva", "atributo": null, "personagem": "nikolai", "habilidades": [] }
+]
