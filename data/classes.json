@@ -1,0 +1,5 @@
+[
+  { "id": "combatente", "nome": "Combatente", "provisorio": true, "pv_base": null, "san_base": null, "iniciativa_base": null },
+  { "id": "especialista", "nome": "Especialista", "provisorio": true, "pv_base": null, "san_base": null, "iniciativa_base": null },
+  { "id": "ocultista", "nome": "Ocultista", "provisorio": true, "pv_base": null, "san_base": null, "iniciativa_base": null }
+]

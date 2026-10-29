@@ -1,0 +1,7 @@
+[
+  { "id": "FOR", "nome": "Força", "descricao": "" },
+  { "id": "AGI", "nome": "Agilidade", "descricao": "Soma à classe na iniciativa." },
+  { "id": "INT", "nome": "Intelecto", "descricao": "" },
+  { "id": "PRE", "nome": "Presença", "descricao": "Soma à classe na SAN inicial e dá ganho fixo de SAN por nível." },
+  { "id": "VIG", "nome": "Vigor", "descricao": "Dá ganho fixo de PV por nível." }
+]

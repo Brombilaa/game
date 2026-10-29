@@ -1,0 +1,8 @@
+[
+  { "id": "atordoado", "nome": "Atordoado", "duracao": null, "rodadas": null, "efeito": null, "acumula": null, "remocao": null },
+  { "id": "caido", "nome": "Caído", "duracao": null, "rodadas": null, "efeito": null, "acumula": null, "remocao": null },
+  { "id": "agarrado", "nome": "Agarrado", "duracao": null, "rodadas": null, "efeito": null, "acumula": null, "remocao": null },
+  { "id": "em_chamas", "nome": "Em chamas", "duracao": null, "rodadas": null, "efeito": null, "acumula": null, "remocao": null },
+  { "id": "sangrando", "nome": "Sangrando", "duracao": null, "rodadas": null, "efeito": null, "acumula": null, "remocao": null },
+  { "id": "efeito_paranormal", "nome": "Sob efeito paranormal", "duracao": null, "rodadas": null, "efeito": null, "acumula": null, "remocao": null }
+]
