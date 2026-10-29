@@ -121,7 +121,7 @@ O que a referência mostra, e como encaixa no GDD (§12):
 
 ## 7. Próximos passos
 
-1. As cinco direções do Nikolai, do Miguel e do Fernando (SE, E, NE, S, N) estão no jogo (Tab alterna o visual do agente na sala de teste); Léo gera o Rafael,  os outros personagens e os inimigos pelo guia, na mesma ordem.
+1. As cinco direções do Nikolai, do Miguel e do Fernando (SE, E, NE, S, N) estão no jogo (Tab alterna o visual do agente na sala de teste); Léo gera o Rafael, os outros personagens e os inimigos pelo guia, na mesma ordem.
 2. Léo responde V-21 (tile 96×48) e V-22 (diagonais como as 4 direções iniciais); Claude monta um protótipo isométrico da sala de teste para comparar com a vista atual.
 3. Depois disso, o HUD da referência na ordem da V-20.
 4. Cada nova resposta do Léo entra na seção 2 no formato do Anexo H.
