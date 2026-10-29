@@ -1,8 +1,8 @@
 # Salvamento e build: plano
 
-Estado: formato do save e build de Windows implementados. Política de save
-aprovada pelo Léo em 2026-10-29 (DEC-2026-10-29-01, seção 5), ainda não
-implementada.
+Estado: formato do save, slots e build de Windows implementados. Política de
+save aprovada pelo Léo em 2026-10-29 (DEC-2026-10-29-01, seção 5); falta ligar
+os gatilhos de autosave às cenas.
 
 ## 1. Formato do save
 
@@ -51,7 +51,11 @@ o save, e a decisão pendente vira só "gravar ou não em disco".
 - Ao sair de uma sala, a cena escreve seu estado em `areas.<area_id>`
   (evento `AreaExited`); ao entrar, lê de lá antes do primeiro quadro
   (`AreaEntered`, Anexo D).
-- Salvar em disco é só `SaveGame.write(slot, GameState.data)`.
+- Salvar em disco é só `SaveSlots.save(slot, GameState.data)`.
+- Slots (`scripts/core/save_slots.gd`, testado em `tests/test_save_slots.gd`):
+  `auto` e `manual_1` a `manual_3` em `user://saves/<slot>.json`;
+  `SaveSlots.list()` dá área e horário de cada um para a tela de carregar;
+  `can_save_manual(in_combat)` bloqueia save manual em combate.
 - Próximo passo concreto: a sala de teste passa a gravar `door_open` em
   `GameState`. Fica para depois da segunda sala existir, para não brigar com
   o trabalho de exploração em andamento.
@@ -76,4 +80,4 @@ o save, e a decisão pendente vira só "gravar ou não em disco".
 
 | ID | Assunto | Decisão | Status |
 | --- | --- | --- | --- |
-| DEC-2026-10-29-01 | Política de save | Autosave ao entrar em área ou zona segura + 3 slots manuais fora de combate. Sem save no meio do combate; autosave no início dele para tentar de novo. Morte do grupo volta ao último autosave. Aprovado por Léo. | Não implementado |
+| DEC-2026-10-29-01 | Política de save | Autosave ao entrar em área ou zona segura + 3 slots manuais fora de combate. Sem save no meio do combate; autosave no início dele para tentar de novo. Morte do grupo volta ao último autosave. Aprovado por Léo. | Slots e regra de combate implementados e testados; gatilhos de autosave não implementados |
