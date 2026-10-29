@@ -37,8 +37,8 @@ var cfg := CombatConfig.load_file()
 var rules := CombatRules.new(cfg)
 var player: Combatant = cfg.make_unit("agente", "Agente", Vector2(160, 360))
 var enemies: Array[Combatant] = [
-	cfg.make_unit("criatura", "Criatura", Vector2(800, 360)),
-	cfg.make_unit("cultista", "Cultista", Vector2(1100, 200)),
+	cfg.make_enemy("cultista_teste", Vector2(800, 360)),
+	cfg.make_enemy("atirador_teste", Vector2(1100, 200)),
 ]
 var turns: TurnManager
 
@@ -189,7 +189,7 @@ func _start_combat() -> void:
 func _on_turn_started(unit: Combatant) -> void:
 	queue_redraw()
 	if unit.side == Combatant.Side.PLAYER:
-		hud.on_turn_started(unit.name, unit.pa, turns.pa_per_turn)
+		hud.on_turn_started(unit.name, unit.pa, turns.turn_pa(player))
 		audio.play_sfx("turn_start")
 	else:
 		_run_enemy_turn.call_deferred(unit)
@@ -244,7 +244,7 @@ func _player_move(click: Vector2) -> void:
 	if plan.cost > player.pa or not turns.spend(player, plan.cost):
 		_reject("no_pa")
 		return
-	hud.on_pa_changed(player.pa, turns.pa_per_turn)
+	hud.on_pa_changed(player.pa, turns.turn_pa(player))
 	busy = true
 	_start_move(player, plan.path)
 	await move_finished
@@ -254,7 +254,7 @@ func _player_move(click: Vector2) -> void:
 
 func _after_player_action() -> void:
 	if turns.is_turn_of(player):
-		hud.on_pa_changed(player.pa, turns.pa_per_turn)
+		hud.on_pa_changed(player.pa, turns.turn_pa(player))
 	turns.action_done()
 	queue_redraw()
 

@@ -8,6 +8,7 @@ var cfg: CombatConfig
 
 func _init() -> void:
 	cfg = CombatConfig.load_file()
+	_test_data_sources()
 	_test_initiative_and_pa()
 	_test_delay_and_pass()
 	_test_combat_end()
@@ -20,15 +21,31 @@ func _init() -> void:
 
 
 func _unit(id: String, n: String, init: int, pos := Vector2.ZERO) -> Combatant:
-	var u := cfg.make_unit(id, n, pos)
+	var u := cfg.make_unit(id, n, pos) if id == "agente" else cfg.make_enemy(id, pos)
 	u.initiative = init
 	return u
+
+
+func _test_data_sources() -> void:
+	var ppm := cfg.value("pixels_per_meter")
+	var w := cfg.weapon("pistola_teste")
+	var src := cfg.game_data.get_entry("armas", "pistola_teste")
+	_check(w.base_chance == src["precisao_base"] and w.damage_min == src["dano"][0], "arma lida de armas.json")
+	_check(is_equal_approx(w.max_range, src["alcance_maximo"] * ppm), "alcance convertido de metros para pixels")
+	var e := cfg.make_enemy("cultista_teste", Vector2.ZERO)
+	var sheet := cfg.game_data.get_entry("inimigos", "cultista_teste")
+	_check(e.max_pv == sheet["pv"] and e.initiative == sheet["iniciativa"] and e.side == Combatant.Side.ENEMY, "inimigo lido de inimigos.json")
+	e.pa_per_turn = 2
+	var a := _unit("agente", "A", 1)
+	var tm := TurnManager.new()
+	tm.start([e, a] as Array[Combatant])
+	_check(tm.current == e and e.pa == 2, "inimigo começa o turno com os PA da ficha")
 
 
 func _test_initiative_and_pa() -> void:
 	var a := _unit("agente", "A", 12)
 	var b := _unit("agente", "B", 15)
-	var e := _unit("criatura", "E", 13)
+	var e := _unit("cultista_teste", "E", 13)
 	var tm := TurnManager.new(int(cfg.value("pa_per_turn")))
 	tm.start([a, b, e] as Array[Combatant])
 	_check(tm.order[0] == b and tm.order[1] == e and tm.order[2] == a, "ordem por iniciativa, maior primeiro")
@@ -45,7 +62,7 @@ func _test_initiative_and_pa() -> void:
 	_check(tm.round_number == 2 and tm.current == b and b.pa == 3, "nova rodada recomeça com 3 PA, sem acúmulo")
 	_check(a.pa == 0, "PA restantes de quem encerrou o turno são perdidos")
 
-	var tie_e := _unit("criatura", "E", 10)
+	var tie_e := _unit("cultista_teste", "E", 10)
 	var tie_p := _unit("agente", "P", 10)
 	var tm2 := TurnManager.new()
 	tm2.start([tie_e, tie_p] as Array[Combatant])
@@ -55,7 +72,7 @@ func _test_initiative_and_pa() -> void:
 func _test_delay_and_pass() -> void:
 	var a := _unit("agente", "A", 15)
 	var b := _unit("agente", "B", 12)
-	var e := _unit("criatura", "E", 10)
+	var e := _unit("cultista_teste", "E", 10)
 	var tm := TurnManager.new()
 	tm.start([a, b, e] as Array[Combatant])
 	_check(tm.delay() and tm.current == b, "atrasar passa a vez para o próximo")
@@ -76,7 +93,7 @@ func _test_delay_and_pass() -> void:
 
 func _test_combat_end() -> void:
 	var a := _unit("agente", "A", 15)
-	var e := _unit("criatura", "E", 10)
+	var e := _unit("cultista_teste", "E", 10)
 	var tm := TurnManager.new()
 	var ended := []
 	tm.combat_ended.connect(func(r): ended.append(r))
@@ -88,7 +105,7 @@ func _test_combat_end() -> void:
 	_check(ended.size() == 1 and tm.current == null, "combate termina sem rodada extra")
 
 	var a2 := _unit("agente", "A", 5)
-	var e2 := _unit("criatura", "E", 10)
+	var e2 := _unit("cultista_teste", "E", 10)
 	var tm2 := TurnManager.new()
 	tm2.start([a2, e2] as Array[Combatant])
 	a2.take_damage(999)
@@ -112,10 +129,10 @@ func _test_movement() -> void:
 func _test_hit_chance() -> void:
 	var rules := CombatRules.new(cfg)
 	var a := _unit("agente", "A", 1, Vector2(0, 0))
-	var e := _unit("criatura", "E", 1, Vector2(100, 0))
+	var e := _unit("cultista_teste", "E", 1, Vector2(100, 0))
 	var expected := 0.70 + (2 - 0) * 0.05
 	_check(is_equal_approx(rules.hit_chance(a, e), expected), "chance = base + diferença de precisão/defesa")
-	e.pos = Vector2(250 + 20 + 100, 0)
+	e.pos = Vector2(a.weapon.effective_range + 20 + 100, 0)
 	_check(is_equal_approx(rules.hit_chance(a, e), expected - 0.10), "distância além do alcance efetivo reduz a chance")
 	a.precision = 100
 	_check(is_equal_approx(rules.hit_chance(a, e), 0.95), "chance máxima 95%")
@@ -129,14 +146,14 @@ func _test_attack() -> void:
 	var rules := CombatRules.new(cfg, rng)
 	var walls: Array[Rect2] = [Rect2(200, -50, 20, 100)]
 	var a := _unit("agente", "A", 1, Vector2(0, 0))
-	var e := _unit("criatura", "E", 1, Vector2(400, 0))
+	var e := _unit("cultista_teste", "E", 1, Vector2(400, 0))
 	a.pa = 3
 	_check(rules.attack(a, e, walls, []).reason == "no_line_of_sight", "parede bloqueia o ataque")
 	_check(a.pa == 3, "ataque recusado não gasta PA")
 	e.pos = Vector2(100, 0)
 	a.pa = 0
 	_check(rules.attack(a, e, walls, []).reason == "no_pa", "sem PA não ataca")
-	var claw := _unit("criatura", "C", 1, Vector2(100, 0))
+	var claw := _unit("cultista_teste", "C", 1, Vector2(100, 0))
 	claw.pa = 3
 	_check(rules.attack(claw, a, [] as Array[Rect2], []).reason == "out_of_range", "corpo a corpo exige estar perto")
 
@@ -144,7 +161,7 @@ func _test_attack() -> void:
 	var damage_ok := true
 	var crits := 0
 	for i in 400:
-		a.pa = 1
+		a.pa = a.weapon.pa_cost
 		e.pv = 999
 		var r := rules.attack(a, e, [] as Array[Rect2], [])
 		if r.hit:
@@ -167,7 +184,7 @@ func _test_cover() -> void:
 	rng.seed = 11
 	var rules := CombatRules.new(cfg, rng)
 	var a := _unit("agente", "A", 1, Vector2(0, 0))
-	var e := _unit("criatura", "E", 1, Vector2(300, 0))
+	var e := _unit("cultista_teste", "E", 1, Vector2(300, 0))
 	var partial := Cover.new(Rect2(270, -20, 10, 40), "partial", 30)
 	var full := Cover.new(Rect2(275, -20, 10, 40), "full", 30)
 	var far := Cover.new(Rect2(100, -20, 10, 40), "full", 30)
@@ -185,7 +202,7 @@ func _test_cover() -> void:
 		var total_dmg := 0
 		var damaged := 0
 		for i in 2000:
-			a.pa = 1
+			a.pa = a.weapon.pa_cost
 			e.pv = 999
 			var r := rules.attack(a, e, [] as Array[Rect2], [c])
 			if r.blocked:
@@ -201,7 +218,7 @@ func _test_cover() -> void:
 	var wall_cover := Cover.new(Rect2(100, -20, 10, 40), "partial", 5)
 	var hit_cover := false
 	for i in 50:
-		a.pa = 1
+		a.pa = a.weapon.pa_cost
 		var r := rules.attack_cover(a, wall_cover, [] as Array[Rect2])
 		if r.hit:
 			hit_cover = true
