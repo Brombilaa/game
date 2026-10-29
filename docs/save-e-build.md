@@ -66,7 +66,8 @@ o save, e a decisão pendente vira só "gravar ou não em disco".
   roda todos os `tests/test_*.gd`, exporta e gera o `.zip`.
   - Tag `v*` (ex.: `git tag v0.1.0 && git push origin v0.1.0`): publica o
     `.zip` no GitHub Releases.
-  - Rodar manualmente pela aba Actions: só gera o artifact, sem release.
+  - Toda PR e execução manual pela aba Actions: roda testes e build, gera só
+    o artifact, sem release.
 - Builds nunca entram no Git (`build/`, `*.exe`, `*.pck` já ignorados).
 - Build local: `godot --headless --path . --export-release "Windows Desktop" build/windows/OrdemParanormal.exe`
   (precisa do export template 4.3 instalado no editor).
