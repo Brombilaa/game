@@ -13,6 +13,7 @@ func _initialize() -> void:
 func _run() -> void:
 	await _test_stealth()
 	await _test_game_over()
+	await _test_party()
 	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
 	room.rules.rng.seed = 3
 	root.add_child(room)
@@ -23,7 +24,7 @@ func _run() -> void:
 	room.player.pos = Vector2(650, 360)
 	await process_frame
 	_check(room.mode == room.Mode.COMBAT, "detecção inicia o combate")
-	_check(room.turns.order.size() == 3, "todos os inimigos vivos entram no combate")
+	_check(room.turns.order.size() == 4, "o grupo e todos os inimigos vivos entram no combate")
 	_check(room.turns.current == room.player and room.player.pa == 3, "agente age primeiro (empate de AGI favorece o grupo) com 3 PA")
 
 	# Ataque fora do turno do inimigo: clique em lugar nenhum não gasta PA.
@@ -42,19 +43,25 @@ func _run() -> void:
 	_check(room.player.pa == pa_before - 1 and room.player.pos.is_equal_approx(Vector2(650, 300)), "movimento de até 2 m gasta 1 PA e chega ao destino")
 
 	# Agente resistente para o teste não depender da sorte dos inimigos.
-	room.player.pv = 999
-	room.player.max_pv = 999
+	for m in room.party:
+		m.pv = 999
+		m.max_pv = 999
 
-	# Passar: os inimigos jogam e a vez volta ao agente na rodada 2.
+	# Passar: o resto do grupo e os inimigos jogam e a vez volta ao grupo na rodada 2.
+	var first: Combatant = room.player
 	room._player_pass()
-	await _wait(func() -> bool: return room.mode != room.Mode.COMBAT or (room.turns.current == room.player and not room.busy), 20.0)
+	await _wait(func() -> bool: return room.turns.is_turn_of(room.player) and not room.busy, 20.0)
+	if room.player != first:
+		room._player_pass()  # o outro membro do grupo também passa
+	await _wait(func() -> bool: return room.mode != room.Mode.COMBAT or (room.turns.current == first and not room.busy), 20.0)
 	_check(room.mode != room.Mode.COMBAT or room.turns.round_number == 2, "inimigos agem e a rodada avança")
 
 	# Derrubar todos os inimigos encerra o combate e volta à exploração.
 	if room.mode == room.Mode.COMBAT:
 		for e in room.enemies:
 			e.pv = 1
-		room.player.hit_bonus = 1.0
+		for m in room.party:
+			m.hit_bonus = 1.0
 		var guard := 0
 		while room.mode == room.Mode.COMBAT and guard < 5000:
 			guard += 1
@@ -92,6 +99,7 @@ func _test_stealth() -> void:
 	room.queue_free()
 
 	var room2 = load("res://scenes/exploration/test_room.tscn").instantiate()
+	room2.rules.rng.seed = 3  # acerto máximo é 95%: semente fixa evita o erro raro
 	root.add_child(room2)
 	await process_frame
 	room2.door_open = true
@@ -116,11 +124,44 @@ func _test_game_over() -> void:
 	room.door_open = true
 	room.player.pos = Vector2(650, 360)
 	await process_frame
-	room.player.take_damage(999)
+	for m in room.party:
+		m.take_damage(999)
 	room.turns.action_done()
-	_check(room.mode == room.Mode.GAME_OVER, "agente caído encerra em Game Over")
+	_check(room.mode == room.Mode.GAME_OVER, "grupo todo caído encerra em Game Over")
 	await _wait(func() -> bool: return room.fade.color.a > 0.2, 3.0)
 	_check(room.fade.color.a > 0.2 and room.fade.color.a < 1.0, "a tela escurece aos poucos")
+	room.queue_free()
+	await process_frame
+
+
+# Grupo: seguidor anda atrás do líder, troca de controlado e reanimação com kit.
+func _test_party() -> void:
+	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
+	root.add_child(room)
+	await process_frame
+	var lider: Combatant = room.party[0]
+	var seguidor: Combatant = room.party[1]
+	room._order_move(Vector2(400, 360))
+	await _wait(func() -> bool: return room.moving_unit == null and room.follow_paths.is_empty(), 6.0)
+	var d: float = seguidor.pos.distance_to(lider.pos)
+	_check(absf(d - room.FOLLOW_DISTANCE) < 14.0, "seguidor para a distância fixa do líder (%.0f)" % d)
+	room._switch_to(seguidor)
+	_check(room.player == seguidor, "troca o personagem controlado")
+	room._switch_to(lider)
+
+	room.door_open = true
+	room.enemies[1].pv = 0
+	lider.pos = Vector2(650, 360)
+	seguidor.pos = Vector2(650, 384)
+	await process_frame
+	_check(room.mode == room.Mode.COMBAT, "combate começa com o grupo")
+	seguidor.take_damage(999)
+	room.player = lider
+	lider.pa = 3
+	var pa_before: int = lider.pa
+	room._revive(seguidor)
+	_check(seguidor.pv == seguidor.max_pv / 2 and room.kits == 0, "kit reanima com metade do PV")
+	_check(lider.pa == pa_before - 2, "reanimar custa 2 PA")
 	room.queue_free()
 	await process_frame
 
