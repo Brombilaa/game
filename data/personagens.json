@@ -2,7 +2,7 @@
   {
     "id": "fernando", "nome": "Fernando",
     "papel": "Participa só da primeira missão; morte obrigatória e roteirizada no fim dela.",
-    "classe": null, "arma_inicial": null,
+    "classe": "combatente", "arma_inicial": null,
     "atributos": { "FOR": null, "AGI": null, "INT": null, "PRE": null, "VIG": null },
     "arvores_exclusivas": [], "morte_roteirizada": true, "trio_final": false
   },
@@ -16,14 +16,14 @@
   {
     "id": "miguel", "nome": "Miguel",
     "papel": "Ocultista / glass cannon: defesa baixa e dano alto, principalmente corpo a corpo.",
-    "classe": null, "arma_inicial": null,
+    "classe": "ocultista", "arma_inicial": null,
     "atributos": { "FOR": null, "AGI": null, "INT": null, "PRE": null, "VIG": null },
     "arvores_exclusivas": ["exclusiva_miguel"], "morte_roteirizada": false, "trio_final": true
   },
   {
     "id": "nikolai", "nome": "Nikolai",
     "papel": "Atirador: distância, cobertura e furtividade.",
-    "classe": null, "arma_inicial": null,
+    "classe": "especialista", "arma_inicial": null,
     "atributos": { "FOR": null, "AGI": null, "INT": null, "PRE": null, "VIG": null },
     "arvores_exclusivas": ["exclusiva_nikolai"], "morte_roteirizada": false, "trio_final": true
   }

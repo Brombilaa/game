@@ -21,6 +21,7 @@ func _init() -> void:
 	_check([c.pv_base, c.pv_por_nivel, c.san_base, c.san_por_nivel] == [20, 4, 12, 3], "combatente: PV 20 (+4 por nível), SAN 12 (+3)")
 	_check([e.pv_base, e.pv_por_nivel, e.san_base, e.san_por_nivel] == [16, 3, 16, 4], "especialista: PV 16 (+3 por nível), SAN 16 (+4)")
 	_check([o.pv_base, o.pv_por_nivel, o.san_base, o.san_por_nivel] == [12, 2, 20, 5], "ocultista: PV 12 (+2 por nível), SAN 20 (+5)")
+	_check(data.get_entry("personagens", "fernando").classe == "combatente" and data.get_entry("personagens", "nikolai").classe == "especialista" and data.get_entry("personagens", "miguel").classe == "ocultista", "Fernando é Combatente, Nikolai Especialista e Miguel Ocultista")
 	_check(data.rule("pv_ganho_por_nivel_por_vig") == 1.0, "o Vigor soma 1 PV por ponto a cada nível")
 	_check(data.rule("custo_recarga_pa") == null and "regras.custo_recarga_pa" in data.pending, "custo de recarga fica pendente")
 	_check(data.ids("personagens").size() == 4, "quatro personagens")
