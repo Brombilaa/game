@@ -37,6 +37,8 @@ implementação de todas: **não implementado**.
 | DEC-2026-10-29-05 | Estilo e tamanho do personagem (V-03) | PENDENTE (§13, Anexo F) | Seguir o estilo da referência `arte/referencias/personagem-detetive-noir.png` (pasta de arquivos do projeto, fora do Git) (inspiração, não cópia), em versão menor. Tamanho derivado pelo Claude a partir da referência: personagem com cerca de 48 px de altura (quadro de 32×48) e tile de 16×16 em 640×360. Léo pode ajustar depois do primeiro sprite de teste. | Spritesheets, colisão/raio dos personagens, escala do cenário, retratos. |
 | DEC-2026-10-29-06 | Fonte da interface (V-10) | PENDENTE (§14.1) | Usar a Special Elite (Google Fonts, Apache 2.0) em todo o texto do jogo, a pedido do Léo ("gostei da fonte, aplique no jogo também"). Aplicada por `gui/theme/custom_font` em `project.godot`; cobre todos os acentos do português. Para legibilidade, textos pequenos ficam em 8 a 9 px da resolução interna. | Todo o HUD e os textos desenhados na sala. Pode precisar de outra fonte só para números pequenos, se a leitura ficar ruim. |
 | DEC-2026-10-29-07 | Tamanho do personagem testado (DEC-05) | Proposto, aguardando teste | Léo viu o personagem de 32×48 e achou o tamanho "aceitável", mas quer mais detalhes. O tamanho segue como está até a nova referência ser analisada (ver V-18 e V-19). | Sprites finais, retratos. |
+| DEC-2026-10-29-08 | Vista isométrica (V-18) | DEC-2026-10-29-01: vista de cima em 3/4 | Vista **isométrica**, como na referência da Mansão Rossi ("isométrica é melhor"). Refina a DEC-01. Projeção 2:1 e tile 64×32 são proposta (V-21). A sala de teste continua em 3/4 ortogonal até o protótipo isométrico. | Tiles em losango, ordenação de profundidade, colisão e pathfinding na tela, sprites em direções isométricas. |
+| DEC-2026-10-29-09 | Produção da arte final (V-16) | PENDENTE | Os sprites finais serão gerados pelo Léo no ChatGPT. O Claude escreve os prompts (`guia-sprites-chatgpt.md`) e converte as imagens para o jogo. | Pipeline de conversão, paleta única, nomes de arquivo, Git LFS. |
 
 ## 3. Configuração técnica já no repositório
 
@@ -67,11 +69,12 @@ Cada item abaixo precisa de uma resposta antes da produção ampla de sprites.
 | V-13 | Feedback de falha de interação (porta trancada, objeto inacessível) (B.4). | Fala curta do personagem em texto mais um som não verbal. |
 | V-14 | Ferramenta de arte e formato de entrega. | Aseprite, exportando spritesheet PNG com transparência e JSON de frames. |
 | V-15 | Nomenclatura e pastas dos assets. | `assets/sprites/<categoria>/<nome>_<acao>_<direcao>.png`, ex.: `personagens/nikolai_andar_sul.png`. |
-| V-16 | Quem produz a arte final (Léo, artista contratado, assets de terceiros)? | Decisão do Léo; muda prazo e o nível de detalhe viável. |
 | V-17 | Formato da introdução (cutscene, imagens, texto ou combinação) (§3.1). | Decisão de narrativa do Léo; afeta quantas ilustrações grandes serão necessárias. |
-| V-18 | A referência de ambiente (`arte/referencias/hud-mapa-personagens-mansao-rossi.png`) usa vista **isométrica diagonal** (paredes e pisos em diagonal), não a vista ortogonal em 3/4 que a sala de teste usa hoje. A vista desejada é a da referência? | Se sim, a DEC-2026-10-29-01 passa a ser "isométrica 2:1". Isso muda tiles (losangos), ordenação de profundidade, colisão e pathfinding na tela, e deve ser decidido antes de desenhar qualquer cenário. Posso montar um protótipo curto da sala em isométrica para você comparar. |
-| V-19 | Nível de detalhe e tamanho. Na referência o personagem ocupa cerca de 18% da altura da tela, o que daria uns 65 px em 640×360 (hoje 48 px, 13%), com roupa, rosto e sombreamento bem mais ricos. | Subir o personagem para ~64 px e produzir sprites desenhados à mão (V-16). Detalhe assim não sai de arte gerada por código; os placeholders continuam só para testar mecânica. |
+| V-19 | Altura do personagem. Na referência ele ocupa cerca de 18% da altura da tela, uns 65 px em 640×360 (hoje 48 px). | Subir para ~64 px, com quadro de 96×96. Léo achou os 48 px aceitáveis; confirmar depois do primeiro sprite real. |
 | V-20 | Ordem de implementação do HUD da referência (ver seção 6). | Começar por retratos com PV/SAN, minimapa circular e lista de objetivos, depois barra de itens, menu de interação e aviso do diário. |
+| V-21 | Projeção e tamanho do tile isométrico. | Losango 2:1 de 64×32, com personagem de ~64 px. Define o tamanho das peças de chão, parede e cobertura. |
+| V-22 | Na vista isométrica, as "4 direções iniciais" (DEC-03) são as 4 diagonais da tela (SE, SW, NW, NE) ou as 4 retas (S, W, N, E)? | As diagonais, que são os eixos do chão isométrico e exigem só 2 desenhos (SE e NE) mais espelho. As retas entram depois, para dar fluidez. |
+| V-23 | Git LFS: o envio de PNG é recusado (403) no ambiente da nuvem. | Folhas pequenas vão sem LFS por ora (como a fonte). Se crescer, liberar o host do LFS na rede do ambiente. |
 
 ## 5. Leitura da referência de personagem
 
@@ -116,9 +119,8 @@ O que a referência mostra, e como encaixa no GDD (§12):
 
 ## 7. Próximos passos
 
-1. ~~Claude ajusta o projeto para 640×360 com escala inteira e adapta a sala de teste.~~ Feito: resolução interna 640×360, janela 1280×720, escala inteira; câmera segue a unidade em foco e a sala de 1280×720 rola.
-2. ~~Claude cria a paleta escura de teste, um personagem placeholder de 32×48 em 4 direções e um tile de chão 16×16.~~ Feito em `scripts/art/placeholder_art.gd` (gerado por código, sem PNG) e `assets/palettes/paleta_teste.gpl` (importável no Aseprite).
-3. ~~Léo avalia o personagem de teste.~~ Feito: tamanho aceitável, quer mais detalhe (DEC-07).
-4. Léo responde V-18 (vista isométrica?) e V-19 (tamanho e produção da arte). Bloqueiam o cenário e os sprites finais.
-5. Depois da V-18, Claude monta o HUD da referência na ordem da V-20.
-6. Cada nova resposta do Léo entra na seção 2 no formato do Anexo H.
+1. Léo gera o primeiro teste no ChatGPT (Nikolai, direção SE) seguindo `guia-sprites-chatgpt.md` e envia o PNG.
+2. Claude cria a conversão (fundo, recorte, alinhamento, redução, paleta) e mostra o sprite no jogo.
+3. Léo responde V-21 e V-22; Claude monta um protótipo isométrico da sala de teste para comparar com a vista atual.
+4. Depois disso, o HUD da referência na ordem da V-20.
+5. Cada nova resposta do Léo entra na seção 2 no formato do Anexo H.
