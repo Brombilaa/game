@@ -55,6 +55,7 @@ func on_pa_changed(pa: int, max_pa: int) -> void:
 		pip.custom_minimum_size = PIP_SIZE
 		pip.color = PIP_FULL if i < pa else PIP_EMPTY
 		pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		pip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		pips.add_child(pip)
 
 
@@ -80,15 +81,20 @@ func show_notice(text: String) -> void:
 
 
 func _build() -> void:
-	mode_label = Label.new()
-	mode_label.position = Vector2(24, 18)
+	mode_label = Label.new()  # canto superior direito: a esquerda é das fichas do grupo
+	mode_label.anchor_left = 1.0
+	mode_label.anchor_right = 1.0
+	mode_label.offset_left = -220
+	mode_label.offset_right = -16
+	mode_label.offset_top = 12
+	mode_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	mode_label.add_theme_font_size_override("font_size", 18)
 	add_child(mode_label)
 
 	notice_label = Label.new()
 	notice_label.anchor_right = 1.0
-	notice_label.offset_top = 60
-	notice_label.offset_bottom = 98
+	notice_label.offset_top = 76
+	notice_label.offset_bottom = 114
 	notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	notice_label.add_theme_font_size_override("font_size", 30)
 	notice_label.visible = false
@@ -99,17 +105,17 @@ func _build() -> void:
 	notice_timer.timeout.connect(func() -> void: notice_label.visible = false)
 	add_child(notice_timer)
 
-	# Painel do turno, centralizado na base da tela.
+	# Painel do turno no canto inferior direito; o centro da base é da barra de ações.
 	turn_panel = PanelContainer.new()
-	turn_panel.anchor_left = 0.5
-	turn_panel.anchor_right = 0.5
+	turn_panel.anchor_left = 1.0
+	turn_panel.anchor_right = 1.0
 	turn_panel.anchor_top = 1.0
 	turn_panel.anchor_bottom = 1.0
-	turn_panel.offset_left = -150
-	turn_panel.offset_right = 150
-	turn_panel.offset_top = -60
-	turn_panel.offset_bottom = -18
-	turn_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	turn_panel.offset_left = -300
+	turn_panel.offset_right = -12
+	turn_panel.offset_top = -52
+	turn_panel.offset_bottom = -12
+	turn_panel.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	turn_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	add_child(turn_panel)
 

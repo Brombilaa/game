@@ -18,6 +18,8 @@ const WALK_FRAMES := [2, 3, 4, 5, 6, 7]
 const PIVOT := Vector2(96, 179)
 # Altura do personagem acima do pivô, para posicionar barras de vida.
 const HEIGHT := 134.0
+# Recorte do rosto e ombros no quadro parado da folha S, para retratos do HUD.
+const PORTRAIT := Rect2(64, 46, 64, 64)
 
 var textures := {}  # "se" -> Texture2D
 
@@ -49,3 +51,8 @@ func draw(canvas: CanvasItem, pos: Vector2, frame: int, dir: Dir) -> void:
 		canvas.draw_set_transform(Vector2.ZERO)
 	else:
 		canvas.draw_texture_rect_region(tex, Rect2(origin, Vector2(FRAME, FRAME)), src)
+
+
+# Retrato (rosto do quadro parado de frente) desenhado dentro de `rect`.
+func draw_portrait(canvas: CanvasItem, rect: Rect2) -> void:
+	canvas.draw_texture_rect_region(textures["s"], rect, PORTRAIT)
