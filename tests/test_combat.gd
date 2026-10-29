@@ -17,6 +17,7 @@ func _init() -> void:
 	_test_attack()
 	_test_cover()
 	_test_stealth()
+	_test_conditions()
 	print("Falhas: %d" % failures)
 	quit(1 if failures > 0 else 0)
 
@@ -247,6 +248,47 @@ func _test_stealth() -> void:
 			var base_max := 5 * (2 if r.crit else 1)
 			ok = ok and r.damage >= 6 and r.damage <= base_max * 2
 	_check(hits > 0 and ok, "ataque furtivo dobra o dano")
+
+
+func _test_conditions() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 9
+	var rules := CombatRules.new(cfg, rng)
+	var u := _unit("cultista", "E", 1)
+	u.max_pv = 40
+	u.pv = 40
+	rules.apply_condition(u, "sangrando")
+	rules.apply_condition(u, "sangrando")
+	_check(u.conditions.sangrando.stacks == 2, "sangramento acumula")
+	rules.apply_condition(u, "sangrando")
+	rules.apply_condition(u, "sangrando")
+	_check(u.conditions.sangrando.stacks == 3, "sangramento acumula até 3")
+	var fx := rules.start_turn_effects(u)
+	_check(fx.damage == 6 and u.pv == 34 and not fx.skip, "sangrando: 5% do PV máx por acúmulo no início do turno")
+	_check(rules.start_turn_effects(u).damage == 6 and u.has_condition("sangrando"), "sangramento só para com item")
+	_check(rules.remove_condition(u, "sangrando") and not u.has_condition("sangrando"), "bandagem remove o sangramento")
+
+	rules.apply_condition(u, "atordoado")
+	_check(rules.start_turn_effects(u).skip and not u.has_condition("atordoado"), "atordoado perde um turno e passa")
+
+	rules.apply_condition(u, "em_chamas")
+	var rounds: int = u.conditions.em_chamas.rounds
+	_check(rounds >= 1 and rounds <= 2, "em chamas dura 1 a 2 turnos")
+	var burned := 0
+	for i in 3:
+		burned += rules.start_turn_effects(u).damage
+	_check(burned == 4 * rounds and not u.has_condition("em_chamas"), "em chamas: 10% do PV máx por turno e acaba")
+
+	rules.apply_condition(u, "envenenado")
+	_check(rules.start_turn_effects(u).damage == 1 and u.has_condition("envenenado"), "envenenado: 3% (mínimo 1) até o antídoto")
+
+	var a := _unit("agente", "A", 5)
+	var e := _unit("cultista", "E2", 1)
+	rules.apply_condition(a, "atordoado")
+	var tm := TurnManager.new()
+	tm.turn_effects = func(x: Combatant) -> bool: return rules.start_turn_effects(x).skip
+	tm.start([a, e] as Array[Combatant])
+	_check(tm.current == e, "turno do atordoado é pulado")
 
 
 func _check(ok: bool, name: String) -> void:

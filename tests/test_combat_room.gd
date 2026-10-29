@@ -12,6 +12,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	await _test_stealth()
+	await _test_game_over()
 	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
 	room.rules.rng.seed = 3
 	root.add_child(room)
@@ -104,6 +105,23 @@ func _test_stealth() -> void:
 	room2._stealth_attack(alvo)
 	_check(not alvo.is_alive() and room2.mode == room2.Mode.EXPLORATION, "ataque furtivo que abate não inicia o combate")
 	room2.queue_free()
+	await process_frame
+
+
+# Grupo todo caído: a tela escurece devagar, sem tela de Game Over.
+func _test_game_over() -> void:
+	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
+	root.add_child(room)
+	await process_frame
+	room.door_open = true
+	room.player.pos = Vector2(650, 360)
+	await process_frame
+	room.player.take_damage(999)
+	room.turns.action_done()
+	_check(room.mode == room.Mode.GAME_OVER, "agente caído encerra em Game Over")
+	await _wait(func() -> bool: return room.fade.color.a > 0.2, 3.0)
+	_check(room.fade.color.a > 0.2 and room.fade.color.a < 1.0, "a tela escurece aos poucos")
+	room.queue_free()
 	await process_frame
 
 

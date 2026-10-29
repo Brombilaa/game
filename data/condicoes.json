@@ -1,8 +1,7 @@
 [
-  { "id": "atordoado", "nome": "Atordoado", "duracao": null, "rodadas": null, "efeito": null, "acumula": null, "remocao": null },
-  { "id": "caido", "nome": "Caído", "duracao": null, "rodadas": null, "efeito": null, "acumula": null, "remocao": null },
-  { "id": "agarrado", "nome": "Agarrado", "duracao": null, "rodadas": null, "efeito": null, "acumula": null, "remocao": null },
-  { "id": "em_chamas", "nome": "Em chamas", "duracao": null, "rodadas": null, "efeito": null, "acumula": null, "remocao": null },
-  { "id": "sangrando", "nome": "Sangrando", "duracao": null, "rodadas": null, "efeito": null, "acumula": null, "remocao": null },
-  { "id": "efeito_paranormal", "nome": "Sob efeito paranormal", "duracao": null, "rodadas": null, "efeito": null, "acumula": null, "remocao": null }
+  { "id": "sangrando", "nome": "Sangrando", "provisorio": true, "duracao": "ate_remocao", "rodadas": null, "rodadas_max": null, "efeito": "Perde uma porcentagem do PV máximo no início de cada turno.", "dano_por_turno": 0.05, "acumula": true, "acumulo_max": 3, "remocao": "bandagem", "pula_turno": false },
+  { "id": "atordoado", "nome": "Atordoado", "provisorio": false, "duracao": "rodadas", "rodadas": 1, "rodadas_max": null, "efeito": "Perde o próximo turno.", "dano_por_turno": 0.0, "acumula": false, "acumulo_max": null, "remocao": null, "pula_turno": true },
+  { "id": "em_chamas", "nome": "Em chamas", "provisorio": true, "duracao": "rodadas", "rodadas": 1, "rodadas_max": 2, "efeito": "Perde uma porcentagem do PV máximo por turno durante 1 a 2 turnos.", "dano_por_turno": 0.10, "acumula": false, "acumulo_max": null, "remocao": null, "pula_turno": false },
+  { "id": "envenenado", "nome": "Envenenado", "provisorio": true, "duracao": "ate_remocao", "rodadas": null, "rodadas_max": null, "efeito": "Perde uma porcentagem menor do PV máximo por turno até tomar antídoto.", "dano_por_turno": 0.03, "acumula": false, "acumulo_max": null, "remocao": "antidoto", "pula_turno": false },
+  { "id": "caido", "nome": "Caído", "provisorio": false, "duracao": "situacional", "rodadas": null, "rodadas_max": null, "efeito": "PV zero: fora de ação; um aliado adjacente reanima com kit de primeiros socorros; morre se o combate acabar sem reanimação.", "dano_por_turno": 0.0, "acumula": false, "acumulo_max": null, "remocao": "kit_primeiros_socorros", "pula_turno": true }
 ]

@@ -162,6 +162,9 @@ func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers:
 		dmg *= cfg.value("stealth_damage_multiplier")
 	result.damage = damage_after_defense(dmg, target.defense)
 	target.take_damage(result.damage)
+	if result.crit and target.is_alive():
+		for id in attacker.weapon.get("crit_conditions", []):
+			apply_condition(target, id)
 	return result
 
 
@@ -173,3 +176,48 @@ func damage_after_defense(dmg: float, defense: float) -> int:
 # Alcance com que `observer` percebe `target`: o da ficha, pela metade se o alvo está agachado.
 func perception_range(observer: Combatant, target: Combatant) -> float:
 	return observer.perception * (cfg.value("crouch_perception_factor") if target.crouched else 1.0)
+
+
+
+# --- Condições ---------------------------------------------------------------
+# Léo: sangrando, atordoado, em chamas e envenenado. Percentuais e durações em condicoes.json.
+
+func apply_condition(unit: Combatant, id: String) -> void:
+	var c := cfg.condition(id)
+	var rounds := -1
+	if c["duracao"] == "rodadas":
+		var lo := int(c["rodadas"])
+		rounds = rng.randi_range(lo, int(c["rodadas_max"])) if c["rodadas_max"] != null else lo
+	if unit.conditions.has(id):
+		var cur: Dictionary = unit.conditions[id]
+		if c["acumula"]:
+			cur.stacks = mini(cur.stacks + 1, int(c["acumulo_max"]) if c["acumulo_max"] != null else 99)
+		cur.rounds = maxi(cur.rounds, rounds) if rounds >= 0 else -1
+		return
+	unit.conditions[id] = {"stacks": 1, "rounds": rounds}
+
+
+# Remove a condição (ex.: bandagem tira o sangramento). Retorna se havia algo a remover.
+func remove_condition(unit: Combatant, id: String) -> bool:
+	return unit.conditions.erase(id)
+
+
+# Início do turno: aplica o dano das condições e conta as durações.
+# Retorna {damage, skip}: skip = a unidade perde este turno (atordoado).
+func start_turn_effects(unit: Combatant) -> Dictionary:
+	var out := {"damage": 0, "skip": false}
+	for id in unit.conditions.keys():
+		var c := cfg.condition(id)
+		var state: Dictionary = unit.conditions[id]
+		var pct: float = float(c["dano_por_turno"]) * state.stacks
+		if pct > 0.0:
+			var dmg: int = maxi(floori(unit.max_pv * pct + 0.0001), int(cfg.value("min_damage")))
+			unit.take_damage(dmg)
+			out.damage += dmg
+		if c["pula_turno"]:
+			out.skip = true
+		if state.rounds > 0:
+			state.rounds -= 1
+			if state.rounds == 0:
+				unit.conditions.erase(id)
+	return out

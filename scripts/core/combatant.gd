@@ -17,7 +17,8 @@ var pos := Vector2.ZERO
 var pa := 0
 var perception := 0.0  # alcance de percepção em pixels (inimigos)
 var crouched := false  # agachado: inimigos percebem a metade da distância
-var pa_per_turn := -1  # PA da ficha; -1 usa o padrão do combate (3 para protagonistas)
+var pa_per_turn := -1
+var conditions: Dictionary = {}  # id -> {"stacks": int, "rounds": int (-1 = até remover)}  # PA da ficha; -1 usa o padrão do combate (3 para protagonistas)
 
 
 func is_alive() -> bool:
@@ -26,3 +27,7 @@ func is_alive() -> bool:
 
 func take_damage(amount: int) -> void:
 	pv = maxi(pv - amount, 0)
+
+
+func has_condition(id: String) -> bool:
+	return conditions.has(id)

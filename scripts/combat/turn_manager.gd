@@ -20,6 +20,8 @@ var current: Combatant = null
 var _queue: Array[Combatant] = []
 var _delayed: Array[Combatant] = []
 var _acted: Array[Combatant] = []  # já gastaram PA neste turno (não podem mais atrasar)
+# Efeitos do início do turno (condições). Recebe a unidade e retorna true se ela perde o turno.
+var turn_effects: Callable = Callable()
 
 
 func _init(pa: int = 3) -> void:
@@ -122,6 +124,12 @@ func _advance() -> void:
 		if _queue.is_empty():
 			_next_round()
 		var unit: Combatant = _queue.pop_front()
+		if unit.is_alive() and turn_effects.is_valid():
+			var skip: bool = turn_effects.call(unit)
+			if _check_end():
+				return
+			if skip:
+				continue  # atordoado: perde o turno
 		if unit.is_alive():
 			current = unit
 			unit.pa = turn_pa(unit)
