@@ -39,7 +39,9 @@ const FIELDS := {
 		"id": {"t": "texto", "nulo": false},
 		"nome": {"t": "texto", "nulo": false},
 		"pv_base": {"t": "int", "nulo": true, "min": 1},
+		"pv_por_nivel": {"t": "int", "nulo": true, "min": 0},  # fixo; o Vigor soma de novo a cada nível
 		"san_base": {"t": "int", "nulo": true, "min": 0},
+		"san_por_nivel": {"t": "int", "nulo": true, "min": 0},
 		"iniciativa_base": {"t": "int", "nulo": true},
 	},
 	"personagens": {
