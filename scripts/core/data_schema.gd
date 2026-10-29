@@ -96,6 +96,7 @@ const FIELDS := {
 		"pv": {"t": "int", "nulo": true, "min": 1},
 		"pa": {"t": "int", "nulo": true, "min": 0},
 		"agi": {"t": "int", "nulo": true, "min": 0},  # AGI define a ordem dos turnos (maior age primeiro)
+		"percepcao_px": {"t": "int", "nulo": true, "min": 0},  # alcance de percepção (Léo: 300 cultista, 450 atirador); agachado reduz à metade
 		"precisao": {"t": "int", "nulo": true},
 		"defesa": PERCENT,  # redução percentual do dano recebido
 		"ataques": {"t": "lista", "nulo": false, "ref": "armas"},

@@ -15,6 +15,8 @@ var weapon: Dictionary = {}
 var radius := 10.0
 var pos := Vector2.ZERO
 var pa := 0
+var perception := 0.0  # alcance de percepção em pixels (inimigos)
+var crouched := false  # agachado: inimigos percebem a metade da distância
 var pa_per_turn := -1  # PA da ficha; -1 usa o padrão do combate (3 para protagonistas)
 
 

@@ -11,6 +11,7 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	await _test_stealth()
 	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
 	room.rules.rng.seed = 3
 	root.add_child(room)
@@ -68,6 +69,42 @@ func _run() -> void:
 
 	print("Falhas: %d" % failures)
 	quit(1 if failures > 0 else 0)
+
+
+# Agachado, a percepção cai à metade; ataque furtivo que abate não inicia combate.
+func _test_stealth() -> void:
+	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
+	room.rules.rng.seed = 3
+	root.add_child(room)
+	await process_frame
+	room.door_open = true
+	var cultista: Combatant = room.enemies[0]
+	room.enemies[1].pv = 0  # só o cultista na cena
+	room.player.crouched = true
+	room.player.pos = cultista.pos + Vector2(-200, 0)
+	await process_frame
+	_check(room.mode == room.Mode.EXPLORATION, "agachado a 200 px o cultista não percebe (300 / 2)")
+	room.player.crouched = false
+	room.player.pos = cultista.pos + Vector2(-200, 0)
+	await process_frame
+	_check(room.mode == room.Mode.COMBAT, "de pé a 200 px o cultista percebe")
+	room.queue_free()
+
+	var room2 = load("res://scenes/exploration/test_room.tscn").instantiate()
+	root.add_child(room2)
+	await process_frame
+	room2.door_open = true
+	room2.enemies[1].pv = 0
+	var alvo: Combatant = room2.enemies[0]
+	alvo.pv = 1
+	room2.player.crouched = true
+	room2.player.hit_bonus = 1.0
+	room2.player.pos = alvo.pos + Vector2(-200, 0)
+	await process_frame
+	room2._stealth_attack(alvo)
+	_check(not alvo.is_alive() and room2.mode == room2.Mode.EXPLORATION, "ataque furtivo que abate não inicia o combate")
+	room2.queue_free()
+	await process_frame
 
 
 func _wait(cond: Callable, seconds: float) -> void:

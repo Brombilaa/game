@@ -6,6 +6,7 @@
     "pv": 20,
     "pa": 3,
     "agi": 1,
+    "percepcao_px": 300,
     "precisao": 0,
     "defesa": 0.0,
     "ataques": [
@@ -24,6 +25,7 @@
     "pv": 16,
     "pa": 3,
     "agi": 2,
+    "percepcao_px": 450,
     "precisao": 0,
     "defesa": 0.0,
     "ataques": [
@@ -42,6 +44,7 @@
     "pv": 20,
     "pa": 3,
     "agi": 1,
+    "percepcao_px": 300,
     "precisao": 0,
     "defesa": 0.0,
     "ataques": [
@@ -60,6 +63,7 @@
     "pv": 14,
     "pa": 3,
     "agi": 2,
+    "percepcao_px": 450,
     "precisao": 0,
     "defesa": 0.0,
     "ataques": [

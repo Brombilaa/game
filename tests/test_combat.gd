@@ -16,6 +16,7 @@ func _init() -> void:
 	_test_hit_chance()
 	_test_attack()
 	_test_cover()
+	_test_stealth()
 	print("Falhas: %d" % failures)
 	quit(1 if failures > 0 else 0)
 
@@ -219,6 +220,33 @@ func _test_cover() -> void:
 	var far_full := Cover.new(Rect2(100, -20, 10, 40), "full", 30)
 	_check(rules.attack_blocker(a, e, [] as Array[Rect2], [far_full]) == "no_line_of_sight", "cobertura total bloqueia o tiro")
 	_check(rules.attack(a, e, [] as Array[Rect2], [far_full]).reason == "no_line_of_sight" and a.pa == 3, "tiro bloqueado não gasta PA")
+
+
+func _test_stealth() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 5
+	var rules := CombatRules.new(cfg, rng)
+	var a := _unit("agente", "A", 1, Vector2(0, 0))
+	a.weapon = cfg.weapon("pistola")
+	var cultista := cfg.make_enemy("cultista", Vector2(400, 0))
+	var atirador := cfg.make_enemy("atirador", Vector2(400, 0))
+	_check(is_equal_approx(rules.perception_range(cultista, a), 300.0) and is_equal_approx(rules.perception_range(atirador, a), 450.0), "percepção da ficha: 300 cultista, 450 atirador")
+	a.crouched = true
+	_check(is_equal_approx(rules.perception_range(cultista, a), 150.0) and is_equal_approx(rules.perception_range(atirador, a), 225.0), "agachado reduz a percepção à metade")
+	var normal := rules.hit_chance(a, cultista)
+	_check(is_equal_approx(rules.hit_chance(a, cultista, [], true), minf(normal + 0.25, 0.95)), "ataque furtivo soma 25% ao acerto")
+	var ok := true
+	var hits := 0
+	for i in 200:
+		a.pa = 1
+		cultista.pv = 999
+		cultista.pos = Vector2(30, 0)
+		var r := rules.attack(a, cultista, [] as Array[Rect2], [], true)
+		if r.hit:
+			hits += 1
+			var base_max := 5 * (2 if r.crit else 1)
+			ok = ok and r.damage >= 6 and r.damage <= base_max * 2
+	_check(hits > 0 and ok, "ataque furtivo dobra o dano")
 
 
 func _check(ok: bool, name: String) -> void:
