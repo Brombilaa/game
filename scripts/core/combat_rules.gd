@@ -99,9 +99,11 @@ static func gap(a: Combatant, b: Combatant) -> float:
 	return maxf(a.pos.distance_to(b.pos) - a.radius - b.radius, 0.0)
 
 
-func hit_chance(attacker: Combatant, target: Combatant, covers: Array = []) -> float:
+func hit_chance(attacker: Combatant, target: Combatant, covers: Array = [], stealth := false) -> float:
 	var w := attacker.weapon
 	var chance := float(w["base_chance"]) + attacker.hit_bonus
+	if stealth:
+		chance += cfg.value("stealth_hit_bonus")
 	chance += maxi(attacker.initiative - 1, 0) * cfg.value("agi_hit_bonus")  # initiative = AGI
 	chance -= _range_penalty(w, gap(attacker, target))
 	var c := cover_between(attacker.pos, target, covers)
@@ -136,8 +138,9 @@ func attack_blocker(attacker: Combatant, target: Combatant, walls: Array[Rect2],
 
 
 # Resolve o ataque, gasta PA e aplica dano. Coberturas não são destruídas (Léo: ainda não).
+# stealth: ataque furtivo contra inimigo sem alerta (bônus de acerto e multiplicador de dano).
 # Retorna {ok, reason, chance, hit, blocked, crit, damage, cover}.
-func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers: Array) -> Dictionary:
+func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers: Array, stealth := false) -> Dictionary:
 	var result := {"ok": false, "reason": "", "chance": 0.0, "hit": false, "blocked": false, "crit": false, "damage": 0, "cover": ""}
 	result.reason = attack_blocker(attacker, target, walls, covers)
 	if result.reason != "":
@@ -147,7 +150,7 @@ func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers:
 	var c := cover_between(attacker.pos, target, covers)
 	if c:
 		result.cover = c.kind
-	result.chance = hit_chance(attacker, target, covers)
+	result.chance = hit_chance(attacker, target, covers, stealth)
 	if rng.randf() >= result.chance:
 		return result
 	result.hit = true
@@ -155,6 +158,8 @@ func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers:
 	if rng.randf() < cfg.value("crit_chance"):
 		result.crit = true
 		dmg *= cfg.value("crit_multiplier")
+	if stealth:
+		dmg *= cfg.value("stealth_damage_multiplier")
 	result.damage = damage_after_defense(dmg, target.defense)
 	target.take_damage(result.damage)
 	return result
@@ -163,3 +168,8 @@ func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers:
 # Redução percentual da defesa (colete), para baixo, com mínimo de dano.
 func damage_after_defense(dmg: float, defense: float) -> int:
 	return maxi(floori(dmg * (1.0 - defense) + 0.0001), int(cfg.value("min_damage")))
+
+
+# Alcance com que `observer` percebe `target`: o da ficha, pela metade se o alvo está agachado.
+func perception_range(observer: Combatant, target: Combatant) -> float:
+	return observer.perception * (cfg.value("crouch_perception_factor") if target.crouched else 1.0)

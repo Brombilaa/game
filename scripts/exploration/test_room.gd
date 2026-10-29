@@ -1,9 +1,10 @@
 extends Node2D
 # Sala de teste: exploração com clique para mover, uma porta, inimigos e coberturas.
 # A rota contorna obstáculos via Pathfinder; destino inacessível é ignorado.
-# Inimigo que vê o personagem (alcance + linha de visão) inicia o combate na hora.
+# Inimigo que vê o personagem (alcance + linha de visão) inicia o combate na hora. C agacha:
+# a percepção dos inimigos cai à metade. Clique num inimigo sem alerta faz o ataque furtivo.
 # Combate por turnos (TurnManager + CombatRules): no turno do agente, clique no chão
-# move (gasta PA), clique no inimigo ataca, clique na cobertura mira a estrutura,
+# move (gasta PA), clique no inimigo ataca,
 # Espaço passa o turno e D atrasa. R reinicia a sala. Tab troca o visual do agente (Nikolai/Miguel/Fernando).
 # Visual provisório: resolução interna 960×540 (DEC-2026-10-29-10), câmera segue a unidade
 # em foco e a sala rola. Vista isométrica 2:1 (DEC-2026-10-29-08): a lógica continua em
@@ -19,7 +20,6 @@ signal move_finished
 
 const SPEED := 180.0
 const STAND_OFFSET := 6.0
-const PERCEPTION_RANGE := 300.0  # provisório: alcance de percepção está PENDENTE no GDD
 const ENEMY_STEP_SECONDS := 0.4
 const POPUP_SECONDS := 1.2
 const WALK_FRAME_SECONDS := 0.11
@@ -125,13 +125,20 @@ func _unhandled_input(event: InputEvent) -> void:
 			queue_redraw()
 		elif event.pressed and event.keycode == KEY_D:
 			_player_delay()
+		elif event.pressed and event.keycode == KEY_C and mode == Mode.EXPLORATION:
+			player.crouched = not player.crouched
+			queue_redraw()
 		return
 	if event is InputEventMouseMotion and mode == Mode.COMBAT:
 		queue_redraw()  # atualiza a prévia de chance/custo sob o cursor
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var click := _resolve_click(get_global_mouse_position())
 		if mode == Mode.EXPLORATION:
-			_order_move(click)
+			var target := _enemy_at(click)
+			if target and _visible(target.pos):
+				_stealth_attack(target)
+			else:
+				_order_move(click)
 		elif mode == Mode.COMBAT:
 			_combat_click(click)
 
@@ -274,11 +281,35 @@ func _process(delta: float) -> void:
 # (parede e porta fechada bloqueiam). Detecção inicia o combate imediatamente.
 func _check_detection() -> void:
 	for e in enemies:
-		if not e.is_alive() or e.pos.distance_to(player.pos) > PERCEPTION_RANGE:
+		if not e.is_alive() or e.pos.distance_to(player.pos) > rules.perception_range(e, player):
 			continue
 		if Pathfinder.has_line_of_sight(e.pos, player.pos, _sight_blockers()):
 			_start_combat()
 			return
+
+
+# Ataque furtivo (Léo): contra inimigo sem alerta, com bônus de acerto e de dano. Se errar,
+# o combate começa. Se acertar sem abater, o alvo também entra em alerta (assumido).
+# Fora do alcance da arma, o personagem só anda até o alvo.
+func _stealth_attack(target: Combatant) -> void:
+	player.pa = int(player.weapon["pa_cost"])  # fora do combate não há PA; o custo é só formal
+	var blocker := rules.attack_blocker(player, target, _sight_blockers(), covers)
+	if blocker == "out_of_range":
+		player.pa = 0
+		var stand := target.pos.move_toward(player.pos, player.radius + target.radius + 2.0 + float(player.weapon["max_range"]) * 0.5)
+		_order_move(stand)
+		return
+	if blocker != "":
+		player.pa = 0
+		_reject(blocker)
+		return
+	path = PackedVector2Array()
+	pending_door = false
+	var r := rules.attack(player, target, _sight_blockers(), covers, true)
+	player.pa = 0
+	_show_attack(player, target, r)
+	if target.is_alive():
+		_start_combat()
 
 
 # Monta os participantes (todos os inimigos vivos da sala) e ordena a iniciativa.
@@ -462,7 +493,7 @@ func _draw() -> void:
 	if mode == Mode.EXPLORATION:
 		for e in enemies:
 			if e.is_alive() and _visible(e.pos):
-				_draw_range(e.pos, PERCEPTION_RANGE, Color(PlaceholderArt.color("sangue_claro"), 0.35))
+				_draw_range(e.pos, rules.perception_range(e, player), Color(PlaceholderArt.color("sangue_claro"), 0.35))
 	# Peças ordenadas por profundidade: quanto maior x + y, mais perto da câmera.
 	var items: Array = []
 	for w in walls:
@@ -521,6 +552,8 @@ func _draw() -> void:
 	var footer := get_canvas_transform().affine_inverse() * Vector2(24, 520)
 	if mode == Mode.COMBAT:
 		draw_string(font, footer, "Rodada %d  |  Espaço passa, D atrasa, R reinicia" % turns.round_number, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 1, 0.6))
+	elif mode == Mode.EXPLORATION:
+		draw_string(font, footer, ("AGACHADO  |  " if player.crouched else "") + "C agacha, clique no inimigo ataca de surpresa", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 1, 0.6))
 	elif mode == Mode.GAME_OVER:
 		draw_string(font, footer, "Game Over (R reinicia)", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 0.5, 0.5))
 	for p in popups:
