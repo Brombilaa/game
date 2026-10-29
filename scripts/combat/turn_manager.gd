@@ -66,7 +66,7 @@ func spend(unit: Combatant, amount: int) -> bool:
 func action_done() -> void:
 	if state != State.ACTIVE:
 		return
-	if current and not _acted.has(current) and current.pa < pa_per_turn:
+	if current and not _acted.has(current) and current.pa < turn_pa(current):
 		_acted.append(current)  # PA gastos fora de spend(), ex.: CombatRules.attack
 	if _check_end():
 		return
@@ -110,6 +110,11 @@ func can_delay(unit: Combatant) -> bool:
 	return is_turn_of(unit) and not _delayed.has(unit) and not _acted.has(unit) and not _queue.is_empty()
 
 
+# PA com que a unidade começa cada turno: o da ficha, se houver, senão o padrão.
+func turn_pa(unit: Combatant) -> int:
+	return unit.pa_per_turn if unit.pa_per_turn >= 0 else pa_per_turn
+
+
 func _advance() -> void:
 	if state != State.ACTIVE or _check_end():
 		return
@@ -119,7 +124,7 @@ func _advance() -> void:
 		var unit: Combatant = _queue.pop_front()
 		if unit.is_alive():
 			current = unit
-			unit.pa = pa_per_turn
+			unit.pa = turn_pa(unit)
 			turn_started.emit(unit)
 			return
 

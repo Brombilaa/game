@@ -4,5 +4,11 @@
     "pv": 20, "pa": 3, "iniciativa": 10,
     "ataques": ["faca_teste"], "comportamento": "agressivo",
     "resistencias": [], "fraquezas": [], "chefe": false, "fases": []
+  },
+  {
+    "id": "atirador_teste", "nome": "Atirador (teste)", "provisorio": true,
+    "pv": 16, "pa": 3, "iniciativa": 8,
+    "ataques": ["pistola_teste"], "comportamento": "agressivo",
+    "resistencias": [], "fraquezas": [], "chefe": false, "fases": []
   }
 ]

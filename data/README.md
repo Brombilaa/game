@@ -42,7 +42,8 @@ Estado de execução (PV atual, munição no carregador, condições ativas) nã
 arquivos são só definições estáticas, como recomenda o Anexo C do GDD.
 
 `combat.json` e `audio_cues.json` são lidos por outros sistemas (`CombatConfig` e `AudioDirector`) e
-não passam por este carregador. PA por turno, limites de acerto, crítico, cobertura e distância
+não passam por este carregador. O combate lê armas e inimigos destas tabelas via `GameData` (`CombatConfig.weapon` e
+`CombatConfig.make_enemy`), convertendo metros em pixels por `pixels_per_meter` de `combat.json`. PA por turno, limites de acerto, crítico, cobertura e distância
 por PA estão em `combat.json` por enquanto.
 
 Ao exportar o jogo, incluir `data/*.json` no filtro de recursos não importados do preset.

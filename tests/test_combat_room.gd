@@ -31,12 +31,17 @@ func _run() -> void:
 	# Atacar a criatura gasta 1 PA.
 	var criatura: Combatant = room.enemies[0]
 	room._combat_click(criatura.pos)
-	_check(room.player.pa == 2, "ataque gasta o PA da arma")
+	_check(room.player.pa == 3 - room.player.weapon.pa_cost, "ataque gasta o PA da arma")
 
 	# Mover gasta PA proporcional e anda até o fim da rota.
+	var pa_before: int = room.player.pa
 	room._combat_click(room.player.pos + Vector2(0, -100))
 	await _wait(func() -> bool: return not room.busy, 5.0)
-	_check(room.player.pa == 1 and room.player.pos.is_equal_approx(Vector2(650, 260)), "movimento gasta 1 PA e chega ao destino")
+	_check(room.player.pa == pa_before - 1 and room.player.pos.is_equal_approx(Vector2(650, 260)), "movimento gasta 1 PA e chega ao destino")
+
+	# Agente resistente para o teste não depender da sorte dos inimigos.
+	room.player.pv = 999
+	room.player.max_pv = 999
 
 	# Passar: os inimigos jogam e a vez volta ao agente na rodada 2.
 	room._player_pass()
@@ -49,9 +54,11 @@ func _run() -> void:
 			e.pv = 1
 		room.player.precision = 100
 		var guard := 0
-		while room.mode == room.Mode.COMBAT and guard < 200:
+		while room.mode == room.Mode.COMBAT and guard < 5000:
 			guard += 1
-			if room.turns.is_turn_of(room.player) and not room.busy:
+			if room.turns.is_turn_of(room.player) and not room.busy and room.player.pa < room.player.weapon.pa_cost:
+				room._player_pass()  # sobrou PA só para andar
+			elif room.turns.is_turn_of(room.player) and not room.busy:
 				var alive: Array = room.enemies.filter(func(e: Combatant) -> bool: return e.is_alive())
 				room.player.pos = alive[0].pos + Vector2(-25, 0)  # encosta no alvo para garantir alcance
 				room._combat_click(alive[0].pos)

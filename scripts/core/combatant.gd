@@ -15,6 +15,7 @@ var weapon: Dictionary = {}
 var radius := 10.0
 var pos := Vector2.ZERO
 var pa := 0
+var pa_per_turn := -1  # PA da ficha; -1 usa o padrão do combate (3 para protagonistas)
 
 
 func is_alive() -> bool:
