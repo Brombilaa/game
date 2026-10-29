@@ -156,3 +156,7 @@ Depois que as imagens chegarem, eu monto um conversor de peças de cenário (rec
 Enviar PNGs para o repositório usa o Git LFS, e o envio é recusado (403) no ambiente da nuvem. Enquanto isso, as folhas
 de sprites pequenas (algumas centenas de KB) vão direto no Git, como foi feito com a fonte. Se o volume crescer, será
 preciso liberar o LFS nas configurações de rede do ambiente.
+
+## 10. Animações de ataque, dano e morte
+
+Os prompts do Fernando (pistola, escopeta, soco, dano e morte) estão em `docs/prompts-fernando-animacoes.md`. A estrutura é a mesma das folhas de andar: 8 poses em grade de 4×2, uma direção por imagem, magenta no fundo.
