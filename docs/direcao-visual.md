@@ -90,7 +90,11 @@ vira regra de produção:
 
 ## 6. Próximos passos
 
-1. Claude ajusta o projeto para 640×360 com escala inteira e adapta a sala de teste a essa resolução.
-2. Claude cria a paleta escura de teste e um personagem placeholder de 32×48 em 4 direções, mais um tile de chão 16×16.
-3. Léo avalia o sprite de teste na sala e confirma ou ajusta o tamanho.
+1. ~~Claude ajusta o projeto para 640×360 com escala inteira e adapta a sala de teste.~~ Feito: resolução interna 640×360, janela 1280×720, escala inteira; câmera segue a unidade em foco e a sala de 1280×720 rola.
+2. ~~Claude cria a paleta escura de teste, um personagem placeholder de 32×48 em 4 direções e um tile de chão 16×16.~~ Feito em `scripts/art/placeholder_art.gd` (gerado por código, sem PNG) e `assets/palettes/paleta_teste.gpl` (importável no Aseprite).
+3. Léo avalia o personagem de teste na sala e confirma ou ajusta o tamanho.
 4. Cada nova resposta do Léo entra na seção 2 no formato do Anexo H.
+
+Observação: o combate provisório usa 32 px por metro (`data/combat.json`), então um
+personagem de 48 px mede uns 1,5 m na escala das regras. Para a leitura visual está
+bom; se a escala de distância for aprovada depois, revisar os dois juntos.

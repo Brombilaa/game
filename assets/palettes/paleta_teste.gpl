@@ -1,0 +1,24 @@
+GIMP Palette
+Name: Ordem Paranormal - paleta de teste
+Columns: 4
+# Gerada a partir de scripts/art/placeholder_art.gd (DEC-2026-10-29-04).
+ 13  11  14	contorno
+ 20  18  22	camisa
+ 30  26  31	casaco_escuro
+ 44  38  48	casaco
+ 59  52  64	casaco_claro
+ 42  29  22	cabelo
+138  95  72	pele_sombra
+185 138 106	pele
+ 90  52  32	couro
+122  74  44	couro_claro
+110 106 106	metal
+ 27  23  20	chao_escuro
+ 38  32  25	chao
+ 49  42  33	chao_claro
+ 42  39  48	parede
+ 69  64  76	parede_topo
+ 74  20  22	sangue_escuro
+107  29  29	sangue
+140  42  42	sangue_claro
+201 162  74	destaque
