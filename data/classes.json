@@ -1,5 +1,5 @@
 [
-  { "id": "combatente", "nome": "Combatente", "pv_base": 20, "pv_por_nivel": 4, "san_base": 12, "san_por_nivel": 3, "iniciativa_base": null },
-  { "id": "especialista", "nome": "Especialista", "pv_base": 16, "pv_por_nivel": 3, "san_base": 16, "san_por_nivel": 4, "iniciativa_base": null },
-  { "id": "ocultista", "nome": "Ocultista", "pv_base": 12, "pv_por_nivel": 2, "san_base": 20, "san_por_nivel": 5, "iniciativa_base": null }
+  { "id": "combatente", "nome": "Combatente", "pv_base": 20, "pv_por_nivel": 4, "san_base": 12, "san_por_nivel": 3 },
+  { "id": "especialista", "nome": "Especialista", "pv_base": 16, "pv_por_nivel": 3, "san_base": 16, "san_por_nivel": 4 },
+  { "id": "ocultista", "nome": "Ocultista", "pv_base": 12, "pv_por_nivel": 2, "san_base": 20, "san_por_nivel": 5 }
 ]

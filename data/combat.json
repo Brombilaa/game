@@ -1,27 +1,29 @@
 {
-	"_comment": "Valores PROVISÓRIOS para o protótipo. Todos os números de combate estão PENDENTES no GDD (B.5–B.7) e devem ser revisados no balanceamento.",
+	"_comment": "Valores do protótipo. Acerto, crítico, cobertura e metros por PA seguem as decisões do Léo (29/10/2026, provisórias até testar); o resto é provisório do Claude.",
 	"pa_per_turn": 3,
-	"pixels_per_pa": 120,
-	"hit_chance_min": 0.05,
+	"pixels_per_pa": 64,
+	"_pixels_per_pa": "2 m por PA (Léo) × pixels_per_meter.",
+	"hit_chance_min": 0.25,
 	"hit_chance_max": 0.95,
-	"hit_per_precision_point": 0.05,
-	"range_falloff_per_100px": 0.10,
+	"range_falloff_per_2m": 0.05,
+	"agi_hit_bonus": 0.02,
+	"_acerto": "Léo: 75% à queima-roupa (precisao_base da arma), −5% a cada 2 m além da distância ideal da arma, mínimo 25%; cobertura parcial −20%; total bloqueia o tiro. AGI +2% por ponto acima de 1 é provisório do Claude.",
 	"crit_chance": 0.10,
-	"crit_multiplier": 1.5,
+	"crit_multiplier": 2.0,
 	"min_damage": 1,
 	"cover_adjacent_distance": 24,
 	"_distances": "Em pixels. Alcance de arma é medido borda a borda entre as unidades.",
 	"cover": {
-		"partial": { "block_chance": 0.20, "damage_reduction": 0.25 },
-		"full": { "block_chance": 0.40, "damage_reduction": 0.50 }
+		"partial": { "hit_penalty": 0.20 },
+		"full": { "blocks_shot": true }
 	},
 	"pixels_per_meter": 32,
 	"attack_pa_cost": 2,
-	"enemy_precision": 0,
-	"enemy_defense": 0,
+	"enemy_defense": 0.0,
+	"default_max_range_m": 20,
 	"enemy_radius": 10,
-	"_fichas": "Armas vêm de armas.json e inimigos de inimigos.json (GameData). Distâncias delas em metros, convertidas por pixels_per_meter. attack_pa_cost vale enquanto custo_ataque_distancia_pa/custo_corpo_a_corpo_pa de regras.json forem null; enemy_precision/enemy_defense valem quando precisao/defesa da ficha forem null.",
+	"_fichas": "Armas vêm de armas.json e inimigos de inimigos.json (GameData). Distâncias delas em metros, convertidas por pixels_per_meter. O custo do ataque é custo_pa da arma; attack_pa_cost vale quando ele for null. default_max_range_m vale quando alcance_maximo da arma for null. enemy_defense (redução de dano, 0 a 1) vale quando defesa da ficha for null.",
 	"units": {
-		"agente": { "side": "player", "pv": 30, "initiative": 12, "precision": 2, "defense": 1, "weapon": "pistola_teste", "radius": 10 }
+		"agente": { "side": "player", "pv": 30, "agi": 2, "defense": 0.0, "weapon": "pistola", "radius": 10 }
 	}
 }

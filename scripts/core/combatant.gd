@@ -8,9 +8,9 @@ var name := ""
 var side := Side.PLAYER
 var max_pv := 1
 var pv := 1
-var initiative := 0
-var precision := 0
-var defense := 0
+var initiative := 0  # = AGI: define a ordem dos turnos (maior primeiro)
+var defense := 0.0  # redução percentual do dano recebido (colete; 0.1 = 10%)
+var hit_bonus := 0.0  # bônus temporário de acerto (ex.: mira), somado à chance
 var weapon: Dictionary = {}
 var radius := 10.0
 var pos := Vector2.ZERO

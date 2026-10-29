@@ -34,9 +34,9 @@ func _test_data_sources() -> void:
 	_check(is_equal_approx(w.max_range, src["alcance_maximo"] * ppm), "alcance convertido de metros para pixels")
 	var e := cfg.make_enemy("cultista_teste", Vector2.ZERO)
 	var sheet := cfg.game_data.get_entry("inimigos", "cultista_teste")
-	_check(e.max_pv == sheet["pv"] and e.initiative == sheet["iniciativa"] and e.side == Combatant.Side.ENEMY, "inimigo lido de inimigos.json")
+	_check(e.max_pv == sheet["pv"] and e.initiative == sheet["agi"] and e.side == Combatant.Side.ENEMY, "inimigo lido de inimigos.json")
 	e.pa_per_turn = 2
-	var a := _unit("agente", "A", 1)
+	var a := _unit("agente", "A", 0)
 	var tm := TurnManager.new()
 	tm.start([e, a] as Array[Combatant])
 	_check(tm.current == e and e.pa == 2, "inimigo começa o turno com os PA da ficha")
@@ -128,16 +128,32 @@ func _test_movement() -> void:
 
 func _test_hit_chance() -> void:
 	var rules := CombatRules.new(cfg)
+	var ppm := cfg.value("pixels_per_meter")
 	var a := _unit("agente", "A", 1, Vector2(0, 0))
-	var e := _unit("cultista_teste", "E", 1, Vector2(100, 0))
-	var expected := 0.70 + (2 - 0) * 0.05
-	_check(is_equal_approx(rules.hit_chance(a, e), expected), "chance = base + diferença de precisão/defesa")
-	e.pos = Vector2(a.weapon.effective_range + 20 + 100, 0)
-	_check(is_equal_approx(rules.hit_chance(a, e), expected - 0.10), "distância além do alcance efetivo reduz a chance")
-	a.precision = 100
+	a.weapon = cfg.weapon("pistola")
+	var e := _unit("cultista", "E", 1, Vector2(a.radius + 10.0 + 4.0, 0))  # encostado
+	_check(is_equal_approx(rules.hit_chance(a, e), 0.75), "75% à queima-roupa")
+	e.pos.x += 2.0 * ppm
+	_check(is_equal_approx(rules.hit_chance(a, e), 0.70), "-5% a cada 2 m")
+	e.pos.x += 1.0 * ppm
+	_check(is_equal_approx(rules.hit_chance(a, e), 0.70), "só conta 2 m completos")
+	e.pos.x += 40.0 * ppm
+	_check(is_equal_approx(rules.hit_chance(a, e), 0.25), "mínimo de 25%")
+	a.initiative = 3
+	e.pos = Vector2(a.radius + e.radius + 4.0, 0)
+	_check(is_equal_approx(rules.hit_chance(a, e), 0.79), "AGI 3 soma +4% (provisório)")
+	a.initiative = 1
+	a.hit_bonus = 0.15
+	_check(is_equal_approx(rules.hit_chance(a, e), 0.90), "bônus de mira soma à chance")
+	a.hit_bonus = 1.0
 	_check(is_equal_approx(rules.hit_chance(a, e), 0.95), "chance máxima 95%")
-	a.precision = -100
-	_check(is_equal_approx(rules.hit_chance(a, e), 0.05), "chance mínima 5%")
+	a.hit_bonus = 0.0
+	var rifle := _unit("agente", "R", 1, Vector2(0, 0))
+	rifle.weapon = cfg.weapon("fuzil_precisao")
+	e.pos = Vector2(rifle.radius + e.radius + 18.0 * ppm, 0)
+	_check(is_equal_approx(rules.hit_chance(rifle, e), 0.75), "fuzil sem queda até 18 m")
+	e.pos.x += 2.0 * ppm
+	_check(is_equal_approx(rules.hit_chance(rifle, e), 0.70), "fuzil perde 5% a cada 2 m depois de 18 m")
 
 
 func _test_attack() -> void:
@@ -146,16 +162,18 @@ func _test_attack() -> void:
 	var rules := CombatRules.new(cfg, rng)
 	var walls: Array[Rect2] = [Rect2(200, -50, 20, 100)]
 	var a := _unit("agente", "A", 1, Vector2(0, 0))
-	var e := _unit("cultista_teste", "E", 1, Vector2(400, 0))
+	a.weapon = cfg.weapon("pistola")
+	var e := _unit("cultista", "E", 1, Vector2(400, 0))
 	a.pa = 3
 	_check(rules.attack(a, e, walls, []).reason == "no_line_of_sight", "parede bloqueia o ataque")
 	_check(a.pa == 3, "ataque recusado não gasta PA")
-	e.pos = Vector2(100, 0)
+	e.pos = Vector2(24, 0)
 	a.pa = 0
 	_check(rules.attack(a, e, walls, []).reason == "no_pa", "sem PA não ataca")
-	var claw := _unit("cultista_teste", "C", 1, Vector2(100, 0))
+	var claw := _unit("cultista", "C", 1, Vector2(100, 0))
 	claw.pa = 3
 	_check(rules.attack(claw, a, [] as Array[Rect2], []).reason == "out_of_range", "corpo a corpo exige estar perto")
+	_check(cfg.weapon("pistola").pa_cost == 1 and cfg.weapon("escopeta").pa_cost == 2 and cfg.weapon("soco").pa_cost == 1, "custo em PA vem da arma")
 
 	var hits := 0
 	var damage_ok := true
@@ -169,62 +187,38 @@ func _test_attack() -> void:
 			var dmg: int = r.damage
 			if r.crit:
 				crits += 1
-				damage_ok = damage_ok and dmg >= 12 and dmg <= 18
+				damage_ok = damage_ok and dmg >= 6 and dmg <= 10
 			else:
-				damage_ok = damage_ok and dmg >= 8 and dmg <= 12
+				damage_ok = damage_ok and dmg >= 3 and dmg <= 5
 			damage_ok = damage_ok and e.pv == 999 - dmg
 	_check(a.pa == 0, "ataque gasta o custo em PA da arma")
-	_check(hits > 280 and hits < 360, "taxa de acerto perto de 80%% (%d/400)" % hits)
-	_check(damage_ok, "dano dentro da faixa da arma e aplicado ao alvo")
+	_check(hits > 270 and hits < 330, "taxa de acerto perto de 75%% (%d/400)" % hits)
+	_check(damage_ok, "dano dentro da faixa da arma; crítico dobra")
 	_check(crits > 0, "críticos acontecem")
+
+	_check(rules.damage_after_defense(10.0, 0.1) == 9 and rules.damage_after_defense(5.0, 0.2) == 4, "colete reduz o dano em percentual")
+	_check(rules.damage_after_defense(3.0, 0.1) == 2 and rules.damage_after_defense(1.0, 0.2) == 1, "arredonda para baixo com mínimo 1")
 
 
 func _test_cover() -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 11
-	var rules := CombatRules.new(cfg, rng)
+	var rules := CombatRules.new(cfg)
 	var a := _unit("agente", "A", 1, Vector2(0, 0))
-	var e := _unit("cultista_teste", "E", 1, Vector2(300, 0))
+	a.weapon = cfg.weapon("pistola")
+	var e := _unit("cultista", "E", 1, Vector2(300, 0))
 	var partial := Cover.new(Rect2(270, -20, 10, 40), "partial", 30)
 	var full := Cover.new(Rect2(275, -20, 10, 40), "full", 30)
-	var far := Cover.new(Rect2(100, -20, 10, 40), "full", 30)
+	var far := Cover.new(Rect2(100, -20, 10, 40), "partial", 30)
 	_check(rules.cover_between(a.pos, e, [partial]) == partial, "cobertura encostada no alvo protege")
 	_check(rules.cover_between(a.pos, e, [far]) == null, "cobertura longe do alvo não protege")
 	_check(rules.cover_between(Vector2(600, 0), e, [partial]) == null, "atacar pelo outro lado ignora a cobertura")
 	_check(rules.cover_between(a.pos, e, [partial, full]) == full, "completa tem prioridade sobre parcial")
 	a.pa = 3
-	_check(rules.attack_blocker(a, e, [] as Array[Rect2]) == "", "cobertura não bloqueia a linha de visão")
-
-	var stats := {}
-	for kind in ["partial", "full"]:
-		var c := Cover.new(Rect2(270, -20, 10, 40), kind, 30)
-		var blocked := 0
-		var total_dmg := 0
-		var damaged := 0
-		for i in 2000:
-			a.pa = a.weapon.pa_cost
-			e.pv = 999
-			var r := rules.attack(a, e, [] as Array[Rect2], [c])
-			if r.blocked:
-				blocked += 1
-			elif r.hit:
-				total_dmg += r.damage
-				damaged += 1
-		stats[kind] = {"blocked": blocked, "avg": float(total_dmg) / damaged}
-		_check(c.hp == 30, "atacar alvo protegido (%s) não danifica a cobertura" % kind)
-	_check(stats.full.blocked > stats.partial.blocked, "completa bloqueia mais que parcial")
-	_check(stats.full.avg < stats.partial.avg, "completa reduz mais dano que parcial")
-
-	var wall_cover := Cover.new(Rect2(100, -20, 10, 40), "partial", 5)
-	var hit_cover := false
-	for i in 50:
-		a.pa = a.weapon.pa_cost
-		var r := rules.attack_cover(a, wall_cover, [] as Array[Rect2])
-		if r.hit:
-			hit_cover = true
-			break
-	_check(hit_cover and wall_cover.is_destroyed(), "mirar a estrutura danifica e destrói a cobertura")
-	_check(rules.cover_between(a.pos, e, [wall_cover]) == null, "cobertura destruída não protege")
+	var open_chance := rules.hit_chance(a, e)
+	_check(is_equal_approx(rules.hit_chance(a, e, [partial]), maxf(open_chance - 0.20, 0.25)), "cobertura parcial tira 20% do acerto")
+	_check(rules.attack_blocker(a, e, [] as Array[Rect2], [partial]) == "", "cobertura parcial não bloqueia o tiro")
+	var far_full := Cover.new(Rect2(100, -20, 10, 40), "full", 30)
+	_check(rules.attack_blocker(a, e, [] as Array[Rect2], [far_full]) == "no_line_of_sight", "cobertura total bloqueia o tiro")
+	_check(rules.attack(a, e, [] as Array[Rect2], [far_full]).reason == "no_line_of_sight" and a.pa == 3, "tiro bloqueado não gasta PA")
 
 
 func _check(ok: bool, name: String) -> void:
