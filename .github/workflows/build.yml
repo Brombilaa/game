@@ -1,0 +1,62 @@
+# Testes e build de Windows. Tag v* publica o .zip no GitHub Releases;
+# rodar manualmente (workflow_dispatch) só gera o artifact.
+name: build
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  GODOT_VERSION: "4.3"
+
+jobs:
+  windows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Instalar Godot e export template de Windows
+        run: |
+          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          curl -sSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+          tpl="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$tpl"
+          curl -sSL -o templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q -j templates.tpz templates/windows_release_x86_64.exe templates/version.txt -d "$tpl"
+          rm godot.zip templates.tpz
+
+      - name: Importar projeto
+        run: ./godot --headless --path . --import
+
+      - name: Testes
+        run: |
+          for t in tests/test_*.gd; do
+            ./godot --headless --path . -s "$t"
+          done
+
+      - name: Exportar Windows
+        run: |
+          mkdir -p build/windows
+          ./godot --headless --path . --export-release "Windows Desktop" build/windows/OrdemParanormal.exe
+          test -f build/windows/OrdemParanormal.exe
+          name="OrdemParanormal-${GITHUB_REF_NAME//\//-}-windows"
+          (cd build/windows && zip -q "../../$name.zip" OrdemParanormal.exe)
+          echo "ZIP=$name.zip" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: ${{ env.ZIP }}
+
+      - name: Publicar no GitHub Releases
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "$ZIP" --generate-notes --title "$GITHUB_REF_NAME"
