@@ -75,6 +75,7 @@ Cada item abaixo precisa de uma resposta antes da produção ampla de sprites.
 | V-21 | Projeção e tamanho do tile isométrico. | Losango 2:1 de 64×32, com personagem de ~64 px. Define o tamanho das peças de chão, parede e cobertura. |
 | V-22 | Na vista isométrica, as "4 direções iniciais" (DEC-03) são as 4 diagonais da tela (SE, SW, NW, NE) ou as 4 retas (S, W, N, E)? | As diagonais, que são os eixos do chão isométrico e exigem só 2 desenhos (SE e NE) mais espelho. As retas entram depois, para dar fluidez. |
 | V-23 | Git LFS: o envio de PNG é recusado (403) no ambiente da nuvem. | Folhas pequenas vão sem LFS por ora (como a fonte). Se crescer, liberar o host do LFS na rede do ambiente. |
+| V-24 | Nível de detalhe do pixel: A) tela 640×360 com personagem de 64 px, ou B) tela 960×540 com personagem de 96 px. Mesma proporção na tela; B tem mais detalhe, como pediu o Léo. | B. Muda a resolução interna da DEC-02 (escala inteira continua: ×2 em 1080p, ×4 em 4K). Comparação em `/mnt/project-files/arte/testes/comparacao_64_vs_96.png`. |
 
 ## 5. Leitura da referência de personagem
 

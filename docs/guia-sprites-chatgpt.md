@@ -85,6 +85,10 @@ Envie ao ChatGPT a ficha do Nikolai, cole o bloco de regras (seção 3), o bloco
 Vou mostrar no jogo e dizer se a escala, o alinhamento e a paleta ficaram bons. Se o ChatGPT trocar a roupa entre os quadros,
 peça "regenerate keeping exactly the same outfit as pose 1".
 
+Resultado do primeiro teste (Nikolai, 29/10/2026): o fundo magenta, as 8 poses na grade e o alinhamento funcionaram e a
+conversão ficou boa (`tools/sprites/converter.py`). A imagem veio virada para **leste** (de lado, para a direita) e não para
+sudeste, então vale como a direção E; para SE, acrescente ao pedido "we see his chest and both shoulders, body turned toward the camera".
+
 ## 6. Nome dos arquivos
 
 `<personagem>_<direção>.png`, tudo em minúsculas, sem acento. Exemplos: `nikolai_se.png`, `nikolai_ne.png`, `miguel_se.png`.
