@@ -86,7 +86,7 @@ Vou mostrar no jogo e dizer se a escala, o alinhamento e a paleta ficaram bons. 
 peça "regenerate keeping exactly the same outfit as pose 1".
 
 Resultado (Nikolai, 29/10/2026): o fundo magenta, as 8 poses na grade e o alinhamento funcionaram em todas as direções e a conversão ficou boa
-(`tools/sprites/converter.py`). Léo mandou as cinco direções (NE, SE, E, S, N) e as cinco estão no jogo; SO, O e NO usam o espelho. O Miguel (prompt em `/mnt/project-files/arte/prompts/miguel_prompt.md`) também veio completo, com a tatuagem no braço direito, e o Fernando também (macacão preto com cintos, barba e botas).
+(`tools/sprites/converter.py`). Léo mandou as cinco direções (NE, SE, E, S, N) e as cinco estão no jogo; SO, O e NO usam o espelho. O Miguel (prompt em `/mnt/project-files/arte/prompts/miguel_prompt.md`) também veio completo, com a tatuagem no braço direito, e o Fernando também (macacão preto com cintos, barba e botas). Como o ChatGPT o desenhou bem mais robusto, ele foi reduzido para 118 px de altura (os outros têm 128 px) para não parecer maior que o trio.
 Para os próximos personagens, peça as cinco direções na ordem da tabela, sempre na mesma conversa com a ficha.
 
 ## 6. Nome dos arquivos
