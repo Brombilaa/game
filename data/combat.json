@@ -20,7 +20,7 @@
 	"enemy_precision": 0,
 	"enemy_defense": 0,
 	"enemy_radius": 10,
-	"_fichas": "Armas vêm de armas.json e inimigos de inimigos.json (GameData). Distâncias delas em metros, convertidas por pixels_per_meter. attack_pa_cost vale até regras.json definir o custo de cada ataque; precisão/defesa de inimigo ainda não têm campo na ficha.",
+	"_fichas": "Armas vêm de armas.json e inimigos de inimigos.json (GameData). Distâncias delas em metros, convertidas por pixels_per_meter. attack_pa_cost vale enquanto custo_ataque_distancia_pa/custo_corpo_a_corpo_pa de regras.json forem null; enemy_precision/enemy_defense valem quando precisao/defesa da ficha forem null.",
 	"units": {
 		"agente": { "side": "player", "pv": 30, "initiative": 12, "precision": 2, "defense": 1, "weapon": "pistola_teste", "radius": 10 }
 	}

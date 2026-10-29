@@ -17,6 +17,8 @@ func _init() -> void:
 	_check(data.rule("turnos_chefe_por_rodada_max") == 2 and typeof(data.rule("turnos_chefe_por_rodada_max")) == TYPE_INT, "chefe tem até 2 turnos por rodada, como inteiro")
 	_check(data.rule("custo_recarga_pa") == null and "regras.custo_recarga_pa" in data.pending, "custo de recarga fica pendente")
 	_check(data.ids("personagens").size() == 4, "quatro personagens")
+	_check("regras.custo_ataque_distancia_pa" in data.pending, "custo de ataque à distância fica pendente")
+	_check(typeof(data.get_entry("inimigos", "cultista_teste")["defesa"]) == TYPE_INT, "defesa do inimigo é inteiro")
 	_check(data.get_entry("personagens", "fernando")["morte_roteirizada"], "Fernando tem morte roteirizada")
 	_check(data.ids("condicoes").size() == 6, "seis condições")
 	_check(data.ids("arvores").filter(func(id): return data.get_entry("arvores", id)["tipo"] == "compartilhada").size() == 5, "cinco árvores compartilhadas")

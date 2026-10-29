@@ -28,14 +28,14 @@ data.get_entry("armas", "pistola_teste")["dano"]  # [8, 12]
 
 | Arquivo | Conteúdo |
 | --- | --- |
-| `regras.json` | Constantes globais: atrasar, turnos de chefe, custos de ação (recarga, mira, corpo a corpo), altura, descanso, ganho de PV/SAN por nível. |
+| `regras.json` | Constantes globais: atrasar, turnos de chefe, custos de ação (ataque à distância, corpo a corpo, recarga, mira), altura, descanso, ganho de PV/SAN por nível. |
 | `atributos.json` | FOR, AGI, INT, PRE, VIG. |
 | `classes.json` | PV, SAN e iniciativa base por classe. |
 | `personagens.json` | Fernando, Rafael, Miguel, Nikolai: classe, atributos, arma inicial, árvores exclusivas. |
 | `condicoes.json` | As seis condições aprovadas: duração, efeito, acúmulo, remoção. |
 | `armas.json` | Tipo, dano, precisão base, alcance, distância ideal, carregador, reserva, efeitos críticos. |
 | `itens.json` | Categoria, tamanho na grade, pilha, custo em PA no combate, efeito e valor. |
-| `inimigos.json` | PV, PA, iniciativa, ataques, comportamento, resistências, fraquezas, fases de chefe. |
+| `inimigos.json` | PV, PA, iniciativa, precisão, defesa, ataques, comportamento, resistências, fraquezas, fases de chefe. |
 | `arvores.json` | Cinco árvores compartilhadas (uma por atributo) e uma exclusiva por personagem do trio. |
 
 Estado de execução (PV atual, munição no carregador, condições ativas) não fica aqui: estes
