@@ -70,6 +70,8 @@ func make_unit(unit_id: String, display_name: String, pos: Vector2) -> Combatant
 	u.pv = u.max_pv
 	u.initiative = int(sheet["agi"])
 	u.defense = float(sheet["defense"])
+	u.max_san = int(sheet.get("san", 0))
+	u.san = u.max_san
 	u.weapon = weapon(sheet["weapon"])
 	u.radius = float(sheet["radius"])
 	u.pos = pos

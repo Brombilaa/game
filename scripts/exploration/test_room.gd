@@ -28,7 +28,7 @@ const ENEMY_STEP_SECONDS := 0.4
 const FOLLOW_DISTANCE := 60.0  # distância fixa do seguidor ao líder (provisório)
 const FOLLOW_SPREAD := 1.0  # variação do ângulo do seguidor em radianos (provisório)
 const REVIVE_REACH := 16.0  # borda a borda: "adjacente" para reanimar
-const PORTRAIT_SIZE := Vector2(118, 36)
+const SHEET_SIZE := Vector2(212, 72)  # ficha do personagem no HUD (A, escolhida pelo Léo)
 const POPUP_SECONDS := 1.2
 const WALK_FRAME_SECONDS := 0.11
 const IDLE_FRAME_SECONDS := 0.7
@@ -122,6 +122,8 @@ func _ready() -> void:
 		agent_sheets.append(CharacterSheet.new(path))
 	looks[party[0]] = 0
 	looks[party[1]] = 1
+	party[1].max_san = 16  # Nikolai é Especialista (SAN inicial 16); a ficha de teste é a mesma
+	party[1].san = 16
 	_reset_follow_offsets(Vector2.RIGHT)
 	for variant in ENEMY_SHEETS:
 		enemy_sheets[variant] = CharacterSheet.new(ENEMY_SHEETS[variant])
@@ -664,7 +666,7 @@ func _draw() -> void:
 			_draw_box(it.block, it.front, it.top, it.height)
 	if mode == Mode.COMBAT:
 		_draw_preview(font)
-	_draw_portraits(font)
+	_draw_hud(font)
 	# Textos de rodapé presos à tela, não à sala que rola.
 	var footer := get_canvas_transform().affine_inverse() * Vector2(24, 520)
 	if mode == Mode.COMBAT:
@@ -855,7 +857,7 @@ func _update_followers(delta: float) -> void:
 
 
 func _portrait_rect(i: int) -> Rect2:
-	return Rect2(Vector2(960 - PORTRAIT_SIZE.x - 12, 12 + i * (PORTRAIT_SIZE.y + 6)), PORTRAIT_SIZE)
+	return Rect2(Vector2(8, 8 + i * (SHEET_SIZE.y + 6)), SHEET_SIZE)
 
 
 func _portrait_at(screen: Vector2) -> Combatant:
@@ -865,18 +867,105 @@ func _portrait_at(screen: Vector2) -> Combatant:
 	return null
 
 
-# Retratos provisórios (nome e PV) no canto da tela; clique troca o controlado.
-func _draw_portraits(font: Font) -> void:
+# HUD da ideia A (Léo, 29/10/2026): fichas do grupo à esquerda (retrato, PV, SAN, PA),
+# ordem dos turnos no topo e ações no rodapé durante o combate. Desenhado em pixels da tela.
+func _draw_hud(font: Font) -> void:
 	var to_world := get_canvas_transform().affine_inverse()
 	for i in party.size():
-		var m := party[i]
-		var rect := _portrait_rect(i)
-		var pos := to_world * rect.position
-		var box := Rect2(pos, rect.size)
-		draw_rect(box, Color(0, 0, 0, 0.6))
-		draw_rect(box, PlaceholderArt.color("destaque") if m == player else Color(1, 1, 1, 0.25), false, 1.0)
-		var label := "%d %s" % [i + 1, m.name] + ("  MORTO" if m.dead else ("  CAÍDO" if not m.is_alive() else ""))
-		draw_string(font, pos + Vector2(6, 14), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color.WHITE)
-		var bar := Rect2(pos + Vector2(6, 22), Vector2(rect.size.x - 12, 6))
-		draw_rect(bar, Color(0.2, 0.2, 0.2))
-		draw_rect(Rect2(bar.position, Vector2(bar.size.x * float(m.pv) / m.max_pv, bar.size.y)), Color(0.3, 0.85, 0.35))
+		_draw_sheet(font, party[i], to_world * _portrait_rect(i).position)
+	if mode == Mode.COMBAT and turns:
+		_draw_turn_order(font, to_world)
+		if turns.current and turns.current.side == Combatant.Side.PLAYER:
+			_draw_actions(font, to_world)
+
+
+func _draw_sheet(font: Font, m: Combatant, pos: Vector2) -> void:
+	var active := m == player
+	var gold := PlaceholderArt.color("destaque")
+	var box := Rect2(pos, SHEET_SIZE)
+	draw_rect(box, Color(0.09, 0.07, 0.05, 0.88))
+	draw_rect(box, gold if active else Color(0.43, 0.34, 0.24), false, 1.0)
+	var face := Rect2(pos + Vector2(6, 6), Vector2(60, 60))
+	draw_rect(face, Color(0.16, 0.12, 0.09))
+	agent_sheets[looks.get(m, 0)].draw_portrait(self, face)
+	if not m.is_alive():
+		draw_rect(face, Color(0.4, 0, 0, 0.5))
+	draw_rect(face, gold if active else Color(0.43, 0.34, 0.24), false, 1.0)
+	draw_string(font, pos + Vector2(74, 16), m.name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, gold if active else Color(0.93, 0.89, 0.8))
+	_draw_bar(font, pos + Vector2(74, 22), "PV", m.pv, m.max_pv, Color(0.67, 0.14, 0.14))
+	_draw_bar(font, pos + Vector2(74, 38), "SAN", m.san, m.max_san, Color(0.27, 0.43, 0.67))
+	var status := ""
+	if m.dead:
+		status = "MORTO"
+	elif not m.is_alive():
+		status = "CAÍDO"
+	elif mode == Mode.COMBAT and turns and turns.current == m:
+		for k in turns.turn_pa(m):
+			var c := pos + Vector2(100 + k * 14, 62)
+			draw_circle(c, 5.0, gold if k < m.pa else Color(0.2, 0.17, 0.13))
+		draw_string(font, pos + Vector2(74, 66), "PA", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(0.66, 0.6, 0.49))
+	elif mode == Mode.COMBAT:
+		status = "aguardando"
+	if status != "":
+		draw_string(font, pos + Vector2(74, 66), status, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 0.45, 0.45) if status != "aguardando" else Color(0.66, 0.6, 0.49))
+
+
+func _draw_bar(font: Font, at: Vector2, label: String, value: int, maximum: int, color: Color) -> void:
+	draw_string(font, at + Vector2(0, 10), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(0.66, 0.6, 0.49))
+	var bar := Rect2(at + Vector2(24, 1), Vector2(106, 11))
+	draw_rect(bar, Color(0.12, 0.1, 0.09))
+	if maximum > 0:
+		draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(float(value) / maximum, 0.0, 1.0), bar.size.y)), color)
+	draw_string(font, bar.position + Vector2(4, 9), "%d/%d" % [value, maximum], HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(0.93, 0.89, 0.8))
+
+
+# Faixa no topo: retratos na ordem da rodada, o da vez em destaque e inimigos em vermelho.
+func _draw_turn_order(font: Font, to_world: Transform2D) -> void:
+	var units: Array[Combatant] = []
+	for u in turns.order:
+		if u.is_alive():
+			units.append(u)
+	var size := 34.0
+	var width := units.size() * (size + 8) + 8
+	var pos := to_world * Vector2(480 - width * 0.5, 6)
+	draw_rect(Rect2(pos, Vector2(width, 58)), Color(0.09, 0.07, 0.05, 0.88))
+	draw_string(font, pos + Vector2(8, 12), "RODADA %d · ORDEM DOS TURNOS" % turns.round_number, HORIZONTAL_ALIGNMENT_LEFT, width - 16, 9, Color(0.66, 0.6, 0.49))
+	for k in units.size():
+		var u := units[k]
+		var face := Rect2(pos + Vector2(8 + k * (size + 8), 18), Vector2(size, size))
+		draw_rect(face, Color(0.16, 0.12, 0.09))
+		_draw_face(u, face)
+		var edge := PlaceholderArt.color("destaque") if u == turns.current else (Color(0.6, 0.2, 0.2) if u.side == Combatant.Side.ENEMY else Color(0.43, 0.34, 0.24))
+		draw_rect(face, edge, false, 2.0 if u == turns.current else 1.0)
+
+
+func _draw_face(u: Combatant, rect: Rect2) -> void:
+	var i := enemies.find(u)
+	if i < 0:
+		agent_sheets[looks.get(u, 0)].draw_portrait(self, rect)
+		return
+	var variant: String = ENEMY_VARIANTS[i % ENEMY_VARIANTS.size()]
+	if enemy_sheets.has(variant):
+		enemy_sheets[variant].draw_portrait(self, rect)
+	else:
+		var tex := PlaceholderArt.character_texture(variant, PlaceholderArt.Dir.SOUTH, 0)
+		draw_texture_rect_region(tex, rect, Rect2(4, 0, 24, 24))
+
+
+# Rodapé: ações do personagem da vez (arma equipada e kit), com o custo em PA.
+func _draw_actions(font: Font, to_world: Transform2D) -> void:
+	var kit := cfg.game_data.get_entry("itens", "kit_primeiros_socorros")
+	var slots := [
+		[str(player.weapon["id"]).capitalize(), "%d PA" % int(player.weapon["pa_cost"]), true],
+		["Kit", "%d PA · x%d" % [int(kit["custo_pa_combate"]), kits], false],
+		["Mover", "1 PA / 2 m", false],
+	]
+	var slot := Vector2(82, 40)
+	var width := slots.size() * (slot.x + 6) - 6
+	var pos := to_world * Vector2(480 - width * 0.5, 540 - slot.y - 12)
+	for k in slots.size():
+		var r := Rect2(pos + Vector2(k * (slot.x + 6), 0), slot)
+		draw_rect(r, Color(0.09, 0.07, 0.05, 0.88))
+		draw_rect(r, PlaceholderArt.color("destaque") if slots[k][2] else Color(0.43, 0.34, 0.24), false, 1.0)
+		draw_string(font, r.position + Vector2(0, 17), slots[k][0], HORIZONTAL_ALIGNMENT_CENTER, slot.x, 12, Color(0.93, 0.89, 0.8))
+		draw_string(font, r.position + Vector2(0, 33), slots[k][1], HORIZONTAL_ALIGNMENT_CENTER, slot.x, 9, Color(0.66, 0.6, 0.49))
