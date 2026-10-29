@@ -1,12 +1,12 @@
 extends SceneTree
-# Teste headless das folhas de poses do Nikolai e do Miguel. Rodar com:
+# Teste headless das folhas de poses do Nikolai, do Miguel e do Fernando. Rodar com:
 #   godot --headless --path . -s tests/test_character_sheet.gd
 
 var failures := 0
 
 
 func _init() -> void:
-	for who in ["nikolai", "miguel"]:
+	for who in ["nikolai", "miguel", "fernando"]:
 		_check_sheet(who)
 
 	var D := CharacterSheet.Dir

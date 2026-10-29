@@ -4,13 +4,13 @@ extends Node2D
 # Inimigo que vê o personagem (alcance + linha de visão) inicia o combate na hora.
 # Combate por turnos (TurnManager + CombatRules): no turno do agente, clique no chão
 # move (gasta PA), clique no inimigo ataca, clique na cobertura mira a estrutura,
-# Espaço passa o turno e D atrasa. R reinicia a sala. Tab troca o visual do agente (Nikolai/Miguel).
+# Espaço passa o turno e D atrasa. R reinicia a sala. Tab troca o visual do agente (Nikolai/Miguel/Fernando).
 # Visual provisório: resolução interna 960×540 (DEC-2026-10-29-10), câmera segue a unidade
 # em foco e a sala rola. Vista isométrica 2:1 (DEC-2026-10-29-08): a lógica continua em
 # coordenadas planas de 1280×720 e só o desenho e o clique passam pela projeção (`_iso`).
 # Chão em losangos de 96×48 (um losango = TILE_WORLD unidades da sala); paredes, porta e
 # coberturas são caixas; tudo é desenhado por ordem de profundidade (x + y).
-# O agente usa a folha real do Nikolai ou do Miguel (CharacterSheet, 128 px; só o visual
+# O agente usa a folha real do Nikolai, do Miguel ou do Fernando (CharacterSheet, 128 px; só o visual
 # muda); inimigos e chão são arte provisória (PlaceholderArt ampliada, losangos lisos).
 
 enum Mode { EXPLORATION, COMBAT, GAME_OVER }
@@ -30,7 +30,11 @@ const TILE_SCREEN := Vector2(96, 48)  # losango 2:1 na tela (V-21)
 const BLOCK_HEIGHT := 160.0  # altura na tela das paredes e da porta: ~1,25× o herói de 128 px
 const FRONT_WALL_HEIGHT := 24.0  # paredes voltadas para a câmera
 const COVER_HEIGHT := {"partial": 56.0, "full": 100.0}
-const AGENT_SHEETS := ["res://assets/sprites/personagens/nikolai", "res://assets/sprites/personagens/miguel"]
+const AGENT_SHEETS := [
+	"res://assets/sprites/personagens/nikolai",
+	"res://assets/sprites/personagens/miguel",
+	"res://assets/sprites/personagens/fernando",
+]
 const ROOM_SIZE := Vector2i(1280, 720)
 const ENEMY_VARIANTS := ["cultista", "atirador"]  # mesma ordem de `enemies`
 
