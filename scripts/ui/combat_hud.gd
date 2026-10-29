@@ -7,10 +7,10 @@ extends CanvasLayer
 signal end_turn_requested
 
 const NOTICE_SECONDS := 2.0  # provisório: duração de avisos está PENDENTE no GDD
-const PIP_SIZE := Vector2(8, 8)
+const PIP_SIZE := Vector2(12, 12)
 const PIP_FULL := Color(0.95, 0.8, 0.25)
 const PIP_EMPTY := Color(0.3, 0.3, 0.35)
-const FONT_SIZE := 8  # em pixels da resolução interna 640×360
+const FONT_SIZE := 12  # em pixels da resolução interna 960×540
 
 var mode_label: Label
 var notice_label: Label
@@ -81,16 +81,16 @@ func show_notice(text: String) -> void:
 
 func _build() -> void:
 	mode_label = Label.new()
-	mode_label.position = Vector2(16, 12)
-	mode_label.add_theme_font_size_override("font_size", 12)
+	mode_label.position = Vector2(24, 18)
+	mode_label.add_theme_font_size_override("font_size", 18)
 	add_child(mode_label)
 
 	notice_label = Label.new()
 	notice_label.anchor_right = 1.0
-	notice_label.offset_top = 40
-	notice_label.offset_bottom = 65
+	notice_label.offset_top = 60
+	notice_label.offset_bottom = 98
 	notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	notice_label.add_theme_font_size_override("font_size", 20)
+	notice_label.add_theme_font_size_override("font_size", 30)
 	notice_label.visible = false
 	add_child(notice_label)
 
@@ -105,17 +105,17 @@ func _build() -> void:
 	turn_panel.anchor_right = 0.5
 	turn_panel.anchor_top = 1.0
 	turn_panel.anchor_bottom = 1.0
-	turn_panel.offset_left = -100
-	turn_panel.offset_right = 100
-	turn_panel.offset_top = -40
-	turn_panel.offset_bottom = -12
+	turn_panel.offset_left = -150
+	turn_panel.offset_right = 150
+	turn_panel.offset_top = -60
+	turn_panel.offset_bottom = -18
 	turn_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	turn_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	add_child(turn_panel)
 
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.add_theme_constant_override("separation", 8)
+	row.add_theme_constant_override("separation", 12)
 	turn_panel.add_child(row)
 
 	unit_label = Label.new()

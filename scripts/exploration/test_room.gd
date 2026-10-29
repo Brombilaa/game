@@ -5,8 +5,10 @@ extends Node2D
 # Combate por turnos (TurnManager + CombatRules): no turno do agente, clique no chão
 # move (gasta PA), clique no inimigo ataca, clique na cobertura mira a estrutura,
 # Espaço passa o turno e D atrasa. R reinicia a sala.
-# Visual provisório (PlaceholderArt): resolução interna 640×360, câmera segue a unidade
+# Visual provisório: resolução interna 960×540 (DEC-2026-10-29-10), câmera segue a unidade
 # em foco e a sala de 1280×720 rola; unidades desenhadas por ordem de profundidade (y).
+# O agente usa a folha real do Nikolai (CharacterSheet); inimigos e chão ainda são
+# PlaceholderArt, ampliado 2× para ficar na escala do personagem de ~96 px.
 
 enum Mode { EXPLORATION, COMBAT, GAME_OVER }
 
@@ -17,8 +19,11 @@ const STAND_OFFSET := 6.0
 const PERCEPTION_RANGE := 300.0  # provisório: alcance de percepção está PENDENTE no GDD
 const ENEMY_STEP_SECONDS := 0.4
 const POPUP_SECONDS := 1.2
-const WALK_FRAME_SECONDS := 0.15
-const WALL_TOP := 6.0  # faixa clara no topo da parede, para a leitura em 3/4
+const WALK_FRAME_SECONDS := 0.11
+const IDLE_FRAME_SECONDS := 0.7
+const PLACEHOLDER_SCALE := 2  # arte provisória de 32×48 ampliada para ~96 px
+const AGENT_SHEET := "res://assets/sprites/personagens/nikolai_e.png"
+const WALL_TOP := 9.0  # faixa clara no topo da parede, para a leitura em 3/4
 const ROOM_SIZE := Vector2i(1280, 720)
 const ENEMY_VARIANTS := ["cultista", "atirador"]  # mesma ordem de `enemies`
 
@@ -60,12 +65,16 @@ var hud := CombatHud.new()
 var audio := AudioDirector.new()
 var camera := Camera2D.new()
 var facing := {}  # Combatant -> PlaceholderArt.Dir
+var flipped := {}  # Combatant -> true se está olhando para a esquerda
 var walk_time := 0.0
+var idle_frame := 0
+var agent_sheet: CharacterSheet
 
 
 func _ready() -> void:
 	add_child(hud)
 	add_child(audio)
+	agent_sheet = CharacterSheet.new(AGENT_SHEET)
 	camera.limit_left = 0
 	camera.limit_top = 0
 	camera.limit_right = ROOM_SIZE.x
@@ -155,7 +164,12 @@ func _process(delta: float) -> void:
 	var focus := turns.current if mode == Mode.COMBAT and turns and turns.current else player
 	camera.position = focus.pos
 	if moving_unit and not path.is_empty():
-		facing[moving_unit] = PlaceholderArt.dir_from_vector(path[0] - moving_unit.pos)
+		var dir := PlaceholderArt.dir_from_vector(path[0] - moving_unit.pos)
+		facing[moving_unit] = dir
+		if dir == PlaceholderArt.Dir.EAST:
+			flipped[moving_unit] = false
+		elif dir == PlaceholderArt.Dir.WEST:
+			flipped[moving_unit] = true  # subindo ou descendo mantém o lado anterior
 		walk_time += delta
 		moving_unit.pos = moving_unit.pos.move_toward(path[0], SPEED * delta)
 		if moving_unit.pos.is_equal_approx(path[0]):
@@ -164,6 +178,10 @@ func _process(delta: float) -> void:
 			moving_unit = null
 			walk_time = 0.0
 			move_finished.emit()
+		queue_redraw()
+	var breath := int(Time.get_ticks_msec() / (IDLE_FRAME_SECONDS * 1000.0)) % 2
+	if breath != idle_frame:
+		idle_frame = breath
 		queue_redraw()
 	if mode != Mode.EXPLORATION:
 		return
@@ -370,7 +388,9 @@ func _popup(at: Vector2, text: String) -> void:
 
 func _draw() -> void:
 	var font := ThemeDB.fallback_font
-	draw_texture_rect(PlaceholderArt.floor_texture(), Rect2(Vector2.ZERO, ROOM_SIZE), true)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2(PLACEHOLDER_SCALE, PLACEHOLDER_SCALE))
+	draw_texture_rect(PlaceholderArt.floor_texture(), Rect2(Vector2.ZERO, ROOM_SIZE / PLACEHOLDER_SCALE), true)
+	draw_set_transform(Vector2.ZERO)
 	for w in walls:
 		_draw_block(w, PlaceholderArt.color("parede"), PlaceholderArt.color("parede_topo"))
 	if door_open:
@@ -385,7 +405,7 @@ func _draw() -> void:
 			_draw_block(c.rect, PlaceholderArt.color("couro"), PlaceholderArt.color("couro_claro"))
 		else:
 			_draw_block(c.rect, PlaceholderArt.color("parede"), PlaceholderArt.color("metal"))
-		draw_string(font, c.rect.position + Vector2(2, 14), "%s %d" % ["P" if c.kind == "partial" else "C", c.hp], HORIZONTAL_ALIGNMENT_LEFT, -1, 6, PlaceholderArt.color("contorno"))
+		draw_string(font, c.rect.position + Vector2(2, 14), "%s %d" % ["P" if c.kind == "partial" else "C", c.hp], HORIZONTAL_ALIGNMENT_LEFT, -1, 9, PlaceholderArt.color("contorno"))
 	if mode == Mode.EXPLORATION:
 		for e in enemies:
 			if e.is_alive():
@@ -397,13 +417,13 @@ func _draw() -> void:
 	if mode == Mode.COMBAT:
 		_draw_preview(font)
 	# Textos de rodapé presos à tela, não à sala que rola.
-	var footer := get_canvas_transform().affine_inverse() * Vector2(16, 345)
+	var footer := get_canvas_transform().affine_inverse() * Vector2(24, 520)
 	if mode == Mode.COMBAT:
-		draw_string(font, footer, "Rodada %d  |  Espaço passa, D atrasa, R reinicia" % turns.round_number, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(1, 1, 1, 0.6))
+		draw_string(font, footer, "Rodada %d  |  Espaço passa, D atrasa, R reinicia" % turns.round_number, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 1, 0.6))
 	elif mode == Mode.GAME_OVER:
-		draw_string(font, footer, "Game Over (R reinicia)", HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(1, 0.5, 0.5))
+		draw_string(font, footer, "Game Over (R reinicia)", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 0.5, 0.5))
 	for p in popups:
-		draw_string(font, p.pos, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(1, 1, 0.7, clampf(p.time / POPUP_SECONDS * 2.0, 0.0, 1.0)))
+		draw_string(font, p.pos, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 0.7, clampf(p.time / POPUP_SECONDS * 2.0, 0.0, 1.0)))
 
 
 # Bloco em 3/4: face frontal com uma faixa clara de topo.
@@ -414,21 +434,25 @@ func _draw_block(r: Rect2, front: Color, top: Color) -> void:
 
 func _draw_unit(u: Combatant) -> void:
 	draw_set_transform(u.pos, 0.0, Vector2(1.0, 0.4))  # sombra achatada sob os pés
-	draw_circle(Vector2.ZERO, u.radius, Color(0, 0, 0, 0.45))
+	draw_circle(Vector2.ZERO, 18.0, Color(0, 0, 0, 0.45))
 	draw_set_transform(Vector2.ZERO)
 	if turns and u == turns.current:
 		draw_set_transform(u.pos, 0.0, Vector2(1.0, 0.5))
-		draw_arc(Vector2.ZERO, u.radius + 5, 0.0, TAU, 32, PlaceholderArt.color("destaque"), 2.0)
+		draw_arc(Vector2.ZERO, 26.0, 0.0, TAU, 32, PlaceholderArt.color("destaque"), 2.0)
 		draw_set_transform(Vector2.ZERO)
-	var frame := 0
-	if u == moving_unit:
-		frame = 1 + int(walk_time / WALK_FRAME_SECONDS) % 2
+	var walking := u == moving_unit
 	var i := enemies.find(u)
-	var variant: String = ENEMY_VARIANTS[i % ENEMY_VARIANTS.size()] if i >= 0 else "agente"
-	var tex := PlaceholderArt.character_texture(variant, facing.get(u, PlaceholderArt.Dir.SOUTH), frame)
-	draw_texture(tex, (u.pos - PlaceholderArt.PIVOT).round())
+	if i < 0:
+		var frames: Array = CharacterSheet.WALK_FRAMES if walking else CharacterSheet.IDLE_FRAMES
+		var n := int(walk_time / WALK_FRAME_SECONDS) % frames.size() if walking else idle_frame
+		agent_sheet.draw(self, u.pos, frames[n], flipped.get(u, false))
+	else:
+		var frame := 1 + int(walk_time / WALK_FRAME_SECONDS) % 2 if walking else 0
+		var tex := PlaceholderArt.character_texture(ENEMY_VARIANTS[i % ENEMY_VARIANTS.size()], facing.get(u, PlaceholderArt.Dir.SOUTH), frame)
+		var size := Vector2(PlaceholderArt.FRAME_SIZE * PLACEHOLDER_SCALE)
+		draw_texture_rect(tex, Rect2((u.pos - PlaceholderArt.PIVOT * PLACEHOLDER_SCALE).round(), size), false)
 	if mode != Mode.EXPLORATION:
-		var bar := Rect2(u.pos + Vector2(-14, -PlaceholderArt.PIVOT.y - 6), Vector2(28, 3))
+		var bar := Rect2(u.pos + Vector2(-20, -CharacterSheet.HEIGHT - 8), Vector2(40, 4))
 		draw_rect(bar, Color(0.2, 0.2, 0.2))
 		draw_rect(Rect2(bar.position, Vector2(bar.size.x * float(u.pv) / u.max_pv, bar.size.y)), Color(0.3, 0.85, 0.35))
 
@@ -458,4 +482,4 @@ func _draw_preview(font: Font) -> void:
 			var cost := rules.move_cost(CombatRules.path_length(route))
 			text = "%d PA" % cost if cost <= player.pa else "%d PA (parcial)" % player.pa
 	if text != "":
-		draw_string(font, mouse + Vector2(10, -6), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Color.WHITE)
+		draw_string(font, mouse + Vector2(14, -8), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color.WHITE)

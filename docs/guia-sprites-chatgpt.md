@@ -4,7 +4,7 @@ Para o Léo. Explica o que pedir ao ChatGPT para gerar os personagens e o cenár
 em vista isométrica, de um jeito que o Claude consiga converter em sprites do jogo.
 Decisões que sustentam este guia: DEC-2026-10-29-08 e 09 em `direcao-visual.md`.
 
-Os valores marcados como **proposta** ainda não foram aprovados e estão em V-19, V-21 e V-22.
+Os valores marcados como **proposta** ainda não foram aprovados e estão em V-21 e V-22.
 Os prompts estão em inglês porque o gerador de imagens obedece melhor assim.
 
 ## 1. Como o processo funciona
@@ -23,12 +23,12 @@ imagem eu ajusto o processo e o prompt antes de você gastar tempo com os outros
 | Item | Valor |
 | --- | --- |
 | Vista | Isométrica 2:1, câmera olhando de cima uns 30 graus (como Baldur's Gate ou Fallout 2) |
-| Altura final do personagem | cerca de 64 px na resolução 640×360 |
-| Quadro final | 96×96 px, pés no centro, 8 px acima da borda de baixo |
+| Altura final do personagem | 96 px na tela interna de 960×540 (DEC-2026-10-29-10) |
+| Quadro final | 144×144 px, pés no centro, 8 px acima da borda de baixo |
 | Direções | 8 no total, mas só 5 são desenhadas (S, SE, E, NE, N); as outras 3 são o espelho |
 | Primeira leva (DEC-03) | As 4 diagonais da tela (SE, SW, NW, NE) = só 2 desenhos: SE e NE |
 | Animações da primeira leva | Parado (2 quadros) e andando (6 quadros) |
-| Tile do chão | Losango 64×32 (2:1) |
+| Tile do chão | Losango 96×48 (2:1) |
 
 O espelho tem um custo: o coldre e a bolsa trocam de lado nas direções espelhadas. Se isso importar para algum personagem, desenhe a direção espelhada à parte.
 
@@ -85,7 +85,7 @@ Envie ao ChatGPT a ficha do Nikolai, cole o bloco de regras (seção 3), o bloco
 Vou mostrar no jogo e dizer se a escala, o alinhamento e a paleta ficaram bons. Se o ChatGPT trocar a roupa entre os quadros,
 peça "regenerate keeping exactly the same outfit as pose 1".
 
-Resultado do primeiro teste (Nikolai, 29/10/2026): o fundo magenta, as 8 poses na grade e o alinhamento funcionaram e a
+Resultado do primeiro teste (Nikolai, 29/10/2026), já convertido e no jogo: o fundo magenta, as 8 poses na grade e o alinhamento funcionaram e a
 conversão ficou boa (`tools/sprites/converter.py`). A imagem veio virada para **leste** (de lado, para a direita) e não para
 sudeste, então vale como a direção E; para SE, acrescente ao pedido "we see his chest and both shoulders, body turned toward the camera".
 

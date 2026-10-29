@@ -28,4 +28,6 @@
 
 # Exceção: a Special Elite (150 KB) vai direto no Git porque o envio ao LFS foi recusado
 # (403) no ambiente da nuvem. Migrar para o LFS depois com `git lfs migrate import`.
+# O mesmo vale para as folhas de sprites dos personagens (algumas dezenas de KB cada).
 assets/fonts/SpecialElite-Regular.ttf -filter -diff -merge -text
+assets/sprites/personagens/*.png -filter -diff -merge -text
