@@ -20,6 +20,10 @@ window/stretch/mode="canvas_items"
 window/stretch/aspect="keep"
 window/stretch/scale_mode="integer"
 
+[gui]
+
+theme/custom_font="res://assets/fonts/SpecialElite-Regular.ttf"
+
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0

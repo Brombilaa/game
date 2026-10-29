@@ -25,3 +25,7 @@
 *.cfg text eol=lf
 *.json text eol=lf
 *.md text eol=lf
+
+# Exceção: a Special Elite (150 KB) vai direto no Git porque o envio ao LFS foi recusado
+# (403) no ambiente da nuvem. Migrar para o LFS depois com `git lfs migrate import`.
+assets/fonts/SpecialElite-Regular.ttf -filter -diff -merge -text
