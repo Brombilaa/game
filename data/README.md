@@ -7,7 +7,7 @@ o esquema está em `scripts/core/data_schema.gd` e o carregador em `scripts/core
 var data := GameData.new()
 if not data.load_dir():        # lê res://data
 	push_error("\n".join(data.errors))
-data.rule("pa_por_turno")      # 3
+data.rule("turnos_chefe_por_rodada_max")  # 2
 data.get_entry("armas", "pistola_teste")["dano"]  # [8, 12]
 ```
 
@@ -28,7 +28,7 @@ data.get_entry("armas", "pistola_teste")["dano"]  # [8, 12]
 
 | Arquivo | Conteúdo |
 | --- | --- |
-| `regras.json` | Constantes globais: PA, limites de acerto, custos de ação, crítico, cobertura, altura, descanso, ganho de PV/SAN por nível. |
+| `regras.json` | Constantes globais: atrasar, turnos de chefe, custos de ação (recarga, mira, corpo a corpo), altura, descanso, ganho de PV/SAN por nível. |
 | `atributos.json` | FOR, AGI, INT, PRE, VIG. |
 | `classes.json` | PV, SAN e iniciativa base por classe. |
 | `personagens.json` | Fernando, Rafael, Miguel, Nikolai: classe, atributos, arma inicial, árvores exclusivas. |
@@ -40,5 +40,9 @@ data.get_entry("armas", "pistola_teste")["dano"]  # [8, 12]
 
 Estado de execução (PV atual, munição no carregador, condições ativas) não fica aqui: estes
 arquivos são só definições estáticas, como recomenda o Anexo C do GDD.
+
+`combat.json` e `audio_cues.json` são lidos por outros sistemas (`CombatConfig` e `AudioDirector`) e
+não passam por este carregador. PA por turno, limites de acerto, crítico, cobertura e distância
+por PA estão em `combat.json` por enquanto.
 
 Ao exportar o jogo, incluir `data/*.json` no filtro de recursos não importados do preset.

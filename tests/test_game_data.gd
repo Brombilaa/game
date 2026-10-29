@@ -14,9 +14,8 @@ func _init() -> void:
 	_check(data.load_dir(), "data/ carrega sem erros")
 	for e in data.errors:
 		print("       ", e)
-	_check(data.rule("pa_por_turno") == 3 and typeof(data.rule("pa_por_turno")) == TYPE_INT, "3 PA por turno, como inteiro")
-	_check(is_equal_approx(data.rule("chance_acerto_min"), 0.05) and is_equal_approx(data.rule("chance_acerto_max"), 0.95), "acerto limitado a 5%–95%")
-	_check(data.rule("metros_por_pa") == null and "regras.metros_por_pa" in data.pending, "metros por PA fica pendente")
+	_check(data.rule("turnos_chefe_por_rodada_max") == 2 and typeof(data.rule("turnos_chefe_por_rodada_max")) == TYPE_INT, "chefe tem até 2 turnos por rodada, como inteiro")
+	_check(data.rule("custo_recarga_pa") == null and "regras.custo_recarga_pa" in data.pending, "custo de recarga fica pendente")
 	_check(data.ids("personagens").size() == 4, "quatro personagens")
 	_check(data.get_entry("personagens", "fernando")["morte_roteirizada"], "Fernando tem morte roteirizada")
 	_check(data.ids("condicoes").size() == 6, "seis condições")
@@ -43,7 +42,7 @@ func _init() -> void:
 	_expect_error(base, func(s): s["personagens"][1]["atributos"]["SOR"] = 1, "personagens.rafael.atributos.SOR: atributo desconhecido")
 	_expect_error(base, func(s): s["inimigos"][0]["ataques"] = ["bazuca"], "\"bazuca\" não existe em armas")
 	_expect_error(base, func(s): s["arvores"][5]["personagem"] = null, "arvores.exclusiva_rafael: árvore exclusiva precisa de \"personagem\"")
-	_expect_error(base, func(s): s["regras"]["chance_acerto_min"] = 0.99, "chance_acerto_min maior que chance_acerto_max")
+	_expect_error(base, func(s): s["regras"]["descanso_completo_percentual"] = 1.5, "regras.descanso_completo_percentual: 1.5 é maior que o máximo")
 	_expect_error(base, func(s): s["regras"] = [], "regras: esperado um objeto")
 	_expect_error(base, func(s): s.erase("itens"), "itens: tabela ausente")
 

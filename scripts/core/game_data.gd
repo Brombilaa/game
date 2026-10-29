@@ -52,7 +52,6 @@ func load_from(sources: Dictionary) -> bool:
 		else:
 			_tables[table] = _read_table(table, sources[table])
 	_check_refs()
-	_check_rules()
 	return errors.is_empty()
 
 
@@ -207,12 +206,6 @@ func _check_attribute_keys(where: String, value: Dictionary) -> void:
 	for key in ids("atributos"):
 		if not value.has(key):
 			errors.append("%s.%s: atributo ausente" % [where, key])
-
-
-func _check_rules() -> void:
-	if rules.get("chance_acerto_min") is float and rules.get("chance_acerto_max") is float \
-			and rules["chance_acerto_min"] > rules["chance_acerto_max"]:
-		errors.append("regras: chance_acerto_min maior que chance_acerto_max")
 
 
 func _check_limits(where: String, v: float, f: Dictionary) -> void:
