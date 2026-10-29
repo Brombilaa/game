@@ -50,6 +50,7 @@ const FIELDS := {
 		"papel": {"t": "texto", "nulo": false},
 		"classe": {"t": "texto", "nulo": true, "ref": "classes"},
 		"arma_inicial": {"t": "texto", "nulo": true, "ref": "armas"},
+		"arma_secundaria": {"t": "texto", "nulo": true, "ref": "armas"},
 		"atributos": {"t": "atributos", "nulo": false},
 		"arvores_exclusivas": {"t": "lista", "nulo": false, "ref": "arvores"},
 		"morte_roteirizada": {"t": "bool", "nulo": false},
