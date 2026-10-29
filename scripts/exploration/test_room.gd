@@ -27,9 +27,17 @@ const IDLE_FRAME_SECONDS := 0.7
 const PLACEHOLDER_SCALE := 2.7  # arte provisória de 32×48 ampliada para ~130 px (a altura do herói)
 const TILE_WORLD := 64.0  # lado de um losango do chão, em unidades da sala
 const TILE_SCREEN := Vector2(96, 48)  # losango 2:1 na tela (V-21)
-const BLOCK_HEIGHT := 160.0  # altura na tela das paredes e da porta: ~1,25× o herói de 128 px
+const BLOCK_HEIGHT := 176.0  # altura na tela das paredes: ~1,35× o herói de 128 px (a arte tem 171 px)
 const FRONT_WALL_HEIGHT := 24.0  # paredes voltadas para a câmera
-const COVER_HEIGHT := {"partial": 56.0, "full": 100.0}
+const FRONT_WALL_COLOR := Color("3b2a1d")  # madeira escura do rodapé da arte
+const WALL_SPAN := 128.0  # um painel de parede cobre 2 losangos (96 px de tela) ao longo do eixo
+# Cobertura -> móvel que a representa. O guarda-roupa é o bloco sólido do meio da sala.
+const COVER_PROPS := {"partial": "movel_caixote", "full": "movel_estante"}
+const BLOCK_PROP := "movel_guarda_roupa"
+const BLOCK_CENTER := Vector2(460, 220)  # centro do Rect2(400, 200, 120, 40) de `walls`
+const WALL_BACK := 0  # eixo x, voltada para +y (norte da sala)
+const DOOR_OFFSET := Vector2(8, 0)  # ajuste fino da porta dentro do vão da parede
+const WALL_SIDE := 1  # eixo y, voltada para +x (oeste da sala e parede da porta)
 const AGENT_SHEETS := [
 	"res://assets/sprites/personagens/nikolai",
 	"res://assets/sprites/personagens/miguel",
@@ -84,6 +92,7 @@ var idle_frame := 0
 var agent_sheets: Array[CharacterSheet] = []
 var agent_look := 0
 var enemy_sheets := {}  # variante -> CharacterSheet
+var scenery := Scenery.new()
 
 
 func _ready() -> void:
@@ -466,27 +475,33 @@ func _draw() -> void:
 	var items: Array = []
 	for w in walls:
 		# As paredes de frente (sul e leste) ficam baixas para não esconder a sala.
-		var wall_height := FRONT_WALL_HEIGHT if w.end.y >= ROOM_SIZE.y or w.end.x >= ROOM_SIZE.x else BLOCK_HEIGHT
+		var front: bool = w.end.y >= ROOM_SIZE.y or w.end.x >= ROOM_SIZE.x
+		if not front:
+			continue
 		for piece in _pieces(w):
-			if not _visible(piece.get_center()):
-				continue
-			items.append({"key": piece.get_center().x + piece.get_center().y, "block": piece, "front": PlaceholderArt.color("parede"), "top": PlaceholderArt.color("parede_topo"), "height": wall_height})
+			if _visible(piece.get_center()):
+				items.append({"key": piece.get_center().x + piece.get_center().y, "block": piece, "front": FRONT_WALL_COLOR, "top": FRONT_WALL_COLOR.lightened(0.1), "height": FRONT_WALL_HEIGHT})
+	var panels: Array = []
+	panels.append_array(_wall_run(WALL_BACK, 8.0, 0.0, ROOM_SIZE.x))
+	panels.append_array(_wall_run(WALL_SIDE, 8.0, 0.0, ROOM_SIZE.y))
+	var door_mid := door.get_center()
+	panels.append_array(_wall_run(WALL_SIDE, door_mid.x, 0.0, door_mid.y - WALL_SPAN * 0.5))
+	panels.append_array(_wall_run(WALL_SIDE, door_mid.x, door_mid.y + WALL_SPAN * 0.5, ROOM_SIZE.y))
+	panels.append({"at": door_mid, "name": "parede_y_vao"})
+	for p in panels:
+		if _visible(p.at):
+			items.append({"key": p.at.x + p.at.y, "panel": p})
 	if not door_open:
-		for piece in _pieces(door):
-			items.append({"key": piece.get_center().x + piece.get_center().y, "block": piece, "front": PlaceholderArt.color("couro"), "top": PlaceholderArt.color("couro_claro"), "height": BLOCK_HEIGHT})
+		items.append({"key": door_mid.x + door_mid.y + 0.5, "door": true})
+	if _visible(BLOCK_CENTER):
+		items.append({"key": BLOCK_CENTER.x + BLOCK_CENTER.y, "prop": BLOCK_PROP, "at": BLOCK_CENTER})
 	for c: Cover in covers:
 		if not _visible(c.rect.get_center()):
 			continue
 		if c.is_destroyed():
 			_draw_outline(c.rect, PlaceholderArt.color("chao_claro"))
 			continue
-		var partial := c.kind == "partial"
-		items.append({
-			"key": c.rect.get_center().x + c.rect.get_center().y, "block": c.rect, "cover": c,
-			"front": PlaceholderArt.color("couro") if partial else PlaceholderArt.color("parede"),
-			"top": PlaceholderArt.color("couro_claro") if partial else PlaceholderArt.color("metal"),
-			"height": COVER_HEIGHT[c.kind],
-		})
+		items.append({"key": c.rect.get_center().x + c.rect.get_center().y, "prop": COVER_PROPS[c.kind], "at": c.rect.get_center(), "cover": c})
 	for u in _living_units():
 		if _visible(u.pos):
 			items.append({"key": u.pos.x + u.pos.y, "unit": u})
@@ -495,11 +510,19 @@ func _draw() -> void:
 		if it.has("unit"):
 			_draw_unit(it.unit)
 			continue
-		_draw_box(it.block, it.front, it.top, it.height)
-		if it.has("cover"):
-			var c: Cover = it.cover
-			var label := "%s %d" % ["P" if c.kind == "partial" else "C", c.hp]
-			draw_string(font, _iso(c.rect.get_center()) + Vector2(-14, -it.height - 6), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.8))
+		if it.has("panel"):
+			scenery.draw(self, it.panel.name, _iso(it.panel.at))
+		elif it.has("door"):
+			# A porta fecha o vão da parede lateral; a arte original olha para o outro lado, por isso espelha.
+			scenery.draw(self, "movel_porta", _iso(door.get_center()) + DOOR_OFFSET, true)
+		elif it.has("prop"):
+			scenery.draw(self, it.prop, _iso(it.at))
+			if it.has("cover"):
+				var c: Cover = it.cover
+				var label := "%s %d" % ["P" if c.kind == "partial" else "C", c.hp]
+				draw_string(font, _iso(it.at) + Vector2(-14, -scenery.height_of(it.prop) - 6), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.8))
+		else:
+			_draw_box(it.block, it.front, it.top, it.height)
 	if mode == Mode.COMBAT:
 		_draw_preview(font)
 	# Textos de rodapé presos à tela, não à sala que rola.
@@ -512,18 +535,27 @@ func _draw() -> void:
 		draw_string(font, p.pos, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 0.7, clampf(p.time / POPUP_SECONDS * 2.0, 0.0, 1.0)))
 
 
-# Chão provisório: losangos lisos em dois tons, com uma linha escura entre eles.
+# Chão: um tile de 96×48 por losango, sorteado de forma fixa entre as variações.
 func _draw_floor() -> void:
-	var half := TILE_SCREEN * 0.5
 	for ty in int(ceil(ROOM_SIZE.y / TILE_WORLD)):
 		for tx in int(ceil(ROOM_SIZE.x / TILE_WORLD)):
 			if not _visible((Vector2(tx, ty) + Vector2(0.5, 0.5)) * TILE_WORLD):
 				continue
 			var c := _iso((Vector2(tx, ty) + Vector2(0.5, 0.5)) * TILE_WORLD)
-			var pts := PackedVector2Array([c + Vector2(0, -half.y), c + Vector2(half.x, 0), c + Vector2(0, half.y), c + Vector2(-half.x, 0)])
-			draw_colored_polygon(pts, PlaceholderArt.color("chao") if (tx + ty) % 2 == 0 else PlaceholderArt.color("chao_claro").darkened(0.15))
-			pts.append(pts[0])
-			draw_polyline(pts, PlaceholderArt.color("chao_escuro"), 1.0)
+			draw_texture(scenery.floor_texture(tx, ty), (c - TILE_SCREEN * 0.5).round())
+
+
+# Painéis de parede ao longo de um trecho [from, to]; o último painel recua para não sair do trecho.
+func _wall_run(axis: int, fixed: float, from: float, to: float) -> Array:
+	var out: Array = []
+	var n := maxi(1, int(ceil((to - from) / WALL_SPAN)))
+	var step := (to - from - WALL_SPAN) / (n - 1) if n > 1 else 0.0
+	for i in n:
+		var mid := (from + WALL_SPAN * 0.5 + step * i) if n > 1 else (from + to) * 0.5
+		var at := Vector2(mid, fixed) if axis == WALL_BACK else Vector2(fixed, mid)
+		var kind := "x_" if axis == WALL_BACK else "y_"
+		out.append({"at": at, "name": "parede_" + kind + Scenery.wall_variant(i)})
+	return out
 
 
 # Divide um retângulo longo em peças de no máximo um losango, para a ordem de desenho.
