@@ -31,3 +31,5 @@
 # O mesmo vale para as folhas de sprites dos personagens (algumas dezenas de KB cada).
 assets/fonts/SpecialElite-Regular.ttf -filter -diff -merge -text
 assets/sprites/personagens/*.png -filter -diff -merge -text
+# O cenário isométrico (chão, paredes, móveis) também vai direto no Git, como os personagens.
+assets/sprites/cenario/*.png -filter -diff -merge -text
