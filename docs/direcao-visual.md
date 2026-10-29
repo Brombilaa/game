@@ -39,6 +39,7 @@ implementação de todas: **não implementado**.
 | DEC-2026-10-29-07 | Tamanho do personagem testado (DEC-05) | Proposto, aguardando teste | Léo viu o personagem de 32×48 e achou o tamanho "aceitável", mas quer mais detalhes. O tamanho segue como está até a nova referência ser analisada (ver V-18 e V-19). | Sprites finais, retratos. |
 | DEC-2026-10-29-08 | Vista isométrica (V-18) | DEC-2026-10-29-01: vista de cima em 3/4 | Vista **isométrica**, como na referência da Mansão Rossi ("isométrica é melhor"). Refina a DEC-01. Projeção 2:1 e tile 64×32 são proposta (V-21). A sala de teste continua em 3/4 ortogonal até o protótipo isométrico. | Tiles em losango, ordenação de profundidade, colisão e pathfinding na tela, sprites em direções isométricas. |
 | DEC-2026-10-29-09 | Produção da arte final (V-16) | PENDENTE | Os sprites finais serão gerados pelo Léo no ChatGPT. O Claude escreve os prompts (`guia-sprites-chatgpt.md`) e converte as imagens para o jogo. | Pipeline de conversão, paleta única, nomes de arquivo, Git LFS. |
+| DEC-2026-10-29-10 | Resolução interna e altura do personagem (V-19, V-24) | DEC-02: 640×360 inicial | Opção B, a pedido do Léo ("podemos deixar em B inicialmente"): tela interna **960×540** e personagem de **96 px** de altura (quadro 144×144). Dá mais detalhe na mesma proporção de tela. Dá para melhorar depois: as imagens originais do ChatGPT ficam guardadas e o conversor refaz os quadros em outro tamanho. Substitui a parte de 640×360 da DEC-02 e a altura de 48 px da DEC-05. | `project.godot`, HUD (tamanhos ×1,5), chão, sprites, tile isométrico (V-21). Implementado: `project.godot`, HUD e sala de teste, com o Nikolai real andando na direção leste/oeste. |
 
 ## 3. Configuração técnica já no repositório
 
@@ -46,7 +47,7 @@ Estas são escolhas de implementação feitas no esqueleto do projeto (PR #2), n
 decisões de arte. Podem mudar quando as pendências abaixo forem fechadas.
 
 - Godot 4.3, renderer GL Compatibility.
-- Janela base 1280×720, stretch `canvas_items`, aspecto `keep`.
+- Resolução interna 960×540 (DEC-10), janela inicial 1280×720, stretch `canvas_items`, aspecto `keep`, escala fracionária (exata em 1080p e 4K em tela cheia).
 - Filtro de textura padrão `nearest` (sem borrar pixels).
 - Fonte do jogo: Special Elite (`assets/fonts/`). Exceção ao LFS: o `.ttf` (150 KB) vai direto no Git porque o envio ao LFS foi recusado (403) no ambiente da nuvem; migrar depois com `git lfs migrate import`.
 - Arte versionada com Git LFS em `assets/sprites/`, `assets/fonts/`, `assets/audio/`.
@@ -70,12 +71,10 @@ Cada item abaixo precisa de uma resposta antes da produção ampla de sprites.
 | V-14 | Ferramenta de arte e formato de entrega. | Aseprite, exportando spritesheet PNG com transparência e JSON de frames. |
 | V-15 | Nomenclatura e pastas dos assets. | `assets/sprites/<categoria>/<nome>_<acao>_<direcao>.png`, ex.: `personagens/nikolai_andar_sul.png`. |
 | V-17 | Formato da introdução (cutscene, imagens, texto ou combinação) (§3.1). | Decisão de narrativa do Léo; afeta quantas ilustrações grandes serão necessárias. |
-| V-19 | Altura do personagem. Na referência ele ocupa cerca de 18% da altura da tela, uns 65 px em 640×360 (hoje 48 px). | Subir para ~64 px, com quadro de 96×96. Léo achou os 48 px aceitáveis; confirmar depois do primeiro sprite real. |
 | V-20 | Ordem de implementação do HUD da referência (ver seção 6). | Começar por retratos com PV/SAN, minimapa circular e lista de objetivos, depois barra de itens, menu de interação e aviso do diário. |
-| V-21 | Projeção e tamanho do tile isométrico. | Losango 2:1 de 64×32, com personagem de ~64 px. Define o tamanho das peças de chão, parede e cobertura. |
+| V-21 | Projeção e tamanho do tile isométrico. | Losango 2:1 de 96×48, com personagem de 96 px. Define o tamanho das peças de chão, parede e cobertura. |
 | V-22 | Na vista isométrica, as "4 direções iniciais" (DEC-03) são as 4 diagonais da tela (SE, SW, NW, NE) ou as 4 retas (S, W, N, E)? | As diagonais, que são os eixos do chão isométrico e exigem só 2 desenhos (SE e NE) mais espelho. As retas entram depois, para dar fluidez. |
 | V-23 | Git LFS: o envio de PNG é recusado (403) no ambiente da nuvem. | Folhas pequenas vão sem LFS por ora (como a fonte). Se crescer, liberar o host do LFS na rede do ambiente. |
-| V-24 | Nível de detalhe do pixel: A) tela 640×360 com personagem de 64 px, ou B) tela 960×540 com personagem de 96 px. Mesma proporção na tela; B tem mais detalhe, como pediu o Léo. | B. Muda a resolução interna da DEC-02 (escala inteira continua: ×2 em 1080p, ×4 em 4K). Comparação em `/mnt/project-files/arte/testes/comparacao_64_vs_96.png`. |
 
 ## 5. Leitura da referência de personagem
 
@@ -120,8 +119,7 @@ O que a referência mostra, e como encaixa no GDD (§12):
 
 ## 7. Próximos passos
 
-1. Léo gera o primeiro teste no ChatGPT (Nikolai, direção SE) seguindo `guia-sprites-chatgpt.md` e envia o PNG.
-2. Claude cria a conversão (fundo, recorte, alinhamento, redução, paleta) e mostra o sprite no jogo.
-3. Léo responde V-21 e V-22; Claude monta um protótipo isométrico da sala de teste para comparar com a vista atual.
-4. Depois disso, o HUD da referência na ordem da V-20.
-5. Cada nova resposta do Léo entra na seção 2 no formato do Anexo H.
+1. Léo gera as direções que faltam do Nikolai (SE e NE primeiro, depois S, N) pelo guia; o leste já existe e está no jogo.
+2. Léo responde V-21 (tile 96×48) e V-22 (diagonais como as 4 direções iniciais); Claude monta um protótipo isométrico da sala de teste para comparar com a vista atual.
+3. Depois disso, o HUD da referência na ordem da V-20.
+4. Cada nova resposta do Léo entra na seção 2 no formato do Anexo H.
