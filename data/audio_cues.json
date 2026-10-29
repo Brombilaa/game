@@ -1,0 +1,13 @@
+{
+	"_nota": "Eventos sonoros do jogo. Caminho vazio = som ainda não existe e o evento fica mudo. Volumes em dB, provisórios.",
+	"sfx": {
+		"combat_start": { "path": "", "volume_db": 0.0 },
+		"turn_start": { "path": "", "volume_db": -4.0 },
+		"action_rejected": { "path": "", "volume_db": -6.0 },
+		"door_open": { "path": "", "volume_db": -4.0 }
+	},
+	"music": {
+		"exploration": { "path": "", "volume_db": -10.0 },
+		"combat": { "path": "", "volume_db": -8.0 }
+	}
+}
