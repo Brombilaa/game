@@ -1,7 +1,7 @@
 class_name CharacterSheet
 extends RefCounted
 # Folha de poses de um personagem feita a partir de uma imagem do ChatGPT (tools/sprites/converter.py).
-# Cinco folhas (`<prefixo>_se|e|ne|s|n.png`), cada uma com uma fila de 8 quadros de 144×144:
+# Cinco folhas (`<prefixo>_se|e|ne|s|n.png`), cada uma com uma fila de 8 quadros de 192×192:
 # 0 e 1 parado, 2 a 7 andando. As 8 direções da tela saem delas: SO, O e NO são o espelho de SE, E e NE.
 
 enum Dir { E, SE, S, SW, W, NW, N, NE }
@@ -11,13 +11,13 @@ const SHEET_OF := {
 	Dir.W: ["e", true], Dir.NW: ["ne", true], Dir.N: ["n", false], Dir.NE: ["ne", false],
 }
 
-const FRAME := 144
+const FRAME := 192
 const IDLE_FRAMES := [0, 1]
 const WALK_FRAMES := [2, 3, 4, 5, 6, 7]
 # Ponto do quadro que fica sobre a posição da unidade: meio dos pés.
-const PIVOT := Vector2(72, 135)
+const PIVOT := Vector2(96, 179)
 # Altura do personagem acima do pivô, para posicionar barras de vida.
-const HEIGHT := 100.0
+const HEIGHT := 134.0
 
 var textures := {}  # "se" -> Texture2D
 
