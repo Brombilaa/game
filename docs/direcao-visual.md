@@ -39,7 +39,7 @@ implementação de todas: **não implementado**.
 | DEC-2026-10-29-07 | Tamanho do personagem testado (DEC-05) | Proposto, aguardando teste | Léo viu o personagem de 32×48 e achou o tamanho "aceitável", mas quer mais detalhes. O tamanho segue como está até a nova referência ser analisada (ver V-18 e V-19). | Sprites finais, retratos. |
 | DEC-2026-10-29-08 | Vista isométrica (V-18) | DEC-2026-10-29-01: vista de cima em 3/4 | Vista **isométrica**, como na referência da Mansão Rossi ("isométrica é melhor"). Refina a DEC-01. Projeção 2:1 e tile 64×32 são proposta (V-21). A sala de teste continua em 3/4 ortogonal até o protótipo isométrico. | Tiles em losango, ordenação de profundidade, colisão e pathfinding na tela, sprites em direções isométricas. |
 | DEC-2026-10-29-09 | Produção da arte final (V-16) | PENDENTE | Os sprites finais serão gerados pelo Léo no ChatGPT. O Claude escreve os prompts (`guia-sprites-chatgpt.md`) e converte as imagens para o jogo. | Pipeline de conversão, paleta única, nomes de arquivo, Git LFS. |
-| DEC-2026-10-29-10 | Resolução interna e altura do personagem (V-19, V-24) | DEC-02: 640×360 inicial | Opção B, a pedido do Léo ("podemos deixar em B inicialmente"): tela interna **960×540** e personagem de **96 px** de altura (quadro 144×144). Dá mais detalhe na mesma proporção de tela. Dá para melhorar depois: as imagens originais do ChatGPT ficam guardadas e o conversor refaz os quadros em outro tamanho. Substitui a parte de 640×360 da DEC-02 e a altura de 48 px da DEC-05. | `project.godot`, HUD (tamanhos ×1,5), chão, sprites, tile isométrico (V-21). Implementado: `project.godot`, HUD e sala de teste, com o Nikolai real andando na direção leste/oeste. |
+| DEC-2026-10-29-10 | Resolução interna e altura do personagem (V-19, V-24) | DEC-02: 640×360 inicial | Opção B, a pedido do Léo ("podemos deixar em B inicialmente"): tela interna **960×540** e personagem de **96 px** de altura (quadro 144×144). Dá mais detalhe na mesma proporção de tela. Dá para melhorar depois: as imagens originais do ChatGPT ficam guardadas e o conversor refaz os quadros em outro tamanho. Substitui a parte de 640×360 da DEC-02 e a altura de 48 px da DEC-05. | `project.godot`, HUD (tamanhos ×1,5), chão, sprites, tile isométrico (V-21). Implementado: `project.godot`, HUD e sala de teste, com o Nikolai real andando nas 8 direções (5 desenhos mais espelho). |
 
 ## 3. Configuração técnica já no repositório
 
@@ -119,7 +119,7 @@ O que a referência mostra, e como encaixa no GDD (§12):
 
 ## 7. Próximos passos
 
-1. Léo gera as direções que faltam do Nikolai (SE e NE primeiro, depois S, N) pelo guia; o leste já existe e está no jogo.
+1. As cinco direções do Nikolai (SE, E, NE, S, N) estão no jogo; Léo gera os outros personagens e os inimigos pelo guia, na mesma ordem.
 2. Léo responde V-21 (tile 96×48) e V-22 (diagonais como as 4 direções iniciais); Claude monta um protótipo isométrico da sala de teste para comparar com a vista atual.
 3. Depois disso, o HUD da referência na ordem da V-20.
 4. Cada nova resposta do Léo entra na seção 2 no formato do Anexo H.

@@ -6,27 +6,41 @@ var failures := 0
 
 
 func _init() -> void:
-	var sheet := CharacterSheet.new("res://assets/sprites/personagens/nikolai_e.png")
+	var sheet := CharacterSheet.new("res://assets/sprites/personagens/nikolai")
 	_check(sheet.frame_count() == 8, "8 quadros na folha")
-	_check(sheet.texture.get_height() == CharacterSheet.FRAME, "folha de uma fila só")
+	_check(sheet.textures["e"].get_height() == CharacterSheet.FRAME, "folha de uma fila só")
 
-	var img := sheet.texture.get_image()
 	var used := {}
-	for f in sheet.frame_count():
-		var feet_ok := false
-		var top := -1
-		for y in CharacterSheet.FRAME:
-			for x in CharacterSheet.FRAME:
-				var c := img.get_pixel(f * CharacterSheet.FRAME + x, y)
-				if c.a > 0.0:
-					if top < 0:
-						top = y
-					if y == int(CharacterSheet.PIVOT.y) and absi(x - int(CharacterSheet.PIVOT.x)) < 40:
-						feet_ok = true
-					used[c] = true
-		_check(feet_ok, "quadro %d tem os pés na linha do pivô" % f)
-		_check(top >= 0 and CharacterSheet.PIVOT.y - top <= CharacterSheet.HEIGHT, "quadro %d cabe na altura declarada" % f)
-	_check(used.size() <= 24, "paleta única de até 24 cores (%d)" % used.size())
+	for name in sheet.textures:
+		var tex: Texture2D = sheet.textures[name]
+		_check(tex.get_width() == 8 * CharacterSheet.FRAME, "%s: 8 quadros" % name)
+		var img := tex.get_image()
+		for f in sheet.frame_count():
+			var feet_ok := false
+			var top := -1
+			for y in CharacterSheet.FRAME:
+				for x in CharacterSheet.FRAME:
+					var c := img.get_pixel(f * CharacterSheet.FRAME + x, y)
+					if c.a > 0.0:
+						if top < 0:
+							top = y
+						if y == int(CharacterSheet.PIVOT.y) and absi(x - int(CharacterSheet.PIVOT.x)) < 40:
+							feet_ok = true
+						used[c] = true
+			_check(feet_ok, "%s: quadro %d tem os pés na linha do pivô" % [name, f])
+			_check(top >= 0 and CharacterSheet.PIVOT.y - top <= CharacterSheet.HEIGHT, "%s: quadro %d cabe na altura declarada" % [name, f])
+	_check(used.size() <= 32, "paleta única de até 32 cores (%d)" % used.size())
+
+	var D := CharacterSheet.Dir
+	_check(CharacterSheet.dir_from_vector(Vector2(1, 0)) == D.E, "vetor (1,0) = leste")
+	_check(CharacterSheet.dir_from_vector(Vector2(1, 1)) == D.SE, "vetor (1,1) = sudeste")
+	_check(CharacterSheet.dir_from_vector(Vector2(0, 1)) == D.S, "vetor (0,1) = sul")
+	_check(CharacterSheet.dir_from_vector(Vector2(-1, 1)) == D.SW, "vetor (-1,1) = sudoeste")
+	_check(CharacterSheet.dir_from_vector(Vector2(-1, 0)) == D.W, "vetor (-1,0) = oeste")
+	_check(CharacterSheet.dir_from_vector(Vector2(-1, -1)) == D.NW, "vetor (-1,-1) = noroeste")
+	_check(CharacterSheet.dir_from_vector(Vector2(0, -1)) == D.N, "vetor (0,-1) = norte")
+	_check(CharacterSheet.dir_from_vector(Vector2(1, -1)) == D.NE, "vetor (1,-1) = nordeste")
+	_check(CharacterSheet.SHEET_OF[D.SW] == ["se", true] and CharacterSheet.SHEET_OF[D.W] == ["e", true] and CharacterSheet.SHEET_OF[D.NW] == ["ne", true], "SO, O e NO espelham SE, E e NE")
 
 	_check(CharacterSheet.IDLE_FRAMES + CharacterSheet.WALK_FRAMES == [0, 1, 2, 3, 4, 5, 6, 7], "parado e andando cobrem os 8 quadros")
 
