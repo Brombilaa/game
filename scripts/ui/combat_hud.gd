@@ -1,0 +1,132 @@
+class_name CombatHud
+extends CanvasLayer
+# HUD mínimo: modo atual, aviso central e painel do turno com PA e "Passar turno".
+# A UI só mostra estado confirmado: quem controla o jogo chama os métodos on_*
+# quando o evento acontece (GDD Anexo D), e o HUD nunca altera regras.
+
+signal end_turn_requested
+
+const NOTICE_SECONDS := 2.0  # provisório: duração de avisos está PENDENTE no GDD
+const PIP_SIZE := Vector2(16, 16)
+const PIP_FULL := Color(0.95, 0.8, 0.25)
+const PIP_EMPTY := Color(0.3, 0.3, 0.35)
+
+var mode_label: Label
+var notice_label: Label
+var turn_panel: PanelContainer
+var unit_label: Label
+var pa_label: Label
+var pips: HBoxContainer
+var end_turn_button: Button
+var notice_timer: Timer
+
+
+func _init() -> void:
+	layer = 10
+	_build()
+	show_exploration()
+
+
+func show_exploration() -> void:
+	mode_label.text = HudText.mode_label(false)
+	turn_panel.visible = false
+
+
+func on_combat_started() -> void:
+	mode_label.text = HudText.mode_label(true)
+	show_notice("Combate!")
+
+
+func on_turn_started(unit_name: String, pa: int, max_pa: int) -> void:
+	unit_label.text = unit_name
+	on_pa_changed(pa, max_pa)
+	end_turn_button.disabled = false
+	turn_panel.visible = true
+
+
+func on_pa_changed(pa: int, max_pa: int) -> void:
+	pa_label.text = HudText.pa_label(pa, max_pa)
+	for child in pips.get_children():
+		pips.remove_child(child)
+		child.free()
+	for i in max_pa:
+		var pip := ColorRect.new()
+		pip.custom_minimum_size = PIP_SIZE
+		pip.color = PIP_FULL if i < pa else PIP_EMPTY
+		pip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		pips.add_child(pip)
+
+
+func on_turn_ended() -> void:
+	end_turn_button.disabled = true
+	turn_panel.visible = false
+
+
+func on_action_rejected(reason: String) -> void:
+	show_notice(HudText.rejection_message(reason))
+
+
+func on_combat_ended() -> void:
+	show_exploration()
+	show_notice("Combate encerrado")
+
+
+func show_notice(text: String) -> void:
+	notice_label.text = text
+	notice_label.visible = true
+	if notice_timer.is_inside_tree():
+		notice_timer.start(NOTICE_SECONDS)
+
+
+func _build() -> void:
+	mode_label = Label.new()
+	mode_label.position = Vector2(32, 24)
+	mode_label.add_theme_font_size_override("font_size", 24)
+	add_child(mode_label)
+
+	notice_label = Label.new()
+	notice_label.anchor_right = 1.0
+	notice_label.offset_top = 80
+	notice_label.offset_bottom = 130
+	notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	notice_label.add_theme_font_size_override("font_size", 40)
+	notice_label.visible = false
+	add_child(notice_label)
+
+	notice_timer = Timer.new()
+	notice_timer.one_shot = true
+	notice_timer.timeout.connect(func() -> void: notice_label.visible = false)
+	add_child(notice_timer)
+
+	# Painel do turno, centralizado na base da tela.
+	turn_panel = PanelContainer.new()
+	turn_panel.anchor_left = 0.5
+	turn_panel.anchor_right = 0.5
+	turn_panel.anchor_top = 1.0
+	turn_panel.anchor_bottom = 1.0
+	turn_panel.offset_left = -200
+	turn_panel.offset_right = 200
+	turn_panel.offset_top = -80
+	turn_panel.offset_bottom = -24
+	turn_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	turn_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	add_child(turn_panel)
+
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 16)
+	turn_panel.add_child(row)
+
+	unit_label = Label.new()
+	row.add_child(unit_label)
+	pa_label = Label.new()
+	row.add_child(pa_label)
+	pips = HBoxContainer.new()
+	pips.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_child(pips)
+
+	end_turn_button = Button.new()
+	end_turn_button.text = "Passar turno"
+	end_turn_button.focus_mode = Control.FOCUS_NONE  # não roubar o teclado da sala
+	end_turn_button.pressed.connect(func() -> void: end_turn_requested.emit())
+	row.add_child(end_turn_button)
