@@ -5,6 +5,8 @@ extends Node2D
 # Combate por turnos (TurnManager + CombatRules): no turno do agente, clique no chão
 # move (gasta PA), clique no inimigo ataca, clique na cobertura mira a estrutura,
 # Espaço passa o turno e D atrasa. R reinicia a sala.
+# Visual provisório (PlaceholderArt): resolução interna 640×360, câmera segue a unidade
+# em foco e a sala de 1280×720 rola; unidades desenhadas por ordem de profundidade (y).
 
 enum Mode { EXPLORATION, COMBAT, GAME_OVER }
 
@@ -15,6 +17,10 @@ const STAND_OFFSET := 6.0
 const PERCEPTION_RANGE := 300.0  # provisório: alcance de percepção está PENDENTE no GDD
 const ENEMY_STEP_SECONDS := 0.4
 const POPUP_SECONDS := 1.2
+const WALK_FRAME_SECONDS := 0.15
+const WALL_TOP := 6.0  # faixa clara no topo da parede, para a leitura em 3/4
+const ROOM_SIZE := Vector2i(1280, 720)
+const ENEMY_VARIANTS := ["cultista", "atirador"]  # mesma ordem de `enemies`
 
 var walls: Array[Rect2] = [
 	Rect2(0, 0, 1280, 16),
@@ -52,11 +58,20 @@ var busy := false  # animação ou turno inimigo em andamento: entrada do jogado
 var popups: Array = []  # textos de acerto/erro/dano flutuando sobre as unidades
 var hud := CombatHud.new()
 var audio := AudioDirector.new()
+var camera := Camera2D.new()
+var facing := {}  # Combatant -> PlaceholderArt.Dir
+var walk_time := 0.0
 
 
 func _ready() -> void:
 	add_child(hud)
 	add_child(audio)
+	camera.limit_left = 0
+	camera.limit_top = 0
+	camera.limit_right = ROOM_SIZE.x
+	camera.limit_bottom = ROOM_SIZE.y
+	camera.position = player.pos
+	add_child(camera)
 	hud.end_turn_requested.connect(_player_pass)
 	audio.play_music("exploration")
 
@@ -137,12 +152,17 @@ func _process(delta: float) -> void:
 			p.time -= delta
 		popups = popups.filter(func(p: Dictionary) -> bool: return p.time > 0.0)
 		queue_redraw()
+	var focus := turns.current if mode == Mode.COMBAT and turns and turns.current else player
+	camera.position = focus.pos
 	if moving_unit and not path.is_empty():
+		facing[moving_unit] = PlaceholderArt.dir_from_vector(path[0] - moving_unit.pos)
+		walk_time += delta
 		moving_unit.pos = moving_unit.pos.move_toward(path[0], SPEED * delta)
 		if moving_unit.pos.is_equal_approx(path[0]):
 			path.remove_at(0)
 		if path.is_empty():
 			moving_unit = null
+			walk_time = 0.0
 			move_finished.emit()
 		queue_redraw()
 	if mode != Mode.EXPLORATION:
@@ -350,42 +370,65 @@ func _popup(at: Vector2, text: String) -> void:
 
 func _draw() -> void:
 	var font := ThemeDB.fallback_font
-	draw_rect(Rect2(0, 0, 1280, 720), Color(0.12, 0.12, 0.14))
+	draw_texture_rect(PlaceholderArt.floor_texture(), Rect2(Vector2.ZERO, ROOM_SIZE), true)
 	for w in walls:
-		draw_rect(w, Color(0.35, 0.35, 0.4))
+		_draw_block(w, PlaceholderArt.color("parede"), PlaceholderArt.color("parede_topo"))
 	if door_open:
-		draw_rect(door, Color(0.4, 0.6, 0.4, 0.5))
+		draw_rect(door, PlaceholderArt.color("chao_escuro"))
 	else:
-		draw_rect(door, Color(0.55, 0.35, 0.2))
+		_draw_block(door, PlaceholderArt.color("couro"), PlaceholderArt.color("couro_claro"))
 	for c: Cover in covers:
 		if c.is_destroyed():
-			draw_rect(c.rect, Color(0.4, 0.35, 0.3, 0.25), false, 1.0)
+			draw_rect(c.rect, PlaceholderArt.color("chao_claro"), false, 1.0)
 			continue
-		draw_rect(c.rect, Color(0.5, 0.42, 0.3) if c.kind == "partial" else Color(0.55, 0.55, 0.6))
-		draw_string(font, c.rect.position + Vector2(2, 14), "%s %d" % ["P" if c.kind == "partial" else "C", c.hp], HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color.BLACK)
-	for e in enemies:
-		if not e.is_alive():
-			continue
-		if mode == Mode.EXPLORATION:
-			draw_arc(e.pos, PERCEPTION_RANGE, 0.0, TAU, 96, Color(0.9, 0.2, 0.2, 0.25), 1.0)
-		_draw_unit(e, Color(0.85, 0.2, 0.2))
-	if player.is_alive():
-		_draw_unit(player, Color(0.3, 0.6, 1.0))
+		if c.kind == "partial":
+			_draw_block(c.rect, PlaceholderArt.color("couro"), PlaceholderArt.color("couro_claro"))
+		else:
+			_draw_block(c.rect, PlaceholderArt.color("parede"), PlaceholderArt.color("metal"))
+		draw_string(font, c.rect.position + Vector2(2, 14), "%s %d" % ["P" if c.kind == "partial" else "C", c.hp], HORIZONTAL_ALIGNMENT_LEFT, -1, 6, PlaceholderArt.color("contorno"))
+	if mode == Mode.EXPLORATION:
+		for e in enemies:
+			if e.is_alive():
+				draw_arc(e.pos, PERCEPTION_RANGE, 0.0, TAU, 96, Color(PlaceholderArt.color("sangue_claro"), 0.35), 1.0)
+	var units := _living_units()
+	units.sort_custom(func(a: Combatant, b: Combatant) -> bool: return a.pos.y < b.pos.y)
+	for u in units:
+		_draw_unit(u)
 	if mode == Mode.COMBAT:
 		_draw_preview(font)
-		draw_string(font, Vector2(32, 690), "Rodada %d  |  Espaço passa, D atrasa, R reinicia" % turns.round_number, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(1, 1, 1, 0.6))
+	# Textos de rodapé presos à tela, não à sala que rola.
+	var footer := get_canvas_transform().affine_inverse() * Vector2(16, 345)
+	if mode == Mode.COMBAT:
+		draw_string(font, footer, "Rodada %d  |  Espaço passa, D atrasa, R reinicia" % turns.round_number, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(1, 1, 1, 0.6))
 	elif mode == Mode.GAME_OVER:
-		draw_string(font, Vector2(32, 690), "Game Over (R reinicia)", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(1, 0.5, 0.5))
+		draw_string(font, footer, "Game Over (R reinicia)", HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(1, 0.5, 0.5))
 	for p in popups:
-		draw_string(font, p.pos, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(1, 1, 0.7, clampf(p.time / POPUP_SECONDS * 2.0, 0.0, 1.0)))
+		draw_string(font, p.pos, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(1, 1, 0.7, clampf(p.time / POPUP_SECONDS * 2.0, 0.0, 1.0)))
 
 
-func _draw_unit(u: Combatant, color: Color) -> void:
+# Bloco em 3/4: face frontal com uma faixa clara de topo.
+func _draw_block(r: Rect2, front: Color, top: Color) -> void:
+	draw_rect(r, front)
+	draw_rect(Rect2(r.position, Vector2(r.size.x, minf(WALL_TOP, r.size.y))), top)
+
+
+func _draw_unit(u: Combatant) -> void:
+	draw_set_transform(u.pos, 0.0, Vector2(1.0, 0.4))  # sombra achatada sob os pés
+	draw_circle(Vector2.ZERO, u.radius, Color(0, 0, 0, 0.45))
+	draw_set_transform(Vector2.ZERO)
 	if turns and u == turns.current:
-		draw_arc(u.pos, u.radius + 5, 0.0, TAU, 32, Color(1, 0.85, 0.3), 2.0)
-	draw_circle(u.pos, u.radius, color)
+		draw_set_transform(u.pos, 0.0, Vector2(1.0, 0.5))
+		draw_arc(Vector2.ZERO, u.radius + 5, 0.0, TAU, 32, PlaceholderArt.color("destaque"), 2.0)
+		draw_set_transform(Vector2.ZERO)
+	var frame := 0
+	if u == moving_unit:
+		frame = 1 + int(walk_time / WALK_FRAME_SECONDS) % 2
+	var i := enemies.find(u)
+	var variant: String = ENEMY_VARIANTS[i % ENEMY_VARIANTS.size()] if i >= 0 else "agente"
+	var tex := PlaceholderArt.character_texture(variant, facing.get(u, PlaceholderArt.Dir.SOUTH), frame)
+	draw_texture(tex, (u.pos - PlaceholderArt.PIVOT).round())
 	if mode != Mode.EXPLORATION:
-		var bar := Rect2(u.pos + Vector2(-14, -u.radius - 9), Vector2(28, 4))
+		var bar := Rect2(u.pos + Vector2(-14, -PlaceholderArt.PIVOT.y - 6), Vector2(28, 3))
 		draw_rect(bar, Color(0.2, 0.2, 0.2))
 		draw_rect(Rect2(bar.position, Vector2(bar.size.x * float(u.pv) / u.max_pv, bar.size.y)), Color(0.3, 0.85, 0.35))
 
@@ -415,4 +458,4 @@ func _draw_preview(font: Font) -> void:
 			var cost := rules.move_cost(CombatRules.path_length(route))
 			text = "%d PA" % cost if cost <= player.pa else "%d PA (parcial)" % player.pa
 	if text != "":
-		draw_string(font, mouse + Vector2(14, -8), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color.WHITE)
+		draw_string(font, mouse + Vector2(10, -6), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Color.WHITE)
