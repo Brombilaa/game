@@ -21,6 +21,12 @@ static func to_json(data: Dictionary) -> String:
 # Devolve o conteúdo de "data", ou {} se o texto for inválido ou de versão
 # desconhecida (save mais novo que o jogo).
 static func from_json(text: String) -> Dictionary:
+	var envelope := _parse(text)
+	return envelope.get("data", {})
+
+
+# Envelope completo (version, saved_at, data) já migrado, ou {} se inválido.
+static func _parse(text: String) -> Dictionary:
 	var json := JSON.new()
 	if json.parse(text) != OK:
 		return {}
@@ -32,7 +38,8 @@ static func from_json(text: String) -> Dictionary:
 	var version := int(parsed["version"])
 	if version < 1 or version > FORMAT_VERSION:
 		return {}
-	return _migrate(parsed["data"], version)
+	parsed["data"] = _migrate(parsed["data"], version)
+	return parsed
 
 
 # Gravação atômica: escreve em .tmp e só então substitui o arquivo. O save
@@ -54,12 +61,17 @@ static func write(path: String, data: Dictionary) -> Error:
 # Lê o save; se o principal faltar ou estiver corrompido, tenta o .bak.
 # Devolve {} quando não há save utilizável.
 static func read(path: String) -> Dictionary:
+	return read_envelope(path).get("data", {})
+
+
+# Como read(), mas devolve o envelope inteiro (útil para mostrar saved_at).
+static func read_envelope(path: String) -> Dictionary:
 	for candidate in [path, path + ".bak"]:
 		if not FileAccess.file_exists(candidate):
 			continue
-		var data := from_json(FileAccess.get_file_as_string(candidate))
-		if not data.is_empty():
-			return data
+		var envelope := _parse(FileAccess.get_file_as_string(candidate))
+		if not envelope.is_empty():
+			return envelope
 	return {}
 
 
