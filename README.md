@@ -15,3 +15,7 @@
 ## Engine
 
 Godot 4 com GDScript. Renderer de compatibilidade, pixel art com filtro nearest.
+
+## Build
+
+Tag `v*` gera o build de Windows e publica o `.zip` no GitHub Releases. Detalhes em `docs/save-e-build.md`.

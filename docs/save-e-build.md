@@ -1,8 +1,8 @@
 # Salvamento e build: plano
 
-Estado: rascunho técnico. A política de save (automático/manual, slots,
-checkpoints) está PENDENTE no GDD (seção 14.1 e Anexo F) e precisa de decisão
-do Léo antes de ser implementada.
+Estado: formato do save e build de Windows implementados. Política de save
+aprovada pelo Léo em 2026-10-29 (DEC-2026-10-29-01, seção 5), ainda não
+implementada.
 
 ## 1. Formato do save
 
@@ -59,20 +59,21 @@ o save, e a decisão pendente vira só "gravar ou não em disco".
 ## 4. Build e distribuição
 
 - Alvo inicial: Windows x86_64 (PC primeiro, plataforma ainda PENDENTE no
-  GDD). Linux sai quase de graça pelo mesmo pipeline, se quisermos.
-- `export_presets.cfg` versionado (sem credenciais; `export_credentials.cfg`
-  já está no `.gitignore`).
-- GitHub Actions: ao criar uma tag `v*`, baixa Godot 4.3 e os export
-  templates, roda os testes headless, exporta e anexa o `.zip` ao GitHub
-  Release. `workflow_dispatch` gera o build como artifact, sem release.
+  GDD). Linux sai pelo mesmo pipeline se quisermos.
+- `export_presets.cfg` versionado, preset "Windows Desktop", `.pck` embutido
+  no `.exe`; `tests/` e `docs/` ficam fora do build.
+- `.github/workflows/build.yml`: baixa Godot 4.3 e o template de Windows,
+  roda todos os `tests/test_*.gd`, exporta e gera o `.zip`.
+  - Tag `v*` (ex.: `git tag v0.1.0 && git push origin v0.1.0`): publica o
+    `.zip` no GitHub Releases.
+  - Toda PR e execução manual pela aba Actions: roda testes e build, gera só
+    o artifact, sem release.
 - Builds nunca entram no Git (`build/`, `*.exe`, `*.pck` já ignorados).
-- Versão do jogo: `application/config/version` no `project.godot`, igual à tag.
+- Build local: `godot --headless --path . --export-release "Windows Desktop" build/windows/OrdemParanormal.exe`
+  (precisa do export template 4.3 instalado no editor).
 
-## 5. Decisões para o Léo
+## 5. Decisões
 
-| Tema | Recomendação | Status |
-| --- | --- | --- |
-| Automático ou manual | Automático ao entrar em área/zona segura + manual fora de combate | PENDENTE |
-| Slots | 3 slots manuais + 1 automático | PENDENTE |
-| Save em combate | Não permitir; autosave no início do combate para "tentar de novo" | PENDENTE |
-| Morte do grupo | Volta ao último autosave | PENDENTE |
+| ID | Assunto | Decisão | Status |
+| --- | --- | --- | --- |
+| DEC-2026-10-29-01 | Política de save | Autosave ao entrar em área ou zona segura + 3 slots manuais fora de combate. Sem save no meio do combate; autosave no início dele para tentar de novo. Morte do grupo volta ao último autosave. Aprovado por Léo. | Não implementado |
