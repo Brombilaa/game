@@ -89,6 +89,8 @@ Resultado (Nikolai, 29/10/2026): o fundo magenta, as 8 poses na grade e o alinha
 (`tools/sprites/converter.py`). Léo mandou as cinco direções (NE, SE, E, S, N) e as cinco estão no jogo; SO, O e NO usam o espelho. O Miguel (prompt em `/mnt/project-files/arte/prompts/miguel_prompt.md`) também veio completo, com a tatuagem no braço direito, e o Fernando também (macacão preto com cintos, barba e botas). Como o ChatGPT o desenhou bem mais robusto, ele foi reduzido para 124 px de altura (os outros têm 128 px) para não parecer maior que o trio.
 Para os próximos personagens, peça as cinco direções na ordem da tabela, sempre na mesma conversa com a ficha.
 
+O cultista (encapuzado, casaco marrom com símbolos vermelhos) também veio completo, em 128 px, e já substitui o inimigo provisório da sala de teste; o atirador ainda é arte provisória.
+
 ## 6. Nome dos arquivos
 
 `<personagem>_<direção>.png`, tudo em minúsculas, sem acento. Exemplos: `nikolai_se.png`, `nikolai_ne.png`, `miguel_se.png`.
