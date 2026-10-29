@@ -7,7 +7,7 @@ config_version=5
 
 config/name="Ordem Paranormal"
 config/description="RPG tático com exploração em tempo real e combate por turnos."
-run/main_scene=""
+run/main_scene="res://scenes/exploration/test_room.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 
 [display]
