@@ -28,7 +28,9 @@ const ENEMY_STEP_SECONDS := 0.4
 const FOLLOW_DISTANCE := 60.0  # distância fixa do seguidor ao líder (provisório)
 const FOLLOW_SPREAD := 1.0  # variação do ângulo do seguidor em radianos (provisório)
 const REVIVE_REACH := 16.0  # borda a borda: "adjacente" para reanimar
-const SHEET_SIZE := Vector2(212, 72)  # ficha do personagem no HUD (A, escolhida pelo Léo)
+const SHEET_SIZE := Vector2(212, 72)
+const MINIMAP_CENTER := Vector2(888, 82)  # minimapa redondo no canto superior direito (tela)
+const MINIMAP_RADIUS := 62.0  # ficha do personagem no HUD (A, escolhida pelo Léo)
 const POPUP_SECONDS := 1.2
 const WALK_FRAME_SECONDS := 0.11
 const IDLE_FRAME_SECONDS := 0.7
@@ -873,6 +875,7 @@ func _draw_hud(font: Font) -> void:
 	var to_world := get_canvas_transform().affine_inverse()
 	for i in party.size():
 		_draw_sheet(font, party[i], to_world * _portrait_rect(i).position)
+	_draw_minimap(font, to_world)
 	if mode == Mode.COMBAT and turns:
 		_draw_turn_order(font, to_world)
 		if turns.current and turns.current.side == Combatant.Side.PLAYER:
@@ -969,3 +972,43 @@ func _draw_actions(font: Font, to_world: Transform2D) -> void:
 		draw_rect(r, PlaceholderArt.color("destaque") if slots[k][2] else Color(0.43, 0.34, 0.24), false, 1.0)
 		draw_string(font, r.position + Vector2(0, 17), slots[k][0], HORIZONTAL_ALIGNMENT_CENTER, slot.x, 12, Color(0.93, 0.89, 0.8))
 		draw_string(font, r.position + Vector2(0, 33), slots[k][1], HORIZONTAL_ALIGNMENT_CENTER, slot.x, 9, Color(0.66, 0.6, 0.49))
+
+
+
+# Minimapa redondo (referência do HUD): a sala inteira em losango, paredes, porta,
+# coberturas, o grupo (o controlado maior) e os inimigos que estão à vista.
+# Com a porta fechada, o outro lado da sala fica apagado, como na tela.
+func _draw_minimap(font: Font, to_world: Transform2D) -> void:
+	var center := to_world * MINIMAP_CENTER
+	var room_mid := _iso(Vector2(ROOM_SIZE) * 0.5)
+	var scale := MINIMAP_RADIUS * 1.8 / (_iso(Vector2(ROOM_SIZE.x, 0)).x - _iso(Vector2(0, ROOM_SIZE.y)).x)
+	var to_map := func(p: Vector2) -> Vector2: return center + (_iso(p) - room_mid) * scale
+	var dim := Color(0.09, 0.07, 0.05, 0.9)
+	draw_circle(center, MINIMAP_RADIUS, dim)
+	for side in [Rect2(0, 0, door.get_center().x, ROOM_SIZE.y), Rect2(door.get_center().x, 0, ROOM_SIZE.x - door.get_center().x, ROOM_SIZE.y)]:
+		if not _visible(side.get_center()):
+			continue
+		var r: Rect2 = side
+		var floor := PackedVector2Array([to_map.call(r.position), to_map.call(Vector2(r.end.x, r.position.y)), to_map.call(r.end), to_map.call(Vector2(r.position.x, r.end.y))])
+		draw_colored_polygon(floor, Color(0.29, 0.23, 0.17))
+	for w in walls:
+		if _visible(w.get_center()):
+			_draw_map_rect(to_map, w, Color(0.75, 0.66, 0.5))
+	if not door_open:
+		_draw_map_rect(to_map, door, Color(0.55, 0.36, 0.2))
+	for c: Cover in covers:
+		if _visible(c.rect.get_center()):
+			_draw_map_rect(to_map, c.rect, Color(0.5, 0.42, 0.32))
+	for e in enemies:
+		if e.is_alive() and _visible(e.pos):
+			draw_circle(to_map.call(e.pos), 2.5, Color(0.85, 0.2, 0.2))
+	for m in party:
+		if not m.dead:
+			draw_circle(to_map.call(m.pos), 3.5 if m == player else 2.5, PlaceholderArt.color("destaque") if m.is_alive() else Color(0.5, 0.5, 0.5))
+	draw_arc(center, MINIMAP_RADIUS, 0.0, TAU, 64, Color(0.43, 0.34, 0.24), 2.0)
+	draw_string(font, center + Vector2(-MINIMAP_RADIUS, -MINIMAP_RADIUS - 6), "SALA DE TESTE", HORIZONTAL_ALIGNMENT_CENTER, MINIMAP_RADIUS * 2, 11, Color(0.93, 0.89, 0.8))
+
+
+func _draw_map_rect(to_map: Callable, r: Rect2, color: Color) -> void:
+	var pts := PackedVector2Array([to_map.call(r.position), to_map.call(Vector2(r.end.x, r.position.y)), to_map.call(r.end), to_map.call(Vector2(r.position.x, r.end.y))])
+	draw_colored_polygon(pts, color)
