@@ -3,6 +3,7 @@
   "atrasar_por_rodada": 1,
   "turnos_chefe_por_rodada_max": 2,
   "custo_recarga_pa": null,
+  "custo_ataque_distancia_pa": null,
   "custo_mira_pa": null,
   "bonus_mira_precisao": null,
   "custo_corpo_a_corpo_pa": null,

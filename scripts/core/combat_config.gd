@@ -31,13 +31,13 @@ func cover(kind: String) -> Dictionary:
 
 
 # Arma de armas.json no formato usado por CombatRules (distâncias já em pixels).
-# Alcance efetivo = fim da distância ideal. Custo em PA: custo_corpo_a_corpo_pa das regras
-# para armas brancas quando definido; senão attack_pa_cost provisório.
+# Alcance efetivo = fim da distância ideal. Custo em PA: custo_corpo_a_corpo_pa ou
+# custo_ataque_distancia_pa das regras, conforme o tipo; enquanto null, attack_pa_cost provisório.
 func weapon(id: String) -> Dictionary:
 	var w := game_data.get_entry("armas", id)
 	assert(not w.is_empty(), "arma inexistente: " + id)
 	var ppm := value("pixels_per_meter")
-	var cost = game_data.rule("custo_corpo_a_corpo_pa") if w["tipo"] == "corpo_a_corpo" else null
+	var cost = game_data.rule("custo_corpo_a_corpo_pa" if w["tipo"] == "corpo_a_corpo" else "custo_ataque_distancia_pa")
 	return {
 		"id": id,
 		"pa_cost": int(cost) if cost != null else int(value("attack_pa_cost")),
@@ -78,8 +78,8 @@ func make_enemy(enemy_id: String, pos: Vector2) -> Combatant:
 	u.pv = u.max_pv
 	u.pa_per_turn = int(sheet["pa"]) if sheet["pa"] != null else -1
 	u.initiative = int(sheet["iniciativa"])
-	u.precision = int(value("enemy_precision"))
-	u.defense = int(value("enemy_defense"))
+	u.precision = int(sheet["precisao"]) if sheet["precisao"] != null else int(value("enemy_precision"))
+	u.defense = int(sheet["defesa"]) if sheet["defesa"] != null else int(value("enemy_defense"))
 	u.weapon = weapon(sheet["ataques"][0])
 	u.radius = value("enemy_radius")
 	u.pos = pos
