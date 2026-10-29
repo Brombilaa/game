@@ -2,7 +2,7 @@ extends Node2D
 # Sala de teste da exploração: clique para mover, uma porta e um inimigo.
 # A rota contorna obstáculos via Pathfinder; destino inacessível é ignorado.
 # Inimigo que vê o personagem (alcance + linha de visão) inicia o combate na hora.
-# Combate em si ainda não existe: só o estado COMBAT é ativado e o HUD avisa. R reinicia a sala.
+# Combate em si ainda não existe: só o estado COMBAT é ativado e o HUD e o áudio avisam. R reinicia a sala.
 
 enum Mode { EXPLORATION, COMBAT }
 
@@ -31,10 +31,13 @@ var door_open := false
 var pathfinder := Pathfinder.new()
 var mode := Mode.EXPLORATION
 var hud := CombatHud.new()
+var audio := AudioDirector.new()
 
 
 func _ready() -> void:
 	add_child(hud)
+	add_child(audio)
+	audio.play_music("exploration")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -84,6 +87,7 @@ func _process(delta: float) -> void:
 	elif pending_door:
 		pending_door = false
 		door_open = true
+		audio.play_sfx("door_open")
 		queue_redraw()
 	_check_detection()
 
@@ -99,6 +103,7 @@ func _check_detection() -> void:
 	path = PackedVector2Array()
 	pending_door = false
 	hud.on_combat_started()
+	audio.on_combat_started()
 	queue_redraw()
 
 
