@@ -24,12 +24,12 @@ const ENEMY_STEP_SECONDS := 0.4
 const POPUP_SECONDS := 1.2
 const WALK_FRAME_SECONDS := 0.11
 const IDLE_FRAME_SECONDS := 0.7
-const PLACEHOLDER_SCALE := 3  # arte provisória de 32×48 ampliada para ~144 px
+const PLACEHOLDER_SCALE := 2.7  # arte provisória de 32×48 ampliada para ~130 px (a altura do herói)
 const TILE_WORLD := 64.0  # lado de um losango do chão, em unidades da sala
 const TILE_SCREEN := Vector2(96, 48)  # losango 2:1 na tela (V-21)
-const BLOCK_HEIGHT := 96.0  # altura na tela de paredes e porta
+const BLOCK_HEIGHT := 160.0  # altura na tela das paredes e da porta: ~1,25× o herói de 128 px
 const FRONT_WALL_HEIGHT := 24.0  # paredes voltadas para a câmera
-const COVER_HEIGHT := {"partial": 36.0, "full": 64.0}
+const COVER_HEIGHT := {"partial": 56.0, "full": 100.0}
 const AGENT_SHEETS := ["res://assets/sprites/personagens/nikolai", "res://assets/sprites/personagens/miguel"]
 const ROOM_SIZE := Vector2i(1280, 720)
 const ENEMY_VARIANTS := ["cultista", "atirador"]  # mesma ordem de `enemies`
@@ -39,11 +39,11 @@ var walls: Array[Rect2] = [
 	Rect2(0, 704, 1280, 16),
 	Rect2(0, 0, 16, 720),
 	Rect2(1264, 0, 16, 720),
-	Rect2(600, 0, 24, 300),
-	Rect2(600, 420, 24, 300),
+	Rect2(600, 0, 24, 336),
+	Rect2(600, 408, 24, 312),
 	Rect2(400, 200, 120, 40),
 ]
-var door := Rect2(600, 300, 24, 120)
+var door := Rect2(600, 336, 24, 72)  # 72 unidades: pouco mais de um losango, ~2× a largura de um herói
 # Resistência da estrutura por material (valores provisórios).
 var covers: Array = [
 	Cover.new(Rect2(300, 450, 40, 40), "partial", 20),
@@ -80,7 +80,7 @@ var agent_look := 0
 
 
 func _ready() -> void:
-	RenderingServer.set_default_clear_color(PlaceholderArt.color("chao_escuro"))
+	RenderingServer.set_default_clear_color(Color(0.03, 0.025, 0.02))  # fora da sala e salas fechadas: escuridão
 	add_child(hud)
 	add_child(audio)
 	for path in AGENT_SHEETS:
@@ -118,6 +118,23 @@ func _unhandled_input(event: InputEvent) -> void:
 			_combat_click(click)
 
 
+# --- Visibilidade --------------------------------------------------------------
+# A sala é dividida pela parede da porta. Com a porta fechada, o personagem só vê o lado em
+# que está: nada do outro lado (chão, paredes, inimigos, coberturas) é desenhado.
+
+func _region(p: Vector2) -> int:
+	if p.x < door.position.x:
+		return 0
+	return 1 if p.x > door.end.x else -1  # -1: na parede da porta
+
+
+func _visible(p: Vector2) -> bool:
+	if door_open:
+		return true
+	var r := _region(p)
+	return r == -1 or r == _region(player.pos)
+
+
 # --- Projeção isométrica -----------------------------------------------------
 
 # Ponto da sala -> ponto da tela. Um losango do chão (TILE_WORLD) vira 96×48.
@@ -138,11 +155,12 @@ func _uniso(s: Vector2) -> Vector2:
 # inimigo ou a face de uma cobertura/porta valem como o ponto no chão dessas peças.
 func _resolve_click(mouse: Vector2) -> Vector2:
 	for e in enemies:
-		if e.is_alive() and mouse.distance_to(_iso(e.pos) + Vector2(0, -56)) <= 44.0:
+		if e.is_alive() and _visible(e.pos) and mouse.distance_to(_iso(e.pos) + Vector2(0, -56)) <= 44.0:
 			return e.pos
 	for lift in [0.0, 18.0, 36.0, 54.0, 72.0]:
 		var p := _uniso(mouse + Vector2(0, lift))
-		if _cover_at(p) or (not door_open and door.grow(12).has_point(p)):
+		var cover := _cover_at(p)
+		if (cover and _visible(cover.rect.get_center())) or (not door_open and door.grow(12).has_point(p)):
 			return p
 	return _uniso(mouse)
 
@@ -433,7 +451,7 @@ func _draw() -> void:
 	_draw_floor()
 	if mode == Mode.EXPLORATION:
 		for e in enemies:
-			if e.is_alive():
+			if e.is_alive() and _visible(e.pos):
 				_draw_range(e.pos, PERCEPTION_RANGE, Color(PlaceholderArt.color("sangue_claro"), 0.35))
 	# Peças ordenadas por profundidade: quanto maior x + y, mais perto da câmera.
 	var items: Array = []
@@ -441,11 +459,15 @@ func _draw() -> void:
 		# As paredes de frente (sul e leste) ficam baixas para não esconder a sala.
 		var wall_height := FRONT_WALL_HEIGHT if w.end.y >= ROOM_SIZE.y or w.end.x >= ROOM_SIZE.x else BLOCK_HEIGHT
 		for piece in _pieces(w):
+			if not _visible(piece.get_center()):
+				continue
 			items.append({"key": piece.get_center().x + piece.get_center().y, "block": piece, "front": PlaceholderArt.color("parede"), "top": PlaceholderArt.color("parede_topo"), "height": wall_height})
 	if not door_open:
 		for piece in _pieces(door):
 			items.append({"key": piece.get_center().x + piece.get_center().y, "block": piece, "front": PlaceholderArt.color("couro"), "top": PlaceholderArt.color("couro_claro"), "height": BLOCK_HEIGHT})
 	for c: Cover in covers:
+		if not _visible(c.rect.get_center()):
+			continue
 		if c.is_destroyed():
 			_draw_outline(c.rect, PlaceholderArt.color("chao_claro"))
 			continue
@@ -457,7 +479,8 @@ func _draw() -> void:
 			"height": COVER_HEIGHT[c.kind],
 		})
 	for u in _living_units():
-		items.append({"key": u.pos.x + u.pos.y, "unit": u})
+		if _visible(u.pos):
+			items.append({"key": u.pos.x + u.pos.y, "unit": u})
 	items.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.key < b.key)
 	for it in items:
 		if it.has("unit"):
@@ -485,6 +508,8 @@ func _draw_floor() -> void:
 	var half := TILE_SCREEN * 0.5
 	for ty in int(ceil(ROOM_SIZE.y / TILE_WORLD)):
 		for tx in int(ceil(ROOM_SIZE.x / TILE_WORLD)):
+			if not _visible((Vector2(tx, ty) + Vector2(0.5, 0.5)) * TILE_WORLD):
+				continue
 			var c := _iso((Vector2(tx, ty) + Vector2(0.5, 0.5)) * TILE_WORLD)
 			var pts := PackedVector2Array([c + Vector2(0, -half.y), c + Vector2(half.x, 0), c + Vector2(0, half.y), c + Vector2(-half.x, 0)])
 			draw_colored_polygon(pts, PlaceholderArt.color("chao") if (tx + ty) % 2 == 0 else PlaceholderArt.color("chao_claro").darkened(0.15))
