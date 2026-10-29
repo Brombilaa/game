@@ -5,7 +5,11 @@ extends Node2D
 # a percepção dos inimigos cai à metade. Clique num inimigo sem alerta faz o ataque furtivo.
 # Combate por turnos (TurnManager + CombatRules): no turno do agente, clique no chão
 # move (gasta PA), clique no inimigo ataca,
-# Espaço passa o turno e D atrasa. R reinicia a sala. Tab troca o visual do agente (Nikolai/Miguel/Fernando).
+# Espaço passa o turno e D atrasa. R reinicia a sala.
+# Grupo (Léo): controla um personagem por vez e os outros seguem espalhados, a distância fixa
+# do líder e posição variando. Tab, 1, 2 ou clique no retrato trocam o controlado (na exploração).
+# PV zero deixa caído; aliado encostado reanima com kit (2 PA, metade do PV); quem segue
+# caído no fim do combate morre.
 # Visual provisório: resolução interna 960×540 (DEC-2026-10-29-10), câmera segue a unidade
 # em foco e a sala rola. Vista isométrica 2:1 (DEC-2026-10-29-08): a lógica continua em
 # coordenadas planas de 1280×720 e só o desenho e o clique passam pela projeção (`_iso`).
@@ -21,6 +25,10 @@ signal move_finished
 const SPEED := 180.0
 const STAND_OFFSET := 6.0
 const ENEMY_STEP_SECONDS := 0.4
+const FOLLOW_DISTANCE := 60.0  # distância fixa do seguidor ao líder (provisório)
+const FOLLOW_SPREAD := 1.0  # variação do ângulo do seguidor em radianos (provisório)
+const REVIVE_REACH := 16.0  # borda a borda: "adjacente" para reanimar
+const PORTRAIT_SIZE := Vector2(118, 36)
 const POPUP_SECONDS := 1.2
 const WALK_FRAME_SECONDS := 0.11
 const IDLE_FRAME_SECONDS := 0.7
@@ -38,7 +46,7 @@ const BLOCK_CENTER := Vector2(460, 220)  # centro do Rect2(400, 200, 120, 40) de
 const WALL_BACK := 0  # eixo x, voltada para +y (norte da sala)
 const DOOR_OFFSET := Vector2(8, 0)  # ajuste fino da porta dentro do vão da parede
 const WALL_SIDE := 1  # eixo y, voltada para +x (oeste da sala e parede da porta)
-const AGENT_SHEETS := [  # o protótipo começa com o Fernando; Tab alterna
+const AGENT_SHEETS := [  # visuais dos membros do grupo (Fernando, Nikolai, Miguel)
 	"res://assets/sprites/personagens/fernando",
 	"res://assets/sprites/personagens/nikolai",
 	"res://assets/sprites/personagens/miguel",
@@ -67,7 +75,17 @@ var covers: Array = [
 
 var cfg := CombatConfig.load_file()
 var rules := CombatRules.new(cfg)
-var player: Combatant = cfg.make_unit("agente", "Agente", Vector2(160, 360))
+# Grupo de teste: Fernando e Nikolai (só para exercitar grupo, troca e reanimação).
+var party: Array[Combatant] = [
+	cfg.make_unit("agente", "Fernando", Vector2(160, 360)),
+	cfg.make_unit("agente", "Nikolai", Vector2(110, 320)),
+]
+var player: Combatant = party[0]  # personagem controlado (no combate, o do turno)
+var looks := {}  # membro do grupo -> índice em AGENT_SHEETS
+var follow_paths := {}  # seguidor -> rota restante na exploração
+var follow_offsets := {}  # seguidor -> posição relativa ao líder
+var follow_rng := RandomNumberGenerator.new()
+var kits := 1  # kits de primeiros socorros do grupo (teste; o inventário ainda não existe)
 var enemies: Array[Combatant] = [
 	cfg.make_enemy("cultista", Vector2(800, 360)),
 	cfg.make_enemy("atirador", Vector2(1100, 200)),
@@ -92,7 +110,6 @@ var facing8 := {}  # Combatant -> CharacterSheet.Dir (8 direções; o agente com
 var walk_time := 0.0
 var idle_frame := 0
 var agent_sheets: Array[CharacterSheet] = []
-var agent_look := 0
 var enemy_sheets := {}  # variante -> CharacterSheet
 var scenery := Scenery.new()
 
@@ -103,6 +120,9 @@ func _ready() -> void:
 	add_child(audio)
 	for path in AGENT_SHEETS:
 		agent_sheets.append(CharacterSheet.new(path))
+	looks[party[0]] = 0
+	looks[party[1]] = 1
+	_reset_follow_offsets(Vector2.RIGHT)
 	for variant in ENEMY_SHEETS:
 		enemy_sheets[variant] = CharacterSheet.new(ENEMY_SHEETS[variant])
 	var corners := [_iso(Vector2.ZERO), _iso(Vector2(ROOM_SIZE.x, 0)), _iso(Vector2(0, ROOM_SIZE.y)), _iso(Vector2(ROOM_SIZE))]
@@ -123,8 +143,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.pressed and event.keycode == KEY_SPACE:
 			_player_pass()
 		elif event.pressed and event.keycode == KEY_TAB:
-			agent_look = (agent_look + 1) % agent_sheets.size()
-			queue_redraw()
+			_switch_to(party[(party.find(player) + 1) % party.size()])
+		elif event.pressed and event.keycode >= KEY_1 and event.keycode < KEY_1 + party.size():
+			_switch_to(party[event.keycode - KEY_1])
 		elif event.pressed and event.keycode == KEY_D:
 			_player_delay()
 		elif event.pressed and event.keycode == KEY_C and mode == Mode.EXPLORATION:
@@ -134,6 +155,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and mode == Mode.COMBAT:
 		queue_redraw()  # atualiza a prévia de chance/custo sob o cursor
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		var portrait := _portrait_at(get_viewport().get_mouse_position())
+		if portrait:
+			_switch_to(portrait)
+			return
 		var click := _resolve_click(get_global_mouse_position())
 		if mode == Mode.EXPLORATION:
 			var target := _enemy_at(click)
@@ -184,6 +209,9 @@ func _resolve_click(mouse: Vector2) -> Vector2:
 	for e in enemies:
 		if e.is_alive() and _visible(e.pos) and mouse.distance_to(_iso(e.pos) + Vector2(0, -56)) <= 44.0:
 			return e.pos
+	for m in party:
+		if m != player and not m.dead and _visible(m.pos) and mouse.distance_to(_iso(m.pos) + Vector2(0, -56)) <= 44.0:
+			return m.pos
 	for lift in [0.0, 18.0, 36.0, 54.0, 72.0]:
 		var p := _uniso(mouse + Vector2(0, lift))
 		var cover := _cover_at(p)
@@ -204,6 +232,7 @@ func _order_move(click: Vector2) -> void:
 		return  # destino inacessível
 	# Novo destino cancela a interação pendente e recalcula a rota.
 	pending_door = wants_door
+	_reset_follow_offsets(click - player.pos)
 	_start_move(player, new_path)
 
 
@@ -230,8 +259,9 @@ func _sight_blockers() -> Array[Rect2]:
 
 func _living_units() -> Array[Combatant]:
 	var out: Array[Combatant] = []
-	if player.is_alive():
-		out.append(player)
+	for m in party:
+		if not m.dead:
+			out.append(m)  # caídos também ocupam espaço (Léo: ninguém atravessa)
 	for e in enemies:
 		if e.is_alive():
 			out.append(e)
@@ -271,6 +301,7 @@ func _process(delta: float) -> void:
 		queue_redraw()
 	if mode != Mode.EXPLORATION:
 		return
+	_update_followers(delta)
 	if path.is_empty() and pending_door:
 		pending_door = false
 		door_open = true
@@ -283,11 +314,14 @@ func _process(delta: float) -> void:
 # (parede e porta fechada bloqueiam). Detecção inicia o combate imediatamente.
 func _check_detection() -> void:
 	for e in enemies:
-		if not e.is_alive() or e.pos.distance_to(player.pos) > rules.perception_range(e, player):
+		if not e.is_alive():
 			continue
-		if Pathfinder.has_line_of_sight(e.pos, player.pos, _sight_blockers()):
-			_start_combat()
-			return
+		for m in party:
+			if not m.is_alive() or e.pos.distance_to(m.pos) > rules.perception_range(e, m):
+				continue
+			if Pathfinder.has_line_of_sight(e.pos, m.pos, _sight_blockers()):
+				_start_combat()
+				return
 
 
 # Ataque furtivo (Léo): contra inimigo sem alerta, com bônus de acerto e de dano. Se errar,
@@ -333,7 +367,11 @@ func _start_combat() -> void:
 	turns.turn_started.connect(_on_turn_started)
 	turns.turn_ended.connect(func(_u: Combatant) -> void: hud.on_turn_ended())
 	turns.combat_ended.connect(_on_combat_ended)
-	var units: Array[Combatant] = [player]
+	follow_paths.clear()
+	var units: Array[Combatant] = []
+	for m in party:
+		if m.is_alive():
+			units.append(m)
 	for e in enemies:
 		if e.is_alive():
 			units.append(e)
@@ -344,6 +382,7 @@ func _start_combat() -> void:
 func _on_turn_started(unit: Combatant) -> void:
 	queue_redraw()
 	if unit.side == Combatant.Side.PLAYER:
+		player = unit
 		hud.on_turn_started(unit.name, unit.pa, turns.turn_pa(player))
 		audio.play_sfx("turn_start")
 	else:
@@ -356,6 +395,15 @@ func _on_combat_ended(result: TurnManager.Result) -> void:
 	if result == TurnManager.Result.VICTORY:
 		mode = Mode.EXPLORATION
 		hud.on_combat_ended()
+		for m in party:
+			if not m.is_alive() and not m.dead:
+				m.dead = true  # Léo: caído sem reanimação até o fim do combate morre
+				_popup(m.pos, "Morreu")
+		if player.dead:
+			for m in party:
+				if not m.dead:
+					player = m
+					break
 	else:
 		mode = Mode.GAME_OVER
 		_game_over_fade()
@@ -393,9 +441,38 @@ func _combat_click(click: Vector2) -> void:
 		_show_attack(player, target, rules.attack(player, target, _sight_blockers(), covers))
 		_after_player_action()
 		return
+	var fallen := _fallen_at(click)
+	if fallen:
+		_revive(fallen)
+		return
 	if _cover_at(click):
 		return  # coberturas não podem ser destruídas por enquanto (Léo)
 	await _player_move(click)
+
+
+# Kit de primeiros socorros (Léo): aliado encostado no caído, 2 PA, volta com metade do PV,
+# um uso por kit.
+func _revive(fallen: Combatant) -> void:
+	var kit := cfg.game_data.get_entry("itens", "kit_primeiros_socorros")
+	var cost := int(kit["custo_pa_combate"])
+	if kits <= 0:
+		_reject("requirement")
+	elif CombatRules.gap(player, fallen) > REVIVE_REACH:
+		_reject("out_of_range")
+	elif not turns.spend(player, cost):
+		_reject("no_pa")
+	else:
+		kits -= 1
+		fallen.pv = maxi(floori(fallen.max_pv * float(kit["valor"])), 1)
+		_popup(fallen.pos, "Reanimado")
+	_after_player_action()
+
+
+func _fallen_at(p: Vector2) -> Combatant:
+	for m in party:
+		if not m.is_alive() and not m.dead and m.pos.distance_to(p) <= m.radius + 4.0:
+			return m
+	return null
 
 
 func _player_move(click: Vector2) -> void:
@@ -466,19 +543,32 @@ func _run_enemy_turn(unit: Combatant) -> void:
 		await get_tree().create_timer(ENEMY_STEP_SECONDS).timeout
 		if not turns.is_turn_of(unit):
 			break
-		if rules.attack_blocker(unit, player, _sight_blockers(), covers) == "":
-			_show_attack(unit, player, rules.attack(unit, player, _sight_blockers(), covers))
+		var target := _enemy_target(unit)
+		if target == null:
+			turns.end_turn()
+			break
+		if rules.attack_blocker(unit, target, _sight_blockers(), covers) == "":
+			_show_attack(unit, target, rules.attack(unit, target, _sight_blockers(), covers))
 			turns.action_done()
 			continue
-		if not await _enemy_advance(unit):
+		if not await _enemy_advance(unit, target):
 			turns.end_turn()
 	busy = false
 	queue_redraw()
 
 
+# Alvo do inimigo: o membro do grupo de pé mais próximo.
+func _enemy_target(unit: Combatant) -> Combatant:
+	var best: Combatant = null
+	for m in party:
+		if m.is_alive() and (best == null or unit.pos.distance_to(m.pos) < unit.pos.distance_to(best.pos)):
+			best = m
+	return best
+
+
 # Retorna false se não houver como se aproximar.
-func _enemy_advance(unit: Combatant) -> bool:
-	var stand := player.pos.move_toward(unit.pos, player.radius + unit.radius + 2.0 + float(unit.weapon["max_range"]) * 0.5)
+func _enemy_advance(unit: Combatant, target: Combatant) -> bool:
+	var stand := target.pos.move_toward(unit.pos, target.radius + unit.radius + 2.0 + float(unit.weapon["max_range"]) * 0.5)
 	var full := pathfinder.find_path(unit.pos, stand, _obstacles(unit), unit.radius)
 	if full.size() < 2:
 		return false
@@ -574,12 +664,13 @@ func _draw() -> void:
 			_draw_box(it.block, it.front, it.top, it.height)
 	if mode == Mode.COMBAT:
 		_draw_preview(font)
+	_draw_portraits(font)
 	# Textos de rodapé presos à tela, não à sala que rola.
 	var footer := get_canvas_transform().affine_inverse() * Vector2(24, 520)
 	if mode == Mode.COMBAT:
 		draw_string(font, footer, "Rodada %d  |  Espaço passa, D atrasa, R reinicia" % turns.round_number, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 1, 0.6))
 	elif mode == Mode.EXPLORATION:
-		draw_string(font, footer, ("AGACHADO  |  " if player.crouched else "") + "C agacha, clique no inimigo ataca de surpresa", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 1, 0.6))
+		draw_string(font, footer, ("AGACHADO  |  " if player.crouched else "") + "C agacha, Tab ou 1/2 troca o personagem, clique no inimigo ataca de surpresa", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 1, 0.6))
 	for p in popups:
 		draw_string(font, p.pos, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 0.7, clampf(p.time / POPUP_SECONDS * 2.0, 0.0, 1.0)))
 
@@ -653,12 +744,14 @@ func _draw_unit(u: Combatant) -> void:
 		draw_set_transform(at, 0.0, Vector2(1.0, 0.5))
 		draw_arc(Vector2.ZERO, 36.0, 0.0, TAU, 32, PlaceholderArt.color("destaque"), 2.0)
 		draw_set_transform(Vector2.ZERO)
-	var walking := u == moving_unit
+	var walking: bool = u == moving_unit or not follow_paths.get(u, PackedVector2Array()).is_empty()
 	var i := enemies.find(u)
 	if i < 0:
 		var frames: Array = CharacterSheet.WALK_FRAMES if walking else CharacterSheet.IDLE_FRAMES
 		var n := int(walk_time / WALK_FRAME_SECONDS) % frames.size() if walking else idle_frame
-		agent_sheets[agent_look].draw(self, at, frames[n], facing8.get(u, CharacterSheet.Dir.SE))
+		agent_sheets[looks.get(u, 0)].draw(self, at, frames[n], facing8.get(u, CharacterSheet.Dir.SE))
+		if not u.is_alive():
+			draw_string(ThemeDB.fallback_font, at + Vector2(-22, -CharacterSheet.HEIGHT - 14), "CAÍDO", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(1, 0.4, 0.4))
 	else:
 		var variant: String = ENEMY_VARIANTS[i % ENEMY_VARIANTS.size()]
 		if enemy_sheets.has(variant):
@@ -703,3 +796,87 @@ func _draw_preview(font: Font) -> void:
 			text = "%d PA" % cost if cost <= player.pa else "%d PA (parcial)" % player.pa
 	if text != "":
 		draw_string(font, screen_mouse + Vector2(14, -8), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color.WHITE)
+
+
+# --- Grupo ---------------------------------------------------------------------
+
+# Troca o personagem controlado (só na exploração; no combate manda a ordem dos turnos).
+func _switch_to(m: Combatant) -> void:
+	if mode != Mode.EXPLORATION or m == player or m.dead or not m.is_alive():
+		return
+	if moving_unit == player:
+		path = PackedVector2Array()
+		moving_unit = null
+		walk_time = 0.0
+	pending_door = false
+	follow_paths.erase(m)
+	player = m
+	_reset_follow_offsets(Vector2.RIGHT)
+	queue_redraw()
+
+
+# Sorteia a posição de cada seguidor: atrás do líder (oposto ao rumo), a distância fixa,
+# com ângulo variando para não formar fila rígida.
+func _reset_follow_offsets(heading: Vector2) -> void:
+	var back := -heading.normalized() if heading.length() > 0.1 else Vector2.LEFT
+	var k := 0
+	for m in party:
+		if m == player:
+			continue
+		var side := (k % 2) * 2 - 1  # alterna os lados
+		var angle := side * 0.35 * (k + 1) + follow_rng.randf_range(-FOLLOW_SPREAD, FOLLOW_SPREAD) * 0.5
+		follow_offsets[m] = back.rotated(angle) * FOLLOW_DISTANCE
+		k += 1
+
+
+func _update_followers(delta: float) -> void:
+	for m in party:
+		if m == player or not m.is_alive():
+			continue
+		var goal: Vector2 = player.pos + follow_offsets.get(m, Vector2.LEFT * FOLLOW_DISTANCE)
+		var route: PackedVector2Array = follow_paths.get(m, PackedVector2Array())
+		var stale := route.is_empty() or route[route.size() - 1].distance_to(goal) > 24.0
+		if stale and m.pos.distance_to(goal) > 12.0:
+			route = pathfinder.find_path(m.pos, goal, _obstacles(m), m.radius)
+			if not route.is_empty():
+				route.remove_at(0)
+		if route.is_empty():
+			follow_paths.erase(m)
+			continue
+		var step := _iso(route[0]) - _iso(m.pos)
+		facing8[m] = CharacterSheet.dir_from_vector(step)
+		m.pos = m.pos.move_toward(route[0], SPEED * delta)
+		if m.pos.is_equal_approx(route[0]):
+			route.remove_at(0)
+		follow_paths[m] = route
+		if moving_unit == null:
+			walk_time += delta
+		queue_redraw()
+
+
+func _portrait_rect(i: int) -> Rect2:
+	return Rect2(Vector2(960 - PORTRAIT_SIZE.x - 12, 12 + i * (PORTRAIT_SIZE.y + 6)), PORTRAIT_SIZE)
+
+
+func _portrait_at(screen: Vector2) -> Combatant:
+	for i in party.size():
+		if _portrait_rect(i).has_point(screen):
+			return party[i]
+	return null
+
+
+# Retratos provisórios (nome e PV) no canto da tela; clique troca o controlado.
+func _draw_portraits(font: Font) -> void:
+	var to_world := get_canvas_transform().affine_inverse()
+	for i in party.size():
+		var m := party[i]
+		var rect := _portrait_rect(i)
+		var pos := to_world * rect.position
+		var box := Rect2(pos, rect.size)
+		draw_rect(box, Color(0, 0, 0, 0.6))
+		draw_rect(box, PlaceholderArt.color("destaque") if m == player else Color(1, 1, 1, 0.25), false, 1.0)
+		var label := "%d %s" % [i + 1, m.name] + ("  MORTO" if m.dead else ("  CAÍDO" if not m.is_alive() else ""))
+		draw_string(font, pos + Vector2(6, 14), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color.WHITE)
+		var bar := Rect2(pos + Vector2(6, 22), Vector2(rect.size.x - 12, 6))
+		draw_rect(bar, Color(0.2, 0.2, 0.2))
+		draw_rect(Rect2(bar.position, Vector2(bar.size.x * float(m.pv) / m.max_pv, bar.size.y)), Color(0.3, 0.85, 0.35))

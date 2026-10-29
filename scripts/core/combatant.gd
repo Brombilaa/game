@@ -16,7 +16,8 @@ var radius := 10.0
 var pos := Vector2.ZERO
 var pa := 0
 var perception := 0.0  # alcance de percepção em pixels (inimigos)
-var crouched := false  # agachado: inimigos percebem a metade da distância
+var crouched := false
+var dead := false  # caído que não foi reanimado até o fim do combate (membro do grupo)  # agachado: inimigos percebem a metade da distância
 var pa_per_turn := -1
 var conditions: Dictionary = {}  # id -> {"stacks": int, "rounds": int (-1 = até remover)}  # PA da ficha; -1 usa o padrão do combate (3 para protagonistas)
 
