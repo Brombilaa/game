@@ -29,6 +29,11 @@ func _init() -> void:
 	]
 	_check(pf.find_path(Vector2(10, 100), Vector2(200, 100), box, radius).is_empty(), "destino cercado é inacessível")
 
+	# Linha de visão: parede entre os pontos bloqueia; sem parede, livre.
+	_check(not Pathfinder.has_line_of_sight(Vector2(50, 100), Vector2(200, 100), wall), "parede bloqueia a visão")
+	_check(Pathfinder.has_line_of_sight(Vector2(50, 300), Vector2(200, 300), wall), "sem parede a visão é livre")
+	_check(Pathfinder.has_line_of_sight(Vector2(50, 100), Vector2(100, 100), wall), "encostar na borda não bloqueia")
+
 	print("Falhas: %d" % failures)
 	quit(1 if failures > 0 else 0)
 

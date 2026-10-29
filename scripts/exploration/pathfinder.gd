@@ -44,14 +44,14 @@ func _point_blocked(p: Vector2, blocks: Array[Rect2]) -> bool:
 
 func _segment_blocked(a: Vector2, b: Vector2, blocks: Array[Rect2]) -> bool:
 	for r in blocks:
-		if _segment_crosses_rect(a, b, r):
+		if segment_crosses_rect(a, b, r):
 			return true
 	return false
 
 
 # Liang-Barsky: true se o segmento atravessa o interior do retângulo.
 # Encostar na borda ou passar por um canto não conta como bloqueio.
-func _segment_crosses_rect(a: Vector2, b: Vector2, r: Rect2) -> bool:
+static func segment_crosses_rect(a: Vector2, b: Vector2, r: Rect2) -> bool:
 	var d := b - a
 	var p := [-d.x, d.x, -d.y, d.y]
 	var q := [a.x - r.position.x, r.end.x - a.x, a.y - r.position.y, r.end.y - a.y]
@@ -74,3 +74,11 @@ func _segment_crosses_rect(a: Vector2, b: Vector2, r: Rect2) -> bool:
 					return false
 				t1 = minf(t1, t)
 	return t0 < t1
+
+
+# Linha de visão entre dois pontos: bloqueada por qualquer obstáculo atravessado.
+static func has_line_of_sight(a: Vector2, b: Vector2, obstacles: Array[Rect2]) -> bool:
+	for r in obstacles:
+		if segment_crosses_rect(a, b, r):
+			return false
+	return true
