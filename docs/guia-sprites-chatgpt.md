@@ -96,17 +96,52 @@ O cultista (encapuzado, casaco marrom com símbolos vermelhos) também veio comp
 `<personagem>_<direção>.png`, tudo em minúsculas, sem acento. Exemplos: `nikolai_se.png`, `nikolai_ne.png`, `miguel_se.png`.
 Se refizer uma imagem, acrescente `_v2`. Personagens: `rafael`, `miguel`, `nikolai`, `fernando`, e um nome por inimigo.
 
-## 7. Chão e cenário (proposta, depende da V-21)
+## 7. Chão, paredes e móveis (tile 96×48, DEC-2026-10-29-13)
+
+Referência de estilo: o Enigma do Medo (`/mnt/project-files/arte/referencias/enigma-do-medo-cenario.png`), mas sem iluminação dinâmica nem efeitos 3D avançados.
+Anexe a referência e o bloco de regras abaixo em todo pedido de cenário. Uma imagem por categoria.
 
 ```
-Isometric 2:1 pixel art floor tile set for a dark horror game, flat solid magenta (#FF00FF) background, no text, no grid lines.
-6 variations of a dark worn wooden plank floor, one tile each, in a grid of 3 columns x 2 rows, each tile a perfect diamond twice as wide as it is tall (256x128 px).
-Chunky visible pixels, hard edges, no anti-aliasing, no gradients, dark desaturated warm brown palette, light from the top-left.
-The four edge pixels of each tile must continue seamlessly into a neighboring tile of the same set.
+Pixel art environment pieces for a dark horror / noir isometric tactical RPG (1930s-40s mansion and gothic interiors).
+Camera: classic isometric 2:1 (the floor diamonds are twice as wide as they are tall), looking down at about 30 degrees, like Fear's Mystery (Enigma do Medo) but WITHOUT dynamic lighting, glow, bloom or 3D-render effects.
+
+Style rules:
+- Pixel art with chunky, clearly visible pixels and hard edges. NO anti-aliasing, NO blur, NO gradients, NO painterly look, NO 3D render look.
+- 1-pixel dark outline around each piece. Shading in flat blocks of color. Light from the top-left. No cast shadows on the background.
+- Dark, desaturated palette (browns, dark greens, grays), at most about 24 colors per piece. Small touches of dull red or candle yellow are allowed.
+- Background: one flat solid pure magenta (#FF00FF) and nothing else. Never use magenta on the pieces.
+- No text, no labels, no numbers, no grid lines, no cell borders, no watermark.
+- Every piece is drawn at the SAME scale. Pieces never touch each other or the image edges.
 ```
 
-Para paredes, portas e coberturas, use o mesmo formato trocando a descrição, e diga a altura em tiles (por exemplo, "a wall segment 2 tiles tall").
-Antes de gerar muitas peças, confirme comigo o tamanho do tile (V-21).
+**Chão.** Peça um conjunto de 6 variações do mesmo piso (tábuas de madeira escura, pedra, tapete, azulejo, terra batida, sangue seco, escolha o tema da sala):
+
+```
+Make 6 floor tiles of the same material family on one 1536x1024 image, 3 columns x 2 rows.
+Each tile is a perfect isometric diamond, exactly twice as wide as it is tall, 384 px wide and 192 px tall, centered in a 512x512 cell.
+Variation: [DARK WOODEN PLANKS WITH WORN EDGES / GRAY STONE SLABS / FADED RED CARPET ...].
+All 6 tiles must look like the same floor with different wear (cracks, stains, missing nail heads) and must connect seamlessly with each other on every edge.
+Only the flat top surface of the floor, no thickness, no walls.
+```
+
+**Paredes.** Cada peça cobre um tile de comprimento (96 px de largura na tela) e tem 192 px de altura. Duas orientações (o lado que desce para a direita e o que desce para a esquerda), em variações lisa, com janela e com batente de porta:
+
+```
+Make wall pieces on one 1536x1024 image, 4 columns x 2 rows. Top row: walls whose face runs from upper-left to lower-right ("right-facing wall"). Bottom row: the mirror, from upper-right to lower-left.
+Columns: 1) plain wall, 2) wall with a tall gothic window, 3) wall with an empty doorway (open frame, no door), 4) wall with a damaged section showing bricks.
+Each piece is one floor tile long (the base is one 2:1 diamond edge, 192 px wide on this image) and 384 px tall, with a visible top edge and 6 px of wall thickness.
+Material: [PEELING DARK WALLPAPER OVER PLASTER / ROUGH STONE]. All pieces share the same material and height.
+```
+
+**Móveis e objetos.** Sprites soltos, de tamanho livre, mas na mesma escala do chão (um homem de pé tem 128 px de altura na tela):
+
+```
+Make isometric furniture and props on one 1536x1024 image, a loose grid with generous space between items.
+Items: a wooden bookshelf, a desk with papers, a wooden chair, an iron bed, a small wooden crate (about 1 meter), a large wooden wardrobe, a candle stand, a wooden door (closed, fits a doorway one tile wide and 160 px tall), a round table.
+Scale: a standing man would be 128 px tall in this image (a floor tile is 96 px wide). Show each object from the same isometric camera, facing the lower-right corner.
+```
+
+Depois que as imagens chegarem, eu monto um conversor de peças de cenário (recorta, reduz para 96×48 e junta numa paleta única), como o de personagens. Para cobertura, a caixa pequena vale como cobertura parcial e o armário como completa.
 
 ## 8. Problemas comuns
 
