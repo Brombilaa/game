@@ -42,3 +42,4 @@ assets/sprites/menu/*.png -filter -diff -merge -text
 assets/sprites/ui/acoes/*.png -filter -diff -merge -text
 assets/sprites/ui/inventario_moldura.png -filter -diff -merge -text
 assets/sprites/ui/inv/*.png -filter -diff -merge -text
+assets/sprites/ui/condicoes/*.png -filter -diff -merge -text

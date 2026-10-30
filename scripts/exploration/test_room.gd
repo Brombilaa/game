@@ -1305,7 +1305,7 @@ func _draw_sheet(font: Font, m: Combatant, pos: Vector2) -> void:
 	var k := 0
 	for id in CONDITION_ICONS:  # condições ativas embaixo do retrato
 		if m.has_condition(id):
-			_draw_condition(Rect2(pos + Vector2(_k(2) + k * _k(17), _k(77)), Vector2(_k(15), _k(15))), id)
+			_draw_condition(Rect2(pos + Vector2(_k(1) + k * _k(21), _k(76)), Vector2(_k(20), _k(20))), id)
 			k += 1
 
 
@@ -1314,6 +1314,9 @@ func _draw_condition(r: Rect2, id: String) -> void:
 	var color: Color = CONDITION_ICONS[id]
 	draw_rect(r, FRAME_FILL)
 	draw_rect(r, color, false, 1.0)
+	if ItemIcons.CONDITION_ART.has(id):
+		draw_texture_rect(ItemIcons.CONDITION_ART[id], r.grow(-r.size.x * 0.04), false)
+		return
 	var c := r.get_center()
 	var u := r.size.x / 15.0
 	match id:
