@@ -16,7 +16,7 @@ const CANDLE_AT := Vector2(0.075, 0.26)  # ponta da chama da vela desenhada por 
 const ART_CANDLE_AT := Vector2(0.136, 0.08)  # meio da chama na arte do fundo (fundo_menu.png)
 const ART_WICK_AT := Vector2(0.1365, 0.148)  # pavio da vela na arte: a chama animada nasce aqui
 const ART_FLAME := Vector2(15.0, 150.0)  # meia largura e altura da chama da arte, em pixels de 1920x1080
-const ART_SIGIL_AT := Vector2(0.6, 0.2)  # na arte, o símbolo e o nome ficam na parede escura de cima
+const ART_SIGIL_AT := Vector2(0.62, 0.3)  # na arte, o símbolo e o nome ficam na parede escura de cima
 const ART_DARKEN := 0.25  # escurece a arte por igual, para o nome e o menu lerem por cima
 const TITLE := "PACTO CARMESIM"
 const ITEMS := [["new", "Novo jogo"], ["load", "Carregar"], ["opts", "Opções"], ["quit", "Sair do jogo"]]
@@ -63,7 +63,10 @@ const WAX := Color("d8ccb0")
 const WAX_SHADE := Color("b3a586")
 const PANEL_BG := Color(0.07, 0.05, 0.035, 0.96)
 
-const TITLE_SIZE := 44
+const TITLE_SIZE := 34
+const TITLE_FONT := preload("res://assets/fonts/CinzelDecorative-Bold.ttf")  # só no nome do jogo; o resto segue na Special Elite
+const TITLE_SHINE := Color("ffb59a")
+const SHINE_PERIOD := 6.0  # um reflexo de luz passa pelo nome a cada 6 s
 const MENU_SIZE := 22
 const MENU_GAP := 40.0
 
@@ -389,7 +392,7 @@ func _sigil_center() -> Vector2:
 
 
 func _sigil_scale() -> float:
-	return size.x * (0.26 if bg_tex else 0.40) / 220.0
+	return size.x * (0.2 if bg_tex else 0.40) / 220.0
 
 
 func _flame_at() -> Vector2:
@@ -609,40 +612,42 @@ func _letters_width(font: Font, text: String, font_size: int, spacing: float) ->
 	return w - spacing
 
 
-func _draw_title(font: Font, center: Vector2, alpha: float) -> void:
+func _draw_title(_font: Font, center: Vector2, alpha: float) -> void:
 	if alpha <= 0.0:
 		return
-	var spacing := TITLE_SIZE * 0.12
+	var font: Font = TITLE_FONT
+	var spacing := TITLE_SIZE * 0.08
 	var width := _letters_width(font, TITLE, TITLE_SIZE, spacing)
-	var x := minf(center.x - width / 2.0, size.x - 16 - width)
-	var base := center.y + TITLE_SIZE * 0.3
+	var left := minf(center.x - width / 2.0, size.x - 16 - width)
+	var x := left
+	var base := center.y + TITLE_SIZE * 0.35
 	var glow := 0.0
 	if t > GLOW_START:
 		glow = 0.5 - 0.5 * cos((t - GLOW_START) * TAU / GLOW_PERIOD)
+	# Posição do reflexo, de -0.3 a 1.3 da largura do nome, só depois da abertura.
+	var sweep := -1.0
+	if t > INTRO_END:
+		sweep = fposmod(t - INTRO_END, SHINE_PERIOD) / SHINE_PERIOD * 2.4 - 0.3
 	for i in TITLE.length():
 		var ch := TITLE[i]
 		var a := letter_alpha(t, i) * alpha
+		var adv := font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, TITLE_SIZE).x
 		if a > 0.0 and ch != " ":
-			var pos := Vector2(x, base)
-			# Saindo do desfoque: cópias espalhadas que se juntam conforme a letra aparece.
-			var spread := (1.0 - a) * 6.0
-			if spread > 0.1:
-				for o in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:
-					draw_char(font, pos + o * spread, ch, TITLE_SIZE, Color(TITLE_RED, a * 0.25))
-			# Brilho vermelho que respira.
-			var halo := Color(BLOOD_LIGHT, (0.22 + 0.3 * glow) * a)
-			for o in [Vector2(-2, 0), Vector2(2, 0), Vector2(0, -2), Vector2(0, 2), Vector2(-3, -3), Vector2(3, 3), Vector2(3, -3), Vector2(-3, 3)]:
-				draw_char(font, pos + o * (1.2 + 0.8 * glow), ch, TITLE_SIZE, halo)
-			# Contorno escuro: separa o nome vermelho do símbolo vermelho atrás.
-			for o in [Vector2(-2, 0), Vector2(2, 0), Vector2(0, -2), Vector2(0, 2), Vector2(-1.5, -1.5), Vector2(1.5, 1.5), Vector2(1.5, -1.5), Vector2(-1.5, 1.5)]:
-				draw_char(font, pos + o, ch, TITLE_SIZE, Color(0.07, 0.02, 0.02, a))
-			draw_char(font, pos + Vector2(0, 2), ch, TITLE_SIZE, Color(0, 0, 0, 0.7 * a))
-			draw_char(font, pos, ch, TITLE_SIZE, Color(TITLE_RED, a))
-		x += font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, TITLE_SIZE).x + spacing
+			# A letra desce 6 px enquanto aparece.
+			var pos := Vector2(x, base - 6.0 * (1.0 - a))
+			# Brilho vermelho suave que respira: contornos largos e quase transparentes, um dentro do outro.
+			for k in 3:
+				var o_size := int((22 - k * 6) * (0.85 + 0.3 * glow))
+				draw_char_outline(font, pos, ch, TITLE_SIZE, o_size, Color(BLOOD_LIGHT, (0.05 + 0.04 * glow) * a))
+			draw_char(font, pos + Vector2(0, 3), ch, TITLE_SIZE, Color(0, 0, 0, 0.75 * a))
+			draw_char_outline(font, pos, ch, TITLE_SIZE, 5, Color(0.06, 0.015, 0.015, a))
+			var shine := exp(-pow(((x + adv / 2.0 - left) / width - sweep) * 7.0, 2.0))
+			draw_char(font, pos, ch, TITLE_SIZE, Color(TITLE_RED.lerp(TITLE_SHINE, 0.55 * shine), a))
+		x += adv + spacing
 	# Ornamento dourado abaixo do nome.
 	var oa := menu_alpha(t) * alpha
 	if oa > 0.0:
-		var y := base + 22
+		var y := base + 18
 		var cx := center.x
 		for side in [-1.0, 1.0]:
 			for j in 12:
