@@ -1227,11 +1227,12 @@ func _action_slots() -> Array:
 # compacta e semitransparente no rodapé, com as casas de ação à esquerda, um divisor gótico e o
 # fim do turno em carmesim à direita; os PA ficam numa faixa de gemas sobre a borda de cima.
 # Só o desenho mudou: as casas e o botão continuam sendo os retângulos de _action_rect e _end_turn_rect.
+const ART_ICON := 32.0  # lado do ícone pintado, pixels da tela
 const BAR_SLOT := 38.0  # lado de uma casa, pixels da tela
 const BAR_GAP := 4.0
 const BAR_PAD := 7.0  # da moldura até as casas
 const BAR_DIVIDER := 16.0  # vão entre as casas e o fim do turno
-const BAR_END_W := 96.0
+const BAR_END_W := 92.0
 const BAR_BOTTOM := 532.0
 const BAR_FILL := Color(0.035, 0.026, 0.022, 0.84)
 const BAR_CRIMSON := Color(0.62, 0.09, 0.11)
@@ -1471,16 +1472,17 @@ func _draw_slot(r: Rect2, slot: Array, selected: bool, hover: bool) -> void:
 	draw_rect(r, Color(0.055, 0.042, 0.035, 0.96))
 	draw_rect(Rect2(r.position + Vector2(1, 1), Vector2(r.size.x - 2, r.size.y * 0.45)), Color(1, 0.9, 0.7, 0.04))
 	draw_rect(Rect2(r.position + Vector2(1, r.size.y - 4), Vector2(r.size.x - 2, 3)), Color(0, 0, 0, 0.35))
+	# Contornos: filete externo de 2 px da janela (1.0) e interno de 1 px (0.5), sempre nas mesmas
+	# posições para as casas não parecerem de espessuras diferentes; a selecionada só muda de cor.
 	if selected:
-		draw_rect(r.grow(3), Color(FRAME_ACCENT, 0.12), false, 2.0)
-		draw_rect(r.grow(1.5), Color(FRAME_ACCENT, 0.35), false, 1.5)
+		draw_rect(r.grow(1.25), Color(FRAME_ACCENT, 0.35), false, 0.5)
 		draw_rect(r.grow(-0.5), Color(1.0, 0.85, 0.5), false, 1.0)
-		draw_rect(r.grow(-2.5), Color(FRAME_ACCENT, 0.5), false, 0.5)
+		draw_rect(r.grow(-2.75), Color(FRAME_ACCENT, 0.6), false, 0.5)
 		for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:
-			_draw_diamond(r.position + corner * r.size, 2.0, Color(1.0, 0.85, 0.5))
+			_draw_diamond(r.position + corner * r.size, 1.75, Color(1.0, 0.85, 0.5))
 	else:
-		draw_rect(r.grow(-0.5), FRAME_OUTER.lightened(0.25) if hover else Color(FRAME_OUTER, 0.85), false, 1.0)
-		draw_rect(r.grow(-2.5), Color(FRAME_INNER, 0.5), false, 0.5)
+		draw_rect(r.grow(-0.5), FRAME_OUTER.lightened(0.25) if hover else Color(FRAME_OUTER, 0.9), false, 1.0)
+		draw_rect(r.grow(-2.75), Color(FRAME_INNER, 0.6), false, 0.5)
 	if hover:
 		draw_rect(r.grow(-3), Color(1, 0.9, 0.7, 0.07))
 	_draw_action_icon(r, slot[0], enabled)
@@ -1512,21 +1514,24 @@ func _draw_end_turn(font: Font, er: Rect2, hover: bool, pressed: bool, enabled: 
 	draw_rect(r.grow(-2.5), Color(FRAME_ACCENT, 0.45) if enabled else Color(edge, 0.5), false, 0.5)
 	for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:
 		_draw_diamond(r.position + corner * r.size, 2.0, edge.lightened(0.2))
-	_draw_art_icon(Rect2(r.position + Vector2(4, 1), Vector2(r.size.y - 2, r.size.y - 2)), ACTION_ART["ampulheta"], enabled)
-	draw_string(font, r.position + Vector2(38, 17), "FIM DO", HORIZONTAL_ALIGNMENT_CENTER, r.size.x - 44, 11, ink)
-	draw_string(font, r.position + Vector2(38, 30), "TURNO", HORIZONTAL_ALIGNMENT_CENTER, r.size.x - 44, 11, ink)
+	var glass := ART_ICON  # a ampulheta da arte é estreita; o quadro é o mesmo dos outros ícones
+	_draw_art_icon(Rect2(r.position + Vector2(5, (r.size.y - glass) * 0.5), Vector2(glass, glass)), ACTION_ART["ampulheta"], enabled)
+	draw_string(font, r.position + Vector2(glass + 8, 17), "FIM DO", HORIZONTAL_ALIGNMENT_CENTER, r.size.x - glass - 14, 11, ink)
+	draw_string(font, r.position + Vector2(glass + 8, 30), "TURNO", HORIZONTAL_ALIGNMENT_CENTER, r.size.x - glass - 14, 11, ink)
 
 
 func _draw_action_icon(r: Rect2, id: String, enabled: bool) -> void:
 	if ACTION_ART.has(id):
-		_draw_art_icon(r.grow(-3), ACTION_ART[id], enabled)
+		_draw_art_icon(r, ACTION_ART[id], enabled)
 	else:
 		_draw_pixel_icon(r, PIXEL_ICONS.get(id, PIXEL_ICONS["soco"]), enabled)
 
 
-# Ícone pintado centralizado em `r`; indisponível: escurecido e sem cor.
+# Ícone pintado centralizado em `r`, em 32×32 da tela (os 64 px da arte na janela de 1920, sem
+# reamostrar, para o contorno ficar nítido); indisponível: escurecido e sem cor.
 func _draw_art_icon(r: Rect2, tex: Texture2D, enabled: bool) -> void:
-	draw_texture_rect(tex, r, false, Color.WHITE if enabled else Color(0.42, 0.4, 0.38, 0.8))
+	var at := (r.get_center() - Vector2(ART_ICON, ART_ICON) * 0.5).round()
+	draw_texture_rect(tex, Rect2(at, Vector2(ART_ICON, ART_ICON)), false, Color.WHITE if enabled else Color(0.42, 0.4, 0.38, 0.8))
 
 
 # Desenha um ícone de PIXEL_ICONS centralizado em `r`, um quadrado por pixel, alinhado à grade
