@@ -41,6 +41,11 @@ func _test_intro() -> void:
 	_check(MainMenu.letter_alpha(2.5, 0) > MainMenu.letter_alpha(2.5, 5), "letras surgem uma a uma, da esquerda para a direita")
 	_check(MainMenu.menu_alpha(0.0) == 0.0 and MainMenu.menu_alpha(MainMenu.INTRO_END) == 1.0, "menu aparece no fim da abertura")
 
+	var flame := MainMenu.flame_points(Vector2(10, 50), 6.0, 26.0, 1.0)
+	_check(flame.size() == 20, "chama tem o contorno completo")
+	_check(flame[0].y < 30.0 and flame[10].is_equal_approx(Vector2(10, 50)), "chama sobe a partir do pavio")
+	_check(not Geometry2D.triangulate_polygon(flame).is_empty(), "contorno da chama é um polígono válido")
+
 	_check(MainMenu.area_label("test_room") == "Sala de teste", "nome amigável da área")
 	_check(MainMenu.area_label("") != "", "área vazia ainda tem texto")
 	_check(MainMenu.date_label(0) == "", "sem data quando o slot não tem horário")
@@ -71,6 +76,7 @@ func _test_scene() -> void:
 	await process_frame
 	await process_frame
 	_check(not menu.intro_done(), "começa na abertura")
+	_check(menu.bg_tex == null or ResourceLoader.exists(MainMenu.BG_IMAGE), "sem a arte do fundo, a mesa é desenhada por código")
 	menu.skip_intro()
 	_check(menu.intro_done(), "clique ou tecla pula a abertura")
 

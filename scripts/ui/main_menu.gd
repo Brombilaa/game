@@ -6,8 +6,18 @@ extends Control
 # vela treme atrás do símbolo. Tudo é desenhado por código (sem imagens), na tela de 960×540.
 # Carregar lista os 3 slots manuais do SaveSlots. A sala de teste ainda não lê saves, então
 # carregar um slot só guarda qual foi escolhido (`pending_slot`) e abre a sala.
+# Cenário da referência do Léo (30/10): mesa de investigação no escuro, vela acesa à esquerda,
+# símbolo pintado na parede e o nome em vermelho. Se existir BG_IMAGE (arte do ChatGPT), ela é
+# o fundo; sem ela, uma mesa simples é desenhada por código. O símbolo é chapado, em 2D.
 
 const GAME_SCENE := "res://scenes/exploration/test_room.tscn"
+const BG_IMAGE := "res://assets/sprites/menu/fundo_menu.png"
+const CANDLE_AT := Vector2(0.075, 0.26)  # ponta da chama da vela desenhada por código, em fração da tela
+const ART_CANDLE_AT := Vector2(0.136, 0.08)  # meio da chama na arte do fundo (fundo_menu.png)
+const ART_WICK_AT := Vector2(0.1365, 0.148)  # pavio da vela na arte: a chama animada nasce aqui
+const ART_FLAME := Vector2(15.0, 150.0)  # meia largura e altura da chama da arte, em pixels de 1920x1080
+const ART_SIGIL_AT := Vector2(0.62, 0.3)  # na arte, o símbolo e o nome ficam na parede escura de cima
+const ART_DARKEN := 0.25  # escurece a arte por igual, para o nome e o menu lerem por cima
 const TITLE := "PACTO CARMESIM"
 const ITEMS := [["new", "Novo jogo"], ["load", "Carregar"], ["opts", "Opções"], ["quit", "Sair do jogo"]]
 const OPTION_ROWS := [["master", "Volume geral"], ["music", "Música"], ["sfx", "Efeitos"], ["fullscreen", "Tela cheia"]]
@@ -37,9 +47,26 @@ const LINE := Color("4a3a28")
 const BLOOD := Color("aa2424")
 const BLOOD_LIGHT := Color("e04040")
 const BLOOD_DARK := Color("5e0c0c")
+const SMOKE_PUFFS := 7
+const DESK_TOP := 0.58  # borda da mesa desenhada por código, em fração da altura
+const MENU_CENTER_Y := 0.72  # menu abaixo da vela, sobre a mesa, como na referência
+const BOOKS := [[0.1, 14.0, "4a1414"], [0.085, 11.0, "1f3324"], [0.095, 15.0, "3b2a18"], [0.075, 10.0, "5a1a1a"], [0.09, 13.0, "2a2a36"]]
+const BOOKS_HEIGHT := 63.0  # soma das alturas de BOOKS: a vela fica em cima da pilha
+const SIGIL_RED := Color("8c1d1d")  # mais escuro que o nome, para o título ler por cima
+const DUST_MOTES := 40
+const TITLE_RED := Color("e0453a")
+const WALL := Color("100b08")
+const WOOD := Color("26170d")
+const WOOD_EDGE := Color("3d2615")
+const WOOD_LINE := Color("170e08")
+const WAX := Color("d8ccb0")
+const WAX_SHADE := Color("b3a586")
 const PANEL_BG := Color(0.07, 0.05, 0.035, 0.96)
 
-const TITLE_SIZE := 44
+const TITLE_SIZE := 34
+const TITLE_FONT := preload("res://assets/fonts/CinzelDecorative-Bold.ttf")  # só no nome do jogo; o resto segue na Special Elite
+const TITLE_SHINE := Color("ffb59a")
+const SHINE_PERIOD := 6.0  # um reflexo de luz passa pelo nome a cada 6 s
 const MENU_SIZE := 22
 const MENU_GAP := 40.0
 
@@ -58,6 +85,8 @@ var options := GameOptions.load_from()
 var strokes := sigil_strokes()
 var blots := sigil_blots()
 var light_tex := _radial([Color(0.6, 0.24, 0.12, 0.34), Color(0.6, 0.24, 0.12, 0.0)], [0.0, 1.0])
+var candle_tex := _radial([Color(1.0, 0.62, 0.25, 0.4), Color(1.0, 0.5, 0.2, 0.12), Color(1.0, 0.45, 0.2, 0.0)], [0.0, 0.35, 1.0])
+var bg_tex: Texture2D = null
 var vignette_tex := _radial([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0.82)], [0.0, 0.5, 1.0])
 
 
@@ -66,6 +95,8 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	RenderingServer.set_default_clear_color(BG)
 	options.apply()
+	if ResourceLoader.exists(BG_IMAGE):
+		bg_tex = load(BG_IMAGE)
 	GameCursor.apply(GameCursor.Kind.ARROW)
 
 
@@ -347,7 +378,7 @@ func _menu_x() -> float:
 
 
 func _item_y(i: int) -> float:
-	return size.y * 0.5 + (i - (ITEMS.size() - 1) / 2.0) * MENU_GAP
+	return size.y * MENU_CENTER_Y + (i - (ITEMS.size() - 1) / 2.0) * MENU_GAP
 
 
 func _item_rect(i: int) -> Rect2:
@@ -355,11 +386,17 @@ func _item_rect(i: int) -> Rect2:
 
 
 func _sigil_center() -> Vector2:
+	if bg_tex:
+		return size * ART_SIGIL_AT
 	return Vector2(size.x * 0.64, size.y * 0.46)
 
 
 func _sigil_scale() -> float:
-	return size.x * 0.40 / 220.0
+	return size.x * (0.2 if bg_tex else 0.40) / 220.0
+
+
+func _flame_at() -> Vector2:
+	return size * (ART_CANDLE_AT if bg_tex else CANDLE_AT)
 
 
 func _panel_rect() -> Rect2:
@@ -388,15 +425,147 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), BG)
 	var center := _sigil_center()
 	var flicker := 0.86 + 0.08 * sin(t * 7.3) + 0.06 * sin(t * 13.1 + 1.7)
+	if bg_tex:
+		_draw_cover(bg_tex)
+	else:
+		_draw_desk()
 	var light_size := Vector2(size.x * 0.9, size.y * 1.3)
-	draw_texture_rect(light_tex, Rect2(center - light_size / 2.0, light_size), false, Color(1, 1, 1, flicker))
+	draw_texture_rect(light_tex, Rect2(center - light_size / 2.0, light_size), false, Color(1, 1, 1, 0.6 * flicker))
+	var flame := _flame_at()
+	var glow_size := Vector2.ONE * size.x * (0.6 if bg_tex else 0.8) * (0.96 + 0.04 * flicker)
+	draw_texture_rect(candle_tex, Rect2(flame - glow_size / 2.0, glow_size), false, Color(1, 1, 1, flicker * (0.7 if bg_tex else 1.0)))
+	if not bg_tex:
+		_draw_candle(flame, flicker)
+	_draw_smoke(flame)
+	_draw_dust(flame)
 	_draw_sigil(center, _sigil_scale(), 1.0 - 0.6 * panel_fade)
 	draw_texture_rect(vignette_tex, Rect2(Vector2.ZERO, size), false)
+	if bg_tex:
+		_draw_art_flame(flicker)  # depois da vinheta, que apagava a chama no canto
+		_draw_menu_shade(menu_alpha(t))
 	_draw_title(font, center, 1.0 - panel_fade)
 	_draw_menu(font, menu_alpha(t))
 	if panel != "":
 		_draw_panel(font, panel_fade)
 	draw_string(font, Vector2(size.x - 34, size.y - 10), "v0.1", HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(0.43, 0.36, 0.27))
+
+
+# Fundo da arte cobrindo a tela inteira, sem distorcer.
+func _draw_cover(tex: Texture2D) -> void:
+	var tex_size := Vector2(tex.get_size())
+	var k := maxf(size.x / tex_size.x, size.y / tex_size.y)
+	draw_texture_rect(tex, Rect2((size - tex_size * k) / 2.0, tex_size * k), false)
+	draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, ART_DARKEN))
+
+
+# Sombra à esquerda, atrás do menu: a arte ali é clara (mapa, papéis) e apagava as opções.
+func _draw_menu_shade(alpha: float) -> void:
+	if alpha <= 0.0:
+		return
+	var top := size.y * 0.3
+	var right := size.x * 0.45
+	var dark := Color(0.03, 0.02, 0.015, 0.85 * alpha)
+	var clear := Color(dark, 0.0)
+	var rect := PackedVector2Array([Vector2(0, top), Vector2(right, top), Vector2(right, size.y), Vector2(0, size.y)])
+	draw_polygon(rect, PackedColorArray([clear, clear, clear, dark]))
+	draw_polygon(rect, PackedColorArray([clear, clear, clear, dark]))
+
+
+# Mesa de investigação provisória, enquanto não chega a arte do fundo.
+func _draw_desk() -> void:
+	var top := size.y * DESK_TOP
+	draw_rect(Rect2(0, 0, size.x, top), WALL)
+	for i in range(1, 16):
+		var x := size.x * i / 16.0
+		draw_line(Vector2(x, 0), Vector2(x, top), Color(0, 0, 0, 0.35), 1.0)
+	draw_rect(Rect2(0, top, size.x, size.y - top), WOOD)
+	draw_rect(Rect2(0, top, size.x, 3), WOOD_EDGE)
+	for i in 6:
+		var y := top + 16 + i * 26.0
+		draw_line(Vector2(0, y), Vector2(size.x, y + 8), WOOD_LINE, 1.0)
+	# Livros empilhados atrás da vela.
+	var by := top
+	for b in BOOKS:
+		var w: float = size.x * float(b[0])
+		var h: float = b[1]
+		var hex: String = b[2]
+		by -= h
+		var x0 := size.x * CANDLE_AT.x - w / 2.0
+		draw_rect(Rect2(x0, by, w, h), Color(hex))
+		draw_line(Vector2(x0 + 3, by + 2), Vector2(x0 + w - 3, by + 2), Color(0.85, 0.7, 0.4, 0.25), 1.0)
+	# Papéis espalhados na mesa.
+	for paper in [[Vector2(0.33, 0.8), Vector2(120, 80), -0.12, 0.32], [Vector2(0.56, 0.87), Vector2(96, 120), 0.22, 0.24], [Vector2(0.42, 0.95), Vector2(80, 60), 0.35, 0.2]]:
+		var at: Vector2 = paper[0]
+		var dims: Vector2 = paper[1]
+		draw_set_transform(Vector2(size.x * at.x, size.y * at.y), float(paper[2]), Vector2.ONE)
+		draw_rect(Rect2(-dims / 2.0, dims), Color(0.74, 0.64, 0.48, float(paper[3])))
+		for line in range(1, 6):
+			var ly := -dims.y / 2.0 + line * dims.y / 6.5
+			draw_line(Vector2(-dims.x / 2.0 + 8, ly), Vector2(dims.x / 2.0 - 12, ly), Color(0.1, 0.07, 0.05, float(paper[3])), 1.0)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	# Relógio de bolso.
+	var watch := Vector2(size.x * 0.9, size.y * 0.85)
+	draw_arc(watch + Vector2(-18, -10), 22.0, -0.4, 2.2, 16, Color(0.55, 0.43, 0.2, 0.8), 1.5)
+	draw_circle(watch, 16.0, Color("6b5428"))
+	draw_circle(watch, 13.0, Color("d9cba8"))
+	draw_line(watch, watch + Vector2(0, -9), Color("1a140c"), 1.5)
+	draw_line(watch, watch + Vector2(6, 2), Color("1a140c"), 1.5)
+
+
+# Vela acesa: cera chapada em dois tons, pires, pavio e chama que balança.
+func _draw_candle(flame: Vector2, flicker: float) -> void:
+	var wick := flame + Vector2(0, 30)
+	var stand := size.y * DESK_TOP - BOOKS_HEIGHT
+	var wax := Rect2(wick.x - 8, wick.y + 4, 16, maxf(stand - wick.y - 10, 20.0))
+	draw_rect(wax, WAX)
+	draw_rect(Rect2(wax.position.x + 10, wax.position.y, 6, wax.size.y), WAX_SHADE)
+	draw_rect(Rect2(wick.x - 20, wax.end.y, 40, 6), Color("5a4630"))
+	draw_line(wick + Vector2(0, 4), wick + Vector2(0, -3), Color("1a1410"), 2.0)
+	var h := 26.0 * (0.92 + 0.1 * flicker)
+	var sway := 1.6 * sin(t * 5.3) + 0.8 * sin(t * 11.0)
+	draw_colored_polygon(flame_points(wick, 6.0, h, sway), Color(1.0, 0.52, 0.14, 0.92))
+	draw_colored_polygon(flame_points(wick, 3.2, h * 0.62, sway * 0.6), Color(1.0, 0.92, 0.62))
+
+
+# Chama animada por cima da chama parada da arte (que o escurecimento do fundo apagou).
+func _draw_art_flame(flicker: float) -> void:
+	var k := size.x / 1920.0
+	var wick := size * ART_WICK_AT
+	var h := ART_FLAME.y * k * (0.92 + 0.1 * flicker)
+	var sway := (3.0 * sin(t * 5.3) + 1.5 * sin(t * 11.0)) * k
+	draw_colored_polygon(flame_points(wick, ART_FLAME.x * k, h, sway), Color(1.0, 0.55, 0.16, 0.8))
+	draw_colored_polygon(flame_points(wick, ART_FLAME.x * 0.55 * k, h * 0.62, sway * 0.6), Color(1.0, 0.93, 0.66, 0.95))
+
+
+# Fumaça fina saindo da chama: bolinhas translúcidas que sobem, balançam e somem.
+func _draw_smoke(flame: Vector2) -> void:
+	for i in SMOKE_PUFFS:
+		var k := fposmod(t * 0.22 + i / float(SMOKE_PUFFS), 1.0)
+		var p := flame + Vector2(sin(k * 9.0 + i) * 10.0 * k, -12.0 - k * size.y * 0.32)
+		draw_circle(p, 2.0 + k * 9.0, Color(0.55, 0.5, 0.45, 0.16 * (1.0 - k) * minf(k * 6.0, 1.0)))
+
+
+# Poeira flutuando na luz da vela; cada grão tem a sua velocidade e o seu balanço.
+func _draw_dust(flame: Vector2) -> void:
+	for i in DUST_MOTES:
+		var seed := float(i) * 12.9898
+		var k := fposmod(t * (0.03 + 0.02 * fposmod(seed, 1.0)) + fposmod(seed * 7.1, 1.0), 1.0)
+		var x := flame.x + (fposmod(seed * 3.7, 1.0) - 0.4) * size.x * 0.5 + sin(t * 0.7 + seed) * 8.0
+		var y := size.y * (0.95 - k * 0.9)
+		var near := clampf(1.0 - Vector2(x, y).distance_to(flame) / (size.x * 0.4), 0.0, 1.0)
+		draw_circle(Vector2(x, y), 1.0, Color(1.0, 0.85, 0.6, 0.55 * near * sin(k * PI)))
+
+
+# Contorno de gota da chama: ponta em cima (balançando), mais larga perto da base.
+static func flame_points(bottom: Vector2, half_width: float, height: float, sway: float) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for i in 11:
+		var k := i / 10.0
+		out.append(bottom + Vector2(sway * (1.0 - k) + half_width * sin(PI * pow(k, 0.7)), -height * (1.0 - k)))
+	for i in range(9, 0, -1):
+		var k := i / 10.0
+		out.append(bottom + Vector2(sway * (1.0 - k) - half_width * sin(PI * pow(k, 0.7)), -height * (1.0 - k)))
+	return out
 
 
 func _draw_sigil(center: Vector2, k: float, alpha: float) -> void:
@@ -413,18 +582,17 @@ func _draw_sigil(center: Vector2, k: float, alpha: float) -> void:
 		var a := clampf((t - float(b["delay"])) / 0.6, 0.0, 1.0)
 		if a > 0.0:
 			var r: float = b["radius"] * k * (0.4 + 0.6 * a)
-			draw_circle(center + b["at"] * k, r * 1.15, Color(BLOOD_DARK, 0.9 * a * alpha))
-			draw_circle(center + b["at"] * k, r, Color(BLOOD, a * alpha))
+			draw_circle(center + b["at"] * k, r, Color(SIGIL_RED, a * alpha))
 
 
-# Pincelada: borda escura, corpo vermelho e dois fios mais claro/escuro deslocados (falhas do pincel).
+# Pincelada chapada, em 2D: uma cor só, sem borda escura nem brilho (que davam cara de 3D, Léo 30/10).
+# A borda irregular vem de uma segunda passada da mesma cor, mais fina e deslocada.
 func _brush(pts: PackedVector2Array, w: float, alpha: float) -> void:
-	draw_polyline(pts, Color(BLOOD_DARK, 0.9 * alpha), w * 1.25, true)
-	draw_polyline(pts, Color(BLOOD, alpha), w, true)
-	draw_polyline(_offset(pts, w * 0.22), Color(BLOOD_LIGHT, 0.35 * alpha), maxf(w * 0.22, 1.0), true)
-	draw_polyline(_offset(pts, -w * 0.3), Color(BLOOD_DARK, 0.55 * alpha), maxf(w * 0.18, 1.0), true)
-	draw_circle(pts[0], w * 0.55, Color(BLOOD, alpha))
-	draw_circle(pts[pts.size() - 1], w * 0.5, Color(BLOOD, alpha))
+	var c := Color(SIGIL_RED, alpha)
+	draw_polyline(pts, c, w, true)
+	draw_polyline(_offset(pts, w * 0.18), c, w * 0.7, true)
+	draw_circle(pts[0], w * 0.5, c)
+	draw_circle(pts[pts.size() - 1], w * 0.45, c)
 
 
 static func _offset(pts: PackedVector2Array, d: float) -> PackedVector2Array:
@@ -444,37 +612,42 @@ func _letters_width(font: Font, text: String, font_size: int, spacing: float) ->
 	return w - spacing
 
 
-func _draw_title(font: Font, center: Vector2, alpha: float) -> void:
+func _draw_title(_font: Font, center: Vector2, alpha: float) -> void:
 	if alpha <= 0.0:
 		return
-	var spacing := TITLE_SIZE * 0.12
+	var font: Font = TITLE_FONT
+	var spacing := TITLE_SIZE * 0.08
 	var width := _letters_width(font, TITLE, TITLE_SIZE, spacing)
-	var x := minf(center.x - width / 2.0, size.x - 16 - width)
-	var base := center.y + TITLE_SIZE * 0.3
+	var left := minf(center.x - width / 2.0, size.x - 16 - width)
+	var x := left
+	var base := center.y + TITLE_SIZE * 0.35
 	var glow := 0.0
 	if t > GLOW_START:
 		glow = 0.5 - 0.5 * cos((t - GLOW_START) * TAU / GLOW_PERIOD)
+	# Posição do reflexo, de -0.3 a 1.3 da largura do nome, só depois da abertura.
+	var sweep := -1.0
+	if t > INTRO_END:
+		sweep = fposmod(t - INTRO_END, SHINE_PERIOD) / SHINE_PERIOD * 2.4 - 0.3
 	for i in TITLE.length():
 		var ch := TITLE[i]
 		var a := letter_alpha(t, i) * alpha
+		var adv := font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, TITLE_SIZE).x
 		if a > 0.0 and ch != " ":
-			var pos := Vector2(x, base)
-			# Saindo do desfoque: cópias espalhadas que se juntam conforme a letra aparece.
-			var spread := (1.0 - a) * 6.0
-			if spread > 0.1:
-				for o in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:
-					draw_char(font, pos + o * spread, ch, TITLE_SIZE, Color(INK, a * 0.25))
-			# Brilho vermelho que respira.
-			var halo := Color(BLOOD_LIGHT, (0.22 + 0.3 * glow) * a)
-			for o in [Vector2(-2, 0), Vector2(2, 0), Vector2(0, -2), Vector2(0, 2), Vector2(-3, -3), Vector2(3, 3), Vector2(3, -3), Vector2(-3, 3)]:
-				draw_char(font, pos + o * (0.6 + 0.6 * glow), ch, TITLE_SIZE, halo)
-			draw_char(font, pos + Vector2(0, 2), ch, TITLE_SIZE, Color(0, 0, 0, 0.7 * a))
-			draw_char(font, pos, ch, TITLE_SIZE, Color(INK, a))
-		x += font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, TITLE_SIZE).x + spacing
+			# A letra desce 6 px enquanto aparece.
+			var pos := Vector2(x, base - 6.0 * (1.0 - a))
+			# Brilho vermelho suave que respira: contornos largos e quase transparentes, um dentro do outro.
+			for k in 3:
+				var o_size := int((22 - k * 6) * (0.85 + 0.3 * glow))
+				draw_char_outline(font, pos, ch, TITLE_SIZE, o_size, Color(BLOOD_LIGHT, (0.05 + 0.04 * glow) * a))
+			draw_char(font, pos + Vector2(0, 3), ch, TITLE_SIZE, Color(0, 0, 0, 0.75 * a))
+			draw_char_outline(font, pos, ch, TITLE_SIZE, 5, Color(0.06, 0.015, 0.015, a))
+			var shine := exp(-pow(((x + adv / 2.0 - left) / width - sweep) * 7.0, 2.0))
+			draw_char(font, pos, ch, TITLE_SIZE, Color(TITLE_RED.lerp(TITLE_SHINE, 0.55 * shine), a))
+		x += adv + spacing
 	# Ornamento dourado abaixo do nome.
 	var oa := menu_alpha(t) * alpha
 	if oa > 0.0:
-		var y := base + 22
+		var y := base + 18
 		var cx := center.x
 		for side in [-1.0, 1.0]:
 			for j in 12:
