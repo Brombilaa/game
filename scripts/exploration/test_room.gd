@@ -128,6 +128,7 @@ var facing := {}  # Combatant -> PlaceholderArt.Dir
 var facing8 := {}  # Combatant -> CharacterSheet.Dir (8 direções; o agente começa virado para SE)
 var walk_dist := {}  # unidade -> distância (px de tela) andada desde que começou a andar
 var idle_frame := 0
+var cursor_kind := GameCursor.Kind.ARROW
 var agent_sheets: Array[CharacterSheet] = []
 var enemy_sheets := {}  # variante -> CharacterSheet
 var scenery := Scenery.new()
@@ -159,6 +160,19 @@ func _ready() -> void:
 	add_child(camera)
 	hud.end_turn_requested.connect(_player_pass)
 	audio.play_music("exploration")
+	GameCursor.apply(GameCursor.Kind.ARROW)
+
+
+# Mira vermelha quando o mouse está sobre um inimigo que o controlado pode atacar; seta dourada no resto.
+func _update_cursor() -> void:
+	var kind := GameCursor.Kind.ARROW
+	if _player_ready():
+		var target := _enemy_at(_resolve_click(get_global_mouse_position()))
+		if target and rules.attack_blocker(player, target, _sight_blockers(), covers) == "":
+			kind = GameCursor.Kind.ATTACK
+	if kind != cursor_kind:
+		cursor_kind = kind
+		GameCursor.apply(kind)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -177,6 +191,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			player.crouched = not player.crouched
 			queue_redraw()
 		return
+	if event is InputEventMouseMotion:
+		_update_cursor()
 	if event is InputEventMouseMotion and mode == Mode.COMBAT:
 		queue_redraw()  # atualiza a prévia de chance/custo sob o cursor
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -312,6 +328,7 @@ func _process(delta: float) -> void:
 			hit_shake.erase(u)
 	screen_shake = maxf(screen_shake - delta, 0.0)
 	camera.offset = Vector2(randf_range(-3, 3), randf_range(-2, 2)) if screen_shake > 0.0 else Vector2.ZERO
+	_update_cursor()
 	var focus := turns.current if mode == Mode.COMBAT and turns and turns.current else player
 	camera.position = _iso(focus.pos).round()  # pixel inteiro: o cenário não treme ao andar
 	if moving_unit and not path.is_empty():
