@@ -16,14 +16,16 @@ const NPC_COLORS := {"caio": Color("#46628a"), "leticia": Color("#885050")}  # f
 const CLUE_CLICK_FACTOR := 0.7  # fração do raio da pista em que o clique vale
 const CLUE_HINT_RANGE := 260.0  # o brilho da pista aparece quando o controlado chega perto
 const STAND_FACTOR := 0.85  # distância de parada, em fração do raio da pista
-const DUSK_TINT := Color(0.95, 0.55, 0.2, 0.13)  # véu do entardecer quente (Léo escolheu o modelo A, 30/10)
-const VOID_COLOR := Color(0.03, 0.02, 0.02)  # o que está além da borda do parque
+const DUSK_TINT := Color(0.95, 0.55, 0.2, 0.09)  # véu do entardecer quente (Léo escolheu o modelo A, 30/10)
+const VOID_COLOR := Color(0.078, 0.07, 0.063)  # além da névoa do fundo estendido
+const CAMERA_ZOOM := 1.5  # câmera aproximada: o fundo estendido cobre o que ela mostra (Léo, 30/10)
 const VIGNETTE_SIZE := 128  # textura da vinheta, esticada sobre a tela
-const VIGNETTE_STRENGTH := 0.55
+const VIGNETTE_STRENGTH := 0.4
 const FRAME_BG := Color(0.063, 0.043, 0.031, 0.95)
 
 var scenario: Scenario
 var backdrop: Texture2D
+var extended: Texture2D  # fundo com terreno e lago além do mapa
 var occluder_textures := {}  # id -> recorte do fundo
 var seen_clues: Array[String] = []
 var pending_clue := ""
@@ -38,15 +40,25 @@ func _ready() -> void:
 	scenario = Scenario.load_id(SCENARIO_ID)
 	assert(scenario.ok(), "\n".join(scenario.errors))
 	backdrop = load(scenario.backdrop_path)
+	if scenario.extended_path != "":
+		extended = load(scenario.extended_path)
 	for o in scenario.occluders:
 		occluder_textures[o["id"]] = load(o["arquivo"])
 	_load_layout()
 	super()
 	var corners := [_iso(Vector2.ZERO), _iso(Vector2(scenario.size.x, 0)), _iso(Vector2(0, scenario.size.y)), _iso(scenario.size)]
-	camera.limit_left = int(corners[2].x) - 16
-	camera.limit_right = int(corners[1].x) + 16
-	camera.limit_top = int(corners[0].y) - 16
-	camera.limit_bottom = int(corners[3].y) + 16
+	camera.zoom = Vector2(CAMERA_ZOOM, CAMERA_ZOOM)
+	if extended:  # a câmera nunca sai da imagem estendida
+		var top_left := scenario.extended_pos - scenario.backdrop_origin
+		camera.limit_left = int(top_left.x)
+		camera.limit_top = int(top_left.y)
+		camera.limit_right = int(top_left.x) + extended.get_width()
+		camera.limit_bottom = int(top_left.y) + extended.get_height()
+	else:
+		camera.limit_left = int(corners[2].x) - 16
+		camera.limit_right = int(corners[1].x) + 16
+		camera.limit_top = int(corners[0].y) - 16
+		camera.limit_bottom = int(corners[3].y) + 16
 	vignette = _make_vignette()
 	_build_dialog()
 
@@ -124,6 +136,8 @@ func _draw() -> void:
 	var font := ThemeDB.fallback_font
 	var view := get_canvas_transform().affine_inverse() * Rect2(Vector2.ZERO, get_viewport_rect().size)
 	draw_rect(view, VOID_COLOR)  # fora do parque é escuro, não o cinza do render
+	if extended:
+		draw_texture(extended, scenario.extended_pos - scenario.backdrop_origin)
 	draw_texture(backdrop, -scenario.backdrop_origin)
 	if mode == Mode.EXPLORATION:
 		for e in enemies:
@@ -162,6 +176,18 @@ func _draw() -> void:
 	_draw_hud(font)
 	for p in popups:
 		_draw_popup(font, p)
+
+
+# Com a câmera aproximada o HUD é desenhado com a escala inversa ao zoom, para continuar do mesmo
+# tamanho na tela: ponto da tela s vira s - origem do canvas, e o zoom devolve o tamanho.
+func _hud_to_world() -> Transform2D:
+	return Transform2D(0.0, -get_canvas_transform().origin)
+
+
+func _draw_hud(font: Font) -> void:
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE / CAMERA_ZOOM)
+	super(font)
+	draw_set_transform(Vector2.ZERO)
 
 
 # Figura provisória de NPC (corpo, cabeça e nome) até a arte do Caio e da Letícia existir.

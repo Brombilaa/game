@@ -9,6 +9,8 @@ var id := ""
 var size := Vector2.ZERO
 var backdrop_path := ""
 var backdrop_origin := Vector2.ZERO  # ponto da imagem (px) onde cai o ponto (0, 0) da sala
+var extended_path := ""  # fundo estendido além do mapa (opcional)
+var extended_pos := Vector2.ZERO  # canto da imagem estendida, em px do fundo
 var screen_scale := Vector2.ZERO  # px de tela por unidade da sala, em x e em y
 var party_start: Array[Vector2] = []
 var npcs := {}  # id -> posição
@@ -112,6 +114,9 @@ func _parse(data: Dictionary) -> void:
 	var bg: Dictionary = data.get("fundo", {})
 	backdrop_path = str(bg.get("arquivo", ""))
 	backdrop_origin = _vec(bg.get("origem"))
+	var ext: Dictionary = bg.get("estendido", {})
+	extended_path = str(ext.get("arquivo", ""))
+	extended_pos = _vec(ext.get("pos"))
 	screen_scale = _vec(bg.get("escala_tela"))
 	if id == "" or size == Vector2.ZERO or screen_scale == Vector2.ZERO:
 		errors.append("faltam id, tamanho ou escala_tela")

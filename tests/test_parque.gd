@@ -65,6 +65,16 @@ func _run() -> void:
 	_check(img.get_pixel(mid, mid).a < 0.01, "o centro da vinheta fica livre")
 	_check(img.get_pixel(0, 0).a > 0.3, "a borda da vinheta escurece")
 
+	# Câmera aproximada com fundo estendido: o mapa inteiro fica dentro dos limites da câmera.
+	_check(room.camera.zoom.is_equal_approx(Vector2(1.5, 1.5)), "câmera em 1,5x")
+	_check(room.extended != null, "o fundo estendido carrega")
+	var limits := Rect2(room.camera.limit_left, room.camera.limit_top, room.camera.limit_right - room.camera.limit_left, room.camera.limit_bottom - room.camera.limit_top)
+	for corner in [Vector2.ZERO, Vector2(room.scenario.size.x, 0), Vector2(0, room.scenario.size.y), room.scenario.size]:
+		_check(limits.has_point(room._iso(corner)), "o canto do mapa fica dentro dos limites da câmera")
+	_check(limits.size.x > 1700 and limits.size.y > 650, "os limites cobrem o fundo estendido")
+	var hud_origin: Vector2 = room._hud_to_world() * Vector2.ZERO
+	_check(hud_origin.is_equal_approx(-room.get_canvas_transform().origin), "o HUD parte da origem do canvas, sem o zoom")
+
 	print("Falhas: %d" % failures)
 	quit(1 if failures > 0 else 0)
 
