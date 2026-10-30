@@ -24,7 +24,7 @@ func _run() -> void:
 	room.player.pos = Vector2(650, 360)
 	await process_frame
 	_check(room.mode == room.Mode.COMBAT, "detecção inicia o combate")
-	_check(room.turns.order.size() == 4, "o grupo e todos os inimigos vivos entram no combate")
+	_check(room.turns.order.size() == room.party.size() + 2, "o grupo e todos os inimigos vivos entram no combate")
 	_check(room.turns.current == room.player and room.player.pa == 3, "agente age primeiro (empate de AGI favorece o grupo) com 3 PA")
 
 	# Ataque fora do turno do inimigo: clique em lugar nenhum não gasta PA.
@@ -51,8 +51,10 @@ func _run() -> void:
 	var first: Combatant = room.player
 	room._player_pass()
 	await _wait(func() -> bool: return room.turns.is_turn_of(room.player) and not room.busy, 20.0)
-	if room.player != first:
-		room._player_pass()  # o outro membro do grupo também passa
+	for _i in room.party.size() - 1:
+		if room.mode == room.Mode.COMBAT and room.player != first:
+			room._player_pass()  # os outros membros do grupo também passam
+			await _wait(func() -> bool: return room.turns.is_turn_of(room.player) and not room.busy, 20.0)
 	await _wait(func() -> bool: return room.mode != room.Mode.COMBAT or (room.turns.current == first and not room.busy), 20.0)
 	_check(room.mode != room.Mode.COMBAT or room.turns.round_number == 2, "inimigos agem e a rodada avança")
 

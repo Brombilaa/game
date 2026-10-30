@@ -7,7 +7,7 @@ extends Node2D
 # move (gasta PA), clique no inimigo ataca,
 # Espaço passa o turno e D atrasa. R reinicia a sala.
 # Grupo (Léo): controla um personagem por vez e os outros seguem espalhados, a distância fixa
-# do líder e posição variando. Tab, 1, 2 ou clique no retrato trocam o controlado (na exploração).
+# do líder e posição variando. Tab, 1, 2, 3 ou clique no retrato trocam o controlado (na exploração).
 # PV zero deixa caído; aliado encostado reanima com kit (2 PA, metade do PV); quem segue
 # caído no fim do combate morre.
 # Visual provisório: resolução interna 960×540 (DEC-2026-10-29-10), câmera segue a unidade
@@ -88,10 +88,11 @@ var covers: Array = [
 
 var cfg := CombatConfig.load_file()
 var rules := CombatRules.new(cfg)
-# Grupo de teste: Fernando e Nikolai (só para exercitar grupo, troca e reanimação).
+# Grupo de teste: Fernando, Nikolai e Miguel (só para exercitar grupo, troca e reanimação).
 var party: Array[Combatant] = [
 	cfg.make_unit("agente", "Fernando", Vector2(160, 360)),
 	cfg.make_unit("agente", "Nikolai", Vector2(110, 320)),
+	cfg.make_unit("agente", "Miguel", Vector2(110, 400)),
 ]
 var player: Combatant = party[0]  # personagem controlado (no combate, o do turno)
 var looks := {}  # membro do grupo -> índice em AGENT_SHEETS
@@ -140,6 +141,10 @@ func _ready() -> void:
 	looks[party[1]] = 1
 	party[1].max_san = 16  # Nikolai é Especialista (SAN inicial 16); a ficha de teste é a mesma
 	party[1].san = 16
+	looks[party[2]] = 2
+	party[2].max_san = 20  # Miguel é Ocultista (SAN inicial 20) e luta com a espada (GDD #16)
+	party[2].san = 20
+	party[2].weapon = cfg.weapon("espada")
 	_reset_follow_offsets(Vector2.RIGHT)
 	for variant in ENEMY_SHEETS:
 		enemy_sheets[variant] = CharacterSheet.new(ENEMY_SHEETS[variant])
@@ -255,12 +260,12 @@ func _order_move(click: Vector2) -> void:
 
 
 # Paredes, porta fechada, coberturas de pé e as outras unidades vivas.
-func _obstacles(mover: Combatant = null) -> Array[Rect2]:
+func _obstacles(mover: Combatant = null, with_units := true) -> Array[Rect2]:
 	var obstacles := _sight_blockers()
 	for c: Cover in covers:
 		if not c.is_destroyed():
 			obstacles.append(c.rect)
-	for u in _living_units():
+	for u in _living_units() if with_units else []:
 		if u != mover:
 			obstacles.append(Rect2(u.pos - Vector2(u.radius, u.radius), Vector2(u.radius, u.radius) * 2))
 	return obstacles
@@ -700,7 +705,7 @@ func _draw() -> void:
 	if mode == Mode.COMBAT:
 		draw_string(font, footer, "Rodada %d  |  Espaço passa, D atrasa, R reinicia" % turns.round_number, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 1, 0.6))
 	elif mode == Mode.EXPLORATION:
-		draw_string(font, footer, ("AGACHADO  |  " if player.crouched else "") + "C agacha, Tab ou 1/2 troca o personagem, clique no inimigo ataca de surpresa", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 1, 0.6))
+		draw_string(font, footer, ("AGACHADO  |  " if player.crouched else "") + "C agacha, Tab ou 1/2/3 troca o personagem, clique no inimigo ataca de surpresa", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 1, 0.6))
 	for p in popups:
 		_draw_popup(font, p)
 
@@ -894,6 +899,10 @@ func _update_followers(delta: float) -> void:
 		var stale := route.is_empty() or route[route.size() - 1].distance_to(goal) > 24.0
 		if stale and m.pos.distance_to(goal) > 12.0:
 			route = pathfinder.find_path(m.pos, goal, _obstacles(m), m.radius)
+			if route.is_empty():
+				# Dois seguidores se encostaram e um ficou dentro do obstáculo do outro: sem esta rota
+				# de reserva (só paredes e coberturas) ele ficaria parado para sempre.
+				route = pathfinder.find_path(m.pos, goal, _obstacles(m, false), m.radius)
 			if not route.is_empty():
 				route.remove_at(0)
 		if route.is_empty():
