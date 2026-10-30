@@ -36,6 +36,16 @@ func _init() -> void:
 	_check(s.clue_at(Vector2(640, 20)) == "", "nenhuma pista no vazio")
 	_check(s.triggers_after("arvore_simbolo").size() == 1, "a árvore dispara o combate")
 
+	# Oclusão: um recorte por objeto, com a colisão de mesmo id, e a regra de quem fica na frente.
+	_check(s.occluders.size() == 15, "15 recortes de oclusão")
+	for o in s.occluders:
+		_check(ResourceLoader.exists(o["arquivo"]), "recorte %s existe" % o["id"])
+	var tree: Rect2 = s.colliders["arvore"]
+	_check(not Scenario.in_front(Vector2(1130, 100), tree), "quem está ao norte da árvore fica atrás dela")
+	_check(Scenario.in_front(Vector2(1130, 300), tree), "quem está ao sul da árvore fica na frente")
+	_check(Scenario.in_front(Vector2(1300, 200), tree), "quem está a leste da árvore fica na frente")
+	_check(not Scenario.in_front(Vector2(1000, 200), tree), "quem está a oeste da árvore fica atrás")
+
 	print("Falhas: %d" % failures)
 	quit(1 if failures > 0 else 0)
 
