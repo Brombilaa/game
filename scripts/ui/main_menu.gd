@@ -1,7 +1,7 @@
 class_name MainMenu
 extends Control
 # Menu inicial, modelo "Vela e pincel" com menu lateral (escolha do Léo, 30/10/2026).
-# Abertura de ~4,6 s: o símbolo é pintado traço por traço, as letras do nome surgem uma a uma
+# Abertura de ~4,7 s: o símbolo é pintado traço por traço, as letras do nome surgem uma a uma
 # e o menu aparece; clique ou tecla pula a abertura. Depois o nome pulsa em vermelho e a luz de
 # vela treme atrás do símbolo. Tudo é desenhado por código (sem imagens), na tela de 960×540.
 # Carregar lista os 3 slots manuais do SaveSlots. A sala de teste ainda não lê saves, então
@@ -23,7 +23,7 @@ const MENU_START := 3.6
 const MENU_FADE := 1.0
 const GLOW_START := 4.5
 const GLOW_PERIOD := 4.0
-const INTRO_END := 4.6
+const INTRO_END := 4.7  # um pouco depois de o menu terminar de aparecer (MENU_START + MENU_FADE)
 const BRUSH_SECONDS := 0.3  # pincelada atrás da opção em foco
 const PANEL_FADE_SECONDS := 0.3
 
