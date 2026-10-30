@@ -16,6 +16,9 @@ const NPC_COLORS := {"caio": Color("#46628a"), "leticia": Color("#885050")}  # f
 const CLUE_CLICK_FACTOR := 0.7  # fração do raio da pista em que o clique vale
 const CLUE_HINT_RANGE := 260.0  # o brilho da pista aparece quando o controlado chega perto
 const STAND_FACTOR := 0.85  # distância de parada, em fração do raio da pista
+const DUSK_TINT := Color(0.95, 0.55, 0.2, 0.13)  # véu do entardecer quente (Léo escolheu o modelo A, 30/10)
+const VIGNETTE_SIZE := 128  # textura da vinheta, esticada sobre a tela
+const VIGNETTE_STRENGTH := 0.55
 const FRAME_BG := Color(0.063, 0.043, 0.031, 0.95)
 
 var scenario: Scenario
@@ -27,6 +30,7 @@ var dialog_layer: CanvasLayer
 var dialog_clue := ""
 var dialog_text: Label
 var dialog_image: TextureRect
+var vignette: Texture2D
 
 
 func _ready() -> void:
@@ -42,6 +46,7 @@ func _ready() -> void:
 	camera.limit_right = int(corners[1].x) + 16
 	camera.limit_top = int(corners[0].y) - 16
 	camera.limit_bottom = int(corners[3].y) + 16
+	vignette = _make_vignette()
 	_build_dialog()
 
 
@@ -102,6 +107,18 @@ func _known_rects() -> Array[Rect2]:
 
 # --- Desenho ----------------------------------------------------------------------------------
 
+# Vinheta suave: escurece só as bordas da tela, de forma que o centro fica intacto.
+static func _make_vignette() -> Texture2D:
+	var img := Image.create(VIGNETTE_SIZE, VIGNETTE_SIZE, false, Image.FORMAT_RGBA8)
+	var c := (VIGNETTE_SIZE - 1) * 0.5
+	for y in VIGNETTE_SIZE:
+		for x in VIGNETTE_SIZE:
+			var d := Vector2(x - c, y - c).length() / (c * 1.414)
+			var a := smoothstep(0.45, 1.0, d) * VIGNETTE_STRENGTH
+			img.set_pixel(x, y, Color(0.05, 0.02, 0.0, a))
+	return ImageTexture.create_from_image(img)
+
+
 func _draw() -> void:
 	var font := ThemeDB.fallback_font
 	draw_texture(backdrop, -scenario.backdrop_origin)
@@ -136,6 +153,10 @@ func _draw() -> void:
 			draw_texture(occluder_textures[o["id"]], o["pos"] - scenario.backdrop_origin)
 	if mode == Mode.COMBAT:
 		_draw_preview(font)
+	# Véu quente e vinheta cobrem o cenário e os personagens, mas ficam por baixo do HUD.
+	var view := get_canvas_transform().affine_inverse() * Rect2(Vector2.ZERO, get_viewport_rect().size)
+	draw_rect(view, DUSK_TINT)
+	draw_texture_rect(vignette, view, false)
 	_draw_hud(font)
 	for p in popups:
 		_draw_popup(font, p)

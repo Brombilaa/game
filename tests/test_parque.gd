@@ -59,6 +59,12 @@ func _run() -> void:
 			_check(not w.has_point(e.pos), "cultista fora das paredes")
 	_check(room.turns.order.size() == room.party.size() + 2, "o grupo e os dois cultistas entram na ordem de turnos")
 
+	# Iluminação: vinheta transparente no centro e escura nas bordas.
+	var img: Image = room.vignette.get_image()
+	var mid: int = room.VIGNETTE_SIZE / 2
+	_check(img.get_pixel(mid, mid).a < 0.01, "o centro da vinheta fica livre")
+	_check(img.get_pixel(0, 0).a > 0.3, "a borda da vinheta escurece")
+
 	print("Falhas: %d" % failures)
 	quit(1 if failures > 0 else 0)
 
