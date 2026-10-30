@@ -28,6 +28,7 @@ const ENEMY_STEP_SECONDS := 0.4
 const FOLLOW_DISTANCE := 60.0  # distância fixa do seguidor ao líder (provisório)
 const FOLLOW_SPREAD := 1.0  # variação do ângulo do seguidor em radianos (provisório)
 const REVIVE_REACH := 16.0  # borda a borda: "adjacente" para reanimar
+const KIT_ID := "kit_primeiros_socorros"
 const SWAP_PA := 1  # trocar de arma em combate (GDD #18)
 const SHEET_SCALE := 0.75  # fichas do grupo 25% menores que o desenho em tamanho cheio (pedido do Léo, 30/10/2026)
 const SHEET_SIZE := Vector2(223, 75) * SHEET_SCALE  # retrato e ficha lado a lado
@@ -112,8 +113,9 @@ var looks := {}  # membro do grupo -> índice em AGENT_SHEETS
 var follow_paths := {}  # seguidor -> rota restante na exploração
 var follow_offsets := {}  # seguidor -> posição relativa ao líder
 var follow_rng := RandomNumberGenerator.new()
-var kits := 1  # kits de primeiros socorros do grupo (teste; o inventário ainda não existe)
-var reserves := {}  # membro do grupo -> arma de reserva depois de uma troca (dicionário de CombatConfig.weapon)
+var inventory: Inventory  # mochila compartilhada do grupo (20 espaços)
+var gear := {}  # membro -> {"principal", "secundaria", "colete", "acessorio"}: ids ("" = vazio)
+var inv_panel: InventoryPanel
 var enemies: Array[Combatant] = [
 	cfg.make_enemy("cultista", Vector2(800, 360)),
 	cfg.make_enemy("atirador", Vector2(1100, 200)),
@@ -161,6 +163,13 @@ func _ready() -> void:
 	party[2].max_san = 20  # Miguel é Ocultista (SAN inicial 20) e luta com a espada (GDD #16)
 	party[2].san = 20
 	party[2].weapon = cfg.weapon("espada")
+	_setup_gear()
+	inv_panel = InventoryPanel.new()
+	inv_panel.room = self
+	var inv_layer := CanvasLayer.new()  # fica sobre o HUD e não acompanha a câmera
+	inv_layer.layer = 20
+	inv_layer.add_child(inv_panel)
+	add_child(inv_layer)
 	_reset_follow_offsets(Vector2.RIGHT)
 	for variant in ENEMY_SHEETS:
 		enemy_sheets[variant] = CharacterSheet.new(ENEMY_SHEETS[variant])
@@ -339,6 +348,8 @@ func _start_move(unit: Combatant, new_path: PackedVector2Array) -> void:
 
 
 func _process(delta: float) -> void:
+	if inv_panel and inv_panel.open:
+		return  # inventário aberto: o tempo para (GDD #23)
 	_update_discovered()
 	if mode == Mode.COMBAT and _player_ready():
 		queue_redraw()  # gema de PA pulsando e estados do botão de fim do turno
@@ -529,14 +540,14 @@ func _combat_click(click: Vector2) -> void:
 func _revive(fallen: Combatant) -> void:
 	var kit := cfg.game_data.get_entry("itens", "kit_primeiros_socorros")
 	var cost := int(kit["custo_pa_combate"])
-	if kits <= 0:
+	if inventory.count(KIT_ID) <= 0:
 		_reject("requirement")
 	elif CombatRules.gap(player, fallen) > REVIVE_REACH:
 		_reject("out_of_range")
 	elif not turns.spend(player, cost):
 		_reject("no_pa")
 	else:
-		kits -= 1
+		inventory.remove(KIT_ID)
 		fallen.pv = maxi(floori(fallen.max_pv * float(kit["valor"])), 1)
 		_popup(fallen.pos, "REANIMADO", "heal")
 	_after_player_action()
@@ -579,12 +590,9 @@ func _player_pass() -> void:
 		turns.pass_turn()
 
 
-# Arma de reserva do controlado: a que ele deixou na troca ou, antes disso, a arma secundária da ficha.
+# Arma de reserva do controlado ("" se não tem).
 func _reserve_id() -> String:
-	if reserves.has(player):
-		return str(reserves[player]["id"])
-	var second = cfg.game_data.get_entry("personagens", player.name.to_lower()).get("arma_secundaria")
-	return "" if second == null or str(second) == str(player.weapon["id"]) else str(second)
+	return str(gear[player]["secundaria"])
 
 
 # Troca a arma em mãos pela reserva: 1 PA em combate (GDD #18), grátis fora dele.
@@ -598,10 +606,139 @@ func _swap_weapon() -> void:
 		if not turns.spend(player, SWAP_PA):
 			_reject("no_pa")
 			return
-	reserves[player] = player.weapon
+	gear[player]["secundaria"] = gear[player]["principal"]
+	gear[player]["principal"] = id
 	player.weapon = cfg.weapon(id)
 	hud.show_notice("Empunhou: %s" % cfg.game_data.get_entry("armas", id).get("nome", id))
 	queue_redraw()
+
+
+# --- Inventário e equipamento ---------------------------------------------------
+# A mochila (Inventory) e o equipamento de cada um (`gear`) mandam; o painel (InventoryPanel)
+# só desenha e chama estas funções. Cada uma devolve a mensagem para o painel ("" se nada a dizer).
+
+# O inventário abre fora do combate ou no turno do jogador (o tempo para; no turno inimigo não).
+func inventory_can_open() -> bool:
+	return mode == Mode.EXPLORATION or _player_ready()
+
+
+# "arma", "colete" ou "item".
+func gear_item_kind(id: String) -> String:
+	if cfg.game_data.has_entry("armas", id):
+		return "arma"
+	if cfg.game_data.get_entry("itens", id).get("efeito") == "defesa":
+		return "colete"
+	return "item"
+
+
+func gear_is_equippable(id: String) -> bool:
+	return gear_item_kind(id) != "item"
+
+
+func gear_slot_id(m: Combatant, slot: String) -> String:
+	return str(gear[m][slot])
+
+
+# Em combate só quem está na vez troca de arma, por 1 PA; colete só fora do combate.
+func _gear_change_cost(m: Combatant, kind: String) -> Variant:
+	if mode != Mode.COMBAT:
+		return 0
+	if kind == "colete":
+		return "Troque de colete fora do combate"
+	if m != player:
+		return "Só quem está na vez troca de arma"
+	return SWAP_PA
+
+
+# Equipa o item do espaço `bag_index` no espaço `slot` de `m`; o que estava lá vai para o lugar dele.
+func gear_equip(m: Combatant, slot: String, bag_index: int) -> String:
+	var entry: Dictionary = inventory.slots[bag_index]
+	if entry.is_empty():
+		return ""
+	var id := str(entry["id"])
+	var kind := gear_item_kind(id)
+	if kind == "item" or slot == "acessorio":
+		return "Esse item não vai aí"
+	if (kind == "colete") != (slot == "colete"):
+		return "Esse item não vai aí"
+	var cost = _gear_change_cost(m, kind)
+	if cost is String:
+		return cost
+	if cost > 0 and not turns.spend(player, cost):
+		_reject("no_pa")
+		return "PA insuficientes"
+	var old := str(gear[m][slot])
+	inventory.slots[bag_index] = {"id": old, "qty": 1} if old != "" else {}
+	gear[m][slot] = id
+	if slot == "principal":
+		m.weapon = cfg.weapon(id)
+	elif slot == "colete":
+		m.defense = float(cfg.game_data.get_entry("itens", id)["valor"])
+	queue_redraw()
+	return "%s: %s" % [m.name, cfg.game_data.get_entry("armas", id).get("nome", cfg.game_data.get_entry("itens", id).get("nome", id))]
+
+
+# Guarda de volta na mochila o que `m` tem em `slot`.
+func gear_unequip(m: Combatant, slot: String) -> String:
+	var id := str(gear[m][slot])
+	if id == "":
+		return ""
+	var cost = _gear_change_cost(m, gear_item_kind(id))
+	if cost is String:
+		return cost
+	if inventory.free_slot() < 0:
+		return "Mochila cheia"
+	if cost > 0 and not turns.spend(player, cost):
+		_reject("no_pa")
+		return "PA insuficientes"
+	inventory.add(id)
+	gear[m][slot] = ""
+	if slot == "principal":
+		m.weapon = cfg.weapon("soco")
+	elif slot == "colete":
+		m.defense = 0.0
+	queue_redraw()
+	return "Guardou na mochila"
+
+
+func gear_discard(bag_index: int) -> String:
+	var gone := inventory.discard(bag_index)
+	return "" if gone.is_empty() else "Descartou %s" % cfg.game_data.get_entry("itens", str(gone["id"])).get("nome", cfg.game_data.get_entry("armas", str(gone["id"])).get("nome", gone["id"]))
+
+
+# Usa um consumível da mochila em `m`: bandagem tira o sangramento, antídoto o veneno.
+# O kit de primeiros socorros reanima aliado caído e só se usa pela barra de combate.
+func gear_use(m: Combatant, bag_index: int) -> String:
+	var id := str(inventory.slots[bag_index].get("id", ""))
+	var effect := str(cfg.game_data.get_entry("itens", id).get("efeito", ""))
+	var cures := {"remover_sangrando": "sangrando", "remover_envenenado": "envenenado"}
+	if id == KIT_ID:
+		return "O kit reanima um aliado caído (barra de combate)"
+	if not cures.has(effect):
+		return "Sem efeito por enquanto"
+	if not m.has_condition(cures[effect]):
+		return "%s não precisa" % m.name
+	if mode == Mode.COMBAT:
+		if m != player:
+			return "Só quem está na vez usa itens"
+		if not turns.spend(player, int(cfg.game_data.get_entry("itens", id)["custo_pa_combate"])):
+			_reject("no_pa")
+			return "PA insuficientes"
+	m.conditions.erase(cures[effect])
+	inventory.remove(id)
+	queue_redraw()
+	return "%s usou %s" % [m.name, cfg.game_data.get_entry("itens", id)["nome"]]
+
+
+# Mochila e equipamento iniciais da sala de teste (provisório do Claude).
+func _setup_gear() -> void:
+	inventory = Inventory.new(cfg.game_data)
+	for item in [[KIT_ID, 1], ["bandagem", 2], ["antidoto", 1], ["colete_leve", 1], ["colete_pesado", 1]]:
+		inventory.add(item[0], item[1])
+	for m in party:
+		var second = cfg.game_data.get_entry("personagens", m.name.to_lower()).get("arma_secundaria")
+		var main := str(m.weapon["id"])
+		gear[m] = {"principal": main, "secundaria": "" if second == null or str(second) == main else str(second), "colete": "", "acessorio": ""}
 
 
 func _player_delay() -> void:
@@ -1279,7 +1416,7 @@ func _action_slots() -> Array:
 	var second := _reserve_id()
 	if second != "":
 		slots.append([second, str(data.get_entry("armas", second).get("nome", second)), "Trocar arma · %d PA · tecla Q" % SWAP_PA, player.pa >= SWAP_PA])
-	slots.append(["kit", "Kit de primeiros socorros", "Reanimar · %d PA · restam %d" % [int(kit["custo_pa_combate"]), kits], kits > 0])
+	slots.append(["kit", "Kit de primeiros socorros", "Reanimar · %d PA · restam %d" % [int(kit["custo_pa_combate"]), inventory.count(KIT_ID)], inventory.count(KIT_ID) > 0])
 	slots.append(["atrasar", "Atrasar", "Age depois na rodada · tecla D", true])
 	return slots
 
@@ -1288,7 +1425,6 @@ func _action_slots() -> Array:
 # compacta e semitransparente no rodapé, com as casas de ação à esquerda, um divisor gótico e o
 # fim do turno em carmesim à direita; os PA ficam numa faixa de gemas sobre a borda de cima.
 # Só o desenho mudou: as casas e o botão continuam sendo os retângulos de _action_rect e _end_turn_rect.
-const ART_ICON := 32.0  # lado do ícone pintado, pixels da tela
 const BAR_SLOT := 38.0  # lado de uma casa, pixels da tela
 const BAR_GAP := 4.0
 const BAR_PAD := 7.0  # da moldura até as casas
@@ -1297,118 +1433,7 @@ const BAR_END_W := 92.0
 const BAR_BOTTOM := 532.0
 const BAR_FILL := Color(0.035, 0.026, 0.022, 0.84)
 const BAR_CRIMSON := Color(0.62, 0.09, 0.11)
-const ICON_PIXEL := 2.0  # cada pixel dos ícones vale 2 pixels da tela (4 na janela de 1920)
 
-# Ícones em pixel art, 16 colunas. o contorno, a/b/c metal claro, médio e escuro, w madeira,
-# g ouro, r carmesim, y areia. Ponto é transparente; o desenho é centralizado na casa.
-const ICON_COLORS := {
-	"o": Color(0.05, 0.035, 0.03), "a": Color(0.8, 0.76, 0.68), "b": Color(0.52, 0.48, 0.43),
-	"c": Color(0.3, 0.27, 0.24), "w": Color(0.47, 0.28, 0.15), "g": Color(0.84, 0.68, 0.36),
-	"r": Color(0.74, 0.11, 0.13), "y": Color(0.88, 0.72, 0.42),
-}
-# Ícones pintados do Léo (ChatGPT, 30/10/2026), recortados em 64×64 por tools/sprites/icones_acoes.py.
-# Quem não tem arte ainda (fuzil, soco) usa o pixel art de PIXEL_ICONS.
-const ACTION_ART := {
-	"pistola": preload("res://assets/sprites/ui/acoes/pistola.png"),
-	"escopeta": preload("res://assets/sprites/ui/acoes/escopeta.png"),
-	"espada": preload("res://assets/sprites/ui/acoes/espada.png"),
-	"kit": preload("res://assets/sprites/ui/acoes/kit.png"),
-	"atrasar": preload("res://assets/sprites/ui/acoes/atrasar.png"),  # relógio de bolso
-	"ampulheta": preload("res://assets/sprites/ui/acoes/ampulheta.png"),  # fim do turno
-}
-const PIXEL_ICONS := {
-	"pistola": [
-		"..oooooooooooo..",
-		".oaaaaaaaaaabbo.",
-		".obbbbbbbbbbbo..",
-		"..oooocbbboooo..",
-		".....ocbbo......",
-		"....owwoo.......",
-		"...owwwo........",
-		"..owwwwo........",
-		"..owwwo.........",
-		"..oooo..........",
-	],
-	"escopeta": [
-		"oooo............",
-		"owwwoooooooooooo",
-		"owwwwbbbbaaaaaao",
-		".owwwbbbbbbbbbbo",
-		"..oowoocbboooooo",
-		"....o..occo.....",
-		"........oo......",
-	],
-	"fuzil_precisao": [
-		".....oooooo.....",
-		".....oaaabo.....",
-		"oooo..oooo......",
-		"owwwoooooooooooo",
-		"owwwwbbbbbbbaaao",
-		".owwwbbbbbbbbbbo",
-		"..oowoocbboooooo",
-		"....o..occo.....",
-		"........oo......",
-	],
-	"espada": [
-		".............oo.",
-		"............oao.",
-		"...........oaco.",
-		"..........oaco..",
-		".........oaco...",
-		"........oaco....",
-		".......oaco.....",
-		"..o...oaco......",
-		"..oo.oaco.......",
-		"...ogaco........",
-		"....ogo.........",
-		"...owogo........",
-		"..owo.oo........",
-		".owo............",
-		".oo.............",
-	],
-	"soco": [
-		"....oooooooo....",
-		"...oaaoaaoaao...",
-		"...oaaoaaoaao...",
-		"..ooaaoaaoaao...",
-		"..oaooooooooo...",
-		"..oaaaaaaaaaco..",
-		"..oaaaaaaaaaco..",
-		"..obaaaaaaacco..",
-		"...obbbbbbbco...",
-		"....obbbbbco....",
-		"....ooooooo.....",
-	],
-	"kit": [
-		".....oooooo.....",
-		".....o....o.....",
-		"..oooooooooooo..",
-		"..oaaaaaaaaaao..",
-		"..oaaaarraaaao..",
-		"..oaaaarraaaao..",
-		"..oarrrrrrrrao..",
-		"..oarrrrrrrrao..",
-		"..oaaaarraaaao..",
-		"..oaaaarraaaao..",
-		"..obbbbbbbbbbo..",
-		"..oooooooooooo..",
-	],
-	"atrasar": [
-		"...gggggggggg...",
-		"...oooooooooo...",
-		"....oaaaaaao....",
-		"....oyyyyyyo....",
-		".....oyyyyo.....",
-		"......oyyo......",
-		".......oo.......",
-		"......oaao......",
-		".....oaaaao.....",
-		"....oaayyaao....",
-		"....oyyyyyyo....",
-		"...oooooooooo...",
-		"...gggggggggg...",
-	],
-}
 
 
 func _bar_width(n: int) -> float:
@@ -1575,45 +1600,14 @@ func _draw_end_turn(font: Font, er: Rect2, hover: bool, pressed: bool, enabled: 
 	draw_rect(r.grow(-2.5), Color(FRAME_ACCENT, 0.45) if enabled else Color(edge, 0.5), false, 0.5)
 	for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:
 		_draw_diamond(r.position + corner * r.size, 2.0, edge.lightened(0.2))
-	var glass := ART_ICON  # a ampulheta da arte é estreita; o quadro é o mesmo dos outros ícones
-	_draw_art_icon(Rect2(r.position + Vector2(5, (r.size.y - glass) * 0.5), Vector2(glass, glass)), ACTION_ART["ampulheta"], enabled)
+	var glass := ItemIcons.ART_SIZE  # a ampulheta da arte é estreita; o quadro é o mesmo dos outros ícones
+	ItemIcons.draw(self, Rect2(r.position + Vector2(5, (r.size.y - glass) * 0.5), Vector2(glass, glass)), "ampulheta", enabled)
 	draw_string(font, r.position + Vector2(glass + 8, 17), "FIM DO", HORIZONTAL_ALIGNMENT_CENTER, r.size.x - glass - 14, 11, ink)
 	draw_string(font, r.position + Vector2(glass + 8, 30), "TURNO", HORIZONTAL_ALIGNMENT_CENTER, r.size.x - glass - 14, 11, ink)
 
 
 func _draw_action_icon(r: Rect2, id: String, enabled: bool) -> void:
-	if ACTION_ART.has(id):
-		_draw_art_icon(r, ACTION_ART[id], enabled)
-	else:
-		_draw_pixel_icon(r, PIXEL_ICONS.get(id, PIXEL_ICONS["soco"]), enabled)
-
-
-# Ícone pintado centralizado em `r`, em 32×32 da tela (os 64 px da arte na janela de 1920, sem
-# reamostrar, para o contorno ficar nítido); indisponível: escurecido e sem cor.
-func _draw_art_icon(r: Rect2, tex: Texture2D, enabled: bool) -> void:
-	var at := (r.get_center() - Vector2(ART_ICON, ART_ICON) * 0.5).round()
-	draw_texture_rect(tex, Rect2(at, Vector2(ART_ICON, ART_ICON)), false, Color.WHITE if enabled else Color(0.42, 0.4, 0.38, 0.8))
-
-
-# Desenha um ícone de PIXEL_ICONS centralizado em `r`, um quadrado por pixel, alinhado à grade
-# da tela para os contornos ficarem nítidos. Indisponível: cores sem saturação e escurecidas.
-func _draw_pixel_icon(r: Rect2, rows: Array, enabled: bool, swap := {}) -> void:
-	var w := 0
-	for row in rows:
-		w = maxi(w, str(row).length())
-	var origin := (r.get_center() - Vector2(w, rows.size()) * ICON_PIXEL * 0.5).round()
-	for y in rows.size():
-		var row: String = rows[y]
-		for x in row.length():
-			var ch := row[x]
-			if ch == ".":
-				continue
-			var color: Color = swap.get(ch, ICON_COLORS[ch])
-			if not enabled:
-				var v := color.get_luminance() * 0.55
-				color = Color(v, v * 0.95, v * 0.9)
-			draw_rect(Rect2(origin + Vector2(x, y) * ICON_PIXEL, Vector2.ONE * ICON_PIXEL), color)
-
+	ItemIcons.draw(self, r, id, enabled)
 
 
 # Minimapa: radar redondo visto de cima, centrado no controlado (Léo escolheu, 29/10/2026).
