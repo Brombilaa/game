@@ -25,6 +25,11 @@ func _run() -> void:
 	# Colisão: não há rota para dentro da van.
 	var into_van: PackedVector2Array = room.pathfinder.find_path(room.player.pos, Vector2(200, 900), room._obstacles(room.player), room.player.radius)
 	_check(into_van.is_empty(), "o caminho não entra na van")
+	# Van, sebes e o arbusto da árvore são paredes: bloqueiam o caminho e a visão.
+	for cid in ["van", "mata_1", "mata_2", "arbusto_4"]:
+		_check(room.walls.has(room.scenario.colliders[cid]), cid + " é parede")
+		var center: Vector2 = room.scenario.colliders[cid].get_center()
+		_check(not Pathfinder.has_line_of_sight(center + Vector2(-300, 0), center + Vector2(300, 0), room._sight_blockers()), cid + " bloqueia a visão")
 
 	# A árvore só abre depois das outras pistas.
 	room._inspect("arvore_simbolo")

@@ -13,7 +13,7 @@
 		"npcs": [{"id": "caio", "pos": [330, 740]}, {"id": "leticia", "pos": [390, 705]}]
 	},
 	"colisoes": [
-		{"id": "van", "rect": [40, 860, 380, 100]},
+		{"id": "van", "rect": [0, 790, 410, 170], "_nota": "parede: o retângulo cobre o corpo rotacionado da van"},
 		{"id": "lago", "rect": [0, 0, 310, 296], "_nota": "grade de ferro encostada na borda"},
 		{"id": "banco_1", "rect": [410, 80, 90, 50]},
 		{"id": "banco_2", "rect": [680, 590, 90, 50]},
@@ -21,8 +21,8 @@
 		{"id": "carrossel", "rect": [905, 775, 110, 110]},
 		{"id": "balanco", "rect": [1130, 670, 130, 60]},
 		{"id": "arvore", "rect": [1100, 170, 60, 60]},
-		{"id": "mata_1", "rect": [960, 20, 100, 80]},
-		{"id": "mata_2", "rect": [1160, 40, 100, 100]},
+		{"id": "mata_1", "rect": [820, 28, 380, 64], "_nota": "sebe inteira, com a abertura, como parede"},
+		{"id": "mata_2", "rect": [1040, 60, 240, 60], "_nota": "sebe atrás da árvore, como parede"},
 		{"id": "arbusto_1", "rect": [40, 360, 50, 40]},
 		{"id": "arbusto_2", "rect": [385, 425, 40, 30]},
 		{"id": "arbusto_3", "rect": [200, 555, 50, 30]},
@@ -40,7 +40,7 @@
 	],
 	"gatilhos": [
 		{"id": "combate_arvore", "apos": "arvore_simbolo", "tipo": "combate",
-			"inimigos": [{"tipo": "cultista", "pos": [1100, 130], "origem": "mata atrás da árvore"}, {"tipo": "cultista", "pos": [420, 820], "origem": "atrás do grupo, perto dos NPCs"}],
+			"inimigos": [{"tipo": "cultista", "pos": [1100, 130], "origem": "mata atrás da árvore"}, {"tipo": "cultista", "pos": [450, 800], "origem": "atrás do grupo, perto dos NPCs"}],
 			"cutscene_depois": "morte_caio"}
 	],
 	"_pendencias": ["a Criatura de Sangue substitui o cultista provisório quando existir", "pistas de ordem 2 só liberam depois de todas as de ordem 1"]

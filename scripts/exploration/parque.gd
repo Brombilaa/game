@@ -9,7 +9,7 @@ extends "res://scripts/exploration/test_room.gd"
 
 const SCENARIO_ID := "parque"
 const BOUNDS_PAD := 64.0  # espessura das paredes invisíveis na borda do plano
-const BIG_PROPS := ["van", "lago", "arvore", "mata_1", "mata_2"]  # bloqueiam também a visão
+const BIG_PROPS := ["van", "lago", "arvore", "mata_1", "mata_2", "arbusto_4"]  # paredes: bloqueiam também a visão (Léo: van e arbustos atrás da árvore)
 const NPC_RADIUS := 14.0
 const NPC_NAMES := {"caio": "Caio", "leticia": "Letícia"}
 const NPC_COLORS := {"caio": Color("#46628a"), "leticia": Color("#885050")}  # figuras provisórias
