@@ -1034,7 +1034,7 @@ func _draw_unit(u: Combatant) -> void:
 		if not u.is_alive():
 			draw_string(ThemeDB.fallback_font, at + Vector2(-22, -CharacterSheet.HEIGHT - 14), "CAÍDO", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(1, 0.4, 0.4))
 	else:
-		var variant: String = ENEMY_VARIANTS[i % ENEMY_VARIANTS.size()]
+		var variant := _enemy_variant(i)
 		if enemy_sheets.has(variant):
 			var frames: Array = CharacterSheet.WALK_FRAMES if walking else CharacterSheet.IDLE_FRAMES
 			var n := walk_n % frames.size() if walking else idle_frame
@@ -1420,7 +1420,7 @@ func _draw_face(u: Combatant, rect: Rect2) -> void:
 	if i < 0:
 		agent_sheets[looks.get(u, 0)].draw_portrait(self, rect)
 		return
-	var variant: String = ENEMY_VARIANTS[i % ENEMY_VARIANTS.size()]
+	var variant := _enemy_variant(i)
 	if enemy_sheets.has(variant):
 		enemy_sheets[variant].draw_portrait(self, rect)
 	else:
@@ -1683,6 +1683,16 @@ func _facing_angle(m: Combatant) -> float:
 	return _uniso(v * 100.0).angle()
 
 
+# Nome do local na placa do radar; as áreas derivadas trocam.
+func _place_label() -> String:
+	return "SALA DE TESTE"
+
+
+# Visual do inimigo `i` da lista `enemies` (a sala de teste alterna cultista e atirador).
+func _enemy_variant(i: int) -> String:
+	return ENEMY_VARIANTS[i % ENEMY_VARIANTS.size()]
+
+
 func _draw_minimap(font: Font, to_world: Transform2D) -> void:
 	var center := to_world * RADAR_CENTER
 	var focus := player
@@ -1780,5 +1790,5 @@ func _draw_minimap(font: Font, to_world: Transform2D) -> void:
 	# Placa com o local e o modo logo abaixo.
 	var plate := Rect2(center + Vector2(-65, rim + 12), Vector2(130, 37))
 	_draw_frame(plate)
-	draw_string(font, plate.position + Vector2(0, 15), "SALA DE TESTE", HORIZONTAL_ALIGNMENT_CENTER, plate.size.x, 8, Color(0.73, 0.65, 0.52))
+	draw_string(font, plate.position + Vector2(0, 15), _place_label(), HORIZONTAL_ALIGNMENT_CENTER, plate.size.x, 8, Color(0.73, 0.65, 0.52))
 	draw_string(font, plate.position + Vector2(0, 28), HudText.mode_label(mode == Mode.COMBAT), HORIZONTAL_ALIGNMENT_CENTER, plate.size.x, 11, Color(0.93, 0.89, 0.8))

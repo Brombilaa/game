@@ -40,7 +40,7 @@
 	],
 	"gatilhos": [
 		{"id": "combate_arvore", "apos": "arvore_simbolo", "tipo": "combate",
-			"inimigos": [{"tipo": "cultista", "pos": [1300, 120], "origem": "mata atrás da árvore"}, {"tipo": "cultista", "pos": [430, 860], "origem": "atrás do grupo, perto dos NPCs"}],
+			"inimigos": [{"tipo": "cultista", "pos": [1100, 130], "origem": "mata atrás da árvore"}, {"tipo": "cultista", "pos": [420, 820], "origem": "atrás do grupo, perto dos NPCs"}],
 			"cutscene_depois": "morte_caio"}
 	],
 	"_pendencias": ["a Criatura de Sangue substitui o cultista provisório quando existir", "pistas de ordem 2 só liberam depois de todas as de ordem 1"]

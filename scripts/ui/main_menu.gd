@@ -10,7 +10,7 @@ extends Control
 # símbolo pintado na parede e o nome em vermelho. Se existir BG_IMAGE (arte do ChatGPT), ela é
 # o fundo; sem ela, uma mesa simples é desenhada por código. O símbolo é chapado, em 2D.
 
-const GAME_SCENE := "res://scenes/exploration/test_room.tscn"
+const GAME_SCENE := "res://scenes/exploration/parque.tscn"  # sala inicial (Léo, 30/10/2026)
 const BG_IMAGE := "res://assets/sprites/menu/fundo_menu.png"
 const CANDLE_AT := Vector2(0.075, 0.26)  # ponta da chama da vela desenhada por código, em fração da tela
 const ART_CANDLE_AT := Vector2(0.136, 0.08)  # meio da chama na arte do fundo (fundo_menu.png)
@@ -22,7 +22,7 @@ const TITLE := "PACTO CARMESIM"
 const ITEMS := [["new", "Novo jogo"], ["load", "Carregar"], ["opts", "Opções"], ["quit", "Sair do jogo"]]
 const OPTION_ROWS := [["master", "Volume geral"], ["music", "Música"], ["sfx", "Efeitos"], ["fullscreen", "Tela cheia"]]
 const ROMAN := ["I", "II", "III"]
-const AREA_NAMES := {"test_room": "Sala de teste"}
+const AREA_NAMES := {"test_room": "Sala de teste", "parque": "Parque"}
 
 # Tempos da abertura, em segundos.
 const DRAW_SECONDS := 2.4  # cada traço do símbolo
