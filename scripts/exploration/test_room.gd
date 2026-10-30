@@ -678,6 +678,25 @@ func gear_equip(m: Combatant, slot: String, bag_index: int) -> String:
 	return "%s: %s" % [m.name, cfg.game_data.get_entry("armas", id).get("nome", cfg.game_data.get_entry("itens", id).get("nome", id))]
 
 
+# Troca a arma principal pela secundária de `m` (no inventário; Q faz o mesmo para o controlado).
+func gear_swap_weapons(m: Combatant) -> String:
+	var g: Dictionary = gear[m]
+	if g["secundaria"] == "" and g["principal"] == "":
+		return ""
+	var cost = _gear_change_cost(m, "arma")
+	if cost is String:
+		return cost
+	if cost > 0 and not turns.spend(player, cost):
+		_reject("no_pa")
+		return "PA insuficientes"
+	var main: String = g["principal"]
+	g["principal"] = g["secundaria"]
+	g["secundaria"] = main
+	m.weapon = cfg.weapon(g["principal"]) if g["principal"] != "" else cfg.weapon("soco")
+	queue_redraw()
+	return "%s empunha %s" % [m.name, cfg.game_data.get_entry("armas", g["principal"]).get("nome", "o soco")]
+
+
 # Guarda de volta na mochila o que `m` tem em `slot`.
 func gear_unequip(m: Combatant, slot: String) -> String:
 	var id := str(gear[m][slot])

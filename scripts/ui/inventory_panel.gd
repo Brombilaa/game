@@ -10,6 +10,7 @@ extends Node2D
 const PW := 480.0
 const PH := 516.0
 const MARGIN := Vector2(6, 12)  # folga até a borda direita e a de cima
+const PORTRAIT := 55.0  # 48 + 15% (pedido do Léo, 30/10/2026)
 const CELL := 40.0
 const GAP := 3.0
 const COLS := 5
@@ -24,13 +25,16 @@ const MUTED := Color(0.66, 0.6, 0.49)
 const TEXT := Color(0.91, 0.87, 0.79)
 const CRIMSON := Color(0.62, 0.09, 0.11)
 
+# Armas que o jogo trata como de curta distância (pedido do Léo, 30/10/2026): mostram só a faixa Curto.
+const SHORT_RANGE := ["pistola"]
+
 const TABS := ["TUDO", "ARMAS", "ITENS", "COLETES"]
 const EQUIP_SLOTS := ["principal", "secundaria", "colete", "acessorio"]
 const EQUIP_LABELS := {"principal": "ARMA PRINCIPAL", "secundaria": "ARMA SECUNDÁRIA", "colete": "COLETE", "acessorio": "ACESSÓRIO"}
 
 # Textos provisórios dos itens (o GDD ainda não os define).
 const BLURBS := {
-	"pistola": "Arma curta de uso comum. Confiável a curta e média distância.",
+	"pistola": "Arma curta de uso comum. Confiável à curta distância.",
 	"escopeta": "Dano alto à queima-roupa, gasta 2 PA por disparo.",
 	"espada": "Lâmina de corpo a corpo, forte nas mãos de quem aceita o risco.",
 	"fuzil_precisao": "Tiro longo e preciso, sem penalidade de distância até 18 m.",
@@ -93,7 +97,7 @@ func _close_rect() -> Rect2:
 
 
 func _portrait_rect(i: int) -> Rect2:
-	return Rect2(_origin() + Vector2(16, 66 + i * 68), Vector2(48, 48))
+	return Rect2(_origin() + Vector2(14, 64 + i * 78), Vector2(PORTRAIT, PORTRAIT))
 
 
 func _tab_rect(k: int) -> Rect2:
@@ -105,7 +109,7 @@ func _grid_rect(i: int) -> Rect2:
 
 
 func _detail_rect() -> Rect2:
-	return Rect2(_origin() + Vector2(300, 96), Vector2(164, 196))
+	return Rect2(_origin() + Vector2(300, 96), Vector2(164, 204))
 
 
 func _equip_rect(k: int) -> Rect2:
@@ -169,9 +173,9 @@ func _click(p: Vector2) -> void:
 			var slot: String = EQUIP_SLOTS[k]
 			if sel.get("kind") == "bag":
 				_say(room.gear_equip(_member(), slot, int(sel["i"])))
-				sel = {"kind": "eq", "slot": slot}
-			else:
-				sel = {"kind": "eq", "slot": slot}
+			elif sel.get("kind") == "eq" and sel.get("slot") != slot and slot in ["principal", "secundaria"] and sel.get("slot") in ["principal", "secundaria"]:
+				_say(room.gear_swap_weapons(_member()))  # com uma arma escolhida, clicar na outra troca as duas
+			sel = {"kind": "eq", "slot": slot}
 			return
 
 
@@ -187,8 +191,15 @@ func _act() -> void:
 		else:
 			_say(room.gear_use(_member(), int(sel["i"])))
 	elif sel.get("kind") == "eq":
-		_say(room.gear_unequip(_member(), str(sel["slot"])))
-		sel = {}
+		var slot := str(sel["slot"])
+		var m := _member()
+		var other := "secundaria" if slot == "principal" else "principal"
+		if slot in ["principal", "secundaria"] and (room.gear_slot_id(m, other) != "" or slot == "secundaria"):
+			_say(room.gear_swap_weapons(m))  # E numa arma equipada troca principal e secundária
+			sel = {"kind": "eq", "slot": other}
+		else:
+			_say(room.gear_unequip(m, slot))
+			sel = {}
 
 
 func _discard() -> void:
@@ -227,10 +238,13 @@ func _describe(id: String) -> Dictionary:
 	var w := data.get_entry("armas", id)
 	if not w.is_empty():
 		var dano = w.get("dano")
-		var alc = w.get("alcance_maximo")
-		var custo = w.get("custo_pa")
-		return {"nome": w["nome"], "tipo": "Corpo a corpo" if w["tipo"] == "corpo_a_corpo" else "Arma de fogo", "texto": BLURBS.get(id, ""),
-			"linhas": [["Dano", "%d - %d" % [dano[0], dano[1]] if dano else "—"], ["Custo", "%d PA" % int(custo) if custo != null else "—"], ["Alcance", "%d m" % int(alc) if alc != null else "—"]]}
+		var wp: Dictionary = room.cfg.weapon(id)
+		var lines := [["Dano", "%d - %d" % [dano[0], dano[1]] if dano else "—"], ["Custo", "%d PA" % int(wp["pa_cost"])]]
+		lines.append_array(_range_lines(wp, id in SHORT_RANGE))
+		var tipo := "Corpo a corpo" if w["tipo"] == "corpo_a_corpo" else "Arma de fogo"
+		if id in SHORT_RANGE:
+			tipo += " · curta distância"
+		return {"nome": w["nome"], "tipo": tipo, "texto": BLURBS.get(id, ""), "linhas": lines}
 	var it := data.get_entry("itens", id)
 	if it.is_empty():
 		return {}
@@ -242,6 +256,37 @@ func _describe(id: String) -> Dictionary:
 	return {"nome": it["nome"], "tipo": str(it["categoria"]).capitalize(), "texto": BLURBS.get(id, ""), "linhas": lines}
 
 
+# Curto, médio e longo a partir da regra de acerto (−5% a cada 2 m além da distância ideal):
+# curto = sem penalidade, médio = até −15%, longo = daí até o alcance máximo da arma.
+# Os limites em metros são provisórios do Claude (o GDD só define a perda por distância).
+func _range_lines(wp: Dictionary, short_only := false) -> Array:
+	var ppm: float = room.cfg.value("pixels_per_meter")
+	var max_m: float = float(wp["max_range"]) / ppm
+	var free_m: float = float(wp["free_range"]) / ppm
+	var base: float = float(wp["base_chance"])
+	var lo: float = room.cfg.value("hit_chance_min")
+	var step: float = room.cfg.value("range_falloff_per_2m")
+	if wp["melee"]:
+		return [["Curto", "até %d m · %d%%" % [roundi(max_m), roundi(base * 100.0)]]]
+	var cuts := [minf(free_m + 2.0, max_m), minf(free_m + 8.0, max_m), max_m]
+	if short_only:  # arma de curta distância: uma faixa só, do tiro à queima-roupa até onde ainda é confiável
+		var edge: float = cuts[1]
+		var far := clampf(base - floorf(maxf(edge - free_m, 0.0) / 2.0) * step, lo, 0.95)
+		return [["Curto", "0–%d m · %d%%–%d%%" % [roundi(edge), roundi(base * 100.0), roundi(far * 100.0)]]]
+	var names := ["Curto", "Médio", "Longo"]
+	var out := []
+	var from := 0.0
+	for k in 3:
+		if cuts[k] <= from:
+			continue
+		var chance := clampf(base - floorf(maxf(cuts[k] - free_m, 0.0) / 2.0) * step, lo, 0.95)
+		if k == 0:
+			chance = base
+		out.append([names[k], "%d–%d m · %d%%" % [roundi(from), roundi(cuts[k]), roundi(chance * 100.0)]])
+		from = cuts[k]
+	return out
+
+
 # --- Desenho -------------------------------------------------------------------
 
 func _draw() -> void:
@@ -250,7 +295,7 @@ func _draw() -> void:
 	var font := ThemeDB.fallback_font
 	draw_rect(Rect2(Vector2.ZERO, Vector2(960, 540)), Color(0, 0, 0, DIM * t))
 	var o := _origin()
-	_frame(Rect2(o, Vector2(PW, PH)))
+	_backdrop(Rect2(o, Vector2(PW, PH)))
 	draw_string(font, o + Vector2(24, 34), "INVENTÁRIO", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, TEXT)
 	draw_string(font, o + Vector2(0, 34), "%d / %d" % [room.inventory.used(), Inventory.SIZE], HORIZONTAL_ALIGNMENT_RIGHT, PW - 56, 12, MUTED)
 	_draw_close()
@@ -263,10 +308,49 @@ func _draw() -> void:
 	_draw_hints(font)
 
 
+# Fundo e moldura do painel inteiro: bronze gótico com volutas nos cantos (modelo A, escolhido pelo Léo).
+func _backdrop(r: Rect2) -> void:
+	draw_rect(r, PLATE)
+	_vignette(r, Color(0, 0, 0, 0.5))
+	draw_rect(r.grow(-0.5), BRONZE, false, 1.5)
+	draw_rect(r.grow(-4.0), Color(BRONZE_DARK, 0.9), false, 0.5)
+	draw_rect(r.grow(-7.0), Color(BRONZE, 0.35), false, 0.5)
+	for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:
+		var c: Vector2 = r.position + corner * r.size
+		var d := Vector2(1.0 - corner.x * 2.0, 1.0 - corner.y * 2.0)
+		var pts := PackedVector2Array()
+		for k in 14:
+			var a := k * 0.42
+			var rad := 9.0 - k * 0.45
+			pts.append(c + (Vector2(14, 14) + Vector2(cos(a), sin(a)) * rad) * d)
+		draw_polyline(pts, GOLD, 1.0)
+		draw_polyline(PackedVector2Array([c + Vector2(2, 30) * d, c + Vector2(2, 2) * d, c + Vector2(30, 2) * d]), GOLD, 1.0)
+	_header(r, GOLD)
+
+
+# Faixa do título com filete e losango central, igual nos três acabamentos.
+func _header(r: Rect2, accent: Color) -> void:
+	var y := r.position.y + 44.0
+	draw_line(Vector2(r.position.x + 18, y), Vector2(r.end.x - 18, y), Color(accent, 0.7), 1.0)
+	draw_line(Vector2(r.position.x + 18, y + 2), Vector2(r.end.x - 18, y + 2), Color(accent, 0.25), 1.0)
+	_diamond(Vector2(r.position.x + 18, y + 1), 2.5, accent)
+	_diamond(Vector2(r.end.x - 18, y + 1), 2.5, accent)
+	_diamond(Vector2(r.get_center().x, r.position.y + 0.5), 3.5, accent)
+	_diamond(Vector2(r.get_center().x, r.end.y - 0.5), 3.5, accent)
+
+
+func _vignette(r: Rect2, color: Color) -> void:
+	for i in 14:
+		draw_rect(r.grow(-i * 2.0), Color(color, color.a * pow(1.0 - i / 14.0, 2.0) * 0.5), false, 2.0)
+
+
 # Moldura como a do HUD: placa escura, filete duplo de bronze, cantoneiras e losango.
 func _frame(r: Rect2, accent := GOLD, thin := false) -> void:
-	draw_rect(r, PLATE)
-	draw_rect(r.grow(-0.5), BRONZE, false, 1.0)
+	draw_rect(r, Color(PLATE, 0.62))
+	var lit := thin and r.has_point(get_viewport().get_mouse_position())
+	draw_rect(r.grow(-0.5), GOLD if lit else BRONZE, false, 1.0)
+	if lit:
+		_glow(r, 0.35)
 	draw_rect(r.grow(-3.0 if thin else -4.0), Color(BRONZE_DARK, 0.8), false, 0.5)
 	if thin:
 		return
@@ -277,6 +361,13 @@ func _frame(r: Rect2, accent := GOLD, thin := false) -> void:
 		_diamond(c + Vector2(6, 6) * d, 1.8, accent)
 	_diamond(Vector2(r.get_center().x, r.position.y + 0.5), 3.0, accent)
 	_diamond(Vector2(r.get_center().x, r.end.y - 0.5), 3.0, accent)
+
+
+# Brilho dourado na borda: anéis cada vez mais fracos para fora e uma luz suave por dentro.
+func _glow(r: Rect2, strength: float) -> void:
+	for i in 5:
+		draw_rect(r.grow(0.5 + i * 1.1), Color(GOLD, (0.34 - i * 0.065) * strength), false, 1.0)
+	draw_rect(r.grow(-1.5), Color(GOLD, 0.1 * strength), false, 2.0)
 
 
 func _diamond(c: Vector2, r: float, color: Color) -> void:
@@ -301,13 +392,12 @@ func _draw_portrait(font: Font, i: int) -> void:
 	room.agent_sheets[room.looks.get(m, 0)].draw_portrait(self, r.grow(-3))
 	if not m.is_alive():
 		draw_rect(r, Color(0.4, 0, 0, 0.5))
-	draw_rect(r.grow(-0.5), GOLD if on else BRONZE, false, 1.0)
-	if on:
-		draw_rect(r.grow(1.5), Color(GOLD, 0.35), false, 0.5)
+	var hover := r.has_point(get_viewport().get_mouse_position())
+	draw_rect(r.grow(-0.5), GOLD if on or hover else BRONZE, false, 1.0)
+	if on or hover:
+		_glow(r, 1.0 if on else 0.6)
 		draw_rect(r.grow(-2.5), Color(GOLD, 0.5), false, 0.5)
-	elif r.has_point(get_viewport().get_mouse_position()):
-		draw_rect(r.grow(-1), Color(1, 0.9, 0.7, 0.1))
-	draw_string(font, r.position + Vector2(0, 58), m.name.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 8, GOLD if on else MUTED)
+	draw_string(font, r.position + Vector2(0, PORTRAIT + 11), m.name.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 9, GOLD if on else MUTED)
 
 
 func _draw_tabs(font: Font) -> void:
@@ -318,19 +408,22 @@ func _draw_tabs(font: Font) -> void:
 	for k in TABS.size():
 		var r := _tab_rect(k)
 		var on := k == tab
-		draw_rect(r, Color(0.16, 0.05, 0.05) if on else SLOT_FILL)
-		draw_rect(r.grow(-0.5), CRIMSON if on else BRONZE_DARK, false, 1.0)
+		var hover := r.has_point(get_viewport().get_mouse_position())
+		draw_rect(r, Color(0.16, 0.05, 0.05) if on else (Color(0.12, 0.09, 0.06) if hover else SLOT_FILL))
+		draw_rect(r.grow(-0.5), CRIMSON if on else (GOLD if hover else BRONZE_DARK), false, 1.0)
+		if hover and not on:
+			_glow(r, 0.5)
 		draw_string(font, r.position + Vector2(0, 16), TABS[k], HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 8, TEXT if on else MUTED)
 
 
 func _slot(font: Font, r: Rect2, id: String, qty: int, selected: bool, dim: bool) -> void:
 	draw_rect(r, SLOT_FILL)
 	draw_rect(Rect2(r.position + Vector2(1, 1), Vector2(r.size.x - 2, r.size.y * 0.45)), Color(1, 0.9, 0.7, 0.04))
-	draw_rect(r.grow(-0.5), Color(1.0, 0.85, 0.5) if selected else Color(BRONZE, 0.9), false, 1.0)
-	draw_rect(r.grow(-2.75), Color(GOLD, 0.6) if selected else Color(BRONZE_DARK, 0.6), false, 0.5)
-	if selected:
-		draw_rect(r.grow(1.25), Color(GOLD, 0.35), false, 0.5)
-	elif r.has_point(get_viewport().get_mouse_position()):
+	var hover := r.has_point(get_viewport().get_mouse_position())
+	draw_rect(r.grow(-0.5), Color(1.0, 0.85, 0.5) if selected or hover else Color(BRONZE, 0.9), false, 1.0)
+	draw_rect(r.grow(-2.75), Color(GOLD, 0.6) if selected or hover else Color(BRONZE_DARK, 0.6), false, 0.5)
+	if selected or hover:
+		_glow(r, 1.0 if selected else 0.6)
 		draw_rect(r.grow(-3), Color(1, 0.9, 0.7, 0.07))
 	if id == "":
 		return
@@ -359,16 +452,16 @@ func _draw_detail(font: Font) -> void:
 		return
 	draw_string(font, r.position + Vector2(10, 22), str(d["nome"]), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 20, 13, TEXT)
 	draw_string(font, r.position + Vector2(10, 35), str(d["tipo"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 9, MUTED)
-	ItemIcons.draw(self, Rect2(r.position + Vector2(0, 40), Vector2(r.size.x, 52)), id, true, 48.0)
-	var y := 108.0
+	ItemIcons.draw(self, Rect2(r.position + Vector2(0, 38), Vector2(r.size.x, 44)), id, true, 40.0)
+	var y := 96.0
 	for line in str(d["texto"]).split("\n"):
 		y = _wrap(font, line, r.position + Vector2(10, y), r.size.x - 20, 9) - r.position.y + 4.0
-	y = maxf(y, 148.0)
+	y = maxf(y, 140.0)
 	for row in d["linhas"]:
 		draw_line(r.position + Vector2(10, y - 9), r.position + Vector2(r.size.x - 10, y - 9), Color(BRONZE_DARK, 0.7), 0.5)
 		draw_string(font, r.position + Vector2(10, y + 3), str(row[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 9, GOLD)
 		draw_string(font, r.position + Vector2(10, y + 3), str(row[1]), HORIZONTAL_ALIGNMENT_RIGHT, r.size.x - 20, 9, TEXT)
-		y += 15.0
+		y += 13.0
 
 
 # Quebra `text` em linhas de até `width`; devolve o y da linha seguinte.
@@ -400,7 +493,7 @@ func _draw_equipment(font: Font) -> void:
 
 func _draw_hints(font: Font) -> void:
 	var o := _origin()
-	var keys := [["E", "Equipar / usar"], ["Del", "Descartar"], ["B", "Fechar"]]
+	var keys := [["E", "Equipar / usar / trocar"], ["Del", "Descartar"], ["B", "Fechar"]]
 	var x := 76.0
 	for kv in keys:
 		var w := 22.0 if kv[0].length() == 1 else 30.0
