@@ -1,0 +1,296 @@
+extends "res://scripts/exploration/test_room.gd"
+# Parque da missão 1: a sala inicial do jogo (Léo, 30/10/2026). Reaproveita tudo da sala de
+# teste (grupo, combate, HUD, inventário) e troca só o cenário: o fundo 3D aprovado, as
+# colisões, as pistas e o gatilho do combate vêm de `data/cenarios/parque.json` (Scenario).
+# O fundo tem projeção própria (48 × 18,13 px por unidade), por isso `_iso` e `_uniso` mudam.
+# Pistas: clique no objeto, o grupo anda até perto e o texto aparece; a árvore só depois das
+# outras. Depois da árvore, dois cultistas (provisórios) atacam. A cutscene da morte do Caio
+# e os diálogos dos NPCs ainda não existem.
+
+const SCENARIO_ID := "parque"
+const BOUNDS_PAD := 64.0  # espessura das paredes invisíveis na borda do plano
+const BIG_PROPS := ["van", "lago", "arvore", "mata_1", "mata_2"]  # bloqueiam também a visão
+const NPC_RADIUS := 14.0
+const NPC_NAMES := {"caio": "Caio", "leticia": "Letícia"}
+const NPC_COLORS := {"caio": Color("#46628a"), "leticia": Color("#885050")}  # figuras provisórias
+const CLUE_CLICK_FACTOR := 0.7  # fração do raio da pista em que o clique vale
+const CLUE_HINT_RANGE := 260.0  # o brilho da pista aparece quando o controlado chega perto
+const STAND_FACTOR := 0.85  # distância de parada, em fração do raio da pista
+const FRAME_BG := Color(0.063, 0.043, 0.031, 0.95)
+
+var scenario: Scenario
+var backdrop: Texture2D
+var seen_clues: Array[String] = []
+var pending_clue := ""
+var dialog_layer: CanvasLayer
+var dialog_clue := ""
+var dialog_text: Label
+var dialog_image: TextureRect
+
+
+func _ready() -> void:
+	scenario = Scenario.load_id(SCENARIO_ID)
+	assert(scenario.ok(), "\n".join(scenario.errors))
+	backdrop = load(scenario.backdrop_path)
+	_load_layout()
+	super()
+	var corners := [_iso(Vector2.ZERO), _iso(Vector2(scenario.size.x, 0)), _iso(Vector2(0, scenario.size.y)), _iso(scenario.size)]
+	camera.limit_left = int(corners[2].x) - 16
+	camera.limit_right = int(corners[1].x) + 16
+	camera.limit_top = int(corners[0].y) - 16
+	camera.limit_bottom = int(corners[3].y) + 16
+	_build_dialog()
+
+
+# Paredes e coberturas a partir das colisões do cenário; o grupo começa na entrada.
+func _load_layout() -> void:
+	var size := scenario.size
+	walls.clear()
+	walls.append(Rect2(-BOUNDS_PAD, -BOUNDS_PAD, size.x + BOUNDS_PAD * 2.0, BOUNDS_PAD))
+	walls.append(Rect2(-BOUNDS_PAD, size.y, size.x + BOUNDS_PAD * 2.0, BOUNDS_PAD))
+	walls.append(Rect2(-BOUNDS_PAD, 0, BOUNDS_PAD, size.y))
+	walls.append(Rect2(size.x, 0, BOUNDS_PAD, size.y))
+	covers.clear()
+	for cid in scenario.colliders:
+		var rect: Rect2 = scenario.colliders[cid]
+		if BIG_PROPS.has(cid):
+			walls.append(rect)
+		else:
+			covers.append(Cover.new(rect, "partial", 20))
+	door = Rect2(-1000, -1000, 1, 1)  # não há porta: nada fica escondido
+	door_open = true
+	enemies.clear()  # os cultistas só aparecem depois da árvore
+	for i in party.size():
+		party[i].pos = scenario.party_start[i]
+
+
+# --- Projeção do fundo ----------------------------------------------------------------------
+
+func _iso(p: Vector2) -> Vector2:
+	return scenario.to_backdrop(p) - scenario.backdrop_origin
+
+
+func _uniso(s: Vector2) -> Vector2:
+	return scenario.from_backdrop(s + scenario.backdrop_origin)
+
+
+func _place_label() -> String:
+	return "PARQUE"
+
+
+func _enemy_variant(_i: int) -> String:
+	return "cultista"
+
+
+# Os NPCs também bloqueiam o caminho.
+func _obstacles(mover: Combatant = null, with_units := true) -> Array[Rect2]:
+	var out := super(mover, with_units)
+	for npc in scenario.npcs.values():
+		out.append(Rect2(npc - Vector2(NPC_RADIUS, NPC_RADIUS), Vector2(NPC_RADIUS, NPC_RADIUS) * 2.0))
+	return out
+
+
+# Minimapa: o parque inteiro conta como visto.
+func _known_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	out.append(Rect2(Vector2.ZERO, scenario.size))
+	return out
+
+
+# --- Desenho ----------------------------------------------------------------------------------
+
+func _draw() -> void:
+	var font := ThemeDB.fallback_font
+	draw_texture(backdrop, -scenario.backdrop_origin)
+	if mode == Mode.EXPLORATION:
+		for e in enemies:
+			if e.is_alive():
+				_draw_range(e.pos, rules.perception_range(e, player), Color(PlaceholderArt.color("sangue_claro"), 0.35))
+		_draw_clue_hints()
+	var items: Array = []
+	for u in _living_units():
+		items.append({"key": u.pos.x + u.pos.y, "unit": u})
+	for npc_id in scenario.npcs:
+		items.append({"key": scenario.npcs[npc_id].x + scenario.npcs[npc_id].y, "npc": npc_id})
+	items.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.key < b.key)
+	for it in items:
+		if it.has("unit"):
+			_draw_unit(it.unit)
+		else:
+			_draw_npc(font, it.npc)
+	if mode == Mode.COMBAT:
+		_draw_preview(font)
+	_draw_hud(font)
+	for p in popups:
+		_draw_popup(font, p)
+
+
+# Figura provisória de NPC (corpo, cabeça e nome) até a arte do Caio e da Letícia existir.
+func _draw_npc(font: Font, npc_id: String) -> void:
+	var at := _iso(scenario.npcs[npc_id])
+	draw_set_transform(at, 0.0, Vector2(1.0, 0.5))
+	draw_circle(Vector2.ZERO, 22.0, Color(0, 0, 0, 0.4))
+	draw_set_transform(Vector2.ZERO)
+	draw_rect(Rect2(at + Vector2(-11, -66), Vector2(22, 60)), NPC_COLORS[npc_id])
+	draw_rect(Rect2(at + Vector2(-8, -86), Vector2(16, 18)), Color("#d6b292"))
+	var name_text: String = NPC_NAMES[npc_id]
+	var width := font.get_string_size(name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
+	draw_string_outline(font, at + Vector2(-width * 0.5, -94), name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, 3, Color(0.05, 0.03, 0.02))
+	draw_string(font, at + Vector2(-width * 0.5, -94), name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(0.93, 0.89, 0.8))
+
+
+# Brilho dourado sobre as pistas que ainda não foram vistas, quando o controlado está perto.
+func _draw_clue_hints() -> void:
+	var available := scenario.available_clues(seen_clues)
+	var pulse := 0.6 + 0.4 * sin(Time.get_ticks_msec() / 260.0)
+	var any := false
+	for cid in scenario.clues:
+		var c: Dictionary = scenario.clues[cid]
+		if seen_clues.has(cid) or not available.has(cid) or player.pos.distance_to(c.pos) > CLUE_HINT_RANGE:
+			continue
+		var at := _iso(c.pos) + Vector2(0, -34)
+		var gold := Color(0.84, 0.68, 0.36, pulse)
+		draw_colored_polygon(PackedVector2Array([at + Vector2(0, -6), at + Vector2(4, 0), at + Vector2(0, 6), at + Vector2(-4, 0)]), gold)
+		draw_arc(at, 8.0, 0.0, TAU, 20, Color(gold, 0.5), 1.0)
+		any = true
+	if any:
+		queue_redraw()  # o brilho pulsa
+
+
+# --- Pistas ---------------------------------------------------------------------------------------
+
+func _order_move(click: Vector2) -> void:
+	if dialog_layer.visible:
+		return
+	pending_clue = ""
+	var cid := _clue_under(click)
+	if cid != "":
+		_go_to_clue(cid)
+		return
+	super(click)
+
+
+func _clue_under(click: Vector2) -> String:
+	var best := ""
+	var best_d := INF
+	for cid in scenario.clues:
+		var c: Dictionary = scenario.clues[cid]
+		var d := click.distance_to(c.pos)
+		if d <= c.raio * CLUE_CLICK_FACTOR and d < best_d:
+			best = cid
+			best_d = d
+	return best
+
+
+# Já está perto: examina. Senão anda até o ponto livre mais próximo do objeto e examina ao chegar.
+func _go_to_clue(cid: String) -> void:
+	var c: Dictionary = scenario.clues[cid]
+	if player.pos.distance_to(c.pos) <= c.raio:
+		_inspect(cid)
+		return
+	var spots: Array[Vector2] = []
+	for k in 16:
+		spots.append(c.pos + Vector2.from_angle(TAU * k / 16.0) * c.raio * STAND_FACTOR)
+	spots.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.distance_to(player.pos) < b.distance_to(player.pos))
+	for spot in spots:
+		var route := pathfinder.find_path(player.pos, spot, _obstacles(player), player.radius)
+		if route.size() > 1:
+			pending_clue = cid
+			_reset_follow_offsets(spot - player.pos)
+			_start_move(player, route)
+			return
+
+
+func _process(delta: float) -> void:
+	super(delta)
+	if mode != Mode.EXPLORATION:
+		pending_clue = ""
+	elif pending_clue != "" and path.is_empty() and moving_unit == null:
+		var cid := pending_clue
+		pending_clue = ""
+		_inspect(cid)
+
+
+func _inspect(cid: String) -> void:
+	var c: Dictionary = scenario.clues[cid]
+	if not scenario.available_clues(seen_clues).has(cid):
+		_show_dialog("", "Ainda há o que olhar no parque antes disso.", "")
+		return
+	_show_dialog(c.inspecao, c.texto, cid)
+
+
+func _show_dialog(image_path: String, text: String, cid: String) -> void:
+	dialog_clue = cid
+	dialog_text.text = text
+	dialog_image.texture = load(image_path) if image_path != "" else null
+	dialog_image.visible = image_path != ""
+	dialog_layer.visible = true
+
+
+# Fecha a caixa de texto. Se era uma pista nova, registra e dispara o que vem depois dela.
+func _close_dialog() -> void:
+	dialog_layer.visible = false
+	var cid := dialog_clue
+	dialog_clue = ""
+	if cid == "" or seen_clues.has(cid):
+		return
+	seen_clues.append(cid)
+	for trigger in scenario.triggers_after(cid):
+		_run_trigger(trigger)
+	queue_redraw()
+
+
+func _run_trigger(trigger: Dictionary) -> void:
+	if trigger["tipo"] != "combate":
+		return
+	for spec in trigger["inimigos"]:
+		var p: Array = spec["pos"]
+		enemies.append(cfg.make_enemy(spec["tipo"], Vector2(p[0], p[1])))
+	_start_combat()
+
+
+func _on_dialog_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_close_dialog()
+
+
+# Caixa de texto embaixo e, para a inspeção, a imagem grande no centro da tela (decisão do Léo).
+func _build_dialog() -> void:
+	dialog_layer = CanvasLayer.new()
+	dialog_layer.layer = 25
+	dialog_layer.visible = false
+	add_child(dialog_layer)
+	var catcher := Control.new()
+	catcher.set_anchors_preset(Control.PRESET_FULL_RECT)
+	catcher.mouse_filter = Control.MOUSE_FILTER_STOP
+	catcher.gui_input.connect(_on_dialog_input)
+	dialog_layer.add_child(catcher)
+	var dim := ColorRect.new()
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0, 0, 0, 0.55)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	catcher.add_child(dim)
+	dialog_image = TextureRect.new()
+	dialog_image.position = Vector2(300, 28)
+	dialog_image.size = Vector2(360, 360)
+	dialog_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	dialog_image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	dialog_image.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	dialog_image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	catcher.add_child(dialog_image)
+	var panel := PanelContainer.new()
+	panel.position = Vector2(180, 410)
+	panel.size = Vector2(600, 96)
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = FRAME_BG
+	style.set_border_width_all(2)
+	style.border_color = FRAME_OUTER
+	style.set_content_margin_all(14)
+	panel.add_theme_stylebox_override("panel", style)
+	dialog_text = Label.new()
+	dialog_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	dialog_text.add_theme_font_size_override("font_size", 16)
+	dialog_text.add_theme_color_override("font_color", Color(0.93, 0.89, 0.8))
+	panel.add_child(dialog_text)
+	catcher.add_child(panel)
