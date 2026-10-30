@@ -1003,8 +1003,8 @@ func _draw_frame(r: Rect2, enemy := false, s := 1.0) -> void:
 	var outer := FRAME_ENEMY if enemy else FRAME_OUTER
 	var accent := FRAME_ENEMY if enemy else FRAME_ACCENT
 	draw_rect(r, FRAME_FILL)
-	draw_rect(r.grow(-1.0 * s), outer, false, 1.5 * s)
-	draw_rect(r.grow(-4.0 * s), FRAME_INNER, false, 0.75)
+	draw_rect(r.grow(-1.0 * s), outer, false, 1.0)
+	draw_rect(r.grow(-4.0 * s), FRAME_INNER, false, 0.5)
 	for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:
 		var o: Vector2 = r.position + corner * r.size
 		var d := Vector2(1.0 - corner.x * 2.0, 1.0 - corner.y * 2.0) * s  # para dentro da peça
@@ -1013,8 +1013,8 @@ func _draw_frame(r: Rect2, enemy := false, s := 1.0) -> void:
 			var t := k / 6.0
 			var p := Vector2(1, 9).lerp(Vector2(1, 1), t).lerp(Vector2(1, 1).lerp(Vector2(9, 1), t), t)
 			arc.append(o + p * d)
-		draw_polyline(arc, accent, 1.0 * s)
-		draw_polyline(PackedVector2Array([o + Vector2(4, 11) * d, o + Vector2(4, 4) * d, o + Vector2(11, 4) * d]), accent, 0.75 * s)
+		draw_polyline(arc, accent, 0.5)
+		draw_polyline(PackedVector2Array([o + Vector2(4, 11) * d, o + Vector2(4, 4) * d, o + Vector2(11, 4) * d]), accent, 0.5)
 		_draw_diamond(o + Vector2(3.25, 3.25) * d, 2.5 * s, accent)
 	if r.size.x > 80:  # losango no meio das bordas de cima e de baixo
 		_draw_diamond(Vector2(r.get_center().x, r.position.y + 1), 3.5 * s, accent)
@@ -1117,8 +1117,8 @@ func _draw_bar(font: Font, at: Vector2, kind: String, value: int, maximum: int, 
 		var step := 5
 		for n in range(step, maximum, step):
 			var x := bar.position.x + bar.size.x * n / maximum
-			draw_line(Vector2(x, bar.position.y), Vector2(x, bar.end.y), Color(0, 0, 0, 0.45), 1.0)
-	draw_rect(bar, HUD_BRONZE, false, 1.0)
+			draw_line(Vector2(x, bar.position.y), Vector2(x, bar.end.y), Color(0, 0, 0, 0.45), 0.5)
+	draw_rect(bar, HUD_BRONZE, false, 0.5)
 	draw_string(font, bar.position + Vector2(_k(5), bar.size.y - _k(2.5)), "%d/%d" % [value, maximum], HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(9), Color(0.96, 0.93, 0.85))
 
 
