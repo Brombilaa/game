@@ -30,6 +30,17 @@ const FOLLOW_SPREAD := 1.0  # variação do ângulo do seguidor em radianos (pro
 const REVIVE_REACH := 16.0  # borda a borda: "adjacente" para reanimar
 const SHEET_SIZE := Vector2(212, 72)
 const POPUP_SECONDS := 1.2
+const HIT_SHAKE_SECONDS := 0.2
+const CRIT_SHAKE_SECONDS := 0.35
+const POPUP_STYLES := {
+	"damage": {"size": 18, "color": Color(1.0, 0.92, 0.85)},
+	"crit": {"size": 24, "color": Color(1.0, 0.8, 0.25)},
+	"miss": {"size": 15, "color": Color(0.68, 0.66, 0.62)},
+	"blocked": {"size": 14, "color": Color(0.6, 0.7, 0.85)},
+	"down": {"size": 14, "color": Color(0.95, 0.3, 0.25)},
+	"heal": {"size": 15, "color": Color(0.5, 0.9, 0.55)},
+	"info": {"size": 13, "color": Color(1.0, 1.0, 0.75)},
+}
 const WALK_FRAME_SECONDS := 0.11
 const IDLE_FRAME_SECONDS := 0.7
 const PLACEHOLDER_SCALE := 2.7  # arte provisória de 32×48 ampliada para ~130 px (a altura do herói)
@@ -101,6 +112,8 @@ var pathfinder := Pathfinder.new()
 var mode := Mode.EXPLORATION
 var busy := false  # animação ou turno inimigo em andamento: entrada do jogador ignorada
 var popups: Array = []  # textos de acerto/erro/dano flutuando sobre as unidades
+var hit_shake := {}  # Combatant -> segundos restantes de tremor ao levar dano
+var screen_shake := 0.0  # segundos restantes de tremor da tela (crítico)
 var hud := CombatHud.new()
 var audio := AudioDirector.new()
 var camera := Camera2D.new()
@@ -284,6 +297,12 @@ func _process(delta: float) -> void:
 			p.time -= delta
 		popups = popups.filter(func(p: Dictionary) -> bool: return p.time > 0.0)
 		queue_redraw()
+	for u in hit_shake.keys():
+		hit_shake[u] -= delta
+		if hit_shake[u] <= 0.0:
+			hit_shake.erase(u)
+	screen_shake = maxf(screen_shake - delta, 0.0)
+	camera.offset = Vector2(randf_range(-3, 3), randf_range(-2, 2)) if screen_shake > 0.0 else Vector2.ZERO
 	var focus := turns.current if mode == Mode.COMBAT and turns and turns.current else player
 	camera.position = _iso(focus.pos)
 	if moving_unit and not path.is_empty():
@@ -364,7 +383,7 @@ func _start_combat() -> void:
 	turns.turn_effects = func(u: Combatant) -> bool:
 		var fx := rules.start_turn_effects(u)
 		if fx.damage > 0:
-			_popup(u.pos, "-%d" % fx.damage)
+			_popup(u.pos, "-%d" % fx.damage, "damage")
 		if fx.skip and u.is_alive():
 			_popup(u.pos, "Atordoado")
 		return fx.skip
@@ -468,7 +487,7 @@ func _revive(fallen: Combatant) -> void:
 	else:
 		kits -= 1
 		fallen.pv = maxi(floori(fallen.max_pv * float(kit["valor"])), 1)
-		_popup(fallen.pos, "Reanimado")
+		_popup(fallen.pos, "REANIMADO", "heal")
 	_after_player_action()
 
 
@@ -591,20 +610,25 @@ func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void
 	if not r.ok:
 		_reject(r.reason)
 		return
-	var text := "Errou"
 	if r.blocked:
-		text = "Bloqueado"
-	elif r.hit:
-		text = ("-%d CRÍTICO" if r.crit else "-%d") % r.damage
-	_popup(target.pos, text)
+		_popup(target.pos, "BLOQUEADO", "blocked")
+	elif not r.hit:
+		_popup(target.pos, "ERROU", "miss")
+	else:
+		_popup(target.pos, "-%d" % r.damage, "crit" if r.crit else "damage")
+		hit_shake[target] = CRIT_SHAKE_SECONDS if r.crit else HIT_SHAKE_SECONDS
+		if r.crit:
+			screen_shake = CRIT_SHAKE_SECONDS
 	if not target.is_alive():
-		_popup(target.pos + Vector2(14, 14), "Abatido" if target.side == Combatant.Side.ENEMY else "Caiu")
+		_popup(target.pos, "ABATIDO" if target.side == Combatant.Side.ENEMY else "CAIU", "down")
 	queue_redraw()
 
 
-# `at` é um ponto da sala; o texto sobe da altura da cabeça de uma unidade.
-func _popup(at: Vector2, text: String) -> void:
-	popups.append({"pos": _iso(at) + Vector2(-20, -CharacterSheet.HEIGHT - 12 - 16 * popups.size()), "text": text, "time": POPUP_SECONDS})
+# `at` é um ponto da sala; o texto nasce na altura da cabeça e sobe enquanto some.
+# kind: damage, crit, miss, blocked, down, heal ou info (estilos em POPUP_STYLES).
+func _popup(at: Vector2, text: String, kind := "info") -> void:
+	var stacked := popups.filter(func(p: Dictionary) -> bool: return p.anchor.distance_to(at) < 1.0).size()
+	popups.append({"anchor": at, "pos": _iso(at) + Vector2(0, -CharacterSheet.HEIGHT - 14 - 18 * stacked), "text": text, "kind": kind, "time": POPUP_SECONDS})
 
 
 func _draw() -> void:
@@ -676,7 +700,29 @@ func _draw() -> void:
 	elif mode == Mode.EXPLORATION:
 		draw_string(font, footer, ("AGACHADO  |  " if player.crouched else "") + "C agacha, Tab ou 1/2 troca o personagem, clique no inimigo ataca de surpresa", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 1, 0.6))
 	for p in popups:
-		draw_string(font, p.pos, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 0.7, clampf(p.time / POPUP_SECONDS * 2.0, 0.0, 1.0)))
+		_draw_popup(font, p)
+
+
+# Feedback de combate (provisório do Claude, 29/10/2026): dano em número que sobe e some,
+# "ERROU" em cinza, crítico maior em dourado com "CRÍTICO!" e um tremor na tela.
+func _draw_popup(font: Font, p: Dictionary) -> void:
+	var style: Dictionary = POPUP_STYLES.get(p.kind, POPUP_STYLES.info)
+	var age: float = 1.0 - p.time / POPUP_SECONDS
+	var alpha: float = clampf(p.time / POPUP_SECONDS * 2.5, 0.0, 1.0)
+	var size: int = style.size
+	if p.kind == "crit" and age < 0.15:
+		size = int(size * (1.6 - age * 4.0))  # cresce e assenta no primeiro instante
+	var width := font.get_string_size(p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	var at: Vector2 = p.pos + Vector2(-width * 0.5, -28.0 * age)
+	var color: Color = style.color
+	draw_string_outline(font, at, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 4, Color(0.05, 0.03, 0.02, alpha))
+	draw_string(font, at, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(color, alpha))
+	if p.kind == "crit":
+		var tag := "CRÍTICO!"
+		var tw := font.get_string_size(tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
+		var tag_at: Vector2 = p.pos + Vector2(-tw * 0.5, -28.0 * age - size - 2)
+		draw_string_outline(font, tag_at, tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, 3, Color(0.05, 0.03, 0.02, alpha))
+		draw_string(font, tag_at, tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(0.95, 0.35, 0.25, alpha))
 
 
 # Chão: um tile de 96×48 por losango, sorteado de forma fixa entre as variações.
@@ -741,6 +787,8 @@ func _draw_range(center: Vector2, radius: float, color: Color) -> void:
 
 func _draw_unit(u: Combatant) -> void:
 	var at := _iso(u.pos)
+	if hit_shake.has(u):  # quem leva o golpe treme um instante
+		at.x += sin(hit_shake[u] * 70.0) * 3.0
 	draw_set_transform(at, 0.0, Vector2(1.0, 0.5))  # sombra achatada sob os pés
 	draw_circle(Vector2.ZERO, 26.0, Color(0, 0, 0, 0.45))
 	draw_set_transform(Vector2.ZERO)
