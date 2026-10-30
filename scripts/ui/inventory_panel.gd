@@ -64,6 +64,7 @@ var tab := 0
 var sel := {}  # {"kind": "bag", "i": n} ou {"kind": "eq", "slot": nome}
 var toast := ""
 var toast_time := 0.0
+var close_glow := 0.0  # 0..1, acende e apaga suavemente com o mouse sobre o X
 
 
 func toggle() -> void:
@@ -86,6 +87,8 @@ func _process(delta: float) -> void:
 	var goal := 1.0 if open else 0.0
 	t = move_toward(t, goal, delta / OPEN_SECONDS)
 	toast_time = maxf(toast_time - delta, 0.0)
+	var over := open and _close_rect().has_point(get_viewport().get_mouse_position())
+	close_glow = move_toward(close_glow, 1.0 if over else 0.0, delta / 0.15)
 	queue_redraw()
 	if t == 0.0 and not open:
 		set_process(false)
@@ -106,7 +109,7 @@ func _frame_rect() -> Rect2:
 # O X vem pintado na moldura (canto superior direito).
 func _close_rect() -> Rect2:
 	var f := _frame_rect()
-	return Rect2(f.end.x - 42, f.position.y + 19, 26, 26)
+	return Rect2(f.end.x - 41, f.position.y + 20, 24, 24)
 
 
 func _portrait_rect(i: int) -> Rect2:
@@ -391,9 +394,12 @@ func _diamond(c: Vector2, r: float, color: Color) -> void:
 
 
 func _draw_close() -> void:
+	if close_glow <= 0.0:
+		return
 	var r := _close_rect()
-	if r.has_point(get_viewport().get_mouse_position()):
-		_glow(r, 0.8)
+	var e := close_glow * close_glow * (3.0 - 2.0 * close_glow)
+	draw_rect(r, Color(1.0, 0.45, 0.3, 0.16 * e))
+	_glow(r, 0.9 * e)
 
 
 func _draw_portrait(font: Font, i: int) -> void:
