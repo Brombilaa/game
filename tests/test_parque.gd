@@ -61,7 +61,7 @@ func _run() -> void:
 
 	# Iluminação: vinheta transparente no centro e escura nas bordas.
 	var img: Image = room.vignette.get_image()
-	var mid := room.VIGNETTE_SIZE / 2
+	var mid: int = room.VIGNETTE_SIZE / 2
 	_check(img.get_pixel(mid, mid).a < 0.01, "o centro da vinheta fica livre")
 	_check(img.get_pixel(0, 0).a > 0.3, "a borda da vinheta escurece")
 
