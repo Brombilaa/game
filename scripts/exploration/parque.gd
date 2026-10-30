@@ -16,7 +16,7 @@ const NPC_COLORS := {"caio": Color("#46628a"), "leticia": Color("#885050")}  # f
 const CLUE_CLICK_FACTOR := 0.7  # fração do raio da pista em que o clique vale
 const CLUE_HINT_RANGE := 260.0  # o brilho da pista aparece quando o controlado chega perto
 const STAND_FACTOR := 0.85  # distância de parada, em fração do raio da pista
-const DUSK_TINT := Color(1.0, 0.93, 0.82)  # luz do entardecer quente (Léo escolheu o modelo A, 30/10)
+const DUSK_TINT := Color(0.95, 0.55, 0.2, 0.13)  # véu do entardecer quente (Léo escolheu o modelo A, 30/10)
 const VIGNETTE_SIZE := 128  # textura da vinheta, esticada sobre a tela
 const VIGNETTE_STRENGTH := 0.55
 const FRAME_BG := Color(0.063, 0.043, 0.031, 0.95)
@@ -121,7 +121,6 @@ static func _make_vignette() -> Texture2D:
 
 func _draw() -> void:
 	var font := ThemeDB.fallback_font
-	draw_set_modulate(DUSK_TINT)  # tom quente em tudo que é cenário; o HUD volta ao normal abaixo
 	draw_texture(backdrop, -scenario.backdrop_origin)
 	if mode == Mode.EXPLORATION:
 		for e in enemies:
@@ -154,8 +153,9 @@ func _draw() -> void:
 			draw_texture(occluder_textures[o["id"]], o["pos"] - scenario.backdrop_origin)
 	if mode == Mode.COMBAT:
 		_draw_preview(font)
-	draw_set_modulate(Color.WHITE)
+	# Véu quente e vinheta cobrem o cenário e os personagens, mas ficam por baixo do HUD.
 	var view := get_canvas_transform().affine_inverse() * Rect2(Vector2.ZERO, get_viewport_rect().size)
+	draw_rect(view, DUSK_TINT)
 	draw_texture_rect(vignette, view, false)
 	_draw_hud(font)
 	for p in popups:
