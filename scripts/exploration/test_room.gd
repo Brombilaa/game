@@ -1051,16 +1051,32 @@ func _draw_turn_order(font: Font, to_world: Transform2D) -> void:
 			units.append(u)
 	var size := 34.0
 	var width := units.size() * (size + 8) + 8
-	var pos := to_world * Vector2(480 - width * 0.5, 6)
+	var screen_pos := Vector2(480 - width * 0.5, 6)
+	var pos := to_world * screen_pos
+	var mouse := get_viewport().get_mouse_position()
+	var hovered: Combatant = null
 	draw_rect(Rect2(pos, Vector2(width, 58)), Color(0.09, 0.07, 0.05, 0.88))
 	draw_string(font, pos + Vector2(8, 12), "RODADA %d · ORDEM DOS TURNOS" % turns.round_number, HORIZONTAL_ALIGNMENT_LEFT, width - 16, 9, Color(0.66, 0.6, 0.49))
+	var hover_rect := Rect2()
 	for k in units.size():
 		var u := units[k]
 		var face := Rect2(pos + Vector2(8 + k * (size + 8), 18), Vector2(size, size))
+		var over := Rect2(screen_pos + Vector2(8 + k * (size + 8), 18), Vector2(size, size)).has_point(mouse)
 		draw_rect(face, Color(0.16, 0.12, 0.09))
 		_draw_face(u, face)
 		var edge := PlaceholderArt.color("destaque") if u == turns.current else (Color(0.6, 0.2, 0.2) if u.side == Combatant.Side.ENEMY else Color(0.43, 0.34, 0.24))
 		draw_rect(face, edge, false, 2.0 if u == turns.current else 1.0)
+		if over:
+			hovered = u
+			hover_rect = face
+			draw_rect(face, Color(1, 1, 1, 0.18))
+	if hovered:  # nome embaixo do retrato sob o mouse
+		var label := hovered.name.to_upper()
+		var text_w := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+		var tip := Rect2(Vector2(hover_rect.get_center().x - text_w * 0.5 - 6, hover_rect.end.y + 8), Vector2(text_w + 12, 18))
+		draw_rect(tip, Color(0.05, 0.04, 0.03, 0.96))
+		draw_rect(tip, PlaceholderArt.color("destaque") if hovered.side == Combatant.Side.PLAYER else Color(0.86, 0.3, 0.3), false, 1.0)
+		draw_string(font, tip.position + Vector2(6, 13), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.93, 0.89, 0.8))
 
 
 func _draw_face(u: Combatant, rect: Rect2) -> void:
