@@ -40,3 +40,4 @@ assets/sprites/retratos/*.png -filter -diff -merge -text
 assets/sprites/menu/*.png -filter -diff -merge -text
 # Os ícones das ações da barra de combate (arte do Léo) também vão direto no Git.
 assets/sprites/ui/acoes/*.png -filter -diff -merge -text
+assets/sprites/ui/inventario_moldura.png -filter -diff -merge -text

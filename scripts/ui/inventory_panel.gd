@@ -9,7 +9,7 @@ extends Node2D
 
 const PW := 480.0
 const PH := 516.0
-const MARGIN := Vector2(6, 12)  # folga até a borda direita e a de cima
+const MARGIN := Vector2(16, 12)  # folga até a borda direita e a de cima
 const PORTRAIT := 55.0  # 48 + 15% (pedido do Léo, 30/10/2026)
 const CELL := 40.0
 const GAP := 3.0
@@ -27,6 +27,13 @@ const CRIMSON := Color(0.62, 0.09, 0.11)
 
 # Armas que o jogo trata como de curta distância (pedido do Léo, 30/10/2026): mostram só a faixa Curto.
 const SHORT_RANGE := ["pistola"]
+
+# Moldura pintada pelo Léo (ChatGPT, 30/10/2026): 1278x1230, centro transparente. Desenhada em faixas
+# (cantos fixos, trechos retos esticados) um pouco maior que a área do conteúdo.
+const FRAME_TEX := preload("res://assets/sprites/ui/inventario_moldura.png")
+const FRAME_SCALE := 0.33
+const FRAME_PAD := Vector2(16, 0)  # quanto a moldura sai do conteúdo à esquerda e em cima
+const FRAME_SIZE := Vector2(506, 516)
 
 const TABS := ["TUDO", "ARMAS", "ITENS", "COLETES"]
 const EQUIP_SLOTS := ["principal", "secundaria", "colete", "acessorio"]
@@ -92,8 +99,14 @@ func _origin() -> Vector2:
 
 # --- Áreas clicáveis (as mesmas do desenho) ---------------------------------
 
+func _frame_rect() -> Rect2:
+	return Rect2(_origin() - FRAME_PAD, FRAME_SIZE)
+
+
+# O X vem pintado na moldura (canto superior direito).
 func _close_rect() -> Rect2:
-	return Rect2(_origin() + Vector2(PW - 36, 10), Vector2(26, 26))
+	var f := _frame_rect()
+	return Rect2(f.end.x - 42, f.position.y + 19, 26, 26)
 
 
 func _portrait_rect(i: int) -> Rect2:
@@ -295,9 +308,9 @@ func _draw() -> void:
 	var font := ThemeDB.fallback_font
 	draw_rect(Rect2(Vector2.ZERO, Vector2(960, 540)), Color(0, 0, 0, DIM * t))
 	var o := _origin()
-	_backdrop(Rect2(o, Vector2(PW, PH)))
-	draw_string(font, o + Vector2(24, 34), "INVENTÁRIO", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, TEXT)
-	draw_string(font, o + Vector2(0, 34), "%d / %d" % [room.inventory.used(), Inventory.SIZE], HORIZONTAL_ALIGNMENT_RIGHT, PW - 56, 12, MUTED)
+	_backdrop(_frame_rect())
+	var f := _frame_rect()
+	draw_string(font, Vector2(f.position.x, f.position.y + 36), "%d / %d" % [room.inventory.used(), Inventory.SIZE], HORIZONTAL_ALIGNMENT_RIGHT, FRAME_SIZE.x - 62, 12, MUTED)
 	_draw_close()
 	for i in room.party.size():
 		_draw_portrait(font, i)
@@ -308,35 +321,38 @@ func _draw() -> void:
 	_draw_hints(font)
 
 
-# Fundo e moldura do painel inteiro: bronze gótico com volutas nos cantos (modelo A, escolhido pelo Léo).
+# Fundo escuro com a moldura pintada por cima.
 func _backdrop(r: Rect2) -> void:
-	draw_rect(r, PLATE)
-	_vignette(r, Color(0, 0, 0, 0.5))
-	draw_rect(r.grow(-0.5), BRONZE, false, 1.5)
-	draw_rect(r.grow(-4.0), Color(BRONZE_DARK, 0.9), false, 0.5)
-	draw_rect(r.grow(-7.0), Color(BRONZE, 0.35), false, 0.5)
-	for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:
-		var c: Vector2 = r.position + corner * r.size
-		var d := Vector2(1.0 - corner.x * 2.0, 1.0 - corner.y * 2.0)
-		var pts := PackedVector2Array()
-		for k in 14:
-			var a := k * 0.42
-			var rad := 9.0 - k * 0.45
-			pts.append(c + (Vector2(14, 14) + Vector2(cos(a), sin(a)) * rad) * d)
-		draw_polyline(pts, GOLD, 1.0)
-		draw_polyline(PackedVector2Array([c + Vector2(2, 30) * d, c + Vector2(2, 2) * d, c + Vector2(30, 2) * d]), GOLD, 1.0)
-	_header(r, GOLD)
+	draw_rect(r.grow(-6.0), PLATE)
+	_vignette(r.grow(-6.0), Color(0, 0, 0, 0.5))
+	var sc := FRAME_SCALE
+	# faixas da imagem (px): x e y de corte; destino em tela interna
+	var w := 1278.0
+	var h := 1230.0
+	var xl := 400.0  # no topo, o canto esquerdo leva o título
+	var xr := 1150.0  # e o direito leva o X
+	var bl := 130.0  # embaixo, os cantos levam os medalhões
+	var br := 1148.0
+	var side := 65.0
+	var top := 160.0
+	var bot := 1160.0
+	var dl := xl * sc
+	var dr := (w - xr) * sc
+	var dt := top * sc
+	var db := (h - bot) * sc
+	var ds := side * sc
+	_part(Rect2(xl, 0, xr - xl, top), Rect2(r.position.x + dl, r.position.y, r.size.x - dl - dr, dt))
+	_part(Rect2(0, 0, xl, top), Rect2(r.position.x, r.position.y, dl, dt))
+	_part(Rect2(xr, 0, w - xr, top), Rect2(r.end.x - dr, r.position.y, dr, dt))
+	_part(Rect2(0, top, side, bot - top), Rect2(r.position.x, r.position.y + dt, ds, r.size.y - dt - db))
+	_part(Rect2(w - side, top, side, bot - top), Rect2(r.end.x - ds, r.position.y + dt, ds, r.size.y - dt - db))
+	_part(Rect2(bl, bot, br - bl, h - bot), Rect2(r.position.x + bl * sc, r.end.y - db, r.size.x - (bl + w - br) * sc, db))
+	_part(Rect2(0, bot, bl, h - bot), Rect2(r.position.x, r.end.y - db, bl * sc, db))
+	_part(Rect2(br, bot, w - br, h - bot), Rect2(r.end.x - (w - br) * sc, r.end.y - db, (w - br) * sc, db))
 
 
-# Faixa do título com filete e losango central, igual nos três acabamentos.
-func _header(r: Rect2, accent: Color) -> void:
-	var y := r.position.y + 44.0
-	draw_line(Vector2(r.position.x + 18, y), Vector2(r.end.x - 18, y), Color(accent, 0.7), 1.0)
-	draw_line(Vector2(r.position.x + 18, y + 2), Vector2(r.end.x - 18, y + 2), Color(accent, 0.25), 1.0)
-	_diamond(Vector2(r.position.x + 18, y + 1), 2.5, accent)
-	_diamond(Vector2(r.end.x - 18, y + 1), 2.5, accent)
-	_diamond(Vector2(r.get_center().x, r.position.y + 0.5), 3.5, accent)
-	_diamond(Vector2(r.get_center().x, r.end.y - 0.5), 3.5, accent)
+func _part(src: Rect2, dst: Rect2) -> void:
+	draw_texture_rect_region(FRAME_TEX, dst, src)
 
 
 func _vignette(r: Rect2, color: Color) -> void:
@@ -376,12 +392,8 @@ func _diamond(c: Vector2, r: float, color: Color) -> void:
 
 func _draw_close() -> void:
 	var r := _close_rect()
-	var hover := r.has_point(get_viewport().get_mouse_position())
-	draw_rect(r, Color(0.24, 0.04, 0.05) if hover else Color(0.12, 0.03, 0.035))
-	draw_rect(r.grow(-0.5), CRIMSON, false, 1.0)
-	var c := r.get_center()
-	draw_line(c + Vector2(-5, -5), c + Vector2(5, 5), TEXT, 1.5)
-	draw_line(c + Vector2(-5, 5), c + Vector2(5, -5), TEXT, 1.5)
+	if r.has_point(get_viewport().get_mouse_position()):
+		_glow(r, 0.8)
 
 
 func _draw_portrait(font: Font, i: int) -> void:
