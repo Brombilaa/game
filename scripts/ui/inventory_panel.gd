@@ -46,6 +46,7 @@ const TEX_PORTRAIT := preload(INV_ART + "retrato.png")
 const TEX_PORTRAIT_GLOW := preload(INV_ART + "retrato_brilho.png")
 const TEX_EQUIP := preload(INV_ART + "equip.png")
 const TEX_EQUIP_GLOW := preload(INV_ART + "equip_brilho.png")
+const TEX_DETAIL := preload(INV_ART + "detalhe.png")
 const GLOW_PAD := 4.0  # 8 px nativos de halo em volta das peças brilhantes
 
 const TABS := ["TUDO", "ARMAS", "ITENS", "COLETES"]
@@ -268,12 +269,14 @@ func _describe(id: String) -> Dictionary:
 	if not w.is_empty():
 		var dano = w.get("dano")
 		var wp: Dictionary = room.cfg.weapon(id)
-		var lines := [["Dano", "%d - %d" % [dano[0], dano[1]] if dano else "—"], ["Custo", "%d PA" % int(wp["pa_cost"])]]
-		lines.append_array(_range_lines(wp, id in SHORT_RANGE))
+		var ppm: float = room.cfg.value("pixels_per_meter")
+		var max_m := float(wp["max_range"]) / ppm
+		var dist := "Corpo a corpo"
+		if not wp["melee"]:
+			dist = "Curta · até %d m" % roundi(max_m) if id in SHORT_RANGE else ("Média" if max_m <= 14.0 else "Longa") + " · até %d m" % roundi(max_m)
+		var lines := [["Dano", "%d - %d" % [dano[0], dano[1]] if dano else "—"], ["Distância", dist], ["Custo", "%d PA" % int(wp["pa_cost"])]]
 		var tipo := "Corpo a corpo" if w["tipo"] == "corpo_a_corpo" else "Arma de fogo"
-		if id in SHORT_RANGE:
-			tipo += " · curta distância"
-		return {"nome": w["nome"], "tipo": tipo, "texto": BLURBS.get(id, ""), "linhas": lines}
+		return {"nome": w["nome"], "tipo": tipo, "texto": BLURBS.get(id, ""), "linhas": lines, "faixas": _range_lines(wp, id in SHORT_RANGE)}
 	var it := data.get_entry("itens", id)
 	if it.is_empty():
 		return {}
@@ -475,26 +478,32 @@ func _draw_grid(font: Font) -> void:
 
 func _draw_detail(font: Font) -> void:
 	var r := _detail_rect()
-	_frame(r, GOLD, true)
+	draw_rect(r.grow(-5.0), Color(PLATE, 0.8))
+	draw_texture_rect(TEX_DETAIL, r, false)
 	var id := _item_id(sel)
 	if id == "":
-		draw_string(font, r.position + Vector2(0, r.size.y * 0.5), "Escolha um item", HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 10, MUTED)
+		draw_string(font, r.position + Vector2(0, 100), "Escolha um item", HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 10, MUTED)
 		return
 	var d := _describe(id)
 	if d.is_empty():
 		return
-	draw_string(font, r.position + Vector2(10, 22), str(d["nome"]), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 20, 13, TEXT)
-	draw_string(font, r.position + Vector2(10, 35), str(d["tipo"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 9, MUTED)
-	ItemIcons.draw(self, Rect2(r.position + Vector2(0, 38), Vector2(r.size.x, 44)), id, true, 40.0)
-	var y := 96.0
+	ItemIcons.draw(self, Rect2(r.position + Vector2(13, 14), Vector2(39, 37)), id, true, 28.0)
+	draw_string(font, r.position + Vector2(58, 31), str(d["nome"]), HORIZONTAL_ALIGNMENT_LEFT, 92, 12, TEXT)
+	draw_string(font, r.position + Vector2(58, 43), str(d["tipo"]), HORIZONTAL_ALIGNMENT_LEFT, 92, 8, MUTED)
+	var y := 68.0
 	for line in str(d["texto"]).split("\n"):
-		y = _wrap(font, line, r.position + Vector2(10, y), r.size.x - 20, 9) - r.position.y + 4.0
-	y = maxf(y, 140.0)
-	for row in d["linhas"]:
-		draw_line(r.position + Vector2(10, y - 9), r.position + Vector2(r.size.x - 10, y - 9), Color(BRONZE_DARK, 0.7), 0.5)
-		draw_string(font, r.position + Vector2(10, y + 3), str(row[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 9, GOLD)
-		draw_string(font, r.position + Vector2(10, y + 3), str(row[1]), HORIZONTAL_ALIGNMENT_RIGHT, r.size.x - 20, 9, TEXT)
-		y += 13.0
+		y = _wrap(font, line, r.position + Vector2(18, y), 128.0, 9) - r.position.y + 3.0
+	var faixas: Array = d.get("faixas", [])
+	var fy := 148.0 - 11.0 * faixas.size() - 4.0
+	for row in faixas:
+		draw_string(font, r.position + Vector2(18, fy), str(row[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 8, GOLD)
+		draw_string(font, r.position + Vector2(18, fy), str(row[1]), HORIZONTAL_ALIGNMENT_RIGHT, 128.0, 8, MUTED)
+		fy += 11.0
+	var rows: Array = d["linhas"]
+	var base := [158.0, 173.5, 188.0]
+	for k in mini(rows.size(), 3):
+		draw_string(font, r.position + Vector2(17, base[k]), str(rows[k][0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 9, GOLD)
+		draw_string(font, r.position + Vector2(17, base[k]), str(rows[k][1]), HORIZONTAL_ALIGNMENT_RIGHT, 130.0, 9, TEXT)
 
 
 # Quebra `text` em linhas de até `width`; devolve o y da linha seguinte.
