@@ -35,6 +35,19 @@ const FRAME_SCALE := 0.33
 const FRAME_PAD := Vector2(16, 0)  # quanto a moldura sai do conteúdo à esquerda e em cima
 const FRAME_SIZE := Vector2(506, 516)
 
+# Peças pintadas pelo Léo (30/10/2026), já em tamanho nativo; a tela interna é ampliada 2x.
+const INV_ART := "res://assets/sprites/ui/inv/"
+const TEX_TAB := preload(INV_ART + "aba.png")
+const TEX_TAB_GLOW := preload(INV_ART + "aba_brilho.png")
+const TEX_EQUIP_FRAME := preload(INV_ART + "quadro_equipamento.png")
+const TEX_CELL := preload(INV_ART + "casa.png")
+const TEX_CELL_GLOW := preload(INV_ART + "casa_brilho.png")
+const TEX_PORTRAIT := preload(INV_ART + "retrato.png")
+const TEX_PORTRAIT_GLOW := preload(INV_ART + "retrato_brilho.png")
+const TEX_EQUIP := preload(INV_ART + "equip.png")
+const TEX_EQUIP_GLOW := preload(INV_ART + "equip_brilho.png")
+const GLOW_PAD := 4.0  # 8 px nativos de halo em volta das peças brilhantes
+
 const TABS := ["TUDO", "ARMAS", "ITENS", "COLETES"]
 const EQUIP_SLOTS := ["principal", "secundaria", "colete", "acessorio"]
 const EQUIP_LABELS := {"principal": "ARMA PRINCIPAL", "secundaria": "ARMA SECUNDÁRIA", "colete": "COLETE", "acessorio": "ACESSÓRIO"}
@@ -129,7 +142,7 @@ func _detail_rect() -> Rect2:
 
 
 func _equip_rect(k: int) -> Rect2:
-	return Rect2(_origin() + Vector2(88 + k * 92, 352), Vector2(56, 56))
+	return Rect2(_origin() + Vector2(98 + k * 92, 356), Vector2(56, 56))
 
 
 func _member() -> Combatant:
@@ -411,10 +424,10 @@ func _draw_portrait(font: Font, i: int) -> void:
 	if not m.is_alive():
 		draw_rect(r, Color(0.4, 0, 0, 0.5))
 	var hover := r.has_point(get_viewport().get_mouse_position())
-	draw_rect(r.grow(-0.5), GOLD if on or hover else BRONZE, false, 1.0)
 	if on or hover:
-		_glow(r, 1.0 if on else 0.6)
-		draw_rect(r.grow(-2.5), Color(GOLD, 0.5), false, 0.5)
+		draw_texture_rect(TEX_PORTRAIT_GLOW, r.grow(GLOW_PAD), false, Color(1, 1, 1, 1.0 if on else 0.75))
+	else:
+		draw_texture_rect(TEX_PORTRAIT, r, false)
 	draw_string(font, r.position + Vector2(0, PORTRAIT + 11), m.name.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 9, GOLD if on else MUTED)
 
 
@@ -427,10 +440,11 @@ func _draw_tabs(font: Font) -> void:
 		var r := _tab_rect(k)
 		var on := k == tab
 		var hover := r.has_point(get_viewport().get_mouse_position())
-		draw_rect(r, Color(0.16, 0.05, 0.05) if on else (Color(0.12, 0.09, 0.06) if hover else SLOT_FILL))
-		draw_rect(r.grow(-0.5), CRIMSON if on else (GOLD if hover else BRONZE_DARK), false, 1.0)
-		if hover and not on:
-			_glow(r, 0.5)
+		draw_rect(r.grow(-3.0), Color(0.2, 0.05, 0.05) if on else (Color(0.12, 0.09, 0.06) if hover else SLOT_FILL))
+		if on or hover:
+			draw_texture_rect(TEX_TAB_GLOW, r.grow(GLOW_PAD), false, Color(1, 1, 1, 1.0 if on else 0.7))
+		else:
+			draw_texture_rect(TEX_TAB, r, false)
 		draw_string(font, r.position + Vector2(0, 16), TABS[k], HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 8, TEXT if on else MUTED)
 
 
@@ -438,17 +452,18 @@ func _slot(font: Font, r: Rect2, id: String, qty: int, selected: bool, dim: bool
 	draw_rect(r, SLOT_FILL)
 	draw_rect(Rect2(r.position + Vector2(1, 1), Vector2(r.size.x - 2, r.size.y * 0.45)), Color(1, 0.9, 0.7, 0.04))
 	var hover := r.has_point(get_viewport().get_mouse_position())
-	draw_rect(r.grow(-0.5), Color(1.0, 0.85, 0.5) if selected or hover else Color(BRONZE, 0.9), false, 1.0)
-	draw_rect(r.grow(-2.75), Color(GOLD, 0.6) if selected or hover else Color(BRONZE_DARK, 0.6), false, 0.5)
+	var big := r.size.x > 50.0
 	if selected or hover:
-		_glow(r, 1.0 if selected else 0.6)
 		draw_rect(r.grow(-3), Color(1, 0.9, 0.7, 0.07))
+		draw_texture_rect(TEX_EQUIP_GLOW if big else TEX_CELL_GLOW, r.grow(GLOW_PAD), false, Color(1, 1, 1, 1.0 if selected else 0.7))
+	else:
+		draw_texture_rect(TEX_EQUIP if big else TEX_CELL, r, false)
 	if id == "":
 		return
 	var side := minf(r.size.x - 8.0, ItemIcons.ART_SIZE)
 	ItemIcons.draw(self, r, id, not dim, side)
 	if qty > 1:
-		draw_string(font, r.position + Vector2(0, r.size.y - 3), "%d" % qty, HORIZONTAL_ALIGNMENT_RIGHT, r.size.x - 3, 9, GOLD)
+		draw_string(font, r.position + Vector2(0, r.size.y - 6), "%d" % qty, HORIZONTAL_ALIGNMENT_RIGHT, r.size.x - 6, 9, GOLD)
 
 
 func _draw_grid(font: Font) -> void:
@@ -500,8 +515,10 @@ func _wrap(font: Font, text: String, at: Vector2, width: float, size: int) -> fl
 
 func _draw_equipment(font: Font) -> void:
 	var o := _origin()
-	_frame(Rect2(o + Vector2(72, 304), Vector2(392, 124)), GOLD, true)
-	draw_string(font, o + Vector2(86, 326), "EQUIPAMENTO", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, GOLD)
+	var fr := Rect2(o + Vector2(72, 296), Vector2(392, 140))
+	draw_rect(fr.grow(-4.0), Color(PLATE, 0.62))
+	draw_texture_rect(TEX_EQUIP_FRAME, fr, false)
+	draw_string(font, o + Vector2(100, 330), "EQUIPAMENTO", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, GOLD)
 	for k in EQUIP_SLOTS.size():
 		var slot: String = EQUIP_SLOTS[k]
 		var r := _equip_rect(k)
