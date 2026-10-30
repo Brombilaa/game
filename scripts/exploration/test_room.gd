@@ -28,6 +28,7 @@ const ENEMY_STEP_SECONDS := 0.4
 const FOLLOW_DISTANCE := 60.0  # distância fixa do seguidor ao líder (provisório)
 const FOLLOW_SPREAD := 1.0  # variação do ângulo do seguidor em radianos (provisório)
 const REVIVE_REACH := 16.0  # borda a borda: "adjacente" para reanimar
+const SWAP_PA := 1  # trocar de arma em combate (GDD #18)
 const SHEET_SCALE := 0.75  # fichas do grupo 25% menores que o desenho em tamanho cheio (pedido do Léo, 30/10/2026)
 const SHEET_SIZE := Vector2(223, 75) * SHEET_SCALE  # retrato e ficha lado a lado
 const HUD_BRONZE := Color(0.43, 0.34, 0.24)
@@ -112,6 +113,7 @@ var follow_paths := {}  # seguidor -> rota restante na exploração
 var follow_offsets := {}  # seguidor -> posição relativa ao líder
 var follow_rng := RandomNumberGenerator.new()
 var kits := 1  # kits de primeiros socorros do grupo (teste; o inventário ainda não existe)
+var reserves := {}  # membro do grupo -> arma de reserva depois de uma troca (dicionário de CombatConfig.weapon)
 var enemies: Array[Combatant] = [
 	cfg.make_enemy("cultista", Vector2(800, 360)),
 	cfg.make_enemy("atirador", Vector2(1100, 200)),
@@ -198,6 +200,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_switch_to(party[event.keycode - KEY_1])
 		elif event.pressed and event.keycode == KEY_D:
 			_player_delay()
+		elif event.pressed and event.keycode == KEY_Q:
+			_swap_weapon()
 		elif event.pressed and event.keycode == KEY_C and mode == Mode.EXPLORATION:
 			player.crouched = not player.crouched
 			queue_redraw()
@@ -213,8 +217,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			_switch_to(portrait)
 			return
 		if _mouse_on_hud(screen):  # rodapé: o fim do turno passa a vez; os ícones não movem o personagem
-			if _end_turn_rect(_action_slots().size()).has_point(screen):
+			var n := _action_slots().size()
+			if _end_turn_rect(n).has_point(screen):
 				_player_pass()
+			elif _reserve_id() != "" and _action_rect(1, n).has_point(screen):
+				_swap_weapon()
 			return
 		var click := _resolve_click(get_global_mouse_position())
 		if mode == Mode.EXPLORATION:
@@ -568,6 +575,31 @@ func _after_player_action() -> void:
 func _player_pass() -> void:
 	if _player_ready():
 		turns.pass_turn()
+
+
+# Arma de reserva do controlado: a que ele deixou na troca ou, antes disso, a arma secundária da ficha.
+func _reserve_id() -> String:
+	if reserves.has(player):
+		return str(reserves[player]["id"])
+	var second = cfg.game_data.get_entry("personagens", player.name.to_lower()).get("arma_secundaria")
+	return "" if second == null or str(second) == str(player.weapon["id"]) else str(second)
+
+
+# Troca a arma em mãos pela reserva: 1 PA em combate (GDD #18), grátis fora dele.
+func _swap_weapon() -> void:
+	var id := _reserve_id()
+	if id == "" or not player.is_alive():
+		return
+	if mode == Mode.COMBAT:
+		if not _player_ready():
+			return
+		if not turns.spend(player, SWAP_PA):
+			_reject("no_pa")
+			return
+	reserves[player] = player.weapon
+	player.weapon = cfg.weapon(id)
+	hud.show_notice("Empunhou: %s" % cfg.game_data.get_entry("armas", id).get("nome", id))
+	queue_redraw()
 
 
 func _player_delay() -> void:
@@ -1181,15 +1213,15 @@ func _draw_face(u: Combatant, rect: Rect2) -> void:
 
 
 # Ações do rodapé no turno do jogador: [ícone, título, detalhe, ativa]. A arma secundária
-# aparece apagada até existir a troca de arma.
+# aparece apagada quando faltam PA para a troca.
 func _action_slots() -> Array:
 	var data := cfg.game_data
 	var kit := data.get_entry("itens", "kit_primeiros_socorros")
 	var id := str(player.weapon["id"])
 	var slots := [[id, str(data.get_entry("armas", id).get("nome", id)), "Atacar · %d PA · clique no inimigo" % int(player.weapon["pa_cost"]), true]]
-	var second = data.get_entry("personagens", player.name.to_lower()).get("arma_secundaria")
-	if second != null and str(second) != id:
-		slots.append([str(second), str(data.get_entry("armas", str(second)).get("nome", second)), "Trocar arma · 1 PA · em breve", false])
+	var second := _reserve_id()
+	if second != "":
+		slots.append([second, str(data.get_entry("armas", second).get("nome", second)), "Trocar arma · %d PA · tecla Q" % SWAP_PA, player.pa >= SWAP_PA])
 	slots.append(["kit", "Kit de primeiros socorros", "Reanimar · %d PA · restam %d" % [int(kit["custo_pa_combate"]), kits], kits > 0])
 	slots.append(["atrasar", "Atrasar", "Age depois na rodada · tecla D", true])
 	return slots
