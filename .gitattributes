@@ -34,6 +34,7 @@ assets/fonts/CinzelDecorative-Bold.ttf -filter -diff -merge -text
 assets/sprites/personagens/*.png -filter -diff -merge -text
 # O cenário isométrico (chão, paredes, móveis) também vai direto no Git, como os personagens.
 assets/sprites/cenario/*.png -filter -diff -merge -text
+assets/sprites/cenario/parque/*.png -filter -diff -merge -text
 # Os retratos dos protagonistas (64 e 128 px) também vão direto no Git.
 assets/sprites/retratos/*.png -filter -diff -merge -text
 # O fundo do menu inicial (arte do ChatGPT, cerca de 2 MB) também vai direto no Git.

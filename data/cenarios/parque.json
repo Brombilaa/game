@@ -1,0 +1,47 @@
+{
+	"_comentario": "Cenário do parque (missão 1). Coordenadas em unidades da sala (64 = um losango); o plano tem 1280×960. Colisões, pistas e gatilhos medidos sobre a cena aprovada pelo Léo em 30/10/2026 (fundo.png); retângulos são aproximações provisórias a ajustar jogando.",
+	"id": "parque",
+	"tamanho": [1280, 960],
+	"fundo": {
+		"arquivo": "res://assets/sprites/cenario/parque/fundo.png",
+		"_origem": "ponto da imagem (px) onde cai o ponto (0, 0) da sala; a imagem foi renderizada com 48 px por unidade na horizontal e 18,13 px na vertical (câmera de 22°, não os 24 px do losango 2:1 da sala de teste)",
+		"origem": [760, 133],
+		"escala_tela": [48.0, 18.13]
+	},
+	"inicio": {
+		"grupo": [[450, 690], [510, 660], [570, 625]],
+		"npcs": [{"id": "caio", "pos": [330, 740]}, {"id": "leticia", "pos": [390, 705]}]
+	},
+	"colisoes": [
+		{"id": "van", "rect": [40, 860, 380, 100]},
+		{"id": "lago", "rect": [0, 0, 310, 296], "_nota": "grade de ferro encostada na borda"},
+		{"id": "banco_1", "rect": [410, 80, 90, 50]},
+		{"id": "banco_2", "rect": [680, 590, 90, 50]},
+		{"id": "banco_quebrado", "rect": [860, 375, 80, 50]},
+		{"id": "carrossel", "rect": [905, 775, 110, 110]},
+		{"id": "balanco", "rect": [1130, 670, 130, 60]},
+		{"id": "arvore", "rect": [1100, 170, 60, 60]},
+		{"id": "mata_1", "rect": [960, 20, 100, 80]},
+		{"id": "mata_2", "rect": [1160, 40, 100, 100]},
+		{"id": "arbusto_1", "rect": [40, 360, 50, 40]},
+		{"id": "arbusto_2", "rect": [385, 425, 40, 30]},
+		{"id": "arbusto_3", "rect": [200, 555, 50, 30]},
+		{"id": "arbusto_4", "rect": [1230, 315, 50, 30]},
+		{"id": "pneus_oeste", "rect": [630, 700, 70, 240]},
+		{"id": "pneus_arvore", "rect": [1190, 355, 50, 40]}
+	],
+	"pistas": [
+		{"id": "marcas_pneu", "pos": [760, 560], "raio": 70, "ordem": 1, "texto": "Marcas largas de pneu. Vão da terra central até a entrada, como se algo tivesse sido arrastado."},
+		{"id": "carrossel", "pos": [960, 830], "raio": 70, "ordem": 1, "texto": "O carrossel gira sozinho, devagar, sem vento."},
+		{"id": "balanco", "pos": [1200, 700], "raio": 70, "ordem": 1, "texto": "O assento do balanço está cheio de arranhões fundos."},
+		{"id": "banco_quebrado", "pos": [900, 400], "raio": 60, "ordem": 1, "texto": "Garras abriram as tábuas do banco. Há sangue seco na madeira."},
+		{"id": "banco_velho", "pos": [440, 100], "raio": 60, "ordem": 1, "texto": "Um banco velho, coberto de limo."},
+		{"id": "arvore_simbolo", "pos": [1130, 235], "raio": 80, "ordem": 2, "texto": "Um símbolo pintado em vermelho no tronco. Parece sangrar.", "inspecao": "res://assets/sprites/cenario/parque/inspecao_simbolo.png"}
+	],
+	"gatilhos": [
+		{"id": "combate_arvore", "apos": "arvore_simbolo", "tipo": "combate",
+			"inimigos": [{"tipo": "cultista", "pos": [1300, 120], "origem": "mata atrás da árvore"}, {"tipo": "cultista", "pos": [430, 860], "origem": "atrás do grupo, perto dos NPCs"}],
+			"cutscene_depois": "morte_caio"}
+	],
+	"_pendencias": ["a Criatura de Sangue substitui o cultista provisório quando existir", "pistas de ordem 2 só liberam depois de todas as de ordem 1"]
+}
