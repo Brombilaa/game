@@ -15,7 +15,7 @@ const ICON_COLORS := {
 	"r": Color(0.74, 0.11, 0.13), "y": Color(0.88, 0.72, 0.42),
 }
 # Ícones pintados do Léo (ChatGPT, 30/10/2026), recortados em 64×64 por tools/sprites/icones_acoes.py.
-# Quem não tem arte ainda (fuzil, soco) usa o pixel art de PIXEL_ROWS.
+# Quem não tem arte usa o pixel art provisório de PIXEL_ROWS.
 const ART := {
 	"pistola": preload("res://assets/sprites/ui/acoes/pistola.png"),
 	"escopeta": preload("res://assets/sprites/ui/acoes/escopeta.png"),
@@ -23,6 +23,15 @@ const ART := {
 	"kit": preload("res://assets/sprites/ui/acoes/kit.png"),
 	"atrasar": preload("res://assets/sprites/ui/acoes/atrasar.png"),  # relógio de bolso
 	"ampulheta": preload("res://assets/sprites/ui/acoes/ampulheta.png"),  # fim do turno
+	"fuzil_precisao": preload("res://assets/sprites/ui/acoes/fuzil_precisao.png"),
+	"soco": preload("res://assets/sprites/ui/acoes/soco.png"),
+}
+# Ícones das condições (arte do Léo, 30/10/2026), 64×64.
+const CONDITION_ART := {
+	"sangrando": preload("res://assets/sprites/ui/condicoes/sangrando.png"),
+	"atordoado": preload("res://assets/sprites/ui/condicoes/atordoado.png"),
+	"em_chamas": preload("res://assets/sprites/ui/condicoes/em_chamas.png"),
+	"envenenado": preload("res://assets/sprites/ui/condicoes/envenenado.png"),
 }
 const PIXEL_ROWS := {
 	"pistola": [
