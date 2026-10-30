@@ -505,7 +505,7 @@ func _draw_menu(font: Font, alpha: float) -> void:
 		var y := _item_y(i)
 		var label: String = ITEMS[i][1]
 		var tx := lx + 16
-		var on := i == focus and (panel == "" or ITEMS[i][0] == panel)
+		var on: bool = i == focus and (panel == "" or ITEMS[i][0] == panel)
 		if on:
 			var w := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, MENU_SIZE).x
 			var grow := clampf(focus_time / BRUSH_SECONDS, 0.0, 1.0) if panel == "" else 1.0
