@@ -28,7 +28,7 @@ data.get_entry("armas", "pistola_teste")["dano"]  # [8, 12]
 
 | Arquivo | Conteúdo |
 | --- | --- |
-| `regras.json` | Constantes globais: atrasar, turnos de chefe, custos de ação (ataque à distância, corpo a corpo, recarga, mira), altura, descanso, ganho de PV/SAN por nível. |
+| `regras.json` | Constantes globais: atrasar, turnos de chefe, custos de ação (recarga, corpo a corpo, item, troca de arma, reanimar, mira), atributos iniciais, espaços do inventário, altura, descanso, ganho de PV/SAN por nível. O custo de ataque de cada arma fica em `armas.json` (`custo_pa`). |
 | `atributos.json` | FOR, AGI, INT, PRE, VIG. |
 | `classes.json` | PV, SAN e iniciativa base por classe. |
 | `personagens.json` | Fernando, Rafael, Miguel, Nikolai: classe, atributos, arma inicial, árvores exclusivas. |

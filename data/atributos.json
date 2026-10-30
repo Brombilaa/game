@@ -1,7 +1,7 @@
 [
-  { "id": "FOR", "nome": "Força", "descricao": "" },
+  { "id": "FOR", "nome": "Força", "descricao": "Provisório: +1 de dano por ponto acima de 1, em corpo a corpo e escopeta." },
   { "id": "AGI", "nome": "Agilidade", "descricao": "Define a ordem dos turnos (maior age primeiro) e soma no acerto." },
-  { "id": "INT", "nome": "Intelecto", "descricao": "" },
-  { "id": "PRE", "nome": "Presença", "descricao": "Soma à classe na SAN inicial e dá ganho fixo de SAN por nível." },
+  { "id": "INT", "nome": "Intelecto", "descricao": "Soma ao dano e à cura dos rituais (+1 por ponto acima de 1 é provisório)." },
+  { "id": "PRE", "nome": "Presença", "descricao": "Provisório: +2 de SAN por ponto acima de 1 e ajuda a resistir à ruptura." },
   { "id": "VIG", "nome": "Vigor", "descricao": "Dá ganho fixo de PV por nível." }
 ]
