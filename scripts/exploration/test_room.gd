@@ -340,6 +340,8 @@ func _start_move(unit: Combatant, new_path: PackedVector2Array) -> void:
 
 func _process(delta: float) -> void:
 	_update_discovered()
+	if mode == Mode.COMBAT and _player_ready():
+		queue_redraw()  # gema de PA pulsando e estados do botão de fim do turno
 	if not popups.is_empty():
 		for p in popups:
 			p.time -= delta
@@ -999,13 +1001,7 @@ func _mouse_on_hud(screen: Vector2) -> bool:
 		return true
 	if mode != Mode.COMBAT or not _player_ready():
 		return false
-	var n := _action_slots().size()
-	if _end_turn_rect(n).has_point(screen):
-		return true
-	for k in n:
-		if _action_rect(k, n).has_point(screen):
-			return true
-	return false
+	return _bar_rect(_action_slots().size()).grow(8).has_point(screen)  # a barra inteira e a faixa de PA
 
 
 func _portrait_at(screen: Vector2) -> Combatant:
@@ -1227,93 +1223,313 @@ func _action_slots() -> Array:
 	return slots
 
 
+# Barra de combate (pedido do Léo, 30/10/2026, sobre a referência do ChatGPT): uma moldura única,
+# compacta e semitransparente no rodapé, com as casas de ação à esquerda, um divisor gótico e o
+# fim do turno em carmesim à direita; os PA ficam numa faixa de gemas sobre a borda de cima.
+# Só o desenho mudou: as casas e o botão continuam sendo os retângulos de _action_rect e _end_turn_rect.
+const BAR_SLOT := 38.0  # lado de uma casa, pixels da tela
+const BAR_GAP := 4.0
+const BAR_PAD := 7.0  # da moldura até as casas
+const BAR_DIVIDER := 16.0  # vão entre as casas e o fim do turno
+const BAR_END_W := 96.0
+const BAR_BOTTOM := 532.0
+const BAR_FILL := Color(0.035, 0.026, 0.022, 0.84)
+const BAR_CRIMSON := Color(0.62, 0.09, 0.11)
+const ICON_PIXEL := 2.0  # cada pixel dos ícones vale 2 pixels da tela (4 na janela de 1920)
+
+# Ícones em pixel art, 16 colunas. o contorno, a/b/c metal claro, médio e escuro, w madeira,
+# g ouro, r carmesim, y areia. Ponto é transparente; o desenho é centralizado na casa.
+const ICON_COLORS := {
+	"o": Color(0.05, 0.035, 0.03), "a": Color(0.8, 0.76, 0.68), "b": Color(0.52, 0.48, 0.43),
+	"c": Color(0.3, 0.27, 0.24), "w": Color(0.47, 0.28, 0.15), "g": Color(0.84, 0.68, 0.36),
+	"r": Color(0.74, 0.11, 0.13), "y": Color(0.88, 0.72, 0.42),
+}
+const PIXEL_ICONS := {
+	"pistola": [
+		"..oooooooooooo..",
+		".oaaaaaaaaaabbo.",
+		".obbbbbbbbbbbo..",
+		"..oooocbbboooo..",
+		".....ocbbo......",
+		"....owwoo.......",
+		"...owwwo........",
+		"..owwwwo........",
+		"..owwwo.........",
+		"..oooo..........",
+	],
+	"escopeta": [
+		"oooo............",
+		"owwwoooooooooooo",
+		"owwwwbbbbaaaaaao",
+		".owwwbbbbbbbbbbo",
+		"..oowoocbboooooo",
+		"....o..occo.....",
+		"........oo......",
+	],
+	"fuzil_precisao": [
+		".....oooooo.....",
+		".....oaaabo.....",
+		"oooo..oooo......",
+		"owwwoooooooooooo",
+		"owwwwbbbbbbbaaao",
+		".owwwbbbbbbbbbbo",
+		"..oowoocbboooooo",
+		"....o..occo.....",
+		"........oo......",
+	],
+	"espada": [
+		".............oo.",
+		"............oao.",
+		"...........oaco.",
+		"..........oaco..",
+		".........oaco...",
+		"........oaco....",
+		".......oaco.....",
+		"..o...oaco......",
+		"..oo.oaco.......",
+		"...ogaco........",
+		"....ogo.........",
+		"...owogo........",
+		"..owo.oo........",
+		".owo............",
+		".oo.............",
+	],
+	"soco": [
+		"....oooooooo....",
+		"...oaaoaaoaao...",
+		"...oaaoaaoaao...",
+		"..ooaaoaaoaao...",
+		"..oaooooooooo...",
+		"..oaaaaaaaaaco..",
+		"..oaaaaaaaaaco..",
+		"..obaaaaaaacco..",
+		"...obbbbbbbco...",
+		"....obbbbbco....",
+		"....ooooooo.....",
+	],
+	"kit": [
+		".....oooooo.....",
+		".....o....o.....",
+		"..oooooooooooo..",
+		"..oaaaaaaaaaao..",
+		"..oaaaarraaaao..",
+		"..oaaaarraaaao..",
+		"..oarrrrrrrrao..",
+		"..oarrrrrrrrao..",
+		"..oaaaarraaaao..",
+		"..oaaaarraaaao..",
+		"..obbbbbbbbbbo..",
+		"..oooooooooooo..",
+	],
+	"atrasar": [
+		"...gggggggggg...",
+		"...oooooooooo...",
+		"....oaaaaaao....",
+		"....oyyyyyyo....",
+		".....oyyyyo.....",
+		"......oyyo......",
+		".......oo.......",
+		"......oaao......",
+		".....oaaaao.....",
+		"....oaayyaao....",
+		"....oyyyyyyo....",
+		"...oooooooooo...",
+		"...gggggggggg...",
+	],
+}
+
+
+func _bar_width(n: int) -> float:
+	return BAR_PAD * 2 + n * BAR_SLOT + (n - 1) * BAR_GAP + BAR_DIVIDER + BAR_END_W
+
+
+# Moldura inteira da barra, em pixels da tela.
+func _bar_rect(n: int) -> Rect2:
+	var h := BAR_SLOT + BAR_PAD * 2
+	return Rect2(Vector2(roundf(480 - _bar_width(n) * 0.5), BAR_BOTTOM - h), Vector2(_bar_width(n), h))
+
+
 func _action_rect(k: int, n: int) -> Rect2:
-	var width := n * 46 - 4 + 13 + 100
-	return Rect2(Vector2(480 - width * 0.5 + k * 46, 486), Vector2(42, 42))
+	var bar := _bar_rect(n)
+	return Rect2(bar.position + Vector2(BAR_PAD + k * (BAR_SLOT + BAR_GAP), BAR_PAD), Vector2(BAR_SLOT, BAR_SLOT))
 
 
 func _end_turn_rect(n: int) -> Rect2:
-	var r := _action_rect(n - 1, n)
-	return Rect2(Vector2(r.end.x + 13, r.position.y), Vector2(100, 42))
+	var bar := _bar_rect(n)
+	return Rect2(Vector2(bar.end.x - BAR_PAD - BAR_END_W, bar.position.y + BAR_PAD), Vector2(BAR_END_W, BAR_SLOT))
 
 
 # Rodapé: gemas de PA, ícones das ações (dica ao passar o mouse) e o botão de fim do turno.
 func _draw_actions(font: Font, to_world: Transform2D) -> void:
 	var slots := _action_slots()
+	var n := slots.size()
 	var mouse := get_viewport().get_mouse_position()
-	var first := _action_rect(0, slots.size())
-	var pa_box := Rect2(to_world * (first.position + Vector2(0, -29)), Vector2(115, 23))
-	_draw_frame(pa_box)
-	draw_string(font, pa_box.position + Vector2(10, 15), "PA", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(0.85, 0.8, 0.7))
-	for n in turns.turn_pa(player):
-		var c := pa_box.position + Vector2(40 + n * 22, 11.5)
-		_draw_diamond(c, 6.5, FRAME_OUTER)
-		_draw_diamond(c, 5.0, FRAME_ACCENT if n < player.pa else Color(0.16, 0.13, 0.1))
+	var bar := _bar_rect(n)
+	var br := Rect2(to_world * bar.position, bar.size)
+	_draw_bar_frame(br, (to_world * _end_turn_rect(n).position).x)
+	_draw_pa_strip(br.position + Vector2(14, 0), turns.turn_pa(player), player.pa)
 	var tip := -1
-	for k in slots.size():
-		var screen := _action_rect(k, slots.size())
-		var r := Rect2(to_world * screen.position, screen.size)
-		_draw_frame(r)
-		_draw_action_icon(r.grow(-9), slots[k][0], slots[k][3])
-		if k == 0:  # arma pronta: contorno aceso
-			draw_rect(r.grow(1), Color(FRAME_ACCENT, 0.35), false, 3.0)
-			draw_rect(r.grow(-0.5), FRAME_ACCENT, false, 1.5)
-		if screen.has_point(mouse):
+	for k in n:
+		var screen := _action_rect(k, n)
+		var hover := screen.has_point(mouse)
+		if hover:
 			tip = k
-			draw_rect(r.grow(-4), Color(1, 1, 1, 0.12))
-	var end := _end_turn_rect(slots.size())
+		_draw_slot(Rect2(to_world * screen.position, screen.size), slots[k], k == 0, hover)
+	var end := _end_turn_rect(n)
 	var er := Rect2(to_world * end.position, end.size)
-	_draw_frame(er, true)
-	if end.has_point(mouse):
-		draw_rect(er.grow(-4), Color(1, 0.4, 0.3, 0.12))
-	draw_string(font, er.position + Vector2(0, 18), "FIM DO", HORIZONTAL_ALIGNMENT_CENTER, er.size.x, 11, FRAME_ACCENT)
-	draw_string(font, er.position + Vector2(0, 31), "TURNO", HORIZONTAL_ALIGNMENT_CENTER, er.size.x, 11, FRAME_ACCENT)
+	var over_end := end.has_point(mouse)
+	_draw_end_turn(font, er, over_end, over_end and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT), _player_ready())
 	if tip >= 0:
-		var r := Rect2(to_world * _action_rect(tip, slots.size()).position, Vector2(42, 42))
-		_draw_tooltip(font, Vector2(r.get_center().x, r.position.y - 66), slots[tip][1], slots[tip][2])
-	elif end.has_point(mouse):
-		_draw_tooltip(font, Vector2(er.get_center().x, er.position.y - 38), "Fim do turno", "Barra de espaço", true)
+		var r := Rect2(to_world * _action_rect(tip, n).position, Vector2(BAR_SLOT, BAR_SLOT))
+		_draw_tooltip(font, Vector2(r.get_center().x, r.position.y - 64), slots[tip][1], slots[tip][2])
+	elif over_end:
+		_draw_tooltip(font, Vector2(er.get_center().x, er.position.y - 42), "Fim do turno", "Barra de espaço", true)
 
 
-# Ícones das ações desenhados por código, num quadro de 24×24 dentro do espaço.
+# Moldura única: placa escura semitransparente, filete duplo de ouro velho, cantoneiras finas,
+# remates góticos nas pontas e um divisor com losango carmesim antes do fim do turno.
+func _draw_bar_frame(r: Rect2, end_x: float) -> void:
+	draw_rect(r, BAR_FILL)
+	draw_rect(Rect2(r.position, Vector2(r.size.x, 1)), Color(1, 0.85, 0.6, 0.06))
+	draw_rect(r.grow(-0.5), FRAME_OUTER, false, 1.0)
+	draw_rect(r.grow(-3), Color(FRAME_INNER, 0.8), false, 0.5)
+	for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:
+		var o: Vector2 = r.position + corner * r.size
+		var d := Vector2(1.0 - corner.x * 2.0, 1.0 - corner.y * 2.0)
+		draw_polyline(PackedVector2Array([o + Vector2(1.5, 9) * d, o + Vector2(1.5, 1.5) * d, o + Vector2(9, 1.5) * d]), FRAME_ACCENT, 1.0)
+		_draw_diamond(o + Vector2(5, 5) * d, 1.5, FRAME_ACCENT)
+	for side in [-1.0, 1.0]:  # remates: ponta de lança com o losango carmesim
+		var c := Vector2(r.position.x if side < 0 else r.end.x, r.get_center().y)
+		var tip := c + Vector2(side * 7, 0)
+		draw_colored_polygon(PackedVector2Array([c + Vector2(0, -9), tip, c + Vector2(0, 9)]), FRAME_FILL)
+		draw_polyline(PackedVector2Array([c + Vector2(0, -9), tip, c + Vector2(0, 9)]), FRAME_OUTER, 1.0)
+		_draw_diamond(c + Vector2(side * 2.5, 0), 2.5, BAR_CRIMSON)
+	var x := end_x - BAR_DIVIDER * 0.5
+	for dx in [-1.5, 1.5]:
+		draw_line(Vector2(x + dx, r.position.y + 6), Vector2(x + dx, r.end.y - 6), Color(FRAME_INNER, 0.9), 0.5)
+	_draw_diamond(Vector2(x, r.get_center().y), 4.5, FRAME_OUTER)
+	_draw_diamond(Vector2(x, r.get_center().y), 3.0, BAR_CRIMSON)
+	_draw_diamond(Vector2(x, r.position.y + 6), 1.5, FRAME_ACCENT)
+	_draw_diamond(Vector2(x, r.end.y - 6), 1.5, FRAME_ACCENT)
+
+
+# Faixa de PA sobre a borda de cima da barra: medalhão, trilho fino e uma gema lapidada por PA.
+# Gema acesa = PA disponível; soquete escuro = PA gasto; a próxima a ser gasta pulsa de leve.
+func _draw_pa_strip(at: Vector2, total: int, left: int) -> void:
+	var step := 15.0
+	var end_x := at.x + 22.0 + total * step
+	draw_rect(Rect2(Vector2(at.x, at.y - 1.5), Vector2(end_x - at.x, 3)), Color(0.035, 0.026, 0.022))
+	draw_line(Vector2(at.x, at.y - 1.5), Vector2(end_x, at.y - 1.5), FRAME_INNER, 0.5)
+	draw_line(Vector2(at.x, at.y + 1.5), Vector2(end_x, at.y + 1.5), FRAME_INNER, 0.5)
+	_draw_diamond(Vector2(end_x + 2, at.y), 2.0, FRAME_OUTER)
+	draw_circle(at, 7.5, Color(0.035, 0.026, 0.022))
+	draw_arc(at, 7.0, 0, TAU, 24, FRAME_OUTER, 1.0)
+	draw_arc(at, 4.5, 0, TAU, 16, Color(FRAME_INNER, 0.8), 0.5)
+	_draw_diamond(at, 2.5, BAR_CRIMSON)
+	var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 260.0)
+	for n in total:
+		var c := Vector2(at.x + 20.0 + n * step, at.y)
+		_draw_diamond(c, 6.5, Color(0.035, 0.026, 0.022))
+		_draw_diamond(c, 5.5, FRAME_OUTER if n < left else FRAME_INNER)
+		if n < left:
+			if n == left - 1:
+				_draw_diamond(c, 8.0 + pulse, Color(FRAME_ACCENT, 0.12 + 0.1 * pulse))
+			_draw_gem(c, 4.5)
+		else:
+			_draw_diamond(c, 4.5, Color(0.09, 0.05, 0.045))
+			_draw_diamond(c, 1.5, Color(BAR_CRIMSON, 0.45))
+
+
+# Gema dourada lapidada: faces claras em cima à esquerda, escuras embaixo, brilho no topo.
+func _draw_gem(c: Vector2, r: float) -> void:
+	var top := c + Vector2(0, -r)
+	var right := c + Vector2(r, 0)
+	var bottom := c + Vector2(0, r)
+	var left := c + Vector2(-r, 0)
+	var mid := c + Vector2(-0.6, -0.6)
+	draw_colored_polygon(PackedVector2Array([top, mid, left]), Color(1.0, 0.9, 0.6))
+	draw_colored_polygon(PackedVector2Array([top, right, mid]), FRAME_ACCENT)
+	draw_colored_polygon(PackedVector2Array([left, mid, bottom]), Color(0.72, 0.52, 0.22))
+	draw_colored_polygon(PackedVector2Array([mid, right, bottom]), Color(0.5, 0.33, 0.13))
+	draw_rect(Rect2(c + Vector2(-1.5, -2.5), Vector2(1, 1)), Color(1, 1, 0.9, 0.9))
+
+
+# Casa de ação: fundo escuro, filete de ouro velho e o ícone em pixel art no centro.
+# Selecionada: ouro forte com halo; sob o mouse: filete mais claro; indisponível: ícone apagado.
+func _draw_slot(r: Rect2, slot: Array, selected: bool, hover: bool) -> void:
+	var enabled: bool = slot[3]
+	draw_rect(r, Color(0.055, 0.042, 0.035, 0.96))
+	draw_rect(Rect2(r.position + Vector2(1, 1), Vector2(r.size.x - 2, r.size.y * 0.45)), Color(1, 0.9, 0.7, 0.04))
+	draw_rect(Rect2(r.position + Vector2(1, r.size.y - 4), Vector2(r.size.x - 2, 3)), Color(0, 0, 0, 0.35))
+	if selected:
+		draw_rect(r.grow(3), Color(FRAME_ACCENT, 0.12), false, 2.0)
+		draw_rect(r.grow(1.5), Color(FRAME_ACCENT, 0.35), false, 1.5)
+		draw_rect(r.grow(-0.5), Color(1.0, 0.85, 0.5), false, 1.0)
+		draw_rect(r.grow(-2.5), Color(FRAME_ACCENT, 0.5), false, 0.5)
+		for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:
+			_draw_diamond(r.position + corner * r.size, 2.0, Color(1.0, 0.85, 0.5))
+	else:
+		draw_rect(r.grow(-0.5), FRAME_OUTER.lightened(0.25) if hover else Color(FRAME_OUTER, 0.85), false, 1.0)
+		draw_rect(r.grow(-2.5), Color(FRAME_INNER, 0.5), false, 0.5)
+	if hover:
+		draw_rect(r.grow(-3), Color(1, 0.9, 0.7, 0.07))
+	_draw_action_icon(r, slot[0], enabled)
+	if not enabled:
+		draw_rect(r.grow(-1), Color(0.02, 0.015, 0.012, 0.35))
+
+
+# Fim do turno: placa carmesim com a ampulheta em pixel art. Estados: normal, sob o mouse,
+# pressionado (desce 1 px e escurece) e indisponível (cinza).
+func _draw_end_turn(font: Font, er: Rect2, hover: bool, pressed: bool, enabled: bool) -> void:
+	var r := er
+	if pressed:
+		r.position.y += 1
+	var fill := Color(0.24, 0.04, 0.05, 0.95)
+	var edge := BAR_CRIMSON
+	var ink := Color(0.96, 0.84, 0.72)
+	if not enabled:
+		fill = Color(0.1, 0.08, 0.07, 0.9)
+		edge = Color(0.3, 0.26, 0.22)
+		ink = Color(0.45, 0.4, 0.35)
+	elif pressed:
+		fill = Color(0.16, 0.025, 0.03, 0.95)
+	elif hover:
+		fill = Color(0.34, 0.06, 0.07, 0.95)
+		edge = Color(0.86, 0.2, 0.2)
+	draw_rect(r, fill)
+	draw_rect(Rect2(r.position + Vector2(1, 1), Vector2(r.size.x - 2, r.size.y * 0.45)), Color(1, 0.5, 0.4, 0.06 if not pressed else 0.0))
+	draw_rect(r.grow(-0.5), edge, false, 1.0)
+	draw_rect(r.grow(-2.5), Color(FRAME_ACCENT, 0.45) if enabled else Color(edge, 0.5), false, 0.5)
+	for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:
+		_draw_diamond(r.position + corner * r.size, 2.0, edge.lightened(0.2))
+	var glass := Rect2(r.position + Vector2(5, 3), Vector2(32, r.size.y - 6))
+	_draw_pixel_icon(glass, PIXEL_ICONS["atrasar"], enabled, {"y": Color(0.82, 0.16, 0.16)})
+	draw_string(font, r.position + Vector2(38, 17), "FIM DO", HORIZONTAL_ALIGNMENT_CENTER, r.size.x - 44, 11, ink)
+	draw_string(font, r.position + Vector2(38, 30), "TURNO", HORIZONTAL_ALIGNMENT_CENTER, r.size.x - 44, 11, ink)
+
+
 func _draw_action_icon(r: Rect2, id: String, enabled: bool) -> void:
-	var ink := Color(0.85, 0.79, 0.65) if enabled else Color(0.4, 0.36, 0.3)
-	var u := r.size.x / 24.0
-	var p := func(x: float, y: float) -> Vector2: return r.position + Vector2(x, y) * u
-	var poly := func(pts: Array, color: Color) -> void:
-		var out := PackedVector2Array()
-		for q in pts:
-			out.append(p.call(q[0], q[1]))
-		draw_colored_polygon(out, color)
-	match id:
-		"pistola":
-			poly.call([[3, 9], [17, 9], [19, 7], [22, 7], [22, 12], [16, 12], [13, 17], [10, 17], [11, 12], [3, 12]], ink)
-		"escopeta":
-			poly.call([[1, 9], [22, 9], [22, 12], [11, 12], [8, 17], [4, 17], [6, 12], [1, 12]], ink)
-			draw_line(p.call(13, 13), p.call(19, 13), ink, 2.0 * u)
-		"fuzil_precisao":
-			poly.call([[1, 11], [23, 11], [23, 13], [10, 13], [7, 17], [3, 17], [5, 13], [1, 13]], ink)
-			draw_rect(Rect2(p.call(9, 7), Vector2(7, 3) * u), ink)
-		"espada":
-			poly.call([[19, 3], [21, 5], [9, 17], [7, 15]], ink)
-			draw_line(p.call(5, 13), p.call(11, 19), ink, 2.0 * u)
-			draw_line(p.call(7, 17), p.call(3, 21), ink, 2.5 * u)
-		"soco":
-			draw_rect(Rect2(p.call(6, 8), Vector2(12, 9) * u), ink)
-			draw_rect(Rect2(p.call(8, 17), Vector2(8, 4) * u), ink)
-		"kit":
-			draw_rect(Rect2(p.call(5, 7), Vector2(14, 14) * u), ink, false, 1.5 * u)
-			draw_polyline(PackedVector2Array([p.call(9, 7), p.call(9, 4), p.call(15, 4), p.call(15, 7)]), ink, 1.5 * u)
-			var red := Color(0.8, 0.22, 0.2) if enabled else ink
-			draw_line(p.call(12, 10), p.call(12, 18), red, 2.5 * u)
-			draw_line(p.call(8, 14), p.call(16, 14), red, 2.5 * u)
-		"atrasar":  # ampulheta
-			poly.call([[6, 3], [18, 3], [12, 12]], ink)
-			poly.call([[12, 12], [18, 21], [6, 21]], ink)
-			draw_line(p.call(5, 3), p.call(19, 3), ink, 1.5 * u)
-			draw_line(p.call(5, 21), p.call(19, 21), ink, 1.5 * u)
-		_:
-			draw_circle(p.call(12, 12), 5 * u, ink)
+	_draw_pixel_icon(r, PIXEL_ICONS.get(id, PIXEL_ICONS["soco"]), enabled)
+
+
+# Desenha um ícone de PIXEL_ICONS centralizado em `r`, um quadrado por pixel, alinhado à grade
+# da tela para os contornos ficarem nítidos. Indisponível: cores sem saturação e escurecidas.
+func _draw_pixel_icon(r: Rect2, rows: Array, enabled: bool, swap := {}) -> void:
+	var w := 0
+	for row in rows:
+		w = maxi(w, str(row).length())
+	var origin := (r.get_center() - Vector2(w, rows.size()) * ICON_PIXEL * 0.5).round()
+	for y in rows.size():
+		var row: String = rows[y]
+		for x in row.length():
+			var ch := row[x]
+			if ch == ".":
+				continue
+			var color: Color = swap.get(ch, ICON_COLORS[ch])
+			if not enabled:
+				var v := color.get_luminance() * 0.55
+				color = Color(v, v * 0.95, v * 0.9)
+			draw_rect(Rect2(origin + Vector2(x, y) * ICON_PIXEL, Vector2.ONE * ICON_PIXEL), color)
 
 
 
