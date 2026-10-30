@@ -41,7 +41,9 @@ const POPUP_STYLES := {
 	"heal": {"size": 15, "color": Color(0.5, 0.9, 0.55)},
 	"info": {"size": 13, "color": Color(1.0, 1.0, 0.75)},
 }
-const WALK_FRAME_SECONDS := 0.11
+# Quadro da caminhada avança por distância percorrida na tela (não por tempo): os pés não deslizam,
+# cada unidade tem a sua própria fase e o ritmo é o mesmo em todas as direções.
+const WALK_FRAME_PIXELS := 15.0
 const IDLE_FRAME_SECONDS := 0.7
 const PLACEHOLDER_SCALE := 2.7  # arte provisória de 32×48 ampliada para ~130 px (a altura do herói)
 const TILE_WORLD := 64.0  # lado de um losango do chão, em unidades da sala
@@ -121,7 +123,7 @@ var fade_layer := CanvasLayer.new()
 var fade := ColorRect.new()  # escurece a tela no Game Over
 var facing := {}  # Combatant -> PlaceholderArt.Dir
 var facing8 := {}  # Combatant -> CharacterSheet.Dir (8 direções; o agente começa virado para SE)
-var walk_time := 0.0
+var walk_dist := {}  # unidade -> distância (px de tela) andada desde que começou a andar
 var idle_frame := 0
 var agent_sheets: Array[CharacterSheet] = []
 var enemy_sheets := {}  # variante -> CharacterSheet
@@ -304,18 +306,18 @@ func _process(delta: float) -> void:
 	screen_shake = maxf(screen_shake - delta, 0.0)
 	camera.offset = Vector2(randf_range(-3, 3), randf_range(-2, 2)) if screen_shake > 0.0 else Vector2.ZERO
 	var focus := turns.current if mode == Mode.COMBAT and turns and turns.current else player
-	camera.position = _iso(focus.pos)
+	camera.position = _iso(focus.pos).round()  # pixel inteiro: o cenário não treme ao andar
 	if moving_unit and not path.is_empty():
 		var step := _iso(path[0]) - _iso(moving_unit.pos)  # a direção vista na tela
 		facing[moving_unit] = PlaceholderArt.dir_from_vector(step)
 		facing8[moving_unit] = CharacterSheet.dir_from_vector(step)
-		walk_time += delta
+		var before := _iso(moving_unit.pos)
 		moving_unit.pos = moving_unit.pos.move_toward(path[0], SPEED * delta)
+		walk_dist[moving_unit] = walk_dist.get(moving_unit, 0.0) + before.distance_to(_iso(moving_unit.pos))
 		if moving_unit.pos.is_equal_approx(path[0]):
 			path.remove_at(0)
 		if path.is_empty():
 			moving_unit = null
-			walk_time = 0.0
 			move_finished.emit()
 		queue_redraw()
 	var breath := int(Time.get_ticks_msec() / (IDLE_FRAME_SECONDS * 1000.0)) % 2
@@ -797,10 +799,13 @@ func _draw_unit(u: Combatant) -> void:
 		draw_arc(Vector2.ZERO, 36.0, 0.0, TAU, 32, PlaceholderArt.color("destaque"), 2.0)
 		draw_set_transform(Vector2.ZERO)
 	var walking: bool = u == moving_unit or not follow_paths.get(u, PackedVector2Array()).is_empty()
+	if not walking:
+		walk_dist.erase(u)  # a próxima caminhada recomeça no primeiro quadro
+	var walk_n := int(walk_dist.get(u, 0.0) / WALK_FRAME_PIXELS)
 	var i := enemies.find(u)
 	if i < 0:
 		var frames: Array = CharacterSheet.WALK_FRAMES if walking else CharacterSheet.IDLE_FRAMES
-		var n := int(walk_time / WALK_FRAME_SECONDS) % frames.size() if walking else idle_frame
+		var n := walk_n % frames.size() if walking else idle_frame
 		agent_sheets[looks.get(u, 0)].draw(self, at, frames[n], facing8.get(u, CharacterSheet.Dir.SE))
 		if not u.is_alive():
 			draw_string(ThemeDB.fallback_font, at + Vector2(-22, -CharacterSheet.HEIGHT - 14), "CAÍDO", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(1, 0.4, 0.4))
@@ -808,10 +813,10 @@ func _draw_unit(u: Combatant) -> void:
 		var variant: String = ENEMY_VARIANTS[i % ENEMY_VARIANTS.size()]
 		if enemy_sheets.has(variant):
 			var frames: Array = CharacterSheet.WALK_FRAMES if walking else CharacterSheet.IDLE_FRAMES
-			var n := int(walk_time / WALK_FRAME_SECONDS) % frames.size() if walking else idle_frame
+			var n := walk_n % frames.size() if walking else idle_frame
 			enemy_sheets[variant].draw(self, at, frames[n], facing8.get(u, CharacterSheet.Dir.SW))
 		else:
-			var frame := 1 + int(walk_time / WALK_FRAME_SECONDS) % 2 if walking else 0
+			var frame := 1 + walk_n % 2 if walking else 0
 			var tex := PlaceholderArt.character_texture(variant, facing.get(u, PlaceholderArt.Dir.SOUTH), frame)
 			var size := Vector2(PlaceholderArt.FRAME_SIZE * PLACEHOLDER_SCALE)
 			draw_texture_rect(tex, Rect2((at - PlaceholderArt.PIVOT * PLACEHOLDER_SCALE).round(), size), false)
@@ -859,7 +864,6 @@ func _switch_to(m: Combatant) -> void:
 	if moving_unit == player:
 		path = PackedVector2Array()
 		moving_unit = null
-		walk_time = 0.0
 	pending_door = false
 	follow_paths.erase(m)
 	player = m
@@ -897,12 +901,12 @@ func _update_followers(delta: float) -> void:
 			continue
 		var step := _iso(route[0]) - _iso(m.pos)
 		facing8[m] = CharacterSheet.dir_from_vector(step)
+		var before := _iso(m.pos)
 		m.pos = m.pos.move_toward(route[0], SPEED * delta)
+		walk_dist[m] = walk_dist.get(m, 0.0) + before.distance_to(_iso(m.pos))
 		if m.pos.is_equal_approx(route[0]):
 			route.remove_at(0)
 		follow_paths[m] = route
-		if moving_unit == null:
-			walk_time += delta
 		queue_redraw()
 
 
