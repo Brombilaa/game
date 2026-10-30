@@ -6,6 +6,11 @@
 		"arquivo": "res://assets/sprites/cenario/parque/fundo.png",
 		"_origem": "ponto da imagem (px) onde cai o ponto (0, 0) da sala; a imagem foi renderizada com 48 px por unidade na horizontal e 18,13 px na vertical (câmera de 22°, não os 24 px do losango 2:1 da sala de teste)",
 		"origem": [760, 133],
+    "estendido": {
+      "arquivo": "res://assets/sprites/cenario/parque/fundo_estendido.png",
+      "_origem": "terreno e lago estendidos além do mapa (tools/cenarios/estender_fundo.py); pos é o canto da imagem em px do fundo",
+      "pos": [-84, 86]
+    },
 		"escala_tela": [48.0, 18.13]
 	},
 	"_oclusores": "recortes do fundo (mesmos pixels) desenhados por cima de quem está atrás do objeto; pos = canto do recorte na imagem do fundo; a ordem usa o retângulo de colisão de mesmo id (gerados por fonte_3d/shot3.js)",

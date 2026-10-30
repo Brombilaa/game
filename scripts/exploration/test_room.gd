@@ -1232,7 +1232,7 @@ func _portrait_at(screen: Vector2) -> Combatant:
 # grupo à esquerda, ordem dos turnos no topo, radar à direita e, no turno do jogador, PA, ações e
 # fim do turno no rodapé. Desenhado em pixels da tela (960×540).
 func _draw_hud(font: Font) -> void:
-	var to_world := get_canvas_transform().affine_inverse()
+	var to_world := _hud_to_world()
 	for i in party.size():
 		_draw_sheet(font, party[i], to_world * _portrait_rect(i).position)
 	_draw_minimap(font, to_world)
@@ -1240,6 +1240,12 @@ func _draw_hud(font: Font) -> void:
 		_draw_turn_order(font, to_world)
 		if _player_ready():
 			_draw_actions(font, to_world)
+
+
+# Da posição na tela (960×540) para onde o HUD é desenhado. Com a câmera aproximada o parque desenha o
+# HUD com escala inversa ao zoom e troca isto por uma translação.
+func _hud_to_world() -> Transform2D:
+	return get_canvas_transform().affine_inverse()
 
 
 # Moldura A: placa escura, filete duplo de bronze e cantoneiras com voluta e losango.
