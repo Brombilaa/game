@@ -918,9 +918,56 @@ func _draw_preview(font: Font) -> void:
 			text = "Inacessível"
 		else:
 			var cost := rules.move_cost(CombatRules.path_length(route))
-			text = "%d PA" % cost if cost <= player.pa else "%d PA (parcial)" % player.pa
+			var plan := rules.plan_move(route, player.pa)
+			_draw_move_path(font, route, plan["path"], int(plan["cost"]), cost > player.pa)
 	if text != "":
 		draw_string(font, screen_mouse + Vector2(14, -8), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color.WHITE)
+
+
+# Caminho do movimento antes do clique (modelo C, Léo, 30/10/2026): marcas de passo em ouro até
+# onde os PA chegam, o resto apagado em vermelho, e o ladrilho aceso no destino com o custo em cima.
+# `route` é a rota inteira, `reach` o trecho que os PA pagam e `over` diz se o destino passa do saldo.
+func _draw_move_path(font: Font, route: PackedVector2Array, reach: PackedVector2Array, cost: int, over: bool) -> void:
+	var gold := Color(0.96, 0.78, 0.36)
+	var dim := Color(0.8, 0.28, 0.25, 0.5)
+	var total := CombatRules.path_length(route)
+	var reach_len := CombatRules.path_length(reach)
+	var end_room: Vector2 = reach[reach.size() - 1] if reach.size() > 0 else route[route.size() - 1]
+	var d := 0.0
+	var side := 1.0
+	while d < total:
+		var a := _iso(_point_along(route, d))
+		var b := _iso(_point_along(route, minf(d + 4.0, total)))
+		var dir := (b - a).normalized()
+		var off := dir.orthogonal() * side * 3.0
+		draw_line(a + off, a + off + dir * 4.0, Color(gold, 0.8) if d < reach_len else dim, 1.5 if d < reach_len else 1.0)
+		side = -side
+		d += 12.0
+	_draw_floor_diamond(_iso(end_room), 26.0, gold, 0.35)
+	var text := "%d PA%s" % [cost, " (parcial)" if over else ""]
+	var w := 36.0 if not over else 78.0
+	var tag := _iso(end_room) + Vector2(0, -22)
+	draw_rect(Rect2(tag - Vector2(w * 0.5, 9), Vector2(w, 16)), Color(0.04, 0.03, 0.025, 0.9))
+	draw_rect(Rect2(tag - Vector2(w * 0.5, 9), Vector2(w, 16)).grow(-0.5), gold, false, 0.75)
+	draw_string(font, tag + Vector2(-w * 0.5 + 2, 3), text, HORIZONTAL_ALIGNMENT_CENTER, w - 4, 10, gold)
+
+
+# Ponto de `route` a `dist` pixels do começo (o último, se passar do fim).
+func _point_along(route: PackedVector2Array, dist: float) -> Vector2:
+	var left := dist
+	for i in range(1, route.size()):
+		var seg := route[i - 1].distance_to(route[i])
+		if left <= seg and seg > 0.0:
+			return route[i - 1].lerp(route[i], left / seg)
+		left -= seg
+	return route[route.size() - 1]
+
+
+# Losango achatado no chão (a casa de destino), com contorno e brilho.
+func _draw_floor_diamond(c: Vector2, half_width: float, color: Color, fill: float) -> void:
+	var pts := PackedVector2Array([c + Vector2(0, -half_width * 0.5), c + Vector2(half_width, 0), c + Vector2(0, half_width * 0.5), c + Vector2(-half_width, 0)])
+	draw_colored_polygon(pts, Color(color, fill))
+	draw_polyline(pts + PackedVector2Array([pts[0]]), color, 1.0)
 
 
 # --- Grupo ---------------------------------------------------------------------
