@@ -20,6 +20,13 @@ var pa_label: Label
 var pips: HBoxContainer
 var end_turn_button: Button
 var notice_timer: Timer
+# A sala de teste desenha o modo, os PA e o fim do turno no próprio HUD (moldura A); aqui ficam só os avisos.
+var room_draws_hud := false:
+	set(value):
+		room_draws_hud = value
+		mode_label.visible = not value
+		if value:
+			turn_panel.visible = false
 
 
 func _init() -> void:
@@ -42,7 +49,7 @@ func on_turn_started(unit_name: String, pa: int, max_pa: int) -> void:
 	unit_label.text = unit_name
 	on_pa_changed(pa, max_pa)
 	end_turn_button.disabled = false
-	turn_panel.visible = true
+	turn_panel.visible = not room_draws_hud
 
 
 func on_pa_changed(pa: int, max_pa: int) -> void:

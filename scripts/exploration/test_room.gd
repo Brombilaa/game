@@ -29,8 +29,18 @@ const FOLLOW_DISTANCE := 60.0  # distância fixa do seguidor ao líder (provisó
 const FOLLOW_SPREAD := 1.0  # variação do ângulo do seguidor em radianos (provisório)
 const REVIVE_REACH := 16.0  # borda a borda: "adjacente" para reanimar
 const SHEET_SCALE := 0.75  # fichas do grupo 25% menores que o desenho em tamanho cheio (pedido do Léo, 30/10/2026)
-const SHEET_SIZE := Vector2(212, 72) * SHEET_SCALE
+const SHEET_SIZE := Vector2(223, 75) * SHEET_SCALE  # retrato e ficha lado a lado
 const HUD_BRONZE := Color(0.43, 0.34, 0.24)
+# Moldura A, bronze gótico (Léo escolheu entre três modelos, 30/10/2026).
+const FRAME_FILL := Color(0.063, 0.043, 0.031, 0.93)
+const FRAME_OUTER := Color(0.612, 0.455, 0.22)
+const FRAME_INNER := Color(0.353, 0.255, 0.149)
+const FRAME_ACCENT := Color(0.839, 0.678, 0.361)
+const FRAME_ENEMY := Color(0.639, 0.149, 0.165)
+const CONDITION_ICONS := {  # ordem e cor dos ícones de condição embaixo do retrato
+	"sangrando": Color(0.85, 0.2, 0.2), "atordoado": Color(0.95, 0.82, 0.35),
+	"em_chamas": Color(0.95, 0.5, 0.15), "envenenado": Color(0.5, 0.75, 0.35),
+}
 const POPUP_SECONDS := 1.2
 const HIT_SHAKE_SECONDS := 0.2
 const CRIT_SHAKE_SECONDS := 0.35
@@ -136,6 +146,7 @@ var scenery := Scenery.new()
 
 func _ready() -> void:
 	RenderingServer.set_default_clear_color(Color(0.03, 0.025, 0.02))  # fora da sala e salas fechadas: escuridão
+	hud.room_draws_hud = true  # a sala desenha modo, PA e fim do turno na moldura A
 	add_child(hud)
 	add_child(audio)
 	for path in AGENT_SHEETS:
@@ -196,9 +207,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and mode == Mode.COMBAT:
 		queue_redraw()  # atualiza a prévia de chance/custo sob o cursor
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		var portrait := _portrait_at(get_viewport().get_mouse_position())
+		var screen := get_viewport().get_mouse_position()
+		var portrait := _portrait_at(screen)
 		if portrait:
 			_switch_to(portrait)
+			return
+		if _mouse_on_hud(screen):  # rodapé: o fim do turno passa a vez; os ícones não movem o personagem
+			if _end_turn_rect(_action_slots().size()).has_point(screen):
+				_player_pass()
 			return
 		var click := _resolve_click(get_global_mouse_position())
 		if mode == Mode.EXPLORATION:
@@ -846,7 +862,7 @@ func _draw_unit(u: Combatant) -> void:
 
 # Prévia sob o cursor no turno do agente: chance de acerto no inimigo ou custo do movimento.
 func _draw_preview(font: Font) -> void:
-	if not _player_ready():
+	if not _player_ready() or _mouse_on_hud(get_viewport().get_mouse_position()):
 		return
 	var screen_mouse := get_global_mouse_position()
 	var mouse := _resolve_click(screen_mouse)
@@ -942,7 +958,22 @@ func _fs(size: int) -> int:
 
 
 func _portrait_rect(i: int) -> Rect2:
-	return Rect2(Vector2(8, 8 + i * (SHEET_SIZE.y + 6)), SHEET_SIZE)
+	return Rect2(Vector2(8, 8 + i * _k(98)), SHEET_SIZE)  # sobra espaço para os ícones de condição
+
+
+# Mouse sobre uma ficha ou sobre o rodapé de ações: sem prévia de movimento ou ataque.
+func _mouse_on_hud(screen: Vector2) -> bool:
+	if _portrait_at(screen):
+		return true
+	if mode != Mode.COMBAT or not _player_ready():
+		return false
+	var n := _action_slots().size()
+	if _end_turn_rect(n).has_point(screen):
+		return true
+	for k in n:
+		if _action_rect(k, n).has_point(screen):
+			return true
+	return false
 
 
 func _portrait_at(screen: Vector2) -> Combatant:
@@ -952,8 +983,9 @@ func _portrait_at(screen: Vector2) -> Combatant:
 	return null
 
 
-# HUD da ideia A (Léo, 29/10/2026): fichas do grupo à esquerda (retrato, PV, SAN, PA),
-# ordem dos turnos no topo e ações no rodapé durante o combate. Desenhado em pixels da tela.
+# HUD da ideia A (Léo, 29/10/2026) na moldura A, bronze gótico (Léo escolheu, 30/10/2026): fichas do
+# grupo à esquerda, ordem dos turnos no topo, radar à direita e, no turno do jogador, PA, ações e
+# fim do turno no rodapé. Desenhado em pixels da tela (960×540).
 func _draw_hud(font: Font) -> void:
 	var to_world := get_canvas_transform().affine_inverse()
 	for i in party.size():
@@ -961,67 +993,97 @@ func _draw_hud(font: Font) -> void:
 	_draw_minimap(font, to_world)
 	if mode == Mode.COMBAT and turns:
 		_draw_turn_order(font, to_world)
-		if turns.current and turns.current.side == Combatant.Side.PLAYER:
+		if _player_ready():
 			_draw_actions(font, to_world)
 
 
-# Ficha de um membro do grupo. `k` é a escala (SHEET_SCALE): todas as medidas abaixo são do desenho
-# em tamanho cheio e passam por `_k`.
+# Moldura A: placa escura, filete duplo de bronze e cantoneiras com voluta e losango.
+# `s` encolhe os enfeites junto com a peça (fichas usam SHEET_SCALE).
+func _draw_frame(r: Rect2, enemy := false, s := 1.0) -> void:
+	var outer := FRAME_ENEMY if enemy else FRAME_OUTER
+	var accent := FRAME_ENEMY if enemy else FRAME_ACCENT
+	draw_rect(r, FRAME_FILL)
+	draw_rect(r.grow(-1.0 * s), outer, false, 1.5 * s)
+	draw_rect(r.grow(-4.0 * s), FRAME_INNER, false, 0.75)
+	for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:
+		var o: Vector2 = r.position + corner * r.size
+		var d := Vector2(1.0 - corner.x * 2.0, 1.0 - corner.y * 2.0) * s  # para dentro da peça
+		var arc := PackedVector2Array()
+		for k in 7:  # voluta: curva de (1, 9) a (9, 1) puxada para o canto
+			var t := k / 6.0
+			var p := Vector2(1, 9).lerp(Vector2(1, 1), t).lerp(Vector2(1, 1).lerp(Vector2(9, 1), t), t)
+			arc.append(o + p * d)
+		draw_polyline(arc, accent, 1.0 * s)
+		draw_polyline(PackedVector2Array([o + Vector2(4, 11) * d, o + Vector2(4, 4) * d, o + Vector2(11, 4) * d]), accent, 0.75 * s)
+		_draw_diamond(o + Vector2(3.25, 3.25) * d, 2.5 * s, accent)
+	if r.size.x > 80:  # losango no meio das bordas de cima e de baixo
+		_draw_diamond(Vector2(r.get_center().x, r.position.y + 1), 3.5 * s, accent)
+		_draw_diamond(Vector2(r.get_center().x, r.end.y - 1), 3.5 * s, accent)
+
+
+func _draw_diamond(c: Vector2, r: float, color: Color) -> void:
+	draw_colored_polygon(PackedVector2Array([c + Vector2(0, -r), c + Vector2(r, 0), c + Vector2(0, r), c + Vector2(-r, 0)]), color)
+
+
+# Ficha de um membro do grupo: retrato numa moldura e, ao lado, nome, PV e SAN em outra.
+# As medidas são do desenho em tamanho cheio e passam por `_k` (SHEET_SCALE).
 func _draw_sheet(font: Font, m: Combatant, pos: Vector2) -> void:
 	var active := m == player
-	var gold := PlaceholderArt.color("destaque")
-	var edge := gold if active else HUD_BRONZE
-	var box := Rect2(pos, SHEET_SIZE)
-	draw_rect(box, Color(0.09, 0.07, 0.05, 0.9))
-	draw_rect(Rect2(box.position + Vector2(_k(3), _k(3)), box.size - Vector2(_k(6), _k(6))), Color(0.13, 0.1, 0.07, 0.6), false, 1.0)
-	draw_rect(box, edge, false, 1.0)
-	for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:  # cantoneiras douradas
-		var c: Vector2 = box.position + corner * box.size
-		var dx := Vector2(-corner.x * 2.0 + 1.0, 0.0) * _k(9)
-		var dy := Vector2(0.0, -corner.y * 2.0 + 1.0) * _k(9)
-		draw_line(c, c + dx, edge, 2.0)
-		draw_line(c, c + dy, edge, 2.0)
-	var face := Rect2(pos + Vector2(_k(7), _k(7)), Vector2(_k(58), _k(58)))
-	draw_rect(Rect2(face.position - Vector2(2, 2), face.size + Vector2(4, 4)), Color(0.05, 0.04, 0.03))
+	var face_box := Rect2(pos, Vector2(_k(75), _k(75)))
+	var info := Rect2(pos + Vector2(_k(73), _k(10)), Vector2(_k(150), _k(56)))
+	_draw_frame(info, false, SHEET_SCALE)
+	_draw_frame(face_box, false, SHEET_SCALE)
+	var face := face_box.grow(-_k(6))
 	draw_rect(face, Color(0.16, 0.12, 0.09))
 	agent_sheets[looks.get(m, 0)].draw_portrait(self, face)
 	if not m.is_alive():
 		draw_rect(face, Color(0.4, 0, 0, 0.5))
-	draw_rect(face, edge, false, 1.0)
-	var left := pos.x + _k(74)
-	draw_string(font, Vector2(left, pos.y + _k(17)), m.name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(13), gold if active else Color(0.93, 0.89, 0.8))
-	draw_line(Vector2(left, pos.y + _k(21)), Vector2(pos.x + SHEET_SIZE.x - _k(8), pos.y + _k(21)), Color(0.43, 0.34, 0.24, 0.7), 1.0)
-	_draw_bar(font, Vector2(left, pos.y + _k(25)), "pv", m.pv, m.max_pv, Color(0.74, 0.16, 0.16), Color(0.45, 0.07, 0.07))
-	_draw_bar(font, Vector2(left, pos.y + _k(41)), "san", m.san, m.max_san, Color(0.33, 0.52, 0.8), Color(0.15, 0.26, 0.5))
+	if active:
+		draw_rect(face_box.grow(-_k(1)), FRAME_ACCENT, false, 1.5)
+	var left := info.position.x + _k(11)
+	draw_string(font, Vector2(left, info.position.y + _k(17)), m.name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(13), FRAME_ACCENT if active else Color(0.91, 0.87, 0.79))
 	var status := ""
 	if m.dead:
 		status = "MORTO"
 	elif not m.is_alive():
 		status = "CAÍDO"
 	elif mode == Mode.COMBAT and turns and turns.current == m:
-		for n in turns.turn_pa(m):
-			_draw_pa_gem(Vector2(left + _k(8) + n * _k(17), pos.y + _k(63)), n < m.pa)
-		draw_string(font, Vector2(left + _k(8) + turns.turn_pa(m) * _k(17) + _k(2), pos.y + _k(67)), "PA", HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(10), Color(0.66, 0.6, 0.49))
+		status = "na vez"
 	elif mode == Mode.COMBAT:
 		status = "aguardando"
-	if status == "" and m.crouched and mode == Mode.EXPLORATION:
+	elif m.crouched:
 		status = "agachado"
 	if status != "":
-		draw_string(font, Vector2(left, pos.y + _k(67)), status, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(11), Color(1, 0.45, 0.45) if status in ["MORTO", "CAÍDO"] else Color(0.66, 0.6, 0.49))
+		draw_string(font, Vector2(left, info.position.y + _k(17)), status, HORIZONTAL_ALIGNMENT_RIGHT, info.size.x - _k(22), _fs(10), Color(1, 0.45, 0.45) if status in ["MORTO", "CAÍDO"] else Color(0.66, 0.6, 0.49))
+	_draw_bar(font, Vector2(left - _k(3), info.position.y + _k(22)), "pv", m.pv, m.max_pv, Color(0.74, 0.16, 0.16), Color(0.45, 0.07, 0.07))
+	_draw_bar(font, Vector2(left - _k(3), info.position.y + _k(37)), "san", m.san, m.max_san, Color(0.33, 0.52, 0.8), Color(0.15, 0.26, 0.5))
+	var k := 0
+	for id in CONDITION_ICONS:  # condições ativas embaixo do retrato
+		if m.has_condition(id):
+			_draw_condition(Rect2(pos + Vector2(_k(2) + k * _k(17), _k(77)), Vector2(_k(15), _k(15))), id)
+			k += 1
 
 
-# Gema de PA: losango dourado com brilho quando disponível; vazio, só o contorno.
-func _draw_pa_gem(c: Vector2, full: bool) -> void:
-	var r := _k(7)
-	var pts := PackedVector2Array([c + Vector2(0, -r), c + Vector2(r, 0), c + Vector2(0, r), c + Vector2(-r, 0)])
-	if full:
-		draw_colored_polygon(pts, Color(0.9, 0.7, 0.2))
-		draw_colored_polygon(PackedVector2Array([c + Vector2(0, -r), c + Vector2(r, 0), c, c + Vector2(-r, 0)]), Color(1.0, 0.88, 0.45))
-		draw_polyline(pts + PackedVector2Array([pts[0]]), Color(0.45, 0.3, 0.07), 1.0)
-		draw_circle(c + Vector2(-r * 0.25, -r * 0.35), maxf(_k(1.2), 1.0), Color(1, 1, 0.9))
-	else:
-		draw_colored_polygon(pts, Color(0.12, 0.1, 0.08))
-		draw_polyline(pts + PackedVector2Array([pts[0]]), Color(0.35, 0.28, 0.2), 1.0)
+# Ícone de condição: quadrado escuro com o símbolo na cor da condição.
+func _draw_condition(r: Rect2, id: String) -> void:
+	var color: Color = CONDITION_ICONS[id]
+	draw_rect(r, FRAME_FILL)
+	draw_rect(r, color, false, 1.0)
+	var c := r.get_center()
+	var u := r.size.x / 15.0
+	match id:
+		"sangrando":  # gota
+			draw_circle(c + Vector2(0, 1.5) * u, 3.0 * u, color)
+			draw_colored_polygon(PackedVector2Array([c + Vector2(-2.6, 0.5) * u, c + Vector2(0, -5) * u, c + Vector2(2.6, 0.5) * u]), color)
+		"atordoado":  # estrela de quatro pontas
+			draw_colored_polygon(PackedVector2Array([c + Vector2(0, -5) * u, c + Vector2(1.2, -1.2) * u, c + Vector2(5, 0) * u, c + Vector2(1.2, 1.2) * u,
+				c + Vector2(0, 5) * u, c + Vector2(-1.2, 1.2) * u, c + Vector2(-5, 0) * u, c + Vector2(-1.2, -1.2) * u]), color)
+		"em_chamas":  # chama
+			draw_colored_polygon(PackedVector2Array([c + Vector2(-3.5, 4) * u, c + Vector2(-3.5, 0) * u, c + Vector2(-1, -2.5) * u, c + Vector2(0, -5.5) * u,
+				c + Vector2(1.5, -2) * u, c + Vector2(3.5, -0.5) * u, c + Vector2(3.5, 4) * u]), color)
+		_:  # envenenado: bolhas
+			draw_circle(c + Vector2(-1.5, 1.5) * u, 2.6 * u, color)
+			draw_circle(c + Vector2(2.2, -2.2) * u, 1.6 * u, color)
 
 
 # Barra com ícone (coração de PV, olho de SAN), fundo chanfrado, degradê, divisões a cada 5 pontos e brilho.
@@ -1060,40 +1122,49 @@ func _draw_bar(font: Font, at: Vector2, kind: String, value: int, maximum: int, 
 	draw_string(font, bar.position + Vector2(_k(5), bar.size.y - _k(2.5)), "%d/%d" % [value, maximum], HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(9), Color(0.96, 0.93, 0.85))
 
 
-# Faixa no topo: retratos na ordem da rodada, o da vez em destaque e inimigos em vermelho.
+# Faixa no topo: retratos emoldurados na ordem da rodada, inimigos em vermelho, o da vez sublinhado.
 func _draw_turn_order(font: Font, to_world: Transform2D) -> void:
 	var units: Array[Combatant] = []
 	for u in turns.order:
 		if u.is_alive():
 			units.append(u)
-	var size := 34.0
-	var width := units.size() * (size + 8) + 8
-	var screen_pos := Vector2(480 - width * 0.5, 6)
+	var step := 56.0
+	var width := units.size() * step + 14
+	var screen_pos := Vector2(480 - width * 0.5, 8)
 	var pos := to_world * screen_pos
 	var mouse := get_viewport().get_mouse_position()
 	var hovered: Combatant = null
-	draw_rect(Rect2(pos, Vector2(width, 58)), Color(0.09, 0.07, 0.05, 0.88))
-	draw_string(font, pos + Vector2(8, 12), "RODADA %d · ORDEM DOS TURNOS" % turns.round_number, HORIZONTAL_ALIGNMENT_LEFT, width - 16, 9, Color(0.66, 0.6, 0.49))
 	var hover_rect := Rect2()
+	_draw_frame(Rect2(pos, Vector2(width, 66)))
 	for k in units.size():
 		var u := units[k]
-		var face := Rect2(pos + Vector2(8 + k * (size + 8), 18), Vector2(size, size))
-		var over := Rect2(screen_pos + Vector2(8 + k * (size + 8), 18), Vector2(size, size)).has_point(mouse)
+		var cell := Rect2(pos + Vector2(10 + k * step, 7), Vector2(50, 50))
+		_draw_frame(cell, u.side == Combatant.Side.ENEMY)
+		var face := cell.grow(-4)
 		draw_rect(face, Color(0.16, 0.12, 0.09))
 		_draw_face(u, face)
-		var edge := PlaceholderArt.color("destaque") if u == turns.current else (Color(0.6, 0.2, 0.2) if u.side == Combatant.Side.ENEMY else Color(0.43, 0.34, 0.24))
-		draw_rect(face, edge, false, 2.0 if u == turns.current else 1.0)
-		if over:
+		if u == turns.current:
+			draw_rect(Rect2(cell.position + Vector2(5, 52), Vector2(40, 2)), FRAME_ACCENT)
+		if Rect2(screen_pos + Vector2(10 + k * step, 7), cell.size).has_point(mouse):
 			hovered = u
-			hover_rect = face
+			hover_rect = cell
 			draw_rect(face, Color(1, 1, 1, 0.18))
+	draw_string(font, pos + Vector2(0, 80), "RODADA %d" % turns.round_number, HORIZONTAL_ALIGNMENT_CENTER, width, 9, Color(0.72, 0.65, 0.52))
 	if hovered:  # nome embaixo do retrato sob o mouse
-		var label := hovered.name.to_upper()
-		var text_w := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
-		var tip := Rect2(Vector2(hover_rect.get_center().x - text_w * 0.5 - 6, hover_rect.end.y + 8), Vector2(text_w + 12, 18))
-		draw_rect(tip, Color(0.05, 0.04, 0.03, 0.96))
-		draw_rect(tip, PlaceholderArt.color("destaque") if hovered.side == Combatant.Side.PLAYER else Color(0.86, 0.3, 0.3), false, 1.0)
-		draw_string(font, tip.position + Vector2(6, 13), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.93, 0.89, 0.8))
+		_draw_tooltip(font, Vector2(hover_rect.get_center().x, hover_rect.end.y + 26), hovered.name.to_upper(), "", hovered.side == Combatant.Side.ENEMY)
+
+
+# Etiqueta flutuante centrada em `top_center`, com uma segunda linha opcional.
+func _draw_tooltip(font: Font, top_center: Vector2, title: String, detail: String, enemy := false) -> void:
+	var w := font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+	if detail != "":
+		w = maxf(w, font.get_string_size(detail, HORIZONTAL_ALIGNMENT_LEFT, -1, 9).x)
+	var tip := Rect2(top_center - Vector2(w * 0.5 + 7, 0), Vector2(w + 14, 31 if detail != "" else 19))
+	draw_rect(tip, Color(0.05, 0.04, 0.03, 0.96))
+	draw_rect(tip, FRAME_ENEMY if enemy else FRAME_ACCENT, false, 1.0)
+	draw_string(font, tip.position + Vector2(0, 13), title, HORIZONTAL_ALIGNMENT_CENTER, tip.size.x, 12, Color(0.93, 0.89, 0.8))
+	if detail != "":
+		draw_string(font, tip.position + Vector2(0, 26), detail, HORIZONTAL_ALIGNMENT_CENTER, tip.size.x, 9, Color(0.72, 0.65, 0.52))
 
 
 func _draw_face(u: Combatant, rect: Rect2) -> void:
@@ -1109,31 +1180,116 @@ func _draw_face(u: Combatant, rect: Rect2) -> void:
 		draw_texture_rect_region(tex, rect, Rect2(4, 0, 24, 24))
 
 
-# Rodapé: ações do personagem da vez (arma equipada e kit), com o custo em PA.
+# Ações do rodapé no turno do jogador: [ícone, título, detalhe, ativa]. A arma secundária
+# aparece apagada até existir a troca de arma.
+func _action_slots() -> Array:
+	var data := cfg.game_data
+	var kit := data.get_entry("itens", "kit_primeiros_socorros")
+	var id := str(player.weapon["id"])
+	var slots := [[id, str(data.get_entry("armas", id).get("nome", id)), "Atacar · %d PA · clique no inimigo" % int(player.weapon["pa_cost"]), true]]
+	var second = data.get_entry("personagens", player.name.to_lower()).get("arma_secundaria")
+	if second != null and str(second) != id:
+		slots.append([str(second), str(data.get_entry("armas", str(second)).get("nome", second)), "Trocar arma · 1 PA · em breve", false])
+	slots.append(["kit", "Kit de primeiros socorros", "Reanimar · %d PA · restam %d" % [int(kit["custo_pa_combate"]), kits], kits > 0])
+	slots.append(["atrasar", "Atrasar", "Age depois na rodada · tecla D", true])
+	return slots
+
+
+func _action_rect(k: int, n: int) -> Rect2:
+	var width := n * 46 - 4 + 13 + 100
+	return Rect2(Vector2(480 - width * 0.5 + k * 46, 486), Vector2(42, 42))
+
+
+func _end_turn_rect(n: int) -> Rect2:
+	var r := _action_rect(n - 1, n)
+	return Rect2(Vector2(r.end.x + 13, r.position.y), Vector2(100, 42))
+
+
+# Rodapé: gemas de PA, ícones das ações (dica ao passar o mouse) e o botão de fim do turno.
 func _draw_actions(font: Font, to_world: Transform2D) -> void:
-	var kit := cfg.game_data.get_entry("itens", "kit_primeiros_socorros")
-	var slots := [
-		[str(player.weapon["id"]).capitalize(), "%d PA" % int(player.weapon["pa_cost"]), true],
-		["Kit", "%d PA · x%d" % [int(kit["custo_pa_combate"]), kits], false],
-		["Mover", "1 PA / 2 m", false],
-	]
-	var slot := Vector2(82, 40)
-	var width := slots.size() * (slot.x + 6) - 6
-	var pos := to_world * Vector2(480 - width * 0.5, 540 - slot.y - 12)
+	var slots := _action_slots()
+	var mouse := get_viewport().get_mouse_position()
+	var first := _action_rect(0, slots.size())
+	var pa_box := Rect2(to_world * (first.position + Vector2(0, -29)), Vector2(115, 23))
+	_draw_frame(pa_box)
+	draw_string(font, pa_box.position + Vector2(10, 15), "PA", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(0.85, 0.8, 0.7))
+	for n in turns.turn_pa(player):
+		var c := pa_box.position + Vector2(40 + n * 22, 11.5)
+		_draw_diamond(c, 6.5, FRAME_OUTER)
+		_draw_diamond(c, 5.0, FRAME_ACCENT if n < player.pa else Color(0.16, 0.13, 0.1))
+	var tip := -1
 	for k in slots.size():
-		var r := Rect2(pos + Vector2(k * (slot.x + 6), 0), slot)
-		draw_rect(r, Color(0.09, 0.07, 0.05, 0.88))
-		draw_rect(r, PlaceholderArt.color("destaque") if slots[k][2] else Color(0.43, 0.34, 0.24), false, 1.0)
-		draw_string(font, r.position + Vector2(0, 17), slots[k][0], HORIZONTAL_ALIGNMENT_CENTER, slot.x, 12, Color(0.93, 0.89, 0.8))
-		draw_string(font, r.position + Vector2(0, 33), slots[k][1], HORIZONTAL_ALIGNMENT_CENTER, slot.x, 9, Color(0.66, 0.6, 0.49))
+		var screen := _action_rect(k, slots.size())
+		var r := Rect2(to_world * screen.position, screen.size)
+		_draw_frame(r)
+		_draw_action_icon(r.grow(-9), slots[k][0], slots[k][3])
+		if k == 0:  # arma pronta: contorno aceso
+			draw_rect(r.grow(1), Color(FRAME_ACCENT, 0.35), false, 3.0)
+			draw_rect(r.grow(-0.5), FRAME_ACCENT, false, 1.5)
+		if screen.has_point(mouse):
+			tip = k
+			draw_rect(r.grow(-4), Color(1, 1, 1, 0.12))
+	var end := _end_turn_rect(slots.size())
+	var er := Rect2(to_world * end.position, end.size)
+	_draw_frame(er, true)
+	if end.has_point(mouse):
+		draw_rect(er.grow(-4), Color(1, 0.4, 0.3, 0.12))
+	draw_string(font, er.position + Vector2(0, 18), "FIM DO", HORIZONTAL_ALIGNMENT_CENTER, er.size.x, 11, FRAME_ACCENT)
+	draw_string(font, er.position + Vector2(0, 31), "TURNO", HORIZONTAL_ALIGNMENT_CENTER, er.size.x, 11, FRAME_ACCENT)
+	if tip >= 0:
+		var r := Rect2(to_world * _action_rect(tip, slots.size()).position, Vector2(42, 42))
+		_draw_tooltip(font, Vector2(r.get_center().x, r.position.y - 66), slots[tip][1], slots[tip][2])
+	elif end.has_point(mouse):
+		_draw_tooltip(font, Vector2(er.get_center().x, er.position.y - 38), "Fim do turno", "Barra de espaço", true)
+
+
+# Ícones das ações desenhados por código, num quadro de 24×24 dentro do espaço.
+func _draw_action_icon(r: Rect2, id: String, enabled: bool) -> void:
+	var ink := Color(0.85, 0.79, 0.65) if enabled else Color(0.4, 0.36, 0.3)
+	var u := r.size.x / 24.0
+	var p := func(x: float, y: float) -> Vector2: return r.position + Vector2(x, y) * u
+	var poly := func(pts: Array, color: Color) -> void:
+		var out := PackedVector2Array()
+		for q in pts:
+			out.append(p.call(q[0], q[1]))
+		draw_colored_polygon(out, color)
+	match id:
+		"pistola":
+			poly.call([[3, 9], [17, 9], [19, 7], [22, 7], [22, 12], [16, 12], [13, 17], [10, 17], [11, 12], [3, 12]], ink)
+		"escopeta":
+			poly.call([[1, 9], [22, 9], [22, 12], [11, 12], [8, 17], [4, 17], [6, 12], [1, 12]], ink)
+			draw_line(p.call(13, 13), p.call(19, 13), ink, 2.0 * u)
+		"fuzil_precisao":
+			poly.call([[1, 11], [23, 11], [23, 13], [10, 13], [7, 17], [3, 17], [5, 13], [1, 13]], ink)
+			draw_rect(Rect2(p.call(9, 7), Vector2(7, 3) * u), ink)
+		"espada":
+			poly.call([[19, 3], [21, 5], [9, 17], [7, 15]], ink)
+			draw_line(p.call(5, 13), p.call(11, 19), ink, 2.0 * u)
+			draw_line(p.call(7, 17), p.call(3, 21), ink, 2.5 * u)
+		"soco":
+			draw_rect(Rect2(p.call(6, 8), Vector2(12, 9) * u), ink)
+			draw_rect(Rect2(p.call(8, 17), Vector2(8, 4) * u), ink)
+		"kit":
+			draw_rect(Rect2(p.call(5, 7), Vector2(14, 14) * u), ink, false, 1.5 * u)
+			draw_polyline(PackedVector2Array([p.call(9, 7), p.call(9, 4), p.call(15, 4), p.call(15, 7)]), ink, 1.5 * u)
+			var red := Color(0.8, 0.22, 0.2) if enabled else ink
+			draw_line(p.call(12, 10), p.call(12, 18), red, 2.5 * u)
+			draw_line(p.call(8, 14), p.call(16, 14), red, 2.5 * u)
+		"atrasar":  # ampulheta
+			poly.call([[6, 3], [18, 3], [12, 12]], ink)
+			poly.call([[12, 12], [18, 21], [6, 21]], ink)
+			draw_line(p.call(5, 3), p.call(19, 3), ink, 1.5 * u)
+			draw_line(p.call(5, 21), p.call(19, 21), ink, 1.5 * u)
+		_:
+			draw_circle(p.call(12, 12), 5 * u, ink)
 
 
 
 # Minimapa: radar redondo visto de cima, centrado no controlado (Léo escolheu, 29/10/2026).
 # Só desenha o que o grupo já descobriu: o outro lado de uma porta nunca aberta não aparece,
 # e inimigos só aparecem enquanto estão à vista.
-const RADAR_CENTER := Vector2(888, 72)  # pixels da tela
-const RADAR_RADIUS := 56.0
+const RADAR_CENTER := Vector2(866, 88)  # pixels da tela
+const RADAR_RADIUS := 56.0  # área do mapa; o aro da moldura A fica 6 px para fora
 const RADAR_SCALE := 0.11  # pixels do radar por unidade da sala
 const RADAR_GRID := 64.0  # um losango do chão, em unidades da sala
 const RADAR_INK := Color(0.07, 0.05, 0.04)
@@ -1141,7 +1297,6 @@ const RADAR_FLOOR := Color(0.25, 0.2, 0.15)
 const RADAR_WALL := Color(0.84, 0.76, 0.6)
 const RADAR_DOOR := Color(0.66, 0.4, 0.2)
 const RADAR_ENEMY := Color(0.86, 0.2, 0.2)
-const RADAR_BRONZE := Color(0.55, 0.43, 0.27)
 
 
 # Regiões da sala já vistas pelo grupo (0 e 1: os lados da porta; ver _region).
@@ -1200,8 +1355,8 @@ func _draw_minimap(font: Font, to_world: Transform2D) -> void:
 		for seg in Geometry2D.intersect_polyline_with_polygon(PackedVector2Array([to_map.call(a), to_map.call(b)]), disc):
 			draw_polyline(seg, color, width)
 
-	# Fundo: escuro, com a borda ainda mais escura.
-	draw_circle(center, RADAR_RADIUS, Color(0.04, 0.03, 0.02, 0.94))
+	# Fundo escuro no círculo inteiro do aro.
+	draw_circle(center, RADAR_RADIUS + 6, Color(0.04, 0.03, 0.02, 0.92))
 	for c in known:
 		fill.call(c, RADAR_FLOOR)
 		# Grade fraca de losangos do chão, só no que já foi visto.
@@ -1266,18 +1421,17 @@ func _draw_minimap(font: Font, to_world: Transform2D) -> void:
 	tri.append(tri[0])
 	draw_polyline(tri, RADAR_INK, 1.0)
 
-	# Moldura: aro escuro, aro de bronze, marcas dos pontos cardeais e o N no topo.
-	draw_arc(center, RADAR_RADIUS + 1.5, 0.0, TAU, 64, RADAR_INK, 3.0)
-	draw_arc(center, RADAR_RADIUS - 0.5, 0.0, TAU, 64, RADAR_BRONZE, 1.5)
-	for k in 4:
-		var d := Vector2.UP.rotated(TAU * k / 4.0)
-		draw_line(center + d * (RADAR_RADIUS - 5), center + d * (RADAR_RADIUS - 1), RADAR_BRONZE, 1.5)
-	var n_at := center + Vector2(0, -RADAR_RADIUS - 1)
-	draw_circle(n_at, 6.5, RADAR_INK)
-	draw_arc(n_at, 6.5, 0.0, TAU, 24, RADAR_BRONZE, 1.0)
-	draw_string(font, n_at + Vector2(-6.5, 4), "N", HORIZONTAL_ALIGNMENT_CENTER, 13, 10, Color(0.83, 0.67, 0.31))
-	# Placa com o nome do local logo abaixo.
-	var plate := Rect2(center + Vector2(-46, RADAR_RADIUS + 4), Vector2(92, 15))
-	draw_rect(plate, Color(0.07, 0.05, 0.04, 0.9))
-	draw_rect(plate, RADAR_BRONZE, false, 1.0)
-	draw_string(font, plate.position + Vector2(0, 11), "SALA DE TESTE", HORIZONTAL_ALIGNMENT_CENTER, plate.size.x, 10, Color(0.93, 0.89, 0.8))
+	# Moldura A: aro de bronze, filete interno e N, L, S e O em medalhões nos pontos cardeais.
+	var rim := RADAR_RADIUS + 6
+	draw_arc(center, rim, 0.0, TAU, 72, FRAME_OUTER, 2.5)
+	draw_arc(center, RADAR_RADIUS + 1, 0.0, TAU, 72, FRAME_INNER, 1.0)
+	for c in [["N", Vector2.UP], ["L", Vector2.RIGHT], ["S", Vector2.DOWN], ["O", Vector2.LEFT]]:
+		var at: Vector2 = center + c[1] * rim
+		draw_circle(at, 8.5, Color(0.07, 0.047, 0.031))
+		draw_arc(at, 8.5, 0.0, TAU, 24, FRAME_OUTER, 1.0)
+		draw_string(font, at + Vector2(-8.5, 3.5), c[0], HORIZONTAL_ALIGNMENT_CENTER, 17, 10, FRAME_ACCENT)
+	# Placa com o local e o modo logo abaixo.
+	var plate := Rect2(center + Vector2(-65, rim + 12), Vector2(130, 37))
+	_draw_frame(plate)
+	draw_string(font, plate.position + Vector2(0, 15), "SALA DE TESTE", HORIZONTAL_ALIGNMENT_CENTER, plate.size.x, 8, Color(0.73, 0.65, 0.52))
+	draw_string(font, plate.position + Vector2(0, 28), HudText.mode_label(mode == Mode.COMBAT), HORIZONTAL_ALIGNMENT_CENTER, plate.size.x, 11, Color(0.93, 0.89, 0.8))
