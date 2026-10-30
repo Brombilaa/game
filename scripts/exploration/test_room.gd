@@ -943,10 +943,10 @@ func _draw_move_path(font: Font, route: PackedVector2Array, reach: PackedVector2
 		draw_line(a + off, a + off + dir * 4.0, Color(gold, 0.8) if d < reach_len else dim, 1.5 if d < reach_len else 1.0)
 		side = -side
 		d += 12.0
-	_draw_floor_diamond(_iso(end_room), 26.0, gold, 0.35)
+	_draw_floor_halo(_iso(end_room), 13.0, gold)
 	var text := "%d PA%s" % [cost, " (parcial)" if over else ""]
 	var w := 36.0 if not over else 78.0
-	var tag := _iso(end_room) + Vector2(0, -22)
+	var tag := _iso(end_room) + Vector2(0, -20)
 	draw_rect(Rect2(tag - Vector2(w * 0.5, 9), Vector2(w, 16)), Color(0.04, 0.03, 0.025, 0.9))
 	draw_rect(Rect2(tag - Vector2(w * 0.5, 9), Vector2(w, 16)).grow(-0.5), gold, false, 0.75)
 	draw_string(font, tag + Vector2(-w * 0.5 + 2, 3), text, HORIZONTAL_ALIGNMENT_CENTER, w - 4, 10, gold)
@@ -963,11 +963,25 @@ func _point_along(route: PackedVector2Array, dist: float) -> Vector2:
 	return route[route.size() - 1]
 
 
-# Losango achatado no chão (a casa de destino), com contorno e brilho.
-func _draw_floor_diamond(c: Vector2, half_width: float, color: Color, fill: float) -> void:
-	var pts := PackedVector2Array([c + Vector2(0, -half_width * 0.5), c + Vector2(half_width, 0), c + Vector2(0, half_width * 0.5), c + Vector2(-half_width, 0)])
-	draw_colored_polygon(pts, Color(color, fill))
-	draw_polyline(pts + PackedVector2Array([pts[0]]), color, 1.0)
+# Halo pequeno no chão (destino do movimento): anéis de luz achatados na proporção do chão
+# isométrico (2:1), mais fortes no centro, com um aro fino de ouro.
+func _draw_floor_halo(c: Vector2, radius: float, color: Color) -> void:
+	for i in 5:
+		var t := 1.0 - i / 5.0
+		_draw_ellipse(c, radius * (0.45 + 0.55 * t), Color(color, 0.07 + 0.05 * (1.0 - t)), true)
+	_draw_ellipse(c, radius * 0.9, Color(color, 0.85), false)
+	draw_circle(c, 1.2, Color(1, 0.92, 0.7, 0.9))
+
+
+func _draw_ellipse(c: Vector2, radius: float, color: Color, filled: bool) -> void:
+	var pts := PackedVector2Array()
+	for k in 24:
+		var a := TAU * k / 24.0
+		pts.append(c + Vector2(cos(a) * radius, sin(a) * radius * 0.5))
+	if filled:
+		draw_colored_polygon(pts, color)
+	else:
+		draw_polyline(pts + PackedVector2Array([pts[0]]), color, 0.75)
 
 
 # --- Grupo ---------------------------------------------------------------------
