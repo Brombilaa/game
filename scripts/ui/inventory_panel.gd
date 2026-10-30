@@ -460,7 +460,7 @@ func _slot(font: Font, r: Rect2, id: String, qty: int, selected: bool, dim: bool
 		draw_texture_rect(TEX_EQUIP if big else TEX_CELL, r, false)
 	if id == "":
 		return
-	var side := minf(r.size.x - 8.0, ItemIcons.ART_SIZE)
+	var side := roundf(r.size.x * 0.62)  # folga em volta do ícone, longe da moldura
 	ItemIcons.draw(self, r, id, not dim, side)
 	if qty > 1:
 		draw_string(font, r.position + Vector2(0, r.size.y - 6), "%d" % qty, HORIZONTAL_ALIGNMENT_RIGHT, r.size.x - 6, 9, GOLD)

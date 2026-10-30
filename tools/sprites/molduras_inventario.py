@@ -1,6 +1,6 @@
 """Corta as molduras pintadas pelo Léo (fundo magenta) e gera as peças do inventário em tamanho nativo (1920x1080).
 
-Uso: python3 -I tools/sprites/molduras_inventario.py aba quadro_equip moldura casa_equip
+Uso: python3 -I tools/sprites/molduras_inventario.py aba quadro_equip moldura casa_equip casa_lisa
 Cada argumento é um PNG. Saída em assets/sprites/ui/inv/.
 """
 import sys
@@ -48,7 +48,8 @@ def fit(img, size):
 
 
 aba, quadro, mold = [key(p) for p in sys.argv[1:4]]
-casa = key(sys.argv[4], terco=True)
+casa = key(sys.argv[4], terco=True)  # moldura ornamentada (já não usada nas casas)
+simples = key(sys.argv[5], terco=True)  # moldura lisa das casas da mochila e do equipamento
 
 # aba: tampas esquerda e direita mais um miolo com o losango central, na altura de 48 px
 s = 48 / aba.height
@@ -63,7 +64,7 @@ glow(tab, 8).save(OUT + "aba_brilho.png")
 
 fit(quadro, (784, 248)).save(OUT + "quadro_equipamento.png")
 
-for nome, src, lado in (("casa", mold, 80), ("retrato", mold, 110), ("equip", casa, 112)):
+for nome, src, lado in (("casa", simples, 80), ("retrato", mold, 110), ("equip", simples, 112)):
     a = fit(src, (lado, lado))
     a.save(OUT + nome + ".png")
     glow(a, 8).save(OUT + nome + "_brilho.png")
