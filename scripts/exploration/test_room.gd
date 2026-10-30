@@ -1244,6 +1244,16 @@ const ICON_COLORS := {
 	"c": Color(0.3, 0.27, 0.24), "w": Color(0.47, 0.28, 0.15), "g": Color(0.84, 0.68, 0.36),
 	"r": Color(0.74, 0.11, 0.13), "y": Color(0.88, 0.72, 0.42),
 }
+# Ícones pintados do Léo (ChatGPT, 30/10/2026), recortados em 64×64 por tools/sprites/icones_acoes.py.
+# Quem não tem arte ainda (fuzil, soco) usa o pixel art de PIXEL_ICONS.
+const ACTION_ART := {
+	"pistola": preload("res://assets/sprites/ui/acoes/pistola.png"),
+	"escopeta": preload("res://assets/sprites/ui/acoes/escopeta.png"),
+	"espada": preload("res://assets/sprites/ui/acoes/espada.png"),
+	"kit": preload("res://assets/sprites/ui/acoes/kit.png"),
+	"atrasar": preload("res://assets/sprites/ui/acoes/atrasar.png"),  # relógio de bolso
+	"ampulheta": preload("res://assets/sprites/ui/acoes/ampulheta.png"),  # fim do turno
+}
 const PIXEL_ICONS := {
 	"pistola": [
 		"..oooooooooooo..",
@@ -1502,14 +1512,21 @@ func _draw_end_turn(font: Font, er: Rect2, hover: bool, pressed: bool, enabled: 
 	draw_rect(r.grow(-2.5), Color(FRAME_ACCENT, 0.45) if enabled else Color(edge, 0.5), false, 0.5)
 	for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:
 		_draw_diamond(r.position + corner * r.size, 2.0, edge.lightened(0.2))
-	var glass := Rect2(r.position + Vector2(5, 3), Vector2(32, r.size.y - 6))
-	_draw_pixel_icon(glass, PIXEL_ICONS["atrasar"], enabled, {"y": Color(0.82, 0.16, 0.16)})
+	_draw_art_icon(Rect2(r.position + Vector2(4, 1), Vector2(r.size.y - 2, r.size.y - 2)), ACTION_ART["ampulheta"], enabled)
 	draw_string(font, r.position + Vector2(38, 17), "FIM DO", HORIZONTAL_ALIGNMENT_CENTER, r.size.x - 44, 11, ink)
 	draw_string(font, r.position + Vector2(38, 30), "TURNO", HORIZONTAL_ALIGNMENT_CENTER, r.size.x - 44, 11, ink)
 
 
 func _draw_action_icon(r: Rect2, id: String, enabled: bool) -> void:
-	_draw_pixel_icon(r, PIXEL_ICONS.get(id, PIXEL_ICONS["soco"]), enabled)
+	if ACTION_ART.has(id):
+		_draw_art_icon(r.grow(-3), ACTION_ART[id], enabled)
+	else:
+		_draw_pixel_icon(r, PIXEL_ICONS.get(id, PIXEL_ICONS["soco"]), enabled)
+
+
+# Ícone pintado centralizado em `r`; indisponível: escurecido e sem cor.
+func _draw_art_icon(r: Rect2, tex: Texture2D, enabled: bool) -> void:
+	draw_texture_rect(tex, r, false, Color.WHITE if enabled else Color(0.42, 0.4, 0.38, 0.8))
 
 
 # Desenha um ícone de PIXEL_ICONS centralizado em `r`, um quadrado por pixel, alinhado à grade
