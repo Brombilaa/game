@@ -31,6 +31,12 @@ func _run() -> void:
 		var center: Vector2 = room.scenario.colliders[cid].get_center()
 		_check(not Pathfinder.has_line_of_sight(center + Vector2(-300, 0), center + Vector2(300, 0), room._sight_blockers()), cid + " bloqueia a visão")
 
+	# A árvore, os arbustos e os pneus mantêm o grupo afastado (Léo, 30/10): ninguém chega colado no tronco.
+	var near_tree: PackedVector2Array = room.pathfinder.find_path(room.player.pos, Vector2(1130, 250), room._obstacles(room.player), room.player.radius)
+	_check(near_tree.is_empty(), "não há rota até o pé da árvore")
+	var by_tree: PackedVector2Array = room.pathfinder.find_path(room.player.pos, Vector2(1130, 320), room._obstacles(room.player), room.player.radius)
+	_check(by_tree.size() > 1, "há rota até a frente da árvore, a pista continua alcançável")
+
 	# A árvore só abre depois das outras pistas.
 	room._inspect("arvore_simbolo")
 	_check(room.dialog_layer.visible and room.dialog_clue == "", "a árvore bloqueada só avisa")
