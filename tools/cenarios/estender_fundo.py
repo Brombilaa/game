@@ -6,11 +6,13 @@ espelha o desenho do chão (plan_D.png) para fora do plano, mistura com um borr�
 cores e apaga em névoa curta (borda arredondada, sem quinas). Dentro do mapa o fundo original fica
 intacto; o que passa do contorno (como a van) também.
 
-Uso: estender_fundo.py FUNDO.png PLAN_D.png SAIDA.png   (imprime a posição da imagem em coordenadas do fundo)
+Uso: estender_fundo.py FUNDO.png PLAN_D.png SAIDA.png [PASTA_DOS_ARBUSTOS]   (imprime a posição da imagem em coordenadas do fundo)
 """
+import os
+import random
 import sys
 import numpy as np
-from PIL import Image, ImageFilter
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
 
 ORIGEM = (760.0, 133.0)   # ponto (0, 0) da sala no fundo
 ESCALA = (0.75, 0.2833)   # px por unidade do plano (x - y e x + y)
@@ -22,12 +24,77 @@ ESCURECE = 0.62
 FORCA = 0.8
 
 
+# Mata extra (Léo, 30/10): tufos de vários tamanhos e folhagens no canto da direita, onde o chão
+# estendido ficava vazio. Posições em unidades do plano (fora do mapa); a base do sprite fica nelas.
+MATA_ZONAS = [  # (x0, x1, y0, y1, passo)
+    (1295, 1500, -90, 700, 44),
+    (1150, 1500, -230, -10, 44),
+]
+SEMENTE = 11
+
+
+def folhagem(rng):
+    """Folhas finas de pixel art, em tons de verde da paleta dos arbustos."""
+    w, h = 26, 30
+    im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    tons = [(52, 86, 44), (70, 108, 54), (92, 134, 62), (110, 150, 72)]
+    for _ in range(rng.randint(5, 8)):
+        bx = rng.randint(8, w - 8)
+        topo = rng.randint(2, 12)
+        largura = rng.randint(2, 4)
+        c = rng.choice(tons) + (255,)
+        d.polygon([(bx - largura, h - 1), (bx + largura, h - 1), (bx + rng.randint(-8, 8), topo)], fill=c)
+    return im
+
+
+def camada_mata(base, x0, y0, sprites_dir, dentro):
+    """Cola tufos e folhagens sobre `base` (RGB) só fora do mapa; devolve a nova imagem RGB."""
+    rng = random.Random(SEMENTE)
+    nomes = ["arbusto_1", "arbusto_2", "arbusto_3", "arbusto_4"]
+    tufos = [Image.open(os.path.join(sprites_dir, n + ".png")).convert("RGBA") for n in nomes]
+    itens = []
+    for zx0, zx1, zy0, zy1, passo in MATA_ZONAS:
+        x = zx0
+        while x <= zx1:
+            y = zy0
+            while y <= zy1:
+                px = x + rng.randint(-passo // 2, passo // 2)
+                py = y + rng.randint(-passo // 2, passo // 2)
+                itens.append((px, py, rng.random()))
+                y += passo
+            x += passo
+    itens.sort(key=lambda t: t[0] + t[1])  # mais longe primeiro
+    camada = Image.new("RGBA", base.size, (0, 0, 0, 0))
+    for px, py, r in itens:
+        bx = ORIGEM[0] + (px - py) * ESCALA[0] - x0
+        by = ORIGEM[1] + (px + py) * ESCALA[1] - y0
+        if r < 0.3:
+            spr = folhagem(rng)
+            esc = rng.choice([1, 1, 2])
+        else:
+            spr = rng.choice(tufos)
+            esc = rng.choice([0.45, 0.6, 0.8, 1.0, 1.0, 1.25, 1.5])
+        if esc != 1:
+            spr = spr.resize((max(1, int(spr.width * esc)), max(1, int(spr.height * esc))), Image.NEAREST)
+        if rng.random() < 0.5:
+            spr = spr.transpose(Image.FLIP_LEFT_RIGHT)
+        longe = min(1.0, max(0.0, (px - 1280) / 260.0))
+        rgb = ImageEnhance.Brightness(spr.convert("RGB")).enhance(1.0 - 0.3 * longe)
+        spr = Image.merge("RGBA", (*rgb.split(), spr.split()[3]))
+        camada.alpha_composite(spr, (int(bx - spr.width / 2), int(by - spr.height + 6)))
+    arr = np.array(camada).astype(float)
+    a = (arr[..., 3:4] / 255.0) * (~dentro)[..., None]  # nada por cima do que já é do render
+    out = np.array(base).astype(float) * (1 - a) + arr[..., :3] * a
+    return Image.fromarray(out.clip(0, 255).astype("uint8"))
+
+
 def dobra(t, n):
     t = np.mod(t, 2 * n)
     return np.where(t > n, 2 * n - t, t)
 
 
-def main(fundo_png, plano_png, saida):
+def main(fundo_png, plano_png, saida, sprites_dir=""):
     fundo = np.array(Image.open(fundo_png).convert("RGBA")).astype(float)
     plano = np.array(Image.open(plano_png).convert("RGB")).astype(float)
     ih, iw = fundo.shape[:2]
@@ -58,6 +125,9 @@ def main(fundo_png, plano_png, saida):
     dentro = (col[..., 3] > 0) & (bx < iw) & (by < ih) & (bx >= 0) & (by >= 0)
     rgb = np.where(dentro[..., None], col[..., :3], chao)
     base = Image.fromarray(rgb.clip(0, 255).astype("uint8"))
+    if sprites_dir:
+        base = camada_mata(base, x0, y0, sprites_dir, dentro)
+        rgb = np.array(base).astype(float)
     borrao = np.array(base.filter(ImageFilter.GaussianBlur(BORRAO))).astype(float) * ESCURECE
     nu = np.abs((px - PLANO[0] / 2) / (PLANO[0] / 2))
     nv = np.abs((py - PLANO[1] / 2) / (PLANO[1] / 2))
@@ -74,4 +144,4 @@ def main(fundo_png, plano_png, saida):
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:4])
+    main(*sys.argv[1:5])
