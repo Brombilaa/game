@@ -19,7 +19,7 @@ const PIVOT := Vector2(96, 179)
 # Altura do personagem acima do pivô, para posicionar barras de vida.
 const HEIGHT := 134.0
 # Recorte do rosto e ombros no quadro parado da folha S, para retratos do HUD.
-const PORTRAIT := Rect2(64, 46, 64, 64)
+const PORTRAIT := Rect2(66, 48, 60, 60)
 
 var textures := {}  # "se" -> Texture2D
 
