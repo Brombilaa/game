@@ -38,3 +38,5 @@ assets/sprites/cenario/*.png -filter -diff -merge -text
 assets/sprites/retratos/*.png -filter -diff -merge -text
 # O fundo do menu inicial (arte do ChatGPT, cerca de 2 MB) também vai direto no Git.
 assets/sprites/menu/*.png -filter -diff -merge -text
+# Os ícones das ações da barra de combate (arte do Léo) também vão direto no Git.
+assets/sprites/ui/acoes/*.png -filter -diff -merge -text
