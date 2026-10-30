@@ -46,6 +46,8 @@ const TEX_PORTRAIT := preload(INV_ART + "retrato.png")
 const TEX_PORTRAIT_GLOW := preload(INV_ART + "retrato_brilho.png")
 const TEX_EQUIP := preload(INV_ART + "equip.png")
 const TEX_EQUIP_GLOW := preload(INV_ART + "equip_brilho.png")
+const TEX_KEY := preload(INV_ART + "tecla.png")
+const TEX_KEY_WIDE := preload(INV_ART + "tecla_larga.png")
 const TEX_DETAIL := preload(INV_ART + "detalhe.png")
 const GLOW_PAD := 4.0  # 8 px nativos de halo em volta das peças brilhantes
 
@@ -542,8 +544,7 @@ func _draw_hints(font: Font) -> void:
 	for kv in keys:
 		var w := 22.0 if kv[0].length() == 1 else 30.0
 		var kr := Rect2(o + Vector2(x, 466), Vector2(w, 22))
-		draw_rect(kr, SLOT_FILL)
-		draw_rect(kr.grow(-0.5), BRONZE, false, 1.0)
+		draw_texture_rect(TEX_KEY if kv[0].length() == 1 else TEX_KEY_WIDE, kr, false)
 		draw_string(font, kr.position + Vector2(0, 15), kv[0], HORIZONTAL_ALIGNMENT_CENTER, w, 10, TEXT)
 		draw_string(font, kr.position + Vector2(w + 6, 15), kv[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 10, MUTED)
 		x += w + 18.0 + font.get_string_size(kv[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x

@@ -1,6 +1,6 @@
 """Corta as molduras pintadas pelo Léo (fundo magenta) e gera as peças do inventário em tamanho nativo (1920x1080).
 
-Uso: python3 -I tools/sprites/molduras_inventario.py aba quadro_equip moldura casa_equip casa_lisa detalhe
+Uso: python3 -I tools/sprites/molduras_inventario.py aba quadro_equip moldura casa_equip casa_lisa detalhe teclas
 Cada argumento é um PNG. Saída em assets/sprites/ui/inv/.
 """
 import sys
@@ -74,3 +74,22 @@ if len(sys.argv) > 6:
     det = key(sys.argv[6])
     print("detalhe", det.size)
     fit(det, (328, 408)).save(OUT + "detalhe.png")
+
+# teclas da dica (E, Del, B): a imagem traz quadrada, larga e quadrada lado a lado
+if len(sys.argv) > 7:
+    full = key(sys.argv[7])
+    col = np.array(full.getchannel("A")).max(0) > 40
+    runs, start = [], None
+    for x, v in enumerate(col):
+        if v and start is None:
+            start = x
+        if not v and start is not None:
+            runs.append((start, x))
+            start = None
+    if start is not None:
+        runs.append((start, len(col)))
+    runs = [r for r in runs if r[1] - r[0] > 20]
+    print("teclas", runs)
+    quad, larga = full.crop((runs[0][0], 0, runs[0][1], full.height)), full.crop((runs[1][0], 0, runs[1][1], full.height))
+    fit(quad, (44, 44)).save(OUT + "tecla.png")
+    fit(larga, (60, 44)).save(OUT + "tecla_larga.png")
