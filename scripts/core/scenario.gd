@@ -15,6 +15,7 @@ var npcs := {}  # id -> posição
 var colliders := {}  # id -> Rect2
 var clues := {}  # id -> {"pos", "raio", "ordem", "texto", ...}
 var triggers := {}  # id -> gatilho
+var occluders: Array[Dictionary] = []  # {"id", "arquivo", "pos" (na imagem do fundo), "rect" (colisão de mesmo id)}
 var errors: PackedStringArray = []
 
 
@@ -92,6 +93,19 @@ func triggers_after(clue_id: String) -> Array:
 	return out
 
 
+## O ponto `p` (no chão) está na frente do retângulo `r` para quem olha da câmera (+x e +y)?
+## Nos casos ambíguos (de lado), decide pela soma x + y, como a ordem de desenho do resto da sala.
+static func in_front(p: Vector2, r: Rect2) -> bool:
+	var front := p.y >= r.end.y or p.x >= r.end.x
+	var back := p.y <= r.position.y or p.x <= r.position.x
+	if front and not back:
+		return true
+	if back and not front:
+		return false
+	var c := r.get_center()
+	return p.x + p.y >= c.x + c.y
+
+
 func _parse(data: Dictionary) -> void:
 	id = str(data.get("id", ""))
 	size = _vec(data.get("tamanho"))
@@ -114,6 +128,11 @@ func _parse(data: Dictionary) -> void:
 		colliders[c["id"]] = rect
 	for c in data.get("pistas", []):
 		clues[c["id"]] = {"pos": _vec(c["pos"]), "raio": float(c["raio"]), "ordem": int(c["ordem"]), "texto": str(c["texto"]), "inspecao": str(c.get("inspecao", ""))}
+	for o in data.get("oclusores", []):
+		if not colliders.has(o["id"]):
+			errors.append("oclusor sem colisão de mesmo id: " + str(o["id"]))
+			continue
+		occluders.append({"id": o["id"], "arquivo": str(o["arquivo"]), "pos": _vec(o["pos"]), "rect": colliders[o["id"]]})
 	for g in data.get("gatilhos", []):
 		if not clues.has(g["apos"]):
 			errors.append("gatilho %s depende de pista inexistente: %s" % [g["id"], g["apos"]])

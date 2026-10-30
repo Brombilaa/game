@@ -8,6 +8,7 @@
 		"origem": [760, 133],
 		"escala_tela": [48.0, 18.13]
 	},
+	"_oclusores": "recortes do fundo (mesmos pixels) desenhados por cima de quem está atrás do objeto; pos = canto do recorte na imagem do fundo; a ordem usa o retângulo de colisão de mesmo id (gerados por fonte_3d/shot3.js)",
 	"inicio": {
 		"grupo": [[450, 690], [510, 660], [570, 625]],
 		"npcs": [{"id": "caio", "pos": [330, 740]}, {"id": "leticia", "pos": [390, 705]}]
@@ -20,15 +21,15 @@
 		{"id": "banco_quebrado", "rect": [860, 375, 80, 50]},
 		{"id": "carrossel", "rect": [905, 775, 110, 110]},
 		{"id": "balanco", "rect": [1130, 670, 130, 60]},
-		{"id": "arvore", "rect": [1100, 170, 60, 60]},
+		{"id": "arvore", "rect": [1065, 135, 130, 130]},
 		{"id": "mata_1", "rect": [820, 28, 380, 64], "_nota": "sebe inteira, com a abertura, como parede"},
 		{"id": "mata_2", "rect": [1040, 60, 240, 60], "_nota": "sebe atrás da árvore, como parede"},
-		{"id": "arbusto_1", "rect": [40, 360, 50, 40]},
-		{"id": "arbusto_2", "rect": [385, 425, 40, 30]},
-		{"id": "arbusto_3", "rect": [200, 555, 50, 30]},
-		{"id": "arbusto_4", "rect": [1230, 315, 50, 30]},
-		{"id": "pneus_oeste", "rect": [630, 700, 70, 240]},
-		{"id": "pneus_arvore", "rect": [1190, 355, 50, 40]}
+		{"id": "arbusto_1", "rect": [20, 340, 90, 80]},
+		{"id": "arbusto_2", "rect": [365, 405, 80, 70]},
+		{"id": "arbusto_3", "rect": [180, 535, 90, 70]},
+		{"id": "arbusto_4", "rect": [1190, 295, 90, 70]},
+		{"id": "pneus_oeste", "rect": [610, 680, 110, 280]},
+		{"id": "pneus_arvore", "rect": [1170, 335, 90, 80]}
 	],
 	"pistas": [
 		{"id": "marcas_pneu", "pos": [760, 560], "raio": 70, "ordem": 1, "texto": "Marcas largas de pneu. Vão da terra central até a entrada, como se algo tivesse sido arrastado."},
@@ -40,8 +41,25 @@
 	],
 	"gatilhos": [
 		{"id": "combate_arvore", "apos": "arvore_simbolo", "tipo": "combate",
-			"inimigos": [{"tipo": "cultista", "pos": [1100, 130], "origem": "mata atrás da árvore"}, {"tipo": "cultista", "pos": [450, 800], "origem": "atrás do grupo, perto dos NPCs"}],
+			"inimigos": [{"tipo": "cultista", "pos": [1100, 127], "origem": "mata atrás da árvore"}, {"tipo": "cultista", "pos": [450, 800], "origem": "atrás do grupo, perto dos NPCs"}],
 			"cutscene_depois": "morte_caio"}
+	],
+	"oclusores": [
+		{"id": "arvore", "arquivo": "res://assets/sprites/cenario/parque/oclusao/arvore.png", "pos": [1291, 103]},
+		{"id": "van", "arquivo": "res://assets/sprites/cenario/parque/oclusao/van.png", "pos": [26, 222]},
+		{"id": "banco_1", "arquivo": "res://assets/sprites/cenario/parque/oclusao/banco_1.png", "pos": [957, 212]},
+		{"id": "banco_2", "arquivo": "res://assets/sprites/cenario/parque/oclusao/banco_2.png", "pos": [777, 442]},
+		{"id": "banco_quebrado", "arquivo": "res://assets/sprites/cenario/parque/oclusao/banco_quebrado.png", "pos": [1084, 429]},
+		{"id": "carrossel", "arquivo": "res://assets/sprites/cenario/parque/oclusao/carrossel.png", "pos": [767, 565]},
+		{"id": "balanco", "arquivo": "res://assets/sprites/cenario/parque/oclusao/balanco.png", "pos": [1020, 493]},
+		{"id": "mata_1", "arquivo": "res://assets/sprites/cenario/parque/oclusao/mata_1.png", "pos": [1292, 248]},
+		{"id": "mata_2", "arquivo": "res://assets/sprites/cenario/parque/oclusao/mata_2.png", "pos": [1434, 327]},
+		{"id": "arbusto_1", "arquivo": "res://assets/sprites/cenario/parque/oclusao/arbusto_1.png", "pos": [462, 191]},
+		{"id": "arbusto_2", "arquivo": "res://assets/sprites/cenario/parque/oclusao/arbusto_2.png", "pos": [685, 318]},
+		{"id": "arbusto_3", "arquivo": "res://assets/sprites/cenario/parque/oclusao/arbusto_3.png", "pos": [444, 295]},
+		{"id": "arbusto_4", "arquivo": "res://assets/sprites/cenario/parque/oclusao/arbusto_4.png", "pos": [1397, 518]},
+		{"id": "pneus_oeste", "arquivo": "res://assets/sprites/cenario/parque/oclusao/pneus_oeste.png", "pos": [526, 479]},
+		{"id": "pneus_arvore", "arquivo": "res://assets/sprites/cenario/parque/oclusao/pneus_arvore.png", "pos": [1319, 535]}
 	],
 	"_pendencias": ["a Criatura de Sangue substitui o cultista provisório quando existir", "pistas de ordem 2 só liberam depois de todas as de ordem 1"]
 }

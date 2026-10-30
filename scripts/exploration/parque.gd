@@ -20,6 +20,7 @@ const FRAME_BG := Color(0.063, 0.043, 0.031, 0.95)
 
 var scenario: Scenario
 var backdrop: Texture2D
+var occluder_textures := {}  # id -> recorte do fundo
 var seen_clues: Array[String] = []
 var pending_clue := ""
 var dialog_layer: CanvasLayer
@@ -32,6 +33,8 @@ func _ready() -> void:
 	scenario = Scenario.load_id(SCENARIO_ID)
 	assert(scenario.ok(), "\n".join(scenario.errors))
 	backdrop = load(scenario.backdrop_path)
+	for o in scenario.occluders:
+		occluder_textures[o["id"]] = load(o["arquivo"])
 	_load_layout()
 	super()
 	var corners := [_iso(Vector2.ZERO), _iso(Vector2(scenario.size.x, 0)), _iso(Vector2(0, scenario.size.y)), _iso(scenario.size)]
@@ -109,15 +112,28 @@ func _draw() -> void:
 		_draw_clue_hints()
 	var items: Array = []
 	for u in _living_units():
-		items.append({"key": u.pos.x + u.pos.y, "unit": u})
+		items.append({"pos": u.pos, "unit": u})
 	for npc_id in scenario.npcs:
-		items.append({"key": scenario.npcs[npc_id].x + scenario.npcs[npc_id].y, "npc": npc_id})
-	items.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.key < b.key)
-	for it in items:
-		if it.has("unit"):
-			_draw_unit(it.unit)
+		items.append({"pos": scenario.npcs[npc_id], "npc": npc_id})
+	items.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.pos.x + a.pos.y < b.pos.x + b.pos.y)
+	# Oclusão: o recorte de cada objeto é desenhado logo antes do primeiro personagem que está na
+	# frente dele (todos os de antes ficam cobertos; os da frente são desenhados depois, por cima).
+	var after := {}  # índice do item -> recortes a desenhar depois dele
+	for o in scenario.occluders:
+		var cut := items.size()
+		for i in items.size():
+			if Scenario.in_front(items[i].pos, o["rect"]):
+				cut = i
+				break
+		if cut > 0:
+			after[cut - 1] = after.get(cut - 1, []) + [o]
+	for i in items.size():
+		if items[i].has("unit"):
+			_draw_unit(items[i].unit)
 		else:
-			_draw_npc(font, it.npc)
+			_draw_npc(font, items[i].npc)
+		for o in after.get(i, []):
+			draw_texture(occluder_textures[o["id"]], o["pos"] - scenario.backdrop_origin)
 	if mode == Mode.COMBAT:
 		_draw_preview(font)
 	_draw_hud(font)
