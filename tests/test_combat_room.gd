@@ -14,6 +14,7 @@ func _run() -> void:
 	await _test_stealth()
 	await _test_game_over()
 	await _test_party()
+	await _test_gear()
 	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
 	room.rules.rng.seed = 3
 	root.add_child(room)
@@ -137,6 +138,42 @@ func _test_game_over() -> void:
 
 
 # Grupo: seguidor anda atrás do líder, troca de controlado e reanimação com kit.
+# Inventário e equipamento: equipar arma e colete, guardar, descartar e trocar a reserva.
+func _test_gear() -> void:
+	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
+	root.add_child(room)
+	await process_frame
+	var f: Combatant = room.party[0]
+	_check(room.gear[f]["principal"] == "pistola" and room.gear[f]["secundaria"] == "escopeta", "Fernando começa com pistola e escopeta")
+	_check(room.inventory.count("colete_leve") == 1, "mochila inicial tem um colete leve")
+
+	var vest: int = 0
+	for i in 20:
+		if not room.inventory.slots[i].is_empty() and room.inventory.slots[i]["id"] == "colete_leve":
+			vest = i
+	_check(room.gear_equip(f, "colete", vest) != "" and f.defense == 0.1, "colete leve reduz 10% do dano")
+	_check(room.gear[f]["colete"] == "colete_leve" and room.inventory.count("colete_leve") == 0, "o colete sai da mochila")
+
+	room.gear_unequip(f, "colete")
+	_check(f.defense == 0.0 and room.inventory.count("colete_leve") == 1, "guardar o colete zera a defesa e devolve à mochila")
+
+	room._swap_weapon()
+	_check(room.gear[f]["principal"] == "escopeta" and f.weapon["id"] == "escopeta" and room.gear[f]["secundaria"] == "pistola", "Q troca principal e reserva")
+
+	var bag := -1
+	for i in 20:
+		if not room.inventory.slots[i].is_empty() and room.inventory.slots[i]["id"] == "bandagem":
+			bag = i
+	f.conditions["sangrando"] = {"stacks": 1, "rounds": -1}
+	room.gear_use(f, bag)
+	_check(not f.has_condition("sangrando") and room.inventory.count("bandagem") == 1, "bandagem tira o sangramento e gasta 1")
+	_check(room.gear_use(f, bag) == "Fernando não precisa" and room.inventory.count("bandagem") == 1, "sem sangramento a bandagem não é gasta")
+
+	room.gear_discard(bag)
+	_check(room.inventory.count("bandagem") == 0, "descartar tira o item")
+	room.queue_free()
+
+
 func _test_party() -> void:
 	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
 	root.add_child(room)
@@ -165,7 +202,7 @@ func _test_party() -> void:
 	lider.pa = 3
 	var pa_before: int = lider.pa
 	room._revive(seguidor)
-	_check(seguidor.pv == seguidor.max_pv / 2 and room.kits == 0, "kit reanima com metade do PV")
+	_check(seguidor.pv == seguidor.max_pv / 2 and room.inventory.count(room.KIT_ID) == 0, "kit reanima com metade do PV")
 	_check(lider.pa == pa_before - 2, "reanimar custa 2 PA")
 	room.queue_free()
 	await process_frame

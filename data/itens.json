@@ -4,5 +4,7 @@
   {"id": "curativo", "nome": "Curativo", "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": "curar_pv", "valor": null},
   {"id": "componente_ritual", "nome": "Componente de ritual", "categoria": "recurso", "consumivel": true, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": "ritual", "valor": null},
   {"id": "bandagem", "nome": "Bandagem", "provisorio": true, "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": 5, "custo_pa_combate": 1, "efeito": "remover_sangrando", "valor": null},
-  {"id": "antidoto", "nome": "Antídoto", "provisorio": true, "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": 5, "custo_pa_combate": 1, "efeito": "remover_envenenado", "valor": null}
+  {"id": "antidoto", "nome": "Antídoto", "provisorio": true, "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": 5, "custo_pa_combate": 1, "efeito": "remover_envenenado", "valor": null},
+  {"id": "colete_leve", "nome": "Colete leve", "provisorio": true, "categoria": "equipamento", "consumivel": false, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": "defesa", "valor": 0.1},
+  {"id": "colete_pesado", "nome": "Colete pesado", "provisorio": true, "categoria": "equipamento", "consumivel": false, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": "defesa", "valor": 0.2}
 ]
