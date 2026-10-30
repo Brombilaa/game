@@ -22,11 +22,15 @@ const HEIGHT := 134.0
 const PORTRAIT := Rect2(66, 48, 60, 60)
 
 var textures := {}  # "se" -> Texture2D
+var portrait: Texture2D  # retrato próprio (assets/sprites/retratos); sem ele, recorta o rosto da folha S
 
 
 func _init(prefix: String) -> void:
 	for name in ["se", "e", "ne", "s", "n"]:
 		textures[name] = load("%s_%s.png" % [prefix, name])
+	var own := "res://assets/sprites/retratos/%s_64.png" % prefix.get_file()
+	if ResourceLoader.exists(own):
+		portrait = load(own)
 
 
 func frame_count() -> int:
@@ -53,6 +57,9 @@ func draw(canvas: CanvasItem, pos: Vector2, frame: int, dir: Dir) -> void:
 		canvas.draw_texture_rect_region(tex, Rect2(origin, Vector2(FRAME, FRAME)), src)
 
 
-# Retrato (rosto do quadro parado de frente) desenhado dentro de `rect`.
+# Retrato desenhado dentro de `rect`: o retrato próprio, ou o rosto do quadro parado de frente.
 func draw_portrait(canvas: CanvasItem, rect: Rect2) -> void:
+	if portrait:
+		canvas.draw_texture_rect(portrait, rect, false)
+		return
 	canvas.draw_texture_rect_region(textures["s"], rect, PORTRAIT)
