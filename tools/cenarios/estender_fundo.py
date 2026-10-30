@@ -27,10 +27,17 @@ FORCA = 0.8
 # Mata extra (Léo, 30/10): tufos de vários tamanhos e folhagens no canto da direita, onde o chão
 # estendido ficava vazio. Posições em unidades do plano (fora do mapa); a base do sprite fica nelas.
 MATA_ZONAS = [  # (x0, x1, y0, y1, passo)
-    (1295, 1500, -90, 700, 44),
+    (1295, 1500, -90, 560, 44),
     (1150, 1500, -230, -10, 44),
 ]
 SEMENTE = 11
+# O parquinho e os pneus ficam livres (Léo): nenhuma mata nasce perto deles. (x, y, largura, altura, folga)
+LIVRES = [
+    (1130, 670, 130, 60, 210),   # balanço
+    (905, 775, 110, 110, 160),   # carrossel
+    (1170, 335, 90, 80, 140),    # pneus da árvore
+    (610, 680, 110, 280, 120),   # pneus do oeste
+]
 
 
 def folhagem(rng):
@@ -61,7 +68,10 @@ def camada_mata(base, x0, y0, sprites_dir, dentro):
             while y <= zy1:
                 px = x + rng.randint(-passo // 2, passo // 2)
                 py = y + rng.randint(-passo // 2, passo // 2)
-                itens.append((px, py, rng.random()))
+                livre = any(lx - f < px < lx + lw + f and ly - f < py < ly + lh + f for lx, ly, lw, lh, f in LIVRES)
+                r = rng.random()
+                if not livre:
+                    itens.append((px, py, r))
                 y += passo
             x += passo
     itens.sort(key=lambda t: t[0] + t[1])  # mais longe primeiro
