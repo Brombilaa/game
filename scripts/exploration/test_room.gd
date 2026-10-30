@@ -918,9 +918,70 @@ func _draw_preview(font: Font) -> void:
 			text = "Inacessível"
 		else:
 			var cost := rules.move_cost(CombatRules.path_length(route))
-			text = "%d PA" % cost if cost <= player.pa else "%d PA (parcial)" % player.pa
+			var plan := rules.plan_move(route, player.pa)
+			_draw_move_path(font, route, plan["path"], int(plan["cost"]), cost > player.pa)
 	if text != "":
 		draw_string(font, screen_mouse + Vector2(14, -8), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color.WHITE)
+
+
+# Caminho do movimento antes do clique (modelo C, Léo, 30/10/2026): marcas de passo em ouro até
+# onde os PA chegam, o resto apagado em vermelho, e o ladrilho aceso no destino com o custo em cima.
+# `route` é a rota inteira, `reach` o trecho que os PA pagam e `over` diz se o destino passa do saldo.
+func _draw_move_path(font: Font, route: PackedVector2Array, reach: PackedVector2Array, cost: int, over: bool) -> void:
+	var gold := Color(0.96, 0.78, 0.36)
+	var dim := Color(0.8, 0.28, 0.25, 0.5)
+	var total := CombatRules.path_length(route)
+	var reach_len := CombatRules.path_length(reach)
+	var end_room: Vector2 = reach[reach.size() - 1] if reach.size() > 0 else route[route.size() - 1]
+	var d := 0.0
+	var side := 1.0
+	while d < total:
+		var a := _iso(_point_along(route, d))
+		var b := _iso(_point_along(route, minf(d + 4.0, total)))
+		var dir := (b - a).normalized()
+		var off := dir.orthogonal() * side * 3.0
+		draw_line(a + off, a + off + dir * 4.0, Color(gold, 0.8) if d < reach_len else dim, 1.5 if d < reach_len else 1.0)
+		side = -side
+		d += 12.0
+	_draw_floor_halo(_iso(end_room), 13.0, gold)
+	var text := "%d PA%s" % [cost, " (parcial)" if over else ""]
+	var w := 36.0 if not over else 78.0
+	var tag := _iso(end_room) + Vector2(0, -20)
+	draw_rect(Rect2(tag - Vector2(w * 0.5, 9), Vector2(w, 16)), Color(0.04, 0.03, 0.025, 0.9))
+	draw_rect(Rect2(tag - Vector2(w * 0.5, 9), Vector2(w, 16)).grow(-0.5), gold, false, 0.75)
+	draw_string(font, tag + Vector2(-w * 0.5 + 2, 3), text, HORIZONTAL_ALIGNMENT_CENTER, w - 4, 10, gold)
+
+
+# Ponto de `route` a `dist` pixels do começo (o último, se passar do fim).
+func _point_along(route: PackedVector2Array, dist: float) -> Vector2:
+	var left := dist
+	for i in range(1, route.size()):
+		var seg := route[i - 1].distance_to(route[i])
+		if left <= seg and seg > 0.0:
+			return route[i - 1].lerp(route[i], left / seg)
+		left -= seg
+	return route[route.size() - 1]
+
+
+# Halo pequeno no chão (destino do movimento): anéis de luz achatados na proporção do chão
+# isométrico (2:1), mais fortes no centro, com um aro fino de ouro.
+func _draw_floor_halo(c: Vector2, radius: float, color: Color) -> void:
+	for i in 5:
+		var t := 1.0 - i / 5.0
+		_draw_ellipse(c, radius * (0.45 + 0.55 * t), Color(color, 0.07 + 0.05 * (1.0 - t)), true)
+	_draw_ellipse(c, radius * 0.9, Color(color, 0.85), false)
+	draw_circle(c, 1.2, Color(1, 0.92, 0.7, 0.9))
+
+
+func _draw_ellipse(c: Vector2, radius: float, color: Color, filled: bool) -> void:
+	var pts := PackedVector2Array()
+	for k in 24:
+		var a := TAU * k / 24.0
+		pts.append(c + Vector2(cos(a) * radius, sin(a) * radius * 0.5))
+	if filled:
+		draw_colored_polygon(pts, color)
+	else:
+		draw_polyline(pts + PackedVector2Array([pts[0]]), color, 0.75)
 
 
 # --- Grupo ---------------------------------------------------------------------
