@@ -28,7 +28,9 @@ const ENEMY_STEP_SECONDS := 0.4
 const FOLLOW_DISTANCE := 60.0  # distância fixa do seguidor ao líder (provisório)
 const FOLLOW_SPREAD := 1.0  # variação do ângulo do seguidor em radianos (provisório)
 const REVIVE_REACH := 16.0  # borda a borda: "adjacente" para reanimar
-const SHEET_SIZE := Vector2(212, 72)
+const SHEET_SCALE := 1.0  # escala das fichas do grupo (Léo pediu 25% menores: ver _k)
+const SHEET_SIZE := Vector2(212, 72) * SHEET_SCALE
+const HUD_BRONZE := Color(0.43, 0.34, 0.24)
 const POPUP_SECONDS := 1.2
 const HIT_SHAKE_SECONDS := 0.2
 const CRIT_SHAKE_SECONDS := 0.35
@@ -700,12 +702,6 @@ func _draw() -> void:
 	if mode == Mode.COMBAT:
 		_draw_preview(font)
 	_draw_hud(font)
-	# Textos de rodapé presos à tela, não à sala que rola.
-	var footer := get_canvas_transform().affine_inverse() * Vector2(24, 520)
-	if mode == Mode.COMBAT:
-		draw_string(font, footer, "Rodada %d  |  Espaço passa, D atrasa, R reinicia" % turns.round_number, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 1, 0.6))
-	elif mode == Mode.EXPLORATION:
-		draw_string(font, footer, ("AGACHADO  |  " if player.crouched else "") + "C agacha, Tab ou 1/2/3 troca o personagem, clique no inimigo ataca de surpresa", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 1, 0.6))
 	for p in popups:
 		_draw_popup(font, p)
 
@@ -919,6 +915,15 @@ func _update_followers(delta: float) -> void:
 		queue_redraw()
 
 
+# Medida do desenho em tamanho cheio -> pixels da ficha na escala atual.
+func _k(v: float) -> float:
+	return v * SHEET_SCALE
+
+
+func _fs(size: int) -> int:
+	return maxi(roundi(size * SHEET_SCALE), 8)
+
+
 func _portrait_rect(i: int) -> Rect2:
 	return Rect2(Vector2(8, 8 + i * (SHEET_SIZE.y + 6)), SHEET_SIZE)
 
@@ -943,44 +948,99 @@ func _draw_hud(font: Font) -> void:
 			_draw_actions(font, to_world)
 
 
+# Ficha de um membro do grupo. `k` é a escala (SHEET_SCALE): todas as medidas abaixo são do desenho
+# em tamanho cheio e passam por `_k`.
 func _draw_sheet(font: Font, m: Combatant, pos: Vector2) -> void:
 	var active := m == player
 	var gold := PlaceholderArt.color("destaque")
+	var edge := gold if active else HUD_BRONZE
 	var box := Rect2(pos, SHEET_SIZE)
-	draw_rect(box, Color(0.09, 0.07, 0.05, 0.88))
-	draw_rect(box, gold if active else Color(0.43, 0.34, 0.24), false, 1.0)
-	var face := Rect2(pos + Vector2(6, 6), Vector2(60, 60))
+	draw_rect(box, Color(0.09, 0.07, 0.05, 0.9))
+	draw_rect(Rect2(box.position + Vector2(_k(3), _k(3)), box.size - Vector2(_k(6), _k(6))), Color(0.13, 0.1, 0.07, 0.6), false, 1.0)
+	draw_rect(box, edge, false, 1.0)
+	for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:  # cantoneiras douradas
+		var c: Vector2 = box.position + corner * box.size
+		var dx := Vector2(-corner.x * 2.0 + 1.0, 0.0) * _k(9)
+		var dy := Vector2(0.0, -corner.y * 2.0 + 1.0) * _k(9)
+		draw_line(c, c + dx, edge, 2.0)
+		draw_line(c, c + dy, edge, 2.0)
+	var face := Rect2(pos + Vector2(_k(7), _k(7)), Vector2(_k(58), _k(58)))
+	draw_rect(Rect2(face.position - Vector2(2, 2), face.size + Vector2(4, 4)), Color(0.05, 0.04, 0.03))
 	draw_rect(face, Color(0.16, 0.12, 0.09))
 	agent_sheets[looks.get(m, 0)].draw_portrait(self, face)
 	if not m.is_alive():
 		draw_rect(face, Color(0.4, 0, 0, 0.5))
-	draw_rect(face, gold if active else Color(0.43, 0.34, 0.24), false, 1.0)
-	draw_string(font, pos + Vector2(74, 16), m.name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, gold if active else Color(0.93, 0.89, 0.8))
-	_draw_bar(font, pos + Vector2(74, 22), "PV", m.pv, m.max_pv, Color(0.67, 0.14, 0.14))
-	_draw_bar(font, pos + Vector2(74, 38), "SAN", m.san, m.max_san, Color(0.27, 0.43, 0.67))
+	draw_rect(face, edge, false, 1.0)
+	var left := pos.x + _k(74)
+	draw_string(font, Vector2(left, pos.y + _k(17)), m.name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(13), gold if active else Color(0.93, 0.89, 0.8))
+	draw_line(Vector2(left, pos.y + _k(21)), Vector2(pos.x + SHEET_SIZE.x - _k(8), pos.y + _k(21)), Color(0.43, 0.34, 0.24, 0.7), 1.0)
+	_draw_bar(font, Vector2(left, pos.y + _k(25)), "pv", m.pv, m.max_pv, Color(0.74, 0.16, 0.16), Color(0.45, 0.07, 0.07))
+	_draw_bar(font, Vector2(left, pos.y + _k(41)), "san", m.san, m.max_san, Color(0.33, 0.52, 0.8), Color(0.15, 0.26, 0.5))
 	var status := ""
 	if m.dead:
 		status = "MORTO"
 	elif not m.is_alive():
 		status = "CAÍDO"
 	elif mode == Mode.COMBAT and turns and turns.current == m:
-		for k in turns.turn_pa(m):
-			var c := pos + Vector2(100 + k * 14, 62)
-			draw_circle(c, 5.0, gold if k < m.pa else Color(0.2, 0.17, 0.13))
-		draw_string(font, pos + Vector2(74, 66), "PA", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(0.66, 0.6, 0.49))
+		for n in turns.turn_pa(m):
+			_draw_pa_gem(Vector2(left + _k(8) + n * _k(17), pos.y + _k(63)), n < m.pa)
+		draw_string(font, Vector2(left + _k(8) + turns.turn_pa(m) * _k(17) + _k(2), pos.y + _k(67)), "PA", HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(10), Color(0.66, 0.6, 0.49))
 	elif mode == Mode.COMBAT:
 		status = "aguardando"
+	if status == "" and m.crouched and mode == Mode.EXPLORATION:
+		status = "agachado"
 	if status != "":
-		draw_string(font, pos + Vector2(74, 66), status, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 0.45, 0.45) if status != "aguardando" else Color(0.66, 0.6, 0.49))
+		draw_string(font, Vector2(left, pos.y + _k(67)), status, HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(11), Color(1, 0.45, 0.45) if status in ["MORTO", "CAÍDO"] else Color(0.66, 0.6, 0.49))
 
 
-func _draw_bar(font: Font, at: Vector2, label: String, value: int, maximum: int, color: Color) -> void:
-	draw_string(font, at + Vector2(0, 10), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(0.66, 0.6, 0.49))
-	var bar := Rect2(at + Vector2(24, 1), Vector2(106, 11))
+# Gema de PA: losango dourado com brilho quando disponível; vazio, só o contorno.
+func _draw_pa_gem(c: Vector2, full: bool) -> void:
+	var r := _k(7)
+	var pts := PackedVector2Array([c + Vector2(0, -r), c + Vector2(r, 0), c + Vector2(0, r), c + Vector2(-r, 0)])
+	if full:
+		draw_colored_polygon(pts, Color(0.9, 0.7, 0.2))
+		draw_colored_polygon(PackedVector2Array([c + Vector2(0, -r), c + Vector2(r, 0), c, c + Vector2(-r, 0)]), Color(1.0, 0.88, 0.45))
+		draw_polyline(pts + PackedVector2Array([pts[0]]), Color(0.45, 0.3, 0.07), 1.0)
+		draw_circle(c + Vector2(-r * 0.25, -r * 0.35), maxf(_k(1.2), 1.0), Color(1, 1, 0.9))
+	else:
+		draw_colored_polygon(pts, Color(0.12, 0.1, 0.08))
+		draw_polyline(pts + PackedVector2Array([pts[0]]), Color(0.35, 0.28, 0.2), 1.0)
+
+
+# Barra com ícone (coração de PV, olho de SAN), fundo chanfrado, degradê, divisões a cada 5 pontos e brilho.
+func _draw_bar(font: Font, at: Vector2, kind: String, value: int, maximum: int, color: Color, shade: Color) -> void:
+	var icon := at + Vector2(_k(7), _k(7))
+	if kind == "pv":
+		var h := _k(5.0)
+		draw_circle(icon + Vector2(-h * 0.5, -h * 0.35), h * 0.6, color)
+		draw_circle(icon + Vector2(h * 0.5, -h * 0.35), h * 0.6, color)
+		draw_colored_polygon(PackedVector2Array([icon + Vector2(-h * 1.05, -h * 0.1), icon + Vector2(h * 1.05, -h * 0.1), icon + Vector2(0, h * 1.1)]), color)
+	else:
+		var w := _k(6.5)
+		var eye := PackedVector2Array()
+		for i in 13:
+			var t := i / 12.0
+			eye.append(icon + Vector2(lerpf(-w, w, t), -sin(t * PI) * _k(3.4)))
+		for i in 13:
+			var t := 1.0 - i / 12.0
+			eye.append(icon + Vector2(lerpf(-w, w, t), sin(t * PI) * _k(3.4)))
+		draw_polyline(eye + PackedVector2Array([eye[0]]), color, 1.0)
+		draw_circle(icon, _k(2.2), color)
+	var bar := Rect2(at + Vector2(_k(18), _k(1)), Vector2(_k(114), _k(12)))
+	draw_rect(Rect2(bar.position - Vector2(1, 1), bar.size + Vector2(2, 2)), Color(0.04, 0.03, 0.03))
 	draw_rect(bar, Color(0.12, 0.1, 0.09))
+	var fill := bar.size.x * clampf(float(value) / maxf(maximum, 1), 0.0, 1.0) if maximum > 0 else 0.0
+	if fill > 0.0:
+		draw_rect(Rect2(bar.position, Vector2(fill, bar.size.y)), shade)
+		draw_rect(Rect2(bar.position, Vector2(fill, bar.size.y * 0.55)), color)
+		draw_rect(Rect2(bar.position + Vector2(0, 1), Vector2(fill, 1)), color.lightened(0.35))
 	if maximum > 0:
-		draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(float(value) / maximum, 0.0, 1.0), bar.size.y)), color)
-	draw_string(font, bar.position + Vector2(4, 9), "%d/%d" % [value, maximum], HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(0.93, 0.89, 0.8))
+		var step := 5
+		for n in range(step, maximum, step):
+			var x := bar.position.x + bar.size.x * n / maximum
+			draw_line(Vector2(x, bar.position.y), Vector2(x, bar.end.y), Color(0, 0, 0, 0.45), 1.0)
+	draw_rect(bar, HUD_BRONZE, false, 1.0)
+	draw_string(font, bar.position + Vector2(_k(5), bar.size.y - _k(2.5)), "%d/%d" % [value, maximum], HORIZONTAL_ALIGNMENT_LEFT, -1, _fs(9), Color(0.96, 0.93, 0.85))
 
 
 # Faixa no topo: retratos na ordem da rodada, o da vez em destaque e inimigos em vermelho.
