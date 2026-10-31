@@ -60,7 +60,14 @@ func _check_sheet(who: String) -> void:
 						used[c] = true
 			_check(feet_ok, "%s %s: quadro %d tem os pés na linha do pivô" % [who, name, f])
 			_check(top >= 0 and CharacterSheet.PIVOT.y - top <= CharacterSheet.HEIGHT, "%s %s: quadro %d cabe na altura declarada" % [who, name, f])
-	_check(used.size() <= 32, "%s: paleta única de até 32 cores (%d)" % [who, used.size()])
+	# Quem foi renderizado em 3D tem 28 cores base mais os tons de contorno interno e silhueta.
+	_check(used.size() <= (64 if sheet.anims.size() > 0 else 32), "%s: paleta única fechada (%d cores)" % [who, used.size()])
+	for anim in sheet.anims:
+		_check(sheet.anim_frame_count(anim) >= 6, "%s: animação %s com quadros" % [who, anim])
+		for name in sheet.anims[anim]:
+			var atex: Texture2D = sheet.anims[anim][name]
+			_check(atex.get_height() == CharacterSheet.FRAME and atex.get_width() == sheet.anim_frame_count(anim) * CharacterSheet.FRAME, "%s %s %s: fila única de quadros 192" % [who, anim, name])
+	_check(sheet.anims.is_empty() or sheet.has_anim("death") and sheet.has_anim("pistol_shoot"), "%s: animações de morte e tiro presentes" % who)
 
 func _check(ok: bool, label: String) -> void:
 	if not ok:

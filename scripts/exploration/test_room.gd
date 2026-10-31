@@ -131,6 +131,7 @@ var pathfinder := Pathfinder.new()
 var mode := Mode.EXPLORATION
 var busy := false  # animação ou turno inimigo em andamento: entrada do jogador ignorada
 var popups: Array = []  # textos de acerto/erro/dano flutuando sobre as unidades
+var anim_play := {}  # Combatant -> {"name": String, "t": float}: animação 3D em curso (só quem tem folha extra)
 var hit_shake := {}  # Combatant -> segundos restantes de tremor ao levar dano
 var screen_shake := 0.0  # segundos restantes de tremor da tela (crítico)
 var hud := CombatHud.new()
@@ -358,6 +359,14 @@ func _process(delta: float) -> void:
 			p.time -= delta
 		popups = popups.filter(func(p: Dictionary) -> bool: return p.time > 0.0)
 		queue_redraw()
+	for u in anim_play.keys():
+		anim_play[u]["t"] += delta
+		var sheet := _sheet_of(u)
+		var name: String = anim_play[u]["name"]
+		if sheet == null or not sheet.has_anim(name) or (name != "death" and anim_play[u]["t"] >= sheet.anim_seconds(name)):
+			anim_play.erase(u)
+	if not anim_play.is_empty():
+		queue_redraw()
 	for u in hit_shake.keys():
 		hit_shake[u] -= delta
 		if hit_shake[u] <= 0.0:
@@ -550,6 +559,8 @@ func _revive(fallen: Combatant) -> void:
 		inventory.remove(KIT_ID)
 		fallen.pv = maxi(floori(fallen.max_pv * float(kit["valor"])), 1)
 		_popup(fallen.pos, "REANIMADO", "heal")
+		anim_play.erase(fallen)
+		_play(fallen, "getup")
 	_after_player_action()
 
 
@@ -838,10 +849,28 @@ func _enemy_advance(unit: Combatant, target: Combatant) -> bool:
 
 # --- Feedback ----------------------------------------------------------------
 
+# Folha de um agente do grupo (os inimigos usam enemy_sheets e não têm animações extras).
+func _sheet_of(u: Combatant) -> CharacterSheet:
+	return agent_sheets[looks.get(u, 0)] if looks.has(u) else null
+
+
+func _play(u: Combatant, name: String) -> void:
+	var sheet := _sheet_of(u)
+	if sheet != null and sheet.has_anim(name):
+		anim_play[u] = {"name": name, "t": 0.0}
+
+
+# Animação de ataque de cada arma; sem ela (espada, por exemplo) o agente não muda de pose.
+const ATTACK_ANIM := {"pistola": "pistol_shoot", "escopeta": "rifle_fire", "fuzil_precisao": "rifle_fire", "soco": "punch_cross"}
+
+
 func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void:
 	if not r.ok:
 		_reject(r.reason)
 		return
+	_play(attacker, ATTACK_ANIM.get(str(attacker.weapon["id"]), ""))
+	if r.hit and not r.blocked:
+		_play(target, "hit" if target.is_alive() else "death")
 	if r.blocked:
 		_popup(target.pos, "BLOQUEADO", "blocked")
 	elif not r.hit:
@@ -1030,7 +1059,19 @@ func _draw_unit(u: Combatant) -> void:
 	if i < 0:
 		var frames: Array = CharacterSheet.WALK_FRAMES if walking else CharacterSheet.IDLE_FRAMES
 		var n := walk_n % frames.size() if walking else idle_frame
-		agent_sheets[looks.get(u, 0)].draw(self, at, frames[n], facing8.get(u, CharacterSheet.Dir.SE))
+		var sheet := agent_sheets[looks.get(u, 0)]
+		var anim := ""
+		var anim_t := 0.0
+		if anim_play.has(u):
+			anim = anim_play[u]["name"]
+			anim_t = anim_play[u]["t"]
+		elif not u.is_alive() and sheet.has_anim("death"):
+			anim = "death"  # caído fica no último quadro até ser reanimado
+			anim_t = 99.0
+		if anim != "" and not walking:
+			sheet.draw(self, at, sheet.anim_frame_at(anim, anim_t), facing8.get(u, CharacterSheet.Dir.SE), anim)
+		else:
+			sheet.draw(self, at, frames[n], facing8.get(u, CharacterSheet.Dir.SE))
 		if not u.is_alive():
 			draw_string(ThemeDB.fallback_font, at + Vector2(-22, -CharacterSheet.HEIGHT - 14), "CAÍDO", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(1, 0.4, 0.4))
 	else:
