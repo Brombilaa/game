@@ -132,7 +132,7 @@ func _parse(data: Dictionary) -> void:
 			errors.append("colisão fora do plano: " + str(c["id"]))
 		colliders[c["id"]] = rect
 	for c in data.get("pistas", []):
-		clues[c["id"]] = {"pos": _vec(c["pos"]), "raio": float(c["raio"]), "ordem": int(c["ordem"]), "texto": str(c["texto"]), "inspecao": str(c.get("inspecao", ""))}
+		clues[c["id"]] = {"pos": _vec(c["pos"]), "raio": float(c["raio"]), "ordem": int(c["ordem"]), "texto": str(c["texto"]), "inspecao": str(c.get("inspecao", "")), "bolinha": _vec(c.get("bolinha", [0, -60]))}
 	for o in data.get("oclusores", []):
 		if not colliders.has(o["id"]):
 			errors.append("oclusor sem colisão de mesmo id: " + str(o["id"]))

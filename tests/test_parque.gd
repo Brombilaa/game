@@ -17,6 +17,11 @@ func _run() -> void:
 
 	_check(room.mode == room.Mode.EXPLORATION and room.enemies.is_empty(), "começa em exploração, sem inimigos")
 	_check(room.door_open, "não há porta fechada escondendo nada")
+	# Pistas: só a bolinha acima do objeto é clicável, e a da árvore só aparece depois das outras.
+	_check(room._clue_under(room._dot_pos("balanco")) == "balanco", "clicar na bolinha escolhe a pista")
+	_check(room._clue_under(room._dot_pos("balanco") + Vector2(40, 0)) == "", "fora da bolinha não é pista")
+	_check(room._clue_under(room._iso(room.scenario.clues["balanco"].pos)) == "", "o objeto em si não é mais o clique")
+	_check(room._clue_under(room._dot_pos("arvore_simbolo")) == "", "a bolinha da árvore espera as outras pistas")
 	_check(room.party[0].pos == room.scenario.party_start[0], "o grupo começa na entrada")
 	_check(room._iso(Vector2.ZERO).is_equal_approx(Vector2.ZERO), "a origem do plano fica na origem da tela")
 	var p := Vector2(500, 500)
