@@ -1,9 +1,10 @@
-# Testes e build de Windows. Tag v* publica o .zip no GitHub Releases;
-# PRs e execução manual (workflow_dispatch) só geram o artifact.
+# Testes e build de Windows. Cada push na main substitui o único release "latest" (sem acumular
+# versões antigas); tag v* publica um release próprio; PRs e execução manual só geram o artifact.
 name: build
 
 on:
   push:
+    branches: [main]
     tags: ["v*"]
   pull_request:
   workflow_dispatch:
@@ -55,9 +56,20 @@ jobs:
         with:
           name: windows
           path: ${{ env.ZIP }}
+          retention-days: 3
 
       - name: Publicar no GitHub Releases
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release create "$GITHUB_REF_NAME" "$ZIP" --generate-notes --title "$GITHUB_REF_NAME"
+
+
+      - name: Atualizar o release "latest" (substitui o anterior)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --cleanup-tag --yes || true
+          gh release create latest "$ZIP" --target "$GITHUB_SHA" --prerelease --title "Build mais recente da main" \
+            --notes "Build automático do commit $GITHUB_SHA. Cada novo merge na main substitui este release."
