@@ -21,7 +21,10 @@ func _run() -> void:
 	_check(room._clue_under(room._dot_pos("balanco")) == "balanco", "clicar na bolinha escolhe a pista")
 	_check(room._clue_under(room._dot_pos("balanco") + Vector2(40, 0)) == "", "fora da bolinha não é pista")
 	_check(room._clue_under(room._iso(room.scenario.clues["balanco"].pos)) == "", "o objeto em si não é mais o clique")
-	_check(room._clue_under(room._dot_pos("arvore_simbolo")) == "", "a bolinha da árvore espera as outras pistas")
+	_check(room._clue_under(room._dot_pos("arvore_simbolo")) == "arvore_simbolo", "a bolinha da árvore já é clicável (só avisa antes das outras)")
+	var tree_rect: Rect2 = room.scenario.colliders["arvore"]
+	var near: Vector2 = room._nearest_free(tree_rect.get_center())
+	_check(not tree_rect.has_point(near) and room.pathfinder.find_path(room.player.pos, near, room._obstacles(room.player), room.player.radius).size() > 1, "clicar dentro de um obstáculo leva ao ponto livre mais próximo")
 	_check(room.party[0].pos == room.scenario.party_start[0], "o grupo começa na entrada")
 	_check(room._iso(Vector2.ZERO).is_equal_approx(Vector2.ZERO), "a origem do plano fica na origem da tela")
 	var p := Vector2(500, 500)
