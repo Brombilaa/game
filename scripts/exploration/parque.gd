@@ -217,12 +217,18 @@ func _draw_clue_hints() -> void:
 	var pulse := 0.65 + 0.35 * sin(Time.get_ticks_msec() / 260.0)
 	var hover := _clue_under(get_global_mouse_position()) if not dialog_layer.visible else ""
 	for cid in scenario.clues:
-		if seen_clues.has(cid) or not available.has(cid):
+		if seen_clues.has(cid):
 			continue
 		var at := _dot_pos(cid)
 		var radius := DOT_RADIUS + (2.0 if cid == hover else 0.0)
+		# A pista ainda bloqueada (a árvore, antes das outras) fica apagada: clicar só avisa.
+		var locked := not available.has(cid)
+		var tint := Color(0.84, 0.68, 0.36) if not locked else Color(0.66, 0.2, 0.2)
+		var alpha := 1.0 if cid == hover else (pulse if not locked else 0.55)
 		draw_circle(at, radius + 2.0, Color(0.05, 0.03, 0.02, 0.85))
-		draw_circle(at, radius, Color(0.84, 0.68, 0.36, 1.0 if cid == hover else pulse))
+		draw_circle(at, radius, Color(tint, alpha))
+		if locked:
+			continue
 		if player.pos.distance_to(scenario.clues[cid].pos) <= CLUE_NEAR:
 			draw_arc(at, radius + 5.0, 0.0, TAU, 24, Color(0.84, 0.68, 0.36, 0.5 * pulse), 1.0)
 	queue_redraw()  # a bolinha pulsa
@@ -238,16 +244,37 @@ func _order_move(click: Vector2) -> void:
 	if cid != "":
 		_go_to_clue(cid)
 		return
-	super(click)
+	super(_nearest_free(click) if mode == Mode.EXPLORATION else click)
+
+
+# Clique em cima de um obstáculo: em vez de ignorar, vai até o ponto livre mais próximo (contorna).
+func _nearest_free(click: Vector2) -> Vector2:
+	var obstacles := _obstacles(player)
+	if pathfinder.find_path(player.pos, click, obstacles, player.radius).size() > 1:
+		return click
+	for ring in range(1, 26):
+		var r := ring * 8.0
+		var best := Vector2.INF
+		var best_d := INF
+		for k in 16:
+			var spot := click + Vector2.from_angle(TAU * k / 16.0) * r
+			if scenario.size.x < spot.x or scenario.size.y < spot.y or spot.x < 0.0 or spot.y < 0.0:
+				continue
+			var d := spot.distance_to(player.pos)
+			if d < best_d and pathfinder.find_path(player.pos, spot, obstacles, player.radius).size() > 1:
+				best = spot
+				best_d = d
+		if best != Vector2.INF:
+			return best
+	return click
 
 
 # `mouse` está em px do desenho (get_global_mouse_position): vale o clique dentro da bolinha.
 func _clue_under(mouse: Vector2) -> String:
-	var available := scenario.available_clues(seen_clues)
 	var best := ""
 	var best_d := INF
 	for cid in scenario.clues:
-		if seen_clues.has(cid) or not available.has(cid):
+		if seen_clues.has(cid):
 			continue
 		var d := mouse.distance_to(_dot_pos(cid))
 		if d <= DOT_HIT and d < best_d:
