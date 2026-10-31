@@ -146,6 +146,10 @@ var cursor_kind := GameCursor.Kind.ARROW
 var agent_sheets: Array[CharacterSheet] = []
 var enemy_sheets := {}  # variante -> CharacterSheet
 var scenery := Scenery.new()
+var nikolai3d := AnimSheet.new()  # Nikolai em 3D renderizado como pixel art (teste das animações)
+var use_3d := true  # tecla V troca entre o Nikolai 3D e o sprite 2D
+var anim3d_pick := -1  # tecla N: -1 = automático (parado/andando); senão o índice em AnimSheet.NAMES
+var anim3d_tick := 0
 
 
 func _ready() -> void:
@@ -211,6 +215,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			_player_delay()
 		elif event.pressed and event.keycode == KEY_Q:
 			_swap_weapon()
+		elif event.pressed and event.keycode == KEY_V:
+			use_3d = not use_3d
+			_popup(player.pos, "Nikolai 3D" if use_3d else "Nikolai 2D")
+			queue_redraw()
+		elif event.pressed and event.keycode == KEY_N:
+			anim3d_pick = (anim3d_pick + 2) % (AnimSheet.NAMES.size() + 1) - 1
+			_popup(player.pos, "anim: automático" if anim3d_pick < 0 else "anim: " + AnimSheet.NAMES[anim3d_pick])
+			queue_redraw()
 		elif event.pressed and event.keycode == KEY_C and mode == Mode.EXPLORATION:
 			player.crouched = not player.crouched
 			queue_redraw()
@@ -379,6 +391,10 @@ func _process(delta: float) -> void:
 		if path.is_empty():
 			moving_unit = null
 			move_finished.emit()
+		queue_redraw()
+	var tick3d := int(Time.get_ticks_msec() / 100.0)  # o Nikolai 3D anima a até 10 quadros por segundo
+	if use_3d and tick3d != anim3d_tick:
+		anim3d_tick = tick3d
 		queue_redraw()
 	var breath := int(Time.get_ticks_msec() / (IDLE_FRAME_SECONDS * 1000.0)) % 2
 	if breath != idle_frame:
@@ -1028,9 +1044,19 @@ func _draw_unit(u: Combatant) -> void:
 	var walk_n := int(walk_dist.get(u, 0.0) / WALK_FRAME_PIXELS)
 	var i := enemies.find(u)
 	if i < 0:
-		var frames: Array = CharacterSheet.WALK_FRAMES if walking else CharacterSheet.IDLE_FRAMES
-		var n := walk_n % frames.size() if walking else idle_frame
-		agent_sheets[looks.get(u, 0)].draw(self, at, frames[n], facing8.get(u, CharacterSheet.Dir.SE))
+		if use_3d and looks.get(u, 0) == 1:
+			var anim := "walk" if walking else "idle"
+			if anim3d_pick >= 0:
+				anim = AnimSheet.NAMES[anim3d_pick]
+			var count := nikolai3d.frame_count(anim)
+			var f := int(Time.get_ticks_msec() / 1000.0 * AnimSheet.FPS[anim]) % count
+			if walking and anim3d_pick < 0:
+				f = int(walk_dist.get(u, 0.0) / (WALK_FRAME_PIXELS * 6.0 / count)) % count  # passo por distância
+			nikolai3d.draw(self, at, anim, f, facing8.get(u, CharacterSheet.Dir.SE))
+		else:
+			var frames: Array = CharacterSheet.WALK_FRAMES if walking else CharacterSheet.IDLE_FRAMES
+			var n := walk_n % frames.size() if walking else idle_frame
+			agent_sheets[looks.get(u, 0)].draw(self, at, frames[n], facing8.get(u, CharacterSheet.Dir.SE))
 		if not u.is_alive():
 			draw_string(ThemeDB.fallback_font, at + Vector2(-22, -CharacterSheet.HEIGHT - 14), "CAÍDO", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(1, 0.4, 0.4))
 	else:
