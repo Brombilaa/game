@@ -13,8 +13,9 @@ const BIG_PROPS := ["van", "lago", "arvore", "mata_1", "mata_2", "arbusto_4"]  #
 const NPC_RADIUS := 14.0
 const NPC_NAMES := {"caio": "Caio", "leticia": "Letícia"}
 const NPC_COLORS := {"caio": Color("#46628a"), "leticia": Color("#885050")}  # figuras provisórias
-const CLUE_CLICK_FACTOR := 0.7  # fração do raio da pista em que o clique vale
-const CLUE_HINT_RANGE := 260.0  # o brilho da pista aparece quando o controlado chega perto
+const DOT_RADIUS := 6.0  # bolinha da pista, em px do desenho
+const DOT_HIT := 14.0  # raio em que o clique na bolinha vale (px do desenho)
+const CLUE_NEAR := 260.0  # a bolinha ganha um anel quando o controlado chega perto
 const STAND_FACTOR := 0.85  # distância de parada, em fração do raio da pista
 const DUSK_TINT := Color(0.95, 0.55, 0.2, 0.09)  # véu do entardecer quente (Léo escolheu o modelo A, 30/10)
 const VOID_COLOR := Color(0.078, 0.07, 0.063)  # além da névoa do fundo estendido
@@ -205,21 +206,26 @@ func _draw_npc(font: Font, npc_id: String) -> void:
 
 
 # Brilho dourado sobre as pistas que ainda não foram vistas, quando o controlado está perto.
+# Cada pista ainda não vista e já liberada ganha uma bolinha acima do objeto; é nela que se clica.
+func _dot_pos(cid: String) -> Vector2:
+	var c: Dictionary = scenario.clues[cid]
+	return _iso(c.pos) + c.bolinha
+
+
 func _draw_clue_hints() -> void:
 	var available := scenario.available_clues(seen_clues)
-	var pulse := 0.6 + 0.4 * sin(Time.get_ticks_msec() / 260.0)
-	var any := false
+	var pulse := 0.65 + 0.35 * sin(Time.get_ticks_msec() / 260.0)
+	var hover := _clue_under(get_global_mouse_position()) if not dialog_layer.visible else ""
 	for cid in scenario.clues:
-		var c: Dictionary = scenario.clues[cid]
-		if seen_clues.has(cid) or not available.has(cid) or player.pos.distance_to(c.pos) > CLUE_HINT_RANGE:
+		if seen_clues.has(cid) or not available.has(cid):
 			continue
-		var at := _iso(c.pos) + Vector2(0, -34)
-		var gold := Color(0.84, 0.68, 0.36, pulse)
-		draw_colored_polygon(PackedVector2Array([at + Vector2(0, -6), at + Vector2(4, 0), at + Vector2(0, 6), at + Vector2(-4, 0)]), gold)
-		draw_arc(at, 8.0, 0.0, TAU, 20, Color(gold, 0.5), 1.0)
-		any = true
-	if any:
-		queue_redraw()  # o brilho pulsa
+		var at := _dot_pos(cid)
+		var radius := DOT_RADIUS + (2.0 if cid == hover else 0.0)
+		draw_circle(at, radius + 2.0, Color(0.05, 0.03, 0.02, 0.85))
+		draw_circle(at, radius, Color(0.84, 0.68, 0.36, 1.0 if cid == hover else pulse))
+		if player.pos.distance_to(scenario.clues[cid].pos) <= CLUE_NEAR:
+			draw_arc(at, radius + 5.0, 0.0, TAU, 24, Color(0.84, 0.68, 0.36, 0.5 * pulse), 1.0)
+	queue_redraw()  # a bolinha pulsa
 
 
 # --- Pistas ---------------------------------------------------------------------------------------
@@ -228,20 +234,23 @@ func _order_move(click: Vector2) -> void:
 	if dialog_layer.visible:
 		return
 	pending_clue = ""
-	var cid := _clue_under(click)
+	var cid := _clue_under(get_global_mouse_position()) if mode == Mode.EXPLORATION else ""
 	if cid != "":
 		_go_to_clue(cid)
 		return
 	super(click)
 
 
-func _clue_under(click: Vector2) -> String:
+# `mouse` está em px do desenho (get_global_mouse_position): vale o clique dentro da bolinha.
+func _clue_under(mouse: Vector2) -> String:
+	var available := scenario.available_clues(seen_clues)
 	var best := ""
 	var best_d := INF
 	for cid in scenario.clues:
-		var c: Dictionary = scenario.clues[cid]
-		var d := click.distance_to(c.pos)
-		if d <= c.raio * CLUE_CLICK_FACTOR and d < best_d:
+		if seen_clues.has(cid) or not available.has(cid):
+			continue
+		var d := mouse.distance_to(_dot_pos(cid))
+		if d <= DOT_HIT and d < best_d:
 			best = cid
 			best_d = d
 	return best
