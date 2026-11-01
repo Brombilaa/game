@@ -15,24 +15,70 @@ func find_path(from: Vector2, to: Vector2, obstacles: Array[Rect2], radius: floa
 	if _point_blocked(from, blocks) or _point_blocked(to, blocks):
 		return PackedVector2Array()
 
-	var astar := AStar2D.new()
-	astar.add_point(0, from)
-	astar.add_point(1, to)
-	var next_id := 2
+	# Linha reta livre: é a rota mais curta e evita montar o grafo (caso mais comum).
+	if not _segment_blocked(from, to, blocks):
+		return PackedVector2Array([from, to])
+
+	var pts := PackedVector2Array([from, to])
 	for o in obstacles:
 		var c := o.grow(radius + CORNER_MARGIN)
-		var corners := [c.position, Vector2(c.end.x, c.position.y), c.end, Vector2(c.position.x, c.end.y)]
-		for corner in corners:
+		for corner in [c.position, Vector2(c.end.x, c.position.y), c.end, Vector2(c.position.x, c.end.y)]:
 			if not _point_blocked(corner, blocks):
-				astar.add_point(next_id, corner)
-				next_id += 1
+				pts.append(corner)
 
-	var ids := astar.get_point_ids()
-	for i in ids.size():
-		for j in range(i + 1, ids.size()):
-			if not _segment_blocked(astar.get_point_position(ids[i]), astar.get_point_position(ids[j]), blocks):
-				astar.connect_points(ids[i], ids[j])
-	return astar.get_point_path(0, 1)
+	# A* com visibilidade avaliada sob demanda: só testa a aresta quando ela melhora o custo.
+	# (Montar o grafo inteiro era O(n² · obstáculos) a cada chamada e travava o jogo no parque.)
+	var n := pts.size()
+	var g := PackedFloat32Array()
+	g.resize(n)
+	g.fill(INF)
+	var prev := PackedInt32Array()
+	prev.resize(n)
+	prev.fill(-1)
+	var closed := PackedByteArray()
+	closed.resize(n)
+	var open: Array[int] = [0]
+	g[0] = 0.0
+	while not open.is_empty():
+		var best_k := 0
+		var best_f := INF
+		for k in open.size():
+			var f := g[open[k]] + pts[open[k]].distance_to(to)
+			if f < best_f:
+				best_f = f
+				best_k = k
+		var i: int = open[best_k]
+		open.remove_at(best_k)
+		if i == 1:
+			break
+		closed[i] = 1
+		for j in n:
+			if closed[j] == 1 or j == i:
+				continue
+			var nd := g[i] + pts[i].distance_to(pts[j])
+			if nd >= g[j] or _segment_blocked(pts[i], pts[j], blocks):
+				continue
+			g[j] = nd
+			prev[j] = i
+			if not open.has(j):
+				open.append(j)
+	if prev[1] == -1:
+		return PackedVector2Array()
+	var out := PackedVector2Array()
+	var cur := 1
+	while cur != -1:
+		out.append(pts[cur])
+		cur = prev[cur]
+	out.reverse()
+	return out
+
+
+# true se o ponto está livre para um personagem de `radius` (fora de todos os obstáculos inflados).
+static func is_free(p: Vector2, obstacles: Array[Rect2], radius: float) -> bool:
+	for o in obstacles:
+		if o.grow(radius).has_point(p):
+			return false
+	return true
 
 
 func _point_blocked(p: Vector2, blocks: Array[Rect2]) -> bool:
@@ -52,6 +98,9 @@ func _segment_blocked(a: Vector2, b: Vector2, blocks: Array[Rect2]) -> bool:
 # Liang-Barsky: true se o segmento atravessa o interior do retângulo.
 # Encostar na borda ou passar por um canto não conta como bloqueio.
 static func segment_crosses_rect(a: Vector2, b: Vector2, r: Rect2) -> bool:
+	# Rejeição rápida: segmento todo de um lado do retângulo não atravessa o interior.
+	if maxf(a.x, b.x) <= r.position.x or minf(a.x, b.x) >= r.end.x or maxf(a.y, b.y) <= r.position.y or minf(a.y, b.y) >= r.end.y:
+		return false
 	var d := b - a
 	var p := [-d.x, d.x, -d.y, d.y]
 	var q := [a.x - r.position.x, r.end.x - a.x, a.y - r.position.y, r.end.y - a.y]

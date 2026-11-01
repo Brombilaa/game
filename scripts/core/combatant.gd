@@ -17,6 +17,7 @@ var weapon: Dictionary = {}
 var radius := 10.0
 var pos := Vector2.ZERO
 var pa := 0
+var moved_px := 0.0  # distância andada neste turno (os primeiros 5 m são grátis)
 var perception := 0.0  # alcance de percepção em pixels (inimigos)
 var crouched := false
 var dead := false  # caído que não foi reanimado até o fim do combate (membro do grupo)  # agachado: inimigos percebem a metade da distância
