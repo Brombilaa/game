@@ -145,7 +145,7 @@ func _draw() -> void:
 			if e.is_alive():
 				_draw_range(e.pos, rules.perception_range(e, player), Color(PlaceholderArt.color("sangue_claro"), 0.35))
 	var items: Array = []
-	for u in _living_units():
+	for u in _drawn_units():
 		items.append({"pos": u.pos, "unit": u})
 	for npc_id in scenario.npcs:
 		items.append({"pos": scenario.npcs[npc_id], "npc": npc_id})
@@ -172,6 +172,7 @@ func _draw() -> void:
 		_draw_clue_hints()  # por cima dos recortes: a bolinha da árvore ficava escondida atrás da copa
 	if mode == Mode.COMBAT:
 		_draw_preview(font)
+	_draw_fx()
 	# Véu quente e vinheta cobrem o cenário e os personagens, mas ficam por baixo do HUD.
 	draw_rect(view, DUSK_TINT)
 	draw_texture_rect(vignette, view, false)
