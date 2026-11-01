@@ -47,8 +47,8 @@ const POPUP_SECONDS := 1.2
 const HIT_SHAKE_SECONDS := 0.2
 const CRIT_SHAKE_SECONDS := 0.35
 const POPUP_STYLES := {
-	"damage": {"size": 18, "color": Color(1.0, 0.92, 0.85)},
-	"crit": {"size": 24, "color": Color(1.0, 0.8, 0.25)},
+	"damage": {"size": 26, "color": Color(1.0, 0.92, 0.85)},
+	"crit": {"size": 36, "color": Color(1.0, 0.8, 0.25)},
 	"miss": {"size": 15, "color": Color(0.68, 0.66, 0.62)},
 	"blocked": {"size": 14, "color": Color(0.6, 0.7, 0.85)},
 	"down": {"size": 14, "color": Color(0.95, 0.3, 0.25)},
@@ -132,6 +132,9 @@ var mode := Mode.EXPLORATION
 var busy := false  # animação ou turno inimigo em andamento: entrada do jogador ignorada
 var popups: Array = []  # textos de acerto/erro/dano flutuando sobre as unidades
 var hit_shake := {}  # Combatant -> segundos restantes de tremor ao levar dano
+var fx := CombatFx.new()  # animação de combate, modelo B (Léo, 01/11/2026)
+var zoom_base := Vector2.ONE  # zoom do jogador; o pulso do tiro é aplicado por cima
+var zoom_pulsing := false
 var screen_shake := 0.0  # segundos restantes de tremor da tela (crítico)
 var hud := CombatHud.new()
 var audio := AudioDirector.new()
@@ -153,6 +156,8 @@ var anim3d_tick := 0
 
 
 func _ready() -> void:
+	fx.iso = _iso
+	fx.impact.connect(_on_fx_impact)
 	RenderingServer.set_default_clear_color(Color(0.03, 0.025, 0.02))  # fora da sala e salas fechadas: escuridão
 	hud.room_draws_hud = true  # a sala desenha modo, PA e fim do turno na moldura A
 	add_child(hud)
@@ -207,6 +212,19 @@ const ZOOM_MAX := 3.0
 const ZOOM_STEP := 1.1
 
 
+# Pulso de zoom de 8% por 0,45 s no impacto: aplicado por cima do zoom que o jogador escolheu.
+func _apply_zoom_pulse() -> void:
+	if fx.zoom_time > 0.0:
+		if not zoom_pulsing:
+			zoom_base = camera.zoom
+			zoom_pulsing = true
+		var z := zoom_base.x * fx.zoom_factor()
+		camera.zoom = Vector2(z, z)
+	elif zoom_pulsing:
+		camera.zoom = zoom_base
+		zoom_pulsing = false
+
+
 func _zoom_min() -> float:
 	return 1.0
 
@@ -214,6 +232,7 @@ func _zoom_min() -> float:
 func _zoom_by(factor: float) -> void:
 	var z := clampf(camera.zoom.x * factor, _zoom_min(), ZOOM_MAX)
 	camera.zoom = Vector2(z, z)
+	zoom_base = camera.zoom
 	queue_redraw()  # o HUD e a prévia do mouse dependem do zoom
 
 
@@ -386,6 +405,14 @@ func _process(delta: float) -> void:
 	if inv_panel and inv_panel.open:
 		return  # inventário aberto: o tempo para (GDD #23)
 	_update_discovered()
+	fx.update(delta)
+	_apply_zoom_pulse()
+	camera.offset = fx.shake_offset()
+	if fx.active() or not fx.particles.is_empty() or not fx.muzzles.is_empty() or fx.flash_red > 0.0 or not fx.trail.is_empty() or not fx.kicks.is_empty() or not fx.white.is_empty():
+		queue_redraw()
+	if fx.hitstop > 0.0:  # parada de 90 ms no impacto: o mundo congela um instante
+		fx.hitstop -= delta
+		return
 	if mode == Mode.COMBAT and _player_ready():
 		queue_redraw()  # gema de PA pulsando e estados do botão de fim do turno
 	if not popups.is_empty():
@@ -398,7 +425,6 @@ func _process(delta: float) -> void:
 		if hit_shake[u] <= 0.0:
 			hit_shake.erase(u)
 	screen_shake = maxf(screen_shake - delta, 0.0)
-	camera.offset = Vector2(randf_range(-3, 3), randf_range(-2, 2)) if screen_shake > 0.0 else Vector2.ZERO
 	_update_cursor()
 	var focus := turns.current if mode == Mode.COMBAT and turns and turns.current else player
 	camera.position = _iso(focus.pos).round()  # pixel inteiro: o cenário não treme ao andar
@@ -908,19 +934,27 @@ func _jump_spot(unit: Combatant, target: Combatant) -> Vector2:
 
 # --- Feedback ----------------------------------------------------------------
 
+# O ataque já foi resolvido pelas regras; aqui só se encena: mira de 0,6 s e, no impacto, os efeitos
+# do modelo B (CombatFx) e os textos (_on_fx_impact). A barra de vida do alvo fica no valor antigo até lá.
 func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void:
 	if not r.ok:
 		_reject(r.reason)
 		return
-	if r.blocked:
+	var before := mini(target.pv + int(r.get("damage", 0)), target.max_pv) if r.get("hit", false) else target.pv
+	fx.start(attacker, target, r, before)
+	queue_redraw()
+
+
+func _on_fx_impact(job: Dictionary) -> void:
+	var target: Combatant = job["target"]
+	var r: Dictionary = job["r"]
+	if r.get("blocked", false):
 		_popup(target.pos, "BLOQUEADO", "blocked")
-	elif not r.hit:
+	elif not r.get("hit", false):
 		_popup(target.pos, "ERROU", "miss")
 	else:
 		_popup(target.pos, "-%d" % r.damage, "crit" if r.crit else "damage")
 		hit_shake[target] = CRIT_SHAKE_SECONDS if r.crit else HIT_SHAKE_SECONDS
-		if r.crit:
-			screen_shake = CRIT_SHAKE_SECONDS
 	if not target.is_alive():
 		_popup(target.pos, "ABATIDO" if target.side == Combatant.Side.ENEMY else "CAIU", "down")
 	queue_redraw()
@@ -971,7 +1005,7 @@ func _draw() -> void:
 			_draw_outline(c.rect, PlaceholderArt.color("chao_claro"))
 			continue
 		items.append({"key": c.rect.get_center().x + c.rect.get_center().y, "prop": COVER_PROPS[c.kind], "at": c.rect.get_center(), "cover": c})
-	for u in _living_units():
+	for u in _drawn_units():
 		if _visible(u.pos):
 			items.append({"key": u.pos.x + u.pos.y, "unit": u})
 	items.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.key < b.key)
@@ -994,6 +1028,7 @@ func _draw() -> void:
 			_draw_box(it.block, it.front, it.top, it.height)
 	if mode == Mode.COMBAT:
 		_draw_preview(font)
+	_draw_fx()
 	_draw_hud(font)
 	for p in popups:
 		_draw_popup(font, p)
@@ -1011,7 +1046,7 @@ func _draw_popup(font: Font, p: Dictionary) -> void:
 	var width := font.get_string_size(p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 	var at: Vector2 = p.pos + Vector2(-width * 0.5, -28.0 * age)
 	var color: Color = style.color
-	draw_string_outline(font, at, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 4, Color(0.05, 0.03, 0.02, alpha))
+	draw_string_outline(font, at, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 7, Color(0.05, 0.03, 0.02, alpha))
 	draw_string(font, at, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(color, alpha))
 	if p.kind == "crit":
 		var tag := "CRÍTICO!"
@@ -1083,8 +1118,7 @@ func _draw_range(center: Vector2, radius: float, color: Color) -> void:
 
 func _draw_unit(u: Combatant) -> void:
 	var at := _iso(u.pos)
-	if hit_shake.has(u):  # quem leva o golpe treme um instante
-		at.x += sin(hit_shake[u] * 70.0) * 3.0
+	at += fx.offset_of(u)  # arremessado pelo tiro ou desviando dele
 	draw_set_transform(at, 0.0, Vector2(1.0, 0.5))  # sombra achatada sob os pés
 	draw_circle(Vector2.ZERO, 26.0, Color(0, 0, 0, 0.45))
 	draw_set_transform(Vector2.ZERO)
@@ -1124,10 +1158,78 @@ func _draw_unit(u: Combatant) -> void:
 			var tex := PlaceholderArt.character_texture(variant, facing.get(u, PlaceholderArt.Dir.SOUTH), frame)
 			var size := Vector2(PlaceholderArt.FRAME_SIZE * PLACEHOLDER_SCALE)
 			draw_texture_rect(tex, Rect2((at - PlaceholderArt.PIVOT * PLACEHOLDER_SCALE).round(), size), false)
+	var flash := fx.white_alpha(u)
+	if flash > 0.0:  # alvo pisca branco (até a arte entregar os quadros de dano)
+		draw_set_transform(at + Vector2(0, -CharacterSheet.HEIGHT * 0.5), 0.0, Vector2(0.55, 1.0))
+		draw_circle(Vector2.ZERO, CharacterSheet.HEIGHT * 0.42, Color(1, 1, 1, 0.75 * flash))
+		draw_set_transform(Vector2.ZERO)
 	if mode != Mode.EXPLORATION:
-		var bar := Rect2(at + Vector2(-20, -CharacterSheet.HEIGHT - 8), Vector2(40, 4))
-		draw_rect(bar, Color(0.2, 0.2, 0.2))
-		draw_rect(Rect2(bar.position, Vector2(bar.size.x * float(u.pv) / u.max_pv, bar.size.y)), Color(0.3, 0.85, 0.35))
+		_draw_health_bar(u, at)
+
+
+# Barra de vida com nome (modelo B): desce no impacto e deixa um rastro claro por 0,6 s.
+func _draw_health_bar(u: Combatant, at: Vector2) -> void:
+	var font := ThemeDB.fallback_font
+	var bar := Rect2(at + Vector2(-26, -CharacterSheet.HEIGHT - 8), Vector2(52, 6))
+	var shown := float(fx.displayed_pv(u)) / maxf(u.max_pv, 1)
+	draw_string_outline(font, bar.position + Vector2(0, -3), u.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, 4, Color(0.05, 0.03, 0.02))
+	draw_string(font, bar.position + Vector2(0, -3), u.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(0.93, 0.89, 0.8))
+	draw_rect(bar.grow(1.0), Color(0.05, 0.03, 0.02))
+	draw_rect(bar, Color(0.2, 0.2, 0.2))
+	if fx.trail.has(u):
+		var t: Dictionary = fx.trail[u]
+		var from := clampf(float(t["from"]) / maxf(u.max_pv, 1), 0.0, 1.0)
+		draw_rect(Rect2(bar.position, Vector2(bar.size.x * from, bar.size.y)), Color(1, 1, 1, 0.85 * clampf(t["time"] / CombatFx.TRAIL_SECONDS, 0.0, 1.0)))
+	var color := Color(0.3, 0.85, 0.35) if u.side == Combatant.Side.PLAYER else Color(0.85, 0.28, 0.25)
+	draw_rect(Rect2(bar.position, Vector2(bar.size.x * shown, bar.size.y)), color)
+
+
+# Vivos mais os abatidos que o tiro ainda está encenando.
+func _drawn_units() -> Array[Combatant]:
+	var out := _living_units()
+	for u in fx.dying():
+		out.append(u)
+	return out
+
+
+# Mira, clarão, partículas e flash vermelho do modelo B, por cima da cena e por baixo do HUD.
+func _draw_fx() -> void:
+	for job in fx.jobs:
+		var a: Combatant = job["attacker"]
+		var t: Combatant = job["target"]
+		var p := CombatFx.aim_progress(job)
+		var from := _iso(a.pos) + Vector2(0, -60)
+		var to := _iso(t.pos) + fx.offset_of(t) + Vector2(0, -60)
+		var red := Color(0.95, 0.2, 0.2, 0.55 + 0.35 * p)
+		var dist := from.distance_to(to)
+		var dir := (to - from).normalized()
+		var d := 0.0
+		while d < dist:  # linha tracejada vermelha
+			draw_line(from + dir * d, from + dir * minf(d + 6.0, dist), red, 1.5)
+			d += 11.0
+		var radius := lerpf(26.0, 7.0, p)  # o retículo fecha em 0,6 s
+		draw_arc(to, radius, 0.0, TAU, 28, red, 2.0)
+		for k in 4:
+			var v := Vector2.from_angle(k * PI * 0.5)
+			draw_line(to + v * (radius + 4.0), to + v * (radius - 4.0), red, 2.0)
+	for m in fx.muzzles:  # clarão de 2 quadros
+		var big: bool = m["time"] > CombatFx.MUZZLE_SECONDS * 0.5
+		var r := 9.0 if big else 5.0
+		draw_circle(m["pos"], r, Color(1.0, 0.85, 0.45, 0.95))
+		draw_circle(m["pos"], r * 0.5, Color(1, 1, 0.9))
+		draw_line(m["pos"], m["pos"] + m["dir"] * (r * 2.2), Color(1.0, 0.9, 0.6), 2.0)
+	for pt in fx.particles:
+		var k: float = clampf(pt["life"] / pt["max"], 0.0, 1.0)
+		match pt["kind"]:
+			"smoke":
+				draw_circle(pt["pos"], pt["size"] * (1.6 - k), Color(0.75, 0.75, 0.75, 0.35 * k))
+			"casing":
+				draw_rect(Rect2(pt["pos"], Vector2(3, 2)), Color(0.9, 0.7, 0.25, k))
+			_:
+				draw_circle(pt["pos"], pt["size"], Color(0.7, 0.05, 0.05, k))
+	if fx.flash_red > 0.0:  # flash vermelho de 0,22 s na tela
+		var view := get_canvas_transform().affine_inverse() * Rect2(Vector2.ZERO, get_viewport_rect().size)
+		draw_rect(view, Color(0.8, 0.05, 0.05, 0.28 * fx.flash_strength * fx.flash_red / CombatFx.FLASH_RED_SECONDS))
 
 
 # Rota da prévia do mouse. A prévia é redesenhada todo quadro; refazer o pathfinding a cada quadro
