@@ -34,6 +34,18 @@ func _init() -> void:
 	_check(Pathfinder.has_line_of_sight(Vector2(50, 300), Vector2(200, 300), wall), "sem parede a visão é livre")
 	_check(Pathfinder.has_line_of_sight(Vector2(50, 100), Vector2(100, 100), wall), "encostar na borda não bloqueia")
 
+	# Contorno com vários obstáculos: a rota existe, não atravessa nenhum e é mais curta que um desvio longo.
+	var many: Array[Rect2] = [Rect2(100, 0, 20, 200), Rect2(200, 100, 20, 200), Rect2(300, 0, 20, 200)]
+	var zig := pf.find_path(Vector2(50, 50), Vector2(400, 50), many, radius)
+	_check(zig.size() >= 4 and zig[zig.size() - 1] == Vector2(400, 50), "contorna vários obstáculos")
+	var crosses := false
+	for i in range(1, zig.size()):
+		for o in many:
+			if Pathfinder.segment_crosses_rect(zig[i - 1], zig[i], o.grow(radius)):
+				crosses = true
+	_check(not crosses, "a rota não atravessa obstáculos")
+	_check(Pathfinder.is_free(Vector2(10, 10), many, radius) and not Pathfinder.is_free(Vector2(105, 50), many, radius), "is_free respeita o raio")
+
 	print("Falhas: %d" % failures)
 	quit(1 if failures > 0 else 0)
 

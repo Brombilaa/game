@@ -41,7 +41,7 @@ func _run() -> void:
 	var pa_before: int = room.player.pa
 	room._combat_click(room.player.pos + Vector2(0, -60))
 	await _wait(func() -> bool: return not room.busy, 5.0)
-	_check(room.player.pa == pa_before - 1 and room.player.pos.is_equal_approx(Vector2(650, 300)), "movimento de até 2 m gasta 1 PA e chega ao destino")
+	_check(room.player.pa == pa_before and room.player.pos.is_equal_approx(Vector2(650, 300)) and is_equal_approx(room.player.moved_px, 60.0), "movimento de até 5 m não gasta PA, chega ao destino e conta os metros andados")
 
 	# Agente resistente para o teste não depender da sorte dos inimigos.
 	for m in room.party:

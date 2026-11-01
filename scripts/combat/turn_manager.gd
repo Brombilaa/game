@@ -133,6 +133,7 @@ func _advance() -> void:
 		if unit.is_alive():
 			current = unit
 			unit.pa = turn_pa(unit)
+			unit.moved_px = 0.0
 			turn_started.emit(unit)
 			return
 
