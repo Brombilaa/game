@@ -19,7 +19,7 @@ const CLUE_NEAR := 260.0  # a bolinha ganha um anel quando o controlado chega pe
 const STAND_FACTOR := 0.85  # distância de parada, em fração do raio da pista
 const DUSK_TINT := Color(0.95, 0.55, 0.2, 0.09)  # véu do entardecer quente (Léo escolheu o modelo A, 30/10)
 const VOID_COLOR := Color(0.078, 0.07, 0.063)  # além da névoa do fundo estendido
-const CAMERA_ZOOM := 1.5  # câmera aproximada: o fundo estendido cobre o que ela mostra (Léo, 30/10)
+const CAMERA_ZOOM := 1.5  # zoom inicial da câmera (a roda do mouse muda); câmera aproximada: o fundo estendido cobre o que ela mostra (Léo, 30/10)
 const VIGNETTE_SIZE := 128  # textura da vinheta, esticada sobre a tela
 const VIGNETTE_STRENGTH := 0.4
 const FRAME_BG := Color(0.063, 0.043, 0.031, 0.95)
@@ -186,8 +186,16 @@ func _hud_to_world() -> Transform2D:
 	return Transform2D(0.0, -get_canvas_transform().origin)
 
 
+# Afastar até o limite em que a câmera ainda cabe na imagem estendida (nunca mostra fora dela).
+func _zoom_min() -> float:
+	if extended == null:
+		return 1.0
+	var view := get_viewport_rect().size
+	return maxf(1.0, maxf(view.x / extended.get_width(), view.y / extended.get_height()))
+
+
 func _draw_hud(font: Font) -> void:
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE / CAMERA_ZOOM)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE / camera.zoom.x)
 	super(font)
 	draw_set_transform(Vector2.ZERO)
 
@@ -281,7 +289,19 @@ func _clue_under(mouse: Vector2) -> String:
 		if d <= DOT_HIT and d < best_d:
 			best = cid
 			best_d = d
-	return best
+	if best != "":
+		return best
+	# Objetos grandes (a árvore) também respondem ao clique no desenho todo: elipses [cx, cy, rx, ry]
+	# em px do desenho, relativas ao pé da pista (Léo, 01/11/2026: clicar "bem na árvore").
+	for cid in scenario.clues:
+		if seen_clues.has(cid):
+			continue
+		var base := _iso(scenario.clues[cid].pos)
+		for a in scenario.clues[cid].areas:
+			var rel := mouse - (base + Vector2(float(a[0]), float(a[1])))
+			if (rel.x * rel.x) / (float(a[2]) * float(a[2])) + (rel.y * rel.y) / (float(a[3]) * float(a[3])) <= 1.0:
+				return cid
+	return ""
 
 
 # Já está perto: examina. Senão anda até o ponto livre mais próximo do objeto e examina ao chegar.

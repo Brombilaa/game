@@ -23,22 +23,31 @@ func _init(config: CombatConfig, random: RandomNumberGenerator = null) -> void:
 
 # --- Movimento ---------------------------------------------------------------
 
-# PA necessários para andar `distance` pixels (arredonda para cima).
-func move_cost(distance: float) -> int:
+# PA que o turno já pagou por ter andado `moved` pixels: os primeiros `free_move_px` são grátis
+# e, depois, cada `pixels_per_pa` custa 1 PA (Léo, 01/11/2026).
+func _paid_pa(moved: float) -> int:
+	var extra := moved - cfg.value("free_move_px")
+	if extra <= 0.001:
+		return 0
+	return ceili(extra / cfg.value("pixels_per_pa") - 0.0001)
+
+
+# PA necessários para andar mais `distance` pixels num turno em que já se andou `moved`.
+func move_cost(distance: float, moved := 0.0) -> int:
 	if distance <= 0.001:
 		return 0
-	return ceili(distance / cfg.value("pixels_per_pa") - 0.0001)
+	return _paid_pa(moved + distance) - _paid_pa(moved)
 
 
 # Ajusta a rota ao saldo de PA: rota completa se couber, senão movimento parcial
 # até o limite dos PA restantes. Retorna {path, cost}. `path` começa na posição atual.
-func plan_move(path: PackedVector2Array, pa_available: int) -> Dictionary:
+func plan_move(path: PackedVector2Array, pa_available: int, moved := 0.0) -> Dictionary:
 	var length := path_length(path)
-	var cost := move_cost(length)
+	var cost := move_cost(length, moved)
 	if cost <= pa_available:
 		return {"path": path, "cost": cost}
-	var limited := truncate_path(path, pa_available * cfg.value("pixels_per_pa"))
-	return {"path": limited, "cost": pa_available}
+	var limit := cfg.value("free_move_px") + float(_paid_pa(moved) + pa_available) * cfg.value("pixels_per_pa") - moved
+	return {"path": truncate_path(path, maxf(limit, 0.0)), "cost": pa_available}
 
 
 static func path_length(path: PackedVector2Array) -> float:

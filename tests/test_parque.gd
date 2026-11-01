@@ -22,6 +22,16 @@ func _run() -> void:
 	_check(room._clue_under(room._dot_pos("balanco") + Vector2(40, 0)) == "", "fora da bolinha não é pista")
 	_check(room._clue_under(room._iso(room.scenario.clues["balanco"].pos)) == "", "o objeto em si não é mais o clique")
 	_check(room._clue_under(room._dot_pos("arvore_simbolo")) == "arvore_simbolo", "a bolinha da árvore já é clicável (só avisa antes das outras)")
+	var tree_foot: Vector2 = room._iso(room.scenario.clues["arvore_simbolo"].pos)
+	_check(room._clue_under(tree_foot + Vector2(29, -250)) == "arvore_simbolo", "clicar na copa da árvore escolhe a pista")
+	_check(room._clue_under(tree_foot + Vector2(20, -70)) == "arvore_simbolo", "clicar no tronco escolhe a pista")
+	_check(room._clue_under(tree_foot + Vector2(400, -70)) == "", "longe da árvore não é pista")
+	var z0: float = room.camera.zoom.x
+	room._zoom_by(100.0)
+	_check(room.camera.zoom.x == room.ZOOM_MAX and z0 < room.ZOOM_MAX, "a roda aproxima até o zoom máximo")
+	room._zoom_by(0.0001)
+	_check(is_equal_approx(room.camera.zoom.x, room._zoom_min()), "a roda afasta até o zoom mínimo")
+	room.camera.zoom = Vector2(room.CAMERA_ZOOM, room.CAMERA_ZOOM)  # volta ao zoom inicial para os testes seguintes
 	var tree_rect: Rect2 = room.scenario.colliders["arvore"]
 	var near: Vector2 = room._nearest_free(tree_rect.get_center())
 	_check(not tree_rect.has_point(near) and room.pathfinder.find_path(room.player.pos, near, room._obstacles(room.player), room.player.radius).size() > 1, "clicar dentro de um obstáculo leva ao ponto livre mais próximo")

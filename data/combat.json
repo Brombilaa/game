@@ -1,8 +1,9 @@
 {
 	"_comment": "Valores do protótipo. Acerto, crítico, cobertura e metros por PA seguem as decisões do Léo (29/10/2026, provisórias até testar); o resto é provisório do Claude.",
 	"pa_per_turn": 3,
-	"pixels_per_pa": 64,
-	"_pixels_per_pa": "2 m por PA (Léo) × pixels_per_meter.",
+	"pixels_per_pa": 160,
+	"free_move_px": 160,
+	"_movimento": "Léo (01/11/2026): os primeiros 5 m do turno custam 0 PA e, depois, cada 5 m custa 1 PA. Substitui a regra antiga de 2 m por PA. 5 m × pixels_per_meter = 160 px; a franquia vale por turno.",
 	"hit_chance_min": 0.25,
 	"hit_chance_max": 0.95,
 	"range_falloff_per_2m": 0.05,

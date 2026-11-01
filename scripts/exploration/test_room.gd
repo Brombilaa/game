@@ -201,7 +201,30 @@ func _update_cursor() -> void:
 		GameCursor.apply(kind)
 
 
+# Zoom da câmera pela roda do mouse (Léo, 01/11/2026). A câmera segue fixa e isométrica; só a
+# aproximação muda, em passos, dentro de [_zoom_min(), ZOOM_MAX]. A sala de teste usa 1 a 3.
+const ZOOM_MAX := 3.0
+const ZOOM_STEP := 1.1
+
+
+func _zoom_min() -> float:
+	return 1.0
+
+
+func _zoom_by(factor: float) -> void:
+	var z := clampf(camera.zoom.x * factor, _zoom_min(), ZOOM_MAX)
+	camera.zoom = Vector2(z, z)
+	queue_redraw()  # o HUD e a prévia do mouse dependem do zoom
+
+
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			_zoom_by(ZOOM_STEP)
+			return
+		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			_zoom_by(1.0 / ZOOM_STEP)
+			return
 	if event is InputEventKey:
 		if event.pressed and event.keycode == KEY_R:
 			get_tree().reload_current_scene()
@@ -580,12 +603,15 @@ func _player_move(click: Vector2) -> void:
 	var full := pathfinder.find_path(player.pos, click, _obstacles(player), player.radius)
 	if full.is_empty():
 		return  # destino inacessível
-	var plan := rules.plan_move(full, player.pa)
-	if plan.cost == 0:
+	var plan := rules.plan_move(full, player.pa, player.moved_px)
+	if CombatRules.path_length(plan.path) < 1.0:
+		if plan.cost == 0 and rules.move_cost(CombatRules.path_length(full), player.moved_px) > 0:
+			_reject("no_pa")
 		return
-	if plan.cost > player.pa or not turns.spend(player, plan.cost):
+	if plan.cost > player.pa or (plan.cost > 0 and not turns.spend(player, plan.cost)):
 		_reject("no_pa")
 		return
+	player.moved_px += CombatRules.path_length(plan.path)
 	hud.on_pa_changed(player.pa, turns.turn_pa(player))
 	busy = true
 	_start_move(player, plan.path)
@@ -840,16 +866,44 @@ func _enemy_target(unit: Combatant) -> Combatant:
 # Retorna false se não houver como se aproximar.
 func _enemy_advance(unit: Combatant, target: Combatant) -> bool:
 	var stand := target.pos.move_toward(unit.pos, target.radius + unit.radius + 2.0 + float(unit.weapon["max_range"]) * 0.5)
+	if not Pathfinder.is_free(unit.pos, _obstacles(unit), unit.radius):
+		# Preso dentro de um obstáculo (ex.: surgiu atrás da árvore): salta para o ponto livre
+		# mais perto do alvo, sem gastar PA, e segue o turno de lá (Léo, 01/11/2026).
+		var spot := _jump_spot(unit, target)
+		if spot == Vector2.INF:
+			return false
+		_start_move(unit, PackedVector2Array([unit.pos, spot]))
+		await move_finished
+		return true
 	var full := pathfinder.find_path(unit.pos, stand, _obstacles(unit), unit.radius)
 	if full.size() < 2:
 		return false
-	var plan := rules.plan_move(full, unit.pa)
-	if plan.cost == 0 or not turns.spend(unit, plan.cost):
+	var plan := rules.plan_move(full, unit.pa, unit.moved_px)
+	if CombatRules.path_length(plan.path) < 1.0 or (plan.cost > 0 and not turns.spend(unit, plan.cost)):
 		return false
+	unit.moved_px += CombatRules.path_length(plan.path)
 	_start_move(unit, plan.path)
 	await move_finished
 	turns.action_done()
 	return true
+
+
+# Ponto livre perto de `unit` de onde há caminho até o alvo; entre os candidatos, o mais perto do
+# alvo (na prática, o lado da frente do obstáculo). Vector2.INF se não houver.
+func _jump_spot(unit: Combatant, target: Combatant) -> Vector2:
+	var obstacles := _obstacles(unit)
+	var candidates: Array[Vector2] = []
+	for ring in range(1, 26):
+		for k in 16:
+			var spot := unit.pos + Vector2.from_angle(TAU * k / 16.0) * ring * 8.0
+			if Pathfinder.is_free(spot, obstacles, unit.radius):
+				candidates.append(spot)
+	candidates.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.distance_to(target.pos) < b.distance_to(target.pos))
+	for spot in candidates.slice(0, 12):
+		var stand := target.pos.move_toward(spot, target.radius + unit.radius + 2.0)
+		if pathfinder.find_path(spot, stand, obstacles, unit.radius).size() > 1:
+			return spot
+	return candidates[0] if not candidates.is_empty() else Vector2.INF
 
 
 # --- Feedback ----------------------------------------------------------------
@@ -1076,6 +1130,20 @@ func _draw_unit(u: Combatant) -> void:
 		draw_rect(Rect2(bar.position, Vector2(bar.size.x * float(u.pv) / u.max_pv, bar.size.y)), Color(0.3, 0.85, 0.35))
 
 
+# Rota da prévia do mouse. A prévia é redesenhada todo quadro; refazer o pathfinding a cada quadro
+# travava o jogo, então a rota só é recalculada quando muda o ponto do mouse, quem anda ou as unidades.
+var _route_key := ""
+var _route_cache := PackedVector2Array()
+
+
+func _preview_route(mouse: Vector2) -> PackedVector2Array:
+	var key := "%s|%s|%s" % [player.pos, mouse.round(), _living_units().map(func(u: Combatant) -> Vector2: return u.pos)]
+	if key != _route_key:
+		_route_key = key
+		_route_cache = pathfinder.find_path(player.pos, mouse, _obstacles(player), player.radius)
+	return _route_cache
+
+
 # Prévia sob o cursor no turno do agente: chance de acerto no inimigo ou custo do movimento.
 func _draw_preview(font: Font) -> void:
 	if not _player_ready() or _mouse_on_hud(get_viewport().get_mouse_position()):
@@ -1095,12 +1163,12 @@ func _draw_preview(font: Font) -> void:
 				text += " (cobertura %s)" % ("parcial" if c.kind == "partial" else "completa")
 		draw_line(_iso(player.pos), _iso(target.pos), Color(1, 1, 1, 0.3), 1.0)
 	elif _cover_at(mouse) == null:
-		var route := pathfinder.find_path(player.pos, mouse, _obstacles(player), player.radius)
+		var route := _preview_route(mouse)
 		if route.is_empty():
 			text = "Inacessível"
 		else:
-			var cost := rules.move_cost(CombatRules.path_length(route))
-			var plan := rules.plan_move(route, player.pa)
+			var cost := rules.move_cost(CombatRules.path_length(route), player.moved_px)
+			var plan := rules.plan_move(route, player.pa, player.moved_px)
 			_draw_move_path(font, route, plan["path"], int(plan["cost"]), cost > player.pa)
 	if text != "":
 		draw_string(font, screen_mouse + Vector2(14, -8), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color.WHITE)

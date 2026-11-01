@@ -117,15 +117,21 @@ func _test_combat_end() -> void:
 
 func _test_movement() -> void:
 	var rules := CombatRules.new(cfg)
-	var ppa := cfg.value("pixels_per_pa")
+	var step := cfg.value("pixels_per_pa")  # 5 m
+	var free := cfg.value("free_move_px")  # 5 m
 	_check(rules.move_cost(0) == 0, "não andar custa 0 PA")
-	_check(rules.move_cost(ppa) == 1 and rules.move_cost(ppa + 1) == 2, "custo proporcional à distância")
-	var path := PackedVector2Array([Vector2(0, 0), Vector2(ppa * 2, 0), Vector2(ppa * 2, ppa * 3)])
+	_check(rules.move_cost(free) == 0, "os primeiros 5 m custam 0 PA")
+	_check(rules.move_cost(free + 1) == 1 and rules.move_cost(free + step) == 1, "de 5 a 10 m custa 1 PA")
+	_check(rules.move_cost(free + step + 1) == 2, "cada 5 m a mais custa 1 PA")
+	_check(rules.move_cost(free, free) == 1 and rules.move_cost(10.0, 0.0) == 0, "andar em partes não burla a franquia")
+	var path := PackedVector2Array([Vector2(0, 0), Vector2(free + step * 2, 0), Vector2(free + step * 2, step * 3)])
 	var full := rules.plan_move(path, 5)
 	_check(full.cost == 5 and full.path.size() == 3, "rota que cabe nos PA é feita inteira")
 	var partial := rules.plan_move(path, 3)
-	_check(partial.cost == 3 and is_equal_approx(CombatRules.path_length(partial.path), ppa * 3), "movimento parcial até o limite dos PA")
-	_check(partial.path[partial.path.size() - 1].is_equal_approx(Vector2(ppa * 2, ppa)), "parcial para no ponto certo da rota")
+	_check(partial.cost == 3 and is_equal_approx(CombatRules.path_length(partial.path), free + step * 3), "movimento parcial até o limite dos PA")
+	_check(partial.path[partial.path.size() - 1].is_equal_approx(Vector2(free + step * 2, step)), "parcial para no ponto certo da rota")
+	var none := rules.plan_move(path, 0)
+	_check(none.cost == 0 and is_equal_approx(CombatRules.path_length(none.path), free), "sem PA ainda anda os 5 m grátis")
 
 
 func _test_hit_chance() -> void:
