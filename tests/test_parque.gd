@@ -31,6 +31,7 @@ func _run() -> void:
 	_check(room.camera.zoom.x == room.ZOOM_MAX and z0 < room.ZOOM_MAX, "a roda aproxima até o zoom máximo")
 	room._zoom_by(0.0001)
 	_check(is_equal_approx(room.camera.zoom.x, room._zoom_min()), "a roda afasta até o zoom mínimo")
+	room.camera.zoom = Vector2(room.CAMERA_ZOOM, room.CAMERA_ZOOM)  # volta ao zoom inicial para os testes seguintes
 	var tree_rect: Rect2 = room.scenario.colliders["arvore"]
 	var near: Vector2 = room._nearest_free(tree_rect.get_center())
 	_check(not tree_rect.has_point(near) and room.pathfinder.find_path(room.player.pos, near, room._obstacles(room.player), room.player.radius).size() > 1, "clicar dentro de um obstáculo leva ao ponto livre mais próximo")
