@@ -41,7 +41,7 @@
 		{"id": "balanco", "pos": [1200, 700], "raio": 70, "ordem": 1, "bolinha": [0, -125], "texto": "O assento do balanço está cheio de arranhões fundos."},
 		{"id": "banco_quebrado", "pos": [900, 400], "raio": 60, "ordem": 1, "bolinha": [0, -62], "texto": "Garras abriram as tábuas do banco. Há sangue seco na madeira."},
 		{"id": "banco_velho", "pos": [440, 100], "raio": 60, "ordem": 1, "bolinha": [0, -62], "texto": "Um banco velho, coberto de limo."},
-		{"id": "arvore_simbolo", "pos": [1130, 235], "raio": 80, "ordem": 2, "bolinha": [0, -170], "texto": "Um símbolo pintado em vermelho no tronco. Parece sangrar.", "inspecao": "res://assets/sprites/cenario/parque/inspecao_simbolo.png"}
+		{"id": "arvore_simbolo", "pos": [1130, 235], "raio": 80, "ordem": 2, "bolinha": [6, -74], "texto": "Um símbolo pintado em vermelho no tronco. Parece sangrar.", "inspecao": "res://assets/sprites/cenario/parque/inspecao_simbolo.png"}
 	],
 	"gatilhos": [
 		{"id": "combate_arvore", "apos": "arvore_simbolo", "tipo": "combate",
