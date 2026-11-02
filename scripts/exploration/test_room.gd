@@ -860,8 +860,12 @@ func _cover_at(p: Vector2) -> Cover:
 # IA provisória: ataca enquanto puder; se não puder, anda em direção ao agente até
 # ficar a meio alcance da arma e tenta de novo. Comportamento por inimigo é PENDENTE.
 
+var _gap_jumped := false  # o inimigo da vez já saltou por falta de rota neste turno
+
+
 func _run_enemy_turn(unit: Combatant) -> void:
 	busy = true
+	_gap_jumped = false
 	while mode == Mode.COMBAT and turns.is_turn_of(unit):
 		await get_tree().create_timer(ENEMY_STEP_SECONDS).timeout
 		if not turns.is_turn_of(unit):
@@ -902,6 +906,17 @@ func _enemy_advance(unit: Combatant, target: Combatant) -> bool:
 		await move_finished
 		return true
 	var full := pathfinder.find_path(unit.pos, stand, _obstacles(unit), unit.radius)
+	if full.is_empty() and not _gap_jumped:
+		# Sem caminho até o alvo (ex.: ponto livre fechado entre a sebe e a árvore): salta, sem gastar
+		# PA, para o ponto livre mais perto do alvo de onde há caminho; se não houver, passa o turno.
+		# Um salto desses por turno, para não saltar em círculos se o destino continuar sem rota.
+		var out := _jump_spot(unit, target, true)
+		if out == Vector2.INF:
+			return false
+		_gap_jumped = true
+		_start_move(unit, PackedVector2Array([unit.pos, out]))
+		await move_finished
+		return true
 	if full.size() < 2:
 		return false
 	var plan := rules.plan_move(full, unit.pa, unit.moved_px)
@@ -916,7 +931,8 @@ func _enemy_advance(unit: Combatant, target: Combatant) -> bool:
 
 # Ponto livre perto de `unit` de onde há caminho até o alvo; entre os candidatos, o mais perto do
 # alvo (na prática, o lado da frente do obstáculo). Vector2.INF se não houver.
-func _jump_spot(unit: Combatant, target: Combatant) -> Vector2:
+# Com `strict`, só vale ponto com caminho até o alvo (evita saltar em círculos sem progresso).
+func _jump_spot(unit: Combatant, target: Combatant, strict := false) -> Vector2:
 	var obstacles := _obstacles(unit)
 	var candidates: Array[Vector2] = []
 	for ring in range(1, 26):
@@ -929,7 +945,9 @@ func _jump_spot(unit: Combatant, target: Combatant) -> Vector2:
 		var stand := target.pos.move_toward(spot, target.radius + unit.radius + 2.0)
 		if pathfinder.find_path(spot, stand, obstacles, unit.radius).size() > 1:
 			return spot
-	return candidates[0] if not candidates.is_empty() else Vector2.INF
+	if strict or candidates.is_empty():
+		return Vector2.INF
+	return candidates[0]
 
 
 # --- Feedback ----------------------------------------------------------------
