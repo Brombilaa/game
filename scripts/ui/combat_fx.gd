@@ -19,6 +19,8 @@ const SHAKE_PX := 4.0
 const SHAKE_CRIT_PX := 7.0
 const SHAKE_SECONDS := 0.25
 const ZOOM_PULSE := 0.08
+const ZOOM_PULSE_CRIT := 0.14  # crítico
+const ZOOM_PULSE_KILL := 0.18  # abate
 const ZOOM_SECONDS := 0.45
 const KNOCK_PX := 10.0
 const KNOCK_CRIT_PX := 18.0
@@ -43,6 +45,7 @@ var shake_time := 0.0
 var shake_px := 0.0
 var hitstop := 0.0
 var zoom_time := 0.0
+var zoom_pulse := ZOOM_PULSE  # força do pulso atual
 var cam_pair: Array = []  # [atacante, alvo] do último ataque encenado: a câmera acompanha os dois
 var iso: Callable  # posição da sala -> posição de desenho
 var rng := RandomNumberGenerator.new()
@@ -110,7 +113,7 @@ func white_alpha(u: Combatant) -> float:
 func zoom_factor() -> float:
 	if zoom_time <= 0.0:
 		return 1.0
-	return 1.0 + ZOOM_PULSE * sin(PI * (1.0 - zoom_time / ZOOM_SECONDS))
+	return 1.0 + zoom_pulse * sin(PI * (1.0 - zoom_time / ZOOM_SECONDS))
 
 
 func shake_offset() -> Vector2:
@@ -181,6 +184,7 @@ func _impact(job: Dictionary) -> void:
 	shake_time = SHAKE_SECONDS
 	shake_px = SHAKE_CRIT_PX if crit else SHAKE_PX
 	zoom_time = ZOOM_SECONDS
+	zoom_pulse = ZOOM_PULSE_KILL if not target.is_alive() else (ZOOM_PULSE_CRIT if crit else ZOOM_PULSE)
 	flash_red = FLASH_RED_SECONDS
 	flash_strength = 1.4 if crit else 1.0
 	white[target] = WHITE_SECONDS

@@ -54,9 +54,17 @@ func _init() -> void:
 	_check(fx.dying().has(t), "o abatido aparece enquanto a mira não bate")
 	fx.update(0.61)
 	_check(is_equal_approx(fx.shake_px, 7.0) and fx.kicks[t]["dist"] == CombatFx.KNOCK_CRIT_PX, "crítico: 7 px de tremor e 18 px de arremesso")
+	_check(is_equal_approx(fx.zoom_pulse, CombatFx.ZOOM_PULSE_KILL), "abate: zoom de 18%")
 	_check(fx.dying().has(t), "o abatido some só depois do arremesso")
 	fx.update(1.0)
 	_check(not fx.dying().has(t), "o abatido sai de cena")
+
+	# Crítico sem abate: zoom de 14%.
+	t.pv = 10
+	fx.start(a, t, {"ok": true, "hit": true, "crit": true, "blocked": false, "damage": 10}, 20)
+	fx.update(0.61)
+	_check(is_equal_approx(fx.zoom_pulse, CombatFx.ZOOM_PULSE_CRIT), "crítico: zoom de 14%")
+	fx.update(2.0)
 
 	# Erro: o alvo desvia 10 px, sem tremor nem flash.
 	t.pv = 20

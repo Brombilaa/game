@@ -134,6 +134,7 @@ static func _make_vignette() -> Texture2D:
 
 
 func _draw() -> void:
+	var _draw_t0 := Time.get_ticks_usec()
 	var font := ThemeDB.fallback_font
 	var view := get_canvas_transform().affine_inverse() * Rect2(Vector2.ZERO, get_viewport_rect().size)
 	draw_rect(view, VOID_COLOR)  # fora do parque é escuro, não o cinza do render
@@ -173,12 +174,14 @@ func _draw() -> void:
 	if mode == Mode.COMBAT:
 		_draw_preview(font)
 	_draw_fx()
+	_draw_san_tint()
 	# Véu quente e vinheta cobrem o cenário e os personagens, mas ficam por baixo do HUD.
 	draw_rect(view, DUSK_TINT)
 	draw_texture_rect(vignette, view, false)
 	_draw_hud(font)
 	for p in popups:
 		_draw_popup(font, p)
+	_draw_usec = Time.get_ticks_usec() - _draw_t0
 
 
 # Com a câmera aproximada o HUD é desenhado com a escala inversa ao zoom, para continuar do mesmo

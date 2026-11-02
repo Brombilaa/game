@@ -6,7 +6,7 @@ extends RefCounted
 
 const PATH := "user://opcoes.cfg"
 const SECTION := "opcoes"
-const DEFAULTS := {"master": 0.8, "music": 0.6, "sfx": 0.7, "fullscreen": false}
+const DEFAULTS := {"master": 0.8, "music": 0.6, "sfx": 0.7, "fullscreen": false, "fast_combat": false}
 const BUSES := {"master": "Master", "music": "Music", "sfx": "SFX"}
 
 var values: Dictionary = DEFAULTS.duplicate()
@@ -21,6 +21,7 @@ static func load_from(path := PATH) -> GameOptions:
 	for key in BUSES:
 		options.set_volume(key, float(options.values[key]))
 	options.values["fullscreen"] = bool(options.values["fullscreen"])
+	options.values["fast_combat"] = bool(options.values["fast_combat"])
 	return options
 
 
