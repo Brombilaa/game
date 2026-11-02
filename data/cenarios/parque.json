@@ -45,7 +45,7 @@
 	],
 	"gatilhos": [
 		{"id": "combate_arvore", "apos": "arvore_simbolo", "tipo": "combate",
-			"inimigos": [{"tipo": "cultista", "pos": [1100, 127], "origem": "mata atrás da árvore"}, {"tipo": "cultista", "pos": [450, 800], "origem": "atrás do grupo, perto dos NPCs"}],
+			"inimigos": [{"tipo": "cultista", "pos": [1100, 300], "origem": "salta da mata e cai na frente da árvore"}, {"tipo": "cultista", "pos": [450, 800], "origem": "atrás do grupo, perto dos NPCs"}],
 			"cutscene_depois": "morte_caio"}
 	],
 	"oclusores": [
