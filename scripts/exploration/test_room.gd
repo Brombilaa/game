@@ -137,6 +137,16 @@ const CAMERA_EASE_SECONDS := 0.6  # suaviza a câmera durante o ataque e na volt
 var _cam_ease := 0.0
 var zoom_base := Vector2.ONE  # zoom do jogador; o pulso do tiro é aplicado por cima
 var zoom_pulsing := false
+var combat_log: Array = []  # P3: últimas linhas do combate {text, time}
+var cam_pan := Vector2.ZERO  # P6: deslocamento da câmera livre em combate (botão do meio)
+var _pan_unit: Combatant = null
+var options := GameOptions.load_from()
+var perf_on := false  # P11: medidor F3
+var perf_text := ""
+var _perf_time := 0.0
+var _perf_path_usec := 0
+var _perf_path_calls := 0
+var _draw_usec := 0
 var screen_shake := 0.0  # segundos restantes de tremor da tela (crítico)
 var hud := CombatHud.new()
 var audio := AudioDirector.new()
@@ -239,6 +249,22 @@ func _zoom_by(factor: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# P6: câmera livre em combate. Arrastar com o botão do meio move; clicar nele (ou Home) volta.
+	if mode == Mode.COMBAT:
+		if event is InputEventMouseMotion and (event.button_mask & MOUSE_BUTTON_MASK_MIDDLE) != 0:
+			cam_pan -= event.relative / camera.zoom.x
+			queue_redraw()
+			return
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_MIDDLE:
+			cam_pan = Vector2.ZERO
+			return
+		if event is InputEventKey and event.pressed and event.keycode == KEY_HOME:
+			cam_pan = Vector2.ZERO
+			return
+	if event is InputEventKey and event.pressed and event.keycode == KEY_F3:
+		perf_on = not perf_on
+		queue_redraw()
+		return
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			_zoom_by(ZOOM_STEP)
@@ -417,6 +443,14 @@ func _process(delta: float) -> void:
 		return
 	if mode == Mode.COMBAT and _player_ready():
 		queue_redraw()  # gema de PA pulsando e estados do botão de fim do turno
+	if not combat_log.is_empty():
+		for l in combat_log:
+			l.time -= delta
+		combat_log = combat_log.filter(func(l: Dictionary) -> bool: return l.time > 0.0)
+		queue_redraw()
+	_update_perf(delta)
+	if _san_ratio() < 1.0 and player.max_san > 0 and player.san <= 0:
+		queue_redraw()  # a tela pulsa na ruptura
 	if not popups.is_empty():
 		for p in popups:
 			p.time -= delta
@@ -431,10 +465,13 @@ func _process(delta: float) -> void:
 	var focus := turns.current if mode == Mode.COMBAT and turns and turns.current else player
 	# Durante o ataque a câmera acompanha atacante e alvo até o fim da animação (mira, arremesso e
 	# rastro da barra), mesmo que o turno já tenha passado; entra e sai suavemente.
-	var cam_goal := _iso(focus.pos)
+	if focus != _pan_unit:
+		_pan_unit = focus
+		cam_pan = Vector2.ZERO  # a câmera livre volta ao personagem da vez
+	var cam_goal := _iso(focus.pos) + (cam_pan if mode == Mode.COMBAT else Vector2.ZERO)
 	var fx_focus := fx.camera_focus()
 	if fx_focus != Vector2.INF:
-		cam_goal = _iso(fx_focus)
+		cam_goal = _iso(fx_focus)  # o ataque tem prioridade sobre a câmera livre
 		_cam_ease = CAMERA_EASE_SECONDS
 	if _cam_ease > 0.0:
 		if fx_focus == Vector2.INF:
@@ -515,6 +552,9 @@ func _stealth_attack(target: Combatant) -> void:
 # Monta os participantes (todos os inimigos vivos da sala) e ordena a iniciativa.
 func _start_combat() -> void:
 	mode = Mode.COMBAT
+	combat_log.clear()
+	cam_pan = Vector2.ZERO
+	Engine.time_scale = 2.0 if options.values["fast_combat"] else 1.0  # P7: combate rápido (Opções)
 	path = PackedVector2Array()
 	moving_unit = null
 	pending_door = false
@@ -545,6 +585,7 @@ func _start_combat() -> void:
 
 func _on_turn_started(unit: Combatant) -> void:
 	queue_redraw()
+	_log("Vez de %s" % unit.name)
 	if unit.side == Combatant.Side.PLAYER:
 		player = unit
 		hud.on_turn_started(unit.name, unit.pa, turns.turn_pa(player))
@@ -553,7 +594,12 @@ func _on_turn_started(unit: Combatant) -> void:
 		_run_enemy_turn.call_deferred(unit)
 
 
+func _exit_tree() -> void:
+	Engine.time_scale = 1.0
+
+
 func _on_combat_ended(result: TurnManager.Result) -> void:
+	Engine.time_scale = 1.0
 	hud.on_turn_ended()
 	audio.on_combat_ended()
 	if result == TurnManager.Result.VICTORY:
@@ -642,6 +688,7 @@ func _fallen_at(p: Vector2) -> Combatant:
 func _player_move(click: Vector2) -> void:
 	var full := pathfinder.find_path(player.pos, click, _obstacles(player), player.radius)
 	if full.is_empty():
+		await _player_unstick(click)
 		return  # destino inacessível
 	var plan := rules.plan_move(full, player.pa, player.moved_px)
 	if CombatRules.path_length(plan.path) < 1.0:
@@ -658,6 +705,35 @@ func _player_move(click: Vector2) -> void:
 	await move_finished
 	busy = false
 	_after_player_action()
+
+
+# P9: se o controlado está preso (dentro de um obstáculo ou separado de todo o grupo) e o destino é um
+# ponto livre, salta, sem gastar PA, para o ponto livre mais perto do destino com caminho até ele.
+# Fora disso o clique em destino inacessível continua sendo ignorado.
+func _player_unstick(click: Vector2) -> void:
+	if not Pathfinder.is_free(click, _obstacles(player), player.radius) or not _player_trapped():
+		return
+	var spot := _spot_toward(player, click, 0.0, true)
+	if spot == Vector2.INF:
+		return
+	busy = true
+	_start_move(player, PackedVector2Array([player.pos, spot]))
+	await move_finished
+	busy = false
+	queue_redraw()
+
+
+func _player_trapped() -> bool:
+	var obstacles := _obstacles(player)
+	if not Pathfinder.is_free(player.pos, obstacles, player.radius):
+		return true
+	var others := 0
+	for m in party:
+		if m != player and m.is_alive():
+			others += 1
+			if not pathfinder.find_path(player.pos, m.pos, _obstacles(player), player.radius).is_empty():
+				return false
+	return others > 0
 
 
 func _after_player_action() -> void:
@@ -900,11 +976,19 @@ func _run_enemy_turn(unit: Combatant) -> void:
 	queue_redraw()
 
 
-# Alvo do inimigo: o membro do grupo de pé mais próximo.
+# Alvo do inimigo (P8, provisório): o membro de pé com menor "distância ajustada" pela ameaça. Quem está
+# com metade do PV ou menos, ou sem SAN, pesa como se estivesse a 60% da distância. Empate: o mais perto.
 func _enemy_target(unit: Combatant) -> Combatant:
 	var best: Combatant = null
+	var best_score := INF
 	for m in party:
-		if m.is_alive() and (best == null or unit.pos.distance_to(m.pos) < unit.pos.distance_to(best.pos)):
+		if not m.is_alive():
+			continue
+		var score := unit.pos.distance_to(m.pos)
+		if m.pv * 2 <= m.max_pv or (m.max_san > 0 and m.san <= 0):
+			score *= 0.6
+		if score < best_score:
+			best_score = score
 			best = m
 	return best
 
@@ -949,6 +1033,11 @@ func _enemy_advance(unit: Combatant, target: Combatant) -> bool:
 # alvo (na prática, o lado da frente do obstáculo). Vector2.INF se não houver.
 # Com `strict`, só vale ponto com caminho até o alvo (evita saltar em círculos sem progresso).
 func _jump_spot(unit: Combatant, target: Combatant, strict := false) -> Vector2:
+	return _spot_toward(unit, target.pos, target.radius + unit.radius + 2.0, strict)
+
+
+# Igual, para um ponto qualquer `goal`; `gap` é a folga que fica entre o ponto de parada e o objetivo.
+func _spot_toward(unit: Combatant, goal: Vector2, gap: float, strict := false) -> Vector2:
 	var obstacles := _obstacles(unit)
 	var candidates: Array[Vector2] = []
 	for ring in range(1, 26):
@@ -956,9 +1045,9 @@ func _jump_spot(unit: Combatant, target: Combatant, strict := false) -> Vector2:
 			var spot := unit.pos + Vector2.from_angle(TAU * k / 16.0) * ring * 8.0
 			if Pathfinder.is_free(spot, obstacles, unit.radius):
 				candidates.append(spot)
-	candidates.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.distance_to(target.pos) < b.distance_to(target.pos))
-	for spot in candidates.slice(0, 12):
-		var stand := target.pos.move_toward(spot, target.radius + unit.radius + 2.0)
+	candidates.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.distance_to(goal) < b.distance_to(goal))
+	for spot in candidates.slice(0, 40 if strict else 12):
+		var stand := goal.move_toward(spot, gap)
 		if pathfinder.find_path(spot, stand, obstacles, unit.radius).size() > 1:
 			return spot
 	if strict or candidates.is_empty():
@@ -979,9 +1068,30 @@ func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void
 	queue_redraw()
 
 
+const LOG_SECONDS := 8.0
+const LOG_MAX := 4
+
+
+# P3: registro curto do combate no canto inferior esquerdo (as últimas linhas somem sozinhas).
+func _log(text: String) -> void:
+	combat_log.append({"text": text, "time": LOG_SECONDS})
+	while combat_log.size() > LOG_MAX:
+		combat_log.pop_front()
+	queue_redraw()
+
+
 func _on_fx_impact(job: Dictionary) -> void:
 	var target: Combatant = job["target"]
 	var r: Dictionary = job["r"]
+	var attacker: Combatant = job["attacker"]
+	if r.get("blocked", false):
+		_log("%s atira em %s: bloqueado" % [attacker.name, target.name])
+	elif not r.get("hit", false):
+		_log("%s erra %s" % [attacker.name, target.name])
+	else:
+		_log("%s acerta %s: %d%s" % [attacker.name, target.name, int(r.damage), " (crítico)" if r.get("crit", false) else ""])
+	if not target.is_alive():
+		_log("%s %s" % [target.name, "foi abatido" if target.side == Combatant.Side.ENEMY else "caiu"])
 	if r.get("blocked", false):
 		_popup(target.pos, "BLOQUEADO", "blocked")
 	elif not r.get("hit", false):
@@ -1002,6 +1112,7 @@ func _popup(at: Vector2, text: String, kind := "info") -> void:
 
 
 func _draw() -> void:
+	var _draw_t0 := Time.get_ticks_usec()
 	var font := ThemeDB.fallback_font
 	_draw_floor()
 	if mode == Mode.EXPLORATION:
@@ -1063,9 +1174,68 @@ func _draw() -> void:
 	if mode == Mode.COMBAT:
 		_draw_preview(font)
 	_draw_fx()
+	_draw_san_tint()
 	_draw_hud(font)
 	for p in popups:
 		_draw_popup(font, p)
+	_draw_usec = Time.get_ticks_usec() - _draw_t0
+
+
+# 1.0 com a SAN cheia, 0.0 na ruptura (só para quem tem SAN).
+func _san_ratio() -> float:
+	if player == null or player.max_san <= 0:
+		return 1.0
+	return clampf(float(player.san) / float(player.max_san), 0.0, 1.0)
+
+
+# P4 (modelo B, Léo 02/11/2026): quanto menos SAN, mais a cor some (cinza por cima do mundo, antes do
+# HUD) e, na ruptura, a tela pulsa devagar em escuro. Só aviso visual: a regra da ruptura é outra tarefa.
+func _draw_san_tint() -> void:
+	var ratio := _san_ratio()
+	if ratio >= 1.0:
+		return
+	var inv := get_canvas_transform().affine_inverse()
+	var screen := Rect2(inv * Vector2.ZERO, inv.basis_xform(get_viewport_rect().size))
+	draw_rect(screen, Color(0.42, 0.42, 0.42, (1.0 - ratio) * 0.5))
+	if player.san <= 0:
+		var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 1000.0 * 2.2)
+		draw_rect(screen, Color(0, 0, 0, 0.12 + 0.18 * pulse))
+
+
+# P3 (modelo A): até 4 linhas no canto inferior esquerdo, esmaecendo com o tempo.
+func _draw_combat_log(font: Font) -> void:
+	if mode != Mode.COMBAT or combat_log.is_empty():
+		return
+	var to_world := _hud_to_world()
+	var top := 540.0 - 14.0 - 15.0 * LOG_MAX
+	draw_rect(Rect2(to_world * Vector2(8, top - 6), Vector2(250, 15.0 * LOG_MAX + 10)), Color(0.04, 0.03, 0.02, 0.5))
+	for i in combat_log.size():
+		var l: Dictionary = combat_log[i]
+		var a := clampf(l.time / 2.0, 0.0, 1.0)
+		draw_string(font, to_world * Vector2(14, top + 12 + 15.0 * (LOG_MAX - combat_log.size() + i)), l.text, HORIZONTAL_ALIGNMENT_LEFT, 236, 11, Color(0.95, 0.9, 0.82, a))
+
+
+# P11: medidor F3 (só teste): quadros por segundo, rotas calculadas e tempo do desenho.
+func _update_perf(delta: float) -> void:
+	if not perf_on:
+		return
+	_perf_time += delta
+	if _perf_time >= 1.0:
+		var usec := pathfinder.usec_total - _perf_path_usec
+		var calls := pathfinder.calls_total - _perf_path_calls
+		_perf_path_usec = pathfinder.usec_total
+		_perf_path_calls = pathfinder.calls_total
+		perf_text = "%d FPS · rotas %d (%.1f ms) · desenho %.1f ms" % [Engine.get_frames_per_second(), calls, usec / 1000.0, _draw_usec / 1000.0]
+		_perf_time = 0.0
+	queue_redraw()
+
+
+func _draw_perf(font: Font) -> void:
+	if not perf_on:
+		return
+	var at := _hud_to_world() * Vector2(500, 14)
+	draw_rect(Rect2(at + Vector2(-4, -11), Vector2(330, 16)), Color(0, 0, 0, 0.6))
+	draw_string(font, at, perf_text if perf_text != "" else "medindo…", HORIZONTAL_ALIGNMENT_LEFT, 322, 11, Color(0.6, 1.0, 0.6))
 
 
 # Feedback de combate (provisório do Claude, 29/10/2026): dano em número que sobe e some,
@@ -1293,11 +1463,8 @@ func _draw_preview(font: Font) -> void:
 		if blocker != "":
 			text = HudText.rejection_message(blocker)
 		else:
-			text = "%d%%" % roundi(rules.hit_chance(player, target, covers) * 100.0)
-			var c := rules.cover_between(player.pos, target, covers)
-			if c:
-				text += " (cobertura %s)" % ("parcial" if c.kind == "partial" else "completa")
-		draw_line(_iso(player.pos), _iso(target.pos), Color(1, 1, 1, 0.3), 1.0)
+			_draw_hit_label(font, screen_mouse, target)  # P1: etiqueta de acerto, dano e cobertura
+		_draw_fire_line(font, target, blocker)
 	elif _cover_at(mouse) == null:
 		var route := _preview_route(mouse)
 		if route.is_empty():
@@ -1308,6 +1475,50 @@ func _draw_preview(font: Font) -> void:
 			_draw_move_path(font, route, plan["path"], int(plan["cost"]), cost > player.pa)
 	if text != "":
 		draw_string(font, screen_mouse + Vector2(14, -8), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color.WHITE)
+
+
+# P1 (modelo A, Léo 02/11/2026): etiqueta junto da mira com a chance de acerto, a faixa de dano e,
+# quando há, a cobertura que pesa na conta.
+func _draw_hit_label(font: Font, at: Vector2, target: Combatant) -> void:
+	var lines: Array[String] = ["Acerto %d%%" % roundi(rules.hit_chance(player, target, covers) * 100.0), "Dano %d a %d" % [int(player.weapon["damage_min"]), int(player.weapon["damage_max"])]]
+	var c := rules.cover_between(player.pos, target, covers)
+	if c:
+		if c.kind == "partial":
+			lines.append("Cobertura −%d%%" % roundi(float(cfg.cover("partial")["hit_penalty"]) * 100.0))
+		else:
+			lines.append("Cobertura completa")
+	var w := 0.0
+	for l in lines:
+		w = maxf(w, font.get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x)
+	var box := Rect2(at + Vector2(16, -24 - 15 * lines.size()), Vector2(w + 12, 8 + 15 * lines.size()))
+	draw_rect(box, Color(0.07, 0.05, 0.035, 0.92))
+	draw_rect(box.grow(-0.5), Color(0.73, 0.55, 0.24), false, 1.0)
+	for i in lines.size():
+		var col := Color(0.89, 0.69, 0.3) if i == 0 else (Color(0.88, 0.55, 0.35) if i == 2 else Color(0.95, 0.9, 0.82))
+		draw_string(font, box.position + Vector2(6, 14 + 15 * i), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 12 if i == 0 else 11, col)
+
+
+# P2 (modelo B): linha de tiro tracejada; a cobertura que pesa ganha um escudo com a penalidade e a
+# parede (sem linha de visão) uma marca de bloqueio no meio da linha.
+func _draw_fire_line(font: Font, target: Combatant, blocker: String) -> void:
+	var from := _iso(player.pos) + Vector2(0, -30)
+	var to := _iso(target.pos) + Vector2(0, -30)
+	var red := Color(0.85, 0.33, 0.31, 0.9)
+	draw_dashed_line(from, to, red, 1.5, 6.0)
+	if blocker == "no_line_of_sight":
+		var mid := (from + to) * 0.5
+		draw_line(mid + Vector2(-5, -5), mid + Vector2(5, 5), red, 2.0)
+		draw_line(mid + Vector2(-5, 5), mid + Vector2(5, -5), red, 2.0)
+		return
+	var c := rules.cover_between(player.pos, target, covers)
+	if c and c.kind == "partial":
+		var k := clampf(Geometry2D.get_closest_point_to_segment(_iso(c.rect.get_center()) + Vector2(0, -30), from, to).distance_to(from) / maxf(from.distance_to(to), 1.0), 0.0, 1.0)
+		var at := from.lerp(to, k)
+		var label := "−%d%%" % roundi(float(cfg.cover("partial")["hit_penalty"]) * 100.0)
+		var r := Rect2(at + Vector2(-17, -26), Vector2(34, 16))
+		draw_rect(r, Color(0.07, 0.05, 0.035, 0.92))
+		draw_rect(r.grow(-0.5), Color(0.88, 0.55, 0.35), false, 1.0)
+		draw_string(font, r.position + Vector2(3, 12), label, HORIZONTAL_ALIGNMENT_CENTER, 28, 11, Color(0.88, 0.55, 0.35))
 
 
 # Caminho do movimento antes do clique (modelo C, Léo, 30/10/2026): marcas de passo em ouro até
@@ -1470,6 +1681,8 @@ func _draw_hud(font: Font) -> void:
 		_draw_turn_order(font, to_world)
 		if _player_ready():
 			_draw_actions(font, to_world)
+	_draw_combat_log(font)
+	_draw_perf(font)
 
 
 # Da posição na tela (960×540) para onde o HUD é desenhado. Com a câmera aproximada o parque desenha o

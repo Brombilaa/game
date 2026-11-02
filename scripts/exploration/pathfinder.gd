@@ -8,7 +8,31 @@ const CORNER_MARGIN := 1.5
 
 # Retorna os pontos da rota, começando em `from`. Vazio se `from` ou `to` estiverem
 # bloqueados ou se não houver caminho (destino inacessível).
+const CACHE_MAX := 128
+var _cache := {}  # [from, to, raio, hash dos obstáculos] -> rota; some sozinho quando algo muda
+var usec_total := 0  # tempo gasto em find_path (medidor F3)
+var calls_total := 0
+
+
+# Rota com cache: o mesmo trajeto entre os mesmos obstáculos não é recalculado. Porta aberta ou
+# alguém que morre ou se move mudam a lista de obstáculos, então a chave muda e a rota é refeita.
 func find_path(from: Vector2, to: Vector2, obstacles: Array[Rect2], radius: float) -> PackedVector2Array:
+	var t0 := Time.get_ticks_usec()
+	var key := [from, to, radius, obstacles.hash()]
+	var result: PackedVector2Array
+	if _cache.has(key):
+		result = _cache[key]
+	else:
+		result = _compute_path(from, to, obstacles, radius)
+		if _cache.size() >= CACHE_MAX:
+			_cache.clear()
+		_cache[key] = result
+	usec_total += Time.get_ticks_usec() - t0
+	calls_total += 1
+	return result
+
+
+func _compute_path(from: Vector2, to: Vector2, obstacles: Array[Rect2], radius: float) -> PackedVector2Array:
 	var blocks: Array[Rect2] = []
 	for o in obstacles:
 		blocks.append(o.grow(radius))

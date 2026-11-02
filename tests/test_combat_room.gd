@@ -15,6 +15,7 @@ func _run() -> void:
 	await _test_game_over()
 	await _test_party()
 	await _test_gear()
+	await _test_small_upgrades()
 	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
 	room.rules.rng.seed = 3
 	root.add_child(room)
@@ -206,6 +207,40 @@ func _test_party() -> void:
 	_check(lider.pa == pa_before - 2, "reanimar custa 2 PA")
 	room.queue_free()
 	await process_frame
+
+
+func _test_small_upgrades() -> void:
+	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
+	root.add_child(room)
+	await process_frame
+	var cultista: Combatant = room.enemies[0]
+	# P8: o inimigo prefere o ferido, mesmo que o outro esteja um pouco mais perto.
+	var a: Combatant = room.party[0]
+	var b: Combatant = room.party[1]
+	a.pos = cultista.pos + Vector2(100, 0)
+	b.pos = cultista.pos + Vector2(140, 0)
+	a.pv = a.max_pv
+	b.pv = maxi(b.max_pv / 2, 1)
+	_check(room._enemy_target(cultista) == b, "o inimigo prefere o alvo ferido")
+	b.pv = b.max_pv
+	_check(room._enemy_target(cultista) == a, "sem ferido, o mais perto")
+	# P3: o log guarda no máximo 4 linhas.
+	for i in 6:
+		room._log("linha %d" % i)
+	_check(room.combat_log.size() == room.LOG_MAX, "o log guarda só as últimas linhas")
+	# P4: SAN cheia não tinge a tela; SAN zero sim.
+	room.player.max_san = 12
+	room.player.san = 12
+	_check(is_equal_approx(room._san_ratio(), 1.0), "SAN cheia não muda a tela")
+	room.player.san = 0
+	_check(is_equal_approx(room._san_ratio(), 0.0), "SAN zero: tela sem cor")
+	# P7: combate rápido dobra o tempo só no combate.
+	room.options.values["fast_combat"] = true
+	room._start_combat()
+	_check(is_equal_approx(Engine.time_scale, 2.0), "combate rápido: tempo em 2x")
+	room.queue_free()
+	await process_frame
+	_check(is_equal_approx(Engine.time_scale, 1.0), "ao sair da sala o tempo volta a 1x")
 
 
 func _wait(cond: Callable, seconds: float) -> void:

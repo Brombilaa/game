@@ -19,6 +19,14 @@ func _init() -> void:
 	_check(around.size() >= 3, "contorna a parede")
 	_check(around.size() > 0 and around[around.size() - 1] == Vector2(200, 100), "termina no destino")
 
+	# Cache: a mesma rota entre os mesmos obstáculos sai igual; obstáculo novo muda o resultado.
+	var again := pf.find_path(Vector2(50, 100), Vector2(200, 100), wall, radius)
+	_check(again == around and pf.calls_total >= 3, "rota repetida vem igual do cache")
+	var wall2: Array[Rect2] = [Rect2(100, 0, 20, 200), Rect2(150, 0, 20, 200)]
+	_check(pf.find_path(Vector2(50, 100), Vector2(200, 100), wall2, radius).size() >= around.size(), "obstáculo novo refaz a rota")
+	var walled: Array[Rect2] = [Rect2(100, -1000, 20, 2000)]
+	_check(pf.find_path(Vector2(50, 100), Vector2(200, 100), walled, radius).size() >= around.size(), "o cache não reaproveita rota de outros obstáculos")
+
 	# Destino dentro da parede: inacessível.
 	_check(pf.find_path(Vector2(50, 100), Vector2(110, 100), wall, radius).is_empty(), "destino na parede é inacessível")
 

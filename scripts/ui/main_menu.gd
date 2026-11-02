@@ -20,7 +20,8 @@ const ART_SIGIL_AT := Vector2(0.62, 0.3)  # na arte, o símbolo e o nome ficam n
 const ART_DARKEN := 0.25  # escurece a arte por igual, para o nome e o menu lerem por cima
 const TITLE := "PACTO CARMESIM"
 const ITEMS := [["new", "Novo jogo"], ["load", "Carregar"], ["opts", "Opções"], ["quit", "Sair do jogo"]]
-const OPTION_ROWS := [["master", "Volume geral"], ["music", "Música"], ["sfx", "Efeitos"], ["fullscreen", "Tela cheia"]]
+const OPTION_ROWS := [["master", "Volume geral"], ["music", "Música"], ["sfx", "Efeitos"], ["fullscreen", "Tela cheia"], ["fast_combat", "Combate rápido (2x)"]]
+const TOGGLE_KEYS := ["fullscreen", "fast_combat"]
 const ROMAN := ["I", "II", "III"]
 const AREA_NAMES := {"test_room": "Sala de teste", "parque": "Parque"}
 
@@ -273,8 +274,8 @@ func _panel_rows() -> int:
 
 func _change_option(row: int, step: float) -> void:
 	var key: String = OPTION_ROWS[row][0]
-	if key == "fullscreen":
-		options.values["fullscreen"] = not options.values["fullscreen"]
+	if key in TOGGLE_KEYS:
+		options.values[key] = not options.values[key]
 	else:
 		options.set_volume(key, options.volume(key) + step)
 	options.apply()
@@ -285,7 +286,7 @@ func _accept_panel_row(row: int) -> void:
 		close_panel()
 	elif panel == "load":
 		load_slot(row)
-	elif OPTION_ROWS[row][0] == "fullscreen":
+	elif OPTION_ROWS[row][0] in TOGGLE_KEYS:
 		_change_option(row, 0.0)
 
 
@@ -314,7 +315,7 @@ func _gui_input(event: InputEvent) -> void:
 			activate(ITEMS[hit.y][0])
 		elif hit.x == 1:
 			panel_focus = hit.y
-			if panel == "opts" and hit.y < OPTION_ROWS.size() and OPTION_ROWS[hit.y][0] != "fullscreen":
+			if panel == "opts" and hit.y < OPTION_ROWS.size() and not OPTION_ROWS[hit.y][0] in TOGGLE_KEYS:
 				var bar := _option_bar(hit.y)
 				var key: String = OPTION_ROWS[hit.y][0]
 				options.set_volume(key, (event.position.x - bar.position.x) / bar.size.x)
@@ -400,7 +401,7 @@ func _flame_at() -> Vector2:
 
 
 func _panel_rect() -> Rect2:
-	var h := 262.0 if panel == "load" else 230.0
+	var h := 262.0 if panel == "load" else 272.0
 	var x := size.x * 0.33
 	return Rect2(x, (size.y - h) / 2.0, size.x * 0.96 - x, h)
 
@@ -757,10 +758,10 @@ func _draw_options(font: Font, alpha: float) -> void:
 		if on:
 			_diamond(Vector2(row.position.x - 6, row.get_center().y), 3.0, Color(BLOOD_LIGHT, alpha), true)
 		var bar := _option_bar(i)
-		if key == "fullscreen":
+		if key in TOGGLE_KEYS:
 			var box := Rect2(bar.position.x, row.get_center().y - 7, 14, 14)
 			draw_rect(box, Color(GOLD, alpha), false, 1.0)
-			if options.values["fullscreen"]:
+			if options.values[key]:
 				draw_rect(box.grow(-3), Color(BLOOD_LIGHT, alpha))
 		else:
 			var v := options.volume(key)
