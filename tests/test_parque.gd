@@ -35,6 +35,11 @@ func _run() -> void:
 	var tree_rect: Rect2 = room.scenario.colliders["arvore"]
 	var near: Vector2 = room._nearest_free(tree_rect.get_center())
 	_check(not tree_rect.has_point(near) and room.pathfinder.find_path(room.player.pos, near, room._obstacles(room.player), room.player.radius).size() > 1, "clicar dentro de um obstáculo leva ao ponto livre mais próximo")
+	# Os inimigos do gatilho nascem em ponto livre e com caminho até o grupo (nada preso atrás da árvore).
+	for spec in room.scenario.triggers["combate_arvore"]["inimigos"]:
+		var spawn := Vector2(spec["pos"][0], spec["pos"][1])
+		var route: PackedVector2Array = room.pathfinder.find_path(spawn, room.player.pos, room._obstacles(room.player), room.player.radius)
+		_check(Pathfinder.is_free(spawn, room._obstacles(room.player), room.player.radius) and route.size() > 1, "inimigo nasce livre e alcança o grupo: " + str(spec["origem"]))
 	_check(room.party[0].pos == room.scenario.party_start[0], "o grupo começa na entrada")
 	_check(room._iso(Vector2.ZERO).is_equal_approx(Vector2.ZERO), "a origem do plano fica na origem da tela")
 	var p := Vector2(500, 500)
