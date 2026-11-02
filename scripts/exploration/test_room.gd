@@ -133,6 +133,8 @@ var busy := false  # animação ou turno inimigo em andamento: entrada do jogado
 var popups: Array = []  # textos de acerto/erro/dano flutuando sobre as unidades
 var hit_shake := {}  # Combatant -> segundos restantes de tremor ao levar dano
 var fx := CombatFx.new()  # animação de combate, modelo B (Léo, 01/11/2026)
+const CAMERA_EASE_SECONDS := 0.6  # suaviza a câmera durante o ataque e na volta ao foco
+var _cam_ease := 0.0
 var zoom_base := Vector2.ONE  # zoom do jogador; o pulso do tiro é aplicado por cima
 var zoom_pulsing := false
 var screen_shake := 0.0  # segundos restantes de tremor da tela (crítico)
@@ -427,7 +429,19 @@ func _process(delta: float) -> void:
 	screen_shake = maxf(screen_shake - delta, 0.0)
 	_update_cursor()
 	var focus := turns.current if mode == Mode.COMBAT and turns and turns.current else player
-	camera.position = _iso(focus.pos).round()  # pixel inteiro: o cenário não treme ao andar
+	# Durante o ataque a câmera acompanha atacante e alvo até o fim da animação (mira, arremesso e
+	# rastro da barra), mesmo que o turno já tenha passado; entra e sai suavemente.
+	var cam_goal := _iso(focus.pos)
+	var fx_focus := fx.camera_focus()
+	if fx_focus != Vector2.INF:
+		cam_goal = _iso(fx_focus)
+		_cam_ease = CAMERA_EASE_SECONDS
+	if _cam_ease > 0.0:
+		if fx_focus == Vector2.INF:
+			_cam_ease -= delta
+		camera.position = camera.position.lerp(cam_goal, 1.0 - exp(-12.0 * delta)).round()
+	else:
+		camera.position = cam_goal.round()  # pixel inteiro: o cenário não treme ao andar
 	if moving_unit and not path.is_empty():
 		var step := _iso(path[0]) - _iso(moving_unit.pos)  # a direção vista na tela
 		facing[moving_unit] = PlaceholderArt.dir_from_vector(step)
@@ -876,6 +890,8 @@ func _run_enemy_turn(unit: Combatant) -> void:
 			break
 		if rules.attack_blocker(unit, target, _sight_blockers(), covers) == "":
 			_show_attack(unit, target, rules.attack(unit, target, _sight_blockers(), covers))
+			while fx.animating() and mode == Mode.COMBAT:
+				await get_tree().process_frame  # a vez só passa depois da animação inteira
 			turns.action_done()
 			continue
 		if not await _enemy_advance(unit, target):

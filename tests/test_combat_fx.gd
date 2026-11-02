@@ -36,6 +36,18 @@ func _init() -> void:
 	fx.update(2.0)
 	_check(fx.offset_of(t) == Vector2.ZERO and fx.trail.is_empty() and fx.particles.is_empty() and fx.zoom_factor() == 1.0, "tudo volta ao normal")
 
+	# Câmera: acompanha atacante e alvo (ponto médio) durante toda a animação e solta no fim.
+	_check(fx.camera_focus() == Vector2.INF and not fx.animating(), "sem ataque a câmera segue o turno")
+	a.pos = Vector2(0, 0)
+	t.pos = Vector2(100, 40)
+	t.pv = 14
+	fx.start(a, t, {"ok": true, "hit": true, "crit": false, "blocked": false, "damage": 6}, 20)
+	_check(fx.animating() and fx.camera_focus() == Vector2(50, 20), "durante a mira a câmera fica entre os dois")
+	fx.update(0.61)
+	_check(fx.animating() and fx.camera_focus() == Vector2(50, 20), "depois do impacto segue até o arremesso e o rastro acabarem")
+	fx.update(2.0)
+	_check(not fx.animating() and fx.camera_focus() == Vector2.INF, "no fim da animação a câmera é liberada")
+
 	# Crítico: tremor de 7 px e arremesso de 18 px; e o abatido continua aparecendo até o fim.
 	t.pv = 0
 	fx.start(a, t, {"ok": true, "hit": true, "crit": true, "blocked": false, "damage": 14}, 14)
