@@ -43,6 +43,7 @@ var shake_time := 0.0
 var shake_px := 0.0
 var hitstop := 0.0
 var zoom_time := 0.0
+var cam_pair: Array = []  # [atacante, alvo] do último ataque encenado: a câmera acompanha os dois
 var iso: Callable  # posição da sala -> posição de desenho
 var rng := RandomNumberGenerator.new()
 
@@ -51,9 +52,23 @@ func active() -> bool:
 	return not jobs.is_empty()
 
 
+# Verdadeiro da mira até o fim do arremesso e do rastro da barra (a animação inteira do ataque).
+func animating() -> bool:
+	return not jobs.is_empty() or not kicks.is_empty() or not trail.is_empty() or not linger.is_empty()
+
+
+# Ponto da sala que a câmera deve acompanhar durante o ataque: o meio entre atacante e alvo, para
+# os dois ficarem na tela (Léo, 02/11/2026). Vector2.INF quando não há animação em curso.
+func camera_focus() -> Vector2:
+	if not animating() or cam_pair.size() < 2:
+		return Vector2.INF
+	return (cam_pair[0].pos + cam_pair[1].pos) * 0.5
+
+
 # Enfileira a encenação de um ataque já resolvido. `pv_before` é o PV do alvo antes do golpe.
 func start(attacker: Combatant, target: Combatant, r: Dictionary, pv_before: int) -> void:
 	hold_pv[target] = pv_before
+	cam_pair = [attacker, target]
 	jobs.append({"attacker": attacker, "target": target, "r": r, "from_pv": pv_before, "time": 0.0})
 
 
