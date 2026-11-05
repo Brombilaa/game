@@ -583,6 +583,7 @@ func _start_combat() -> void:
 
 
 func _on_turn_started(unit: Combatant) -> void:
+	rules.units = _living_units()  # M4: quem está em campo, para achar o flanqueador
 	queue_redraw()
 	_log("Vez de %s" % unit.name)
 	if unit.side == Combatant.Side.PLAYER:
@@ -1386,6 +1387,8 @@ func _draw_preview(font: Font) -> void:
 # quando há, a cobertura que pesa na conta.
 func _draw_hit_label(font: Font, at: Vector2, target: Combatant) -> void:
 	var lines: Array[String] = ["Acerto %d%%" % roundi(rules.hit_chance(player, target, covers) * 100.0), "Dano %d a %d" % [int(player.weapon["damage_min"]), int(player.weapon["damage_max"])]]
+	if rules.flanker(player, target) != null:
+		lines.append("Flanco +%d%%" % roundi(cfg.value("flank_hit_bonus") * 100.0))
 	var c := rules.cover_between(player.pos, target, covers)
 	if c:
 		if c.kind == "partial":

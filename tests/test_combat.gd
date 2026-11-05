@@ -14,6 +14,7 @@ func _init() -> void:
 	_test_combat_end()
 	_test_movement()
 	_test_hit_chance()
+	_test_flank()
 	_test_attack()
 	_test_cover()
 	_test_stealth()
@@ -303,3 +304,24 @@ func _check(ok: bool, name: String) -> void:
 	else:
 		failures += 1
 		print("FAIL - ", name)
+
+
+func _test_flank() -> void:
+	var rules := CombatRules.new(cfg)
+	var a := cfg.make_unit("agente", "A", Vector2(100, 300))
+	var ally := cfg.make_unit("agente", "B", Vector2(300, 300))
+	var e := cfg.make_enemy("cultista", Vector2(200, 300))
+	rules.units = [a, ally, e]
+	var base := rules.hit_chance(a, e)
+	_check(rules.flanker(a, e) == ally, "aliado do lado oposto flanqueia")
+	rules.units = [a, e]
+	var plain := rules.hit_chance(a, e)
+	_check(is_equal_approx(base, minf(plain + cfg.value("flank_hit_bonus"), 0.95)), "flanco soma o bônus ao acerto")
+	ally.pos = Vector2(100, 340)  # mesmo lado do atacante
+	rules.units = [a, ally, e]
+	_check(rules.flanker(a, e) == null, "aliado do mesmo lado não flanqueia")
+	ally.pos = Vector2(1000, 300)  # longe demais do alvo
+	_check(rules.flanker(a, e) == null, "aliado longe demais não flanqueia")
+	ally.pos = Vector2(300, 300)
+	ally.pv = 0
+	_check(rules.flanker(a, e) == null, "aliado caído não flanqueia")
