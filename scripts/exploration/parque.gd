@@ -411,7 +411,7 @@ func _build_dialog() -> void:
 	var style := StyleBoxFlat.new()
 	style.bg_color = FRAME_BG
 	style.set_border_width_all(2)
-	style.border_color = FRAME_OUTER
+	style.border_color = party_hud.FRAME_OUTER
 	style.set_content_margin_all(14)
 	panel.add_theme_stylebox_override("panel", style)
 	dialog_text = Label.new()
