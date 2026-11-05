@@ -93,6 +93,9 @@ const ENEMY_VARIANTS := ["cultista", "atirador"]  # mesma ordem de `enemies`
 
 # Variantes que já têm folha real; as outras seguem com PlaceholderArt.
 const ENEMY_SHEETS := {"cultista": "res://assets/sprites/personagens/cultista"}
+# Variantes em 3D renderizado como pixel art (CreatureSheet): idle, andar, transição, ataque e morte.
+const CREATURE_VARIANT := "criatura_sangue"
+const TRANSITION_SECONDS := 0.9  # a transição (entrada em combate) toca uma vez ao começar o combate
 
 
 var walls: Array[Rect2] = [
@@ -229,6 +232,9 @@ var agent_sheets: Array[CharacterSheet] = []
 
 var enemy_sheets := {}  # variante -> CharacterSheet
 
+var creature := CreatureSheet.new()  # Criatura de Sangue (parque)
+var creature_clock := {}  # inimigo -> segundo (ms) em que a morte começou
+var combat_started_ms := -100000
 var nikolai3d := AnimSheet.new()  # Nikolai em 3D renderizado como pixel art (teste das animações)
 
 var use_3d := true  # tecla V troca entre o Nikolai 3D e o sprite 2D
@@ -569,7 +575,7 @@ func _process(delta: float) -> void:
 			move_finished.emit()
 		queue_redraw()
 	var tick3d := int(Time.get_ticks_msec() / 100.0)  # o Nikolai 3D anima a até 10 quadros por segundo
-	if use_3d and tick3d != anim3d_tick:
+	if (use_3d or _has_creatures()) and tick3d != anim3d_tick:
 		anim3d_tick = tick3d
 		queue_redraw()
 	var breath := int(Time.get_ticks_msec() / (IDLE_FRAME_SECONDS * 1000.0)) % 2
@@ -628,6 +634,7 @@ func _stealth_attack(target: Combatant) -> void:
 # Monta os participantes (todos os inimigos vivos da sala) e ordena a iniciativa.
 func _start_combat() -> void:
 	mode = Mode.COMBAT
+	combat_started_ms = Time.get_ticks_msec()
 	combat_log.clear()
 	cam_pan = Vector2.ZERO
 	Engine.time_scale = 2.0 if options.values["fast_combat"] else 1.0  # P7: combate rápido (Opções)
@@ -1323,7 +1330,9 @@ func _draw_unit(u: Combatant) -> void:
 			draw_string(ThemeDB.fallback_font, at + Vector2(-22, -CharacterSheet.HEIGHT - 14), "CAÍDO", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(1, 0.4, 0.4))
 	else:
 		var variant := _enemy_variant(i)
-		if enemy_sheets.has(variant):
+		if variant == CREATURE_VARIANT:
+			_draw_creature(u, at, walking, walk_dist.get(u, 0.0))
+		elif enemy_sheets.has(variant):
 			var frames: Array = CharacterSheet.WALK_FRAMES if walking else CharacterSheet.IDLE_FRAMES
 			var n := walk_n % frames.size() if walking else idle_frame
 			enemy_sheets[variant].draw(self, at, frames[n], facing8.get(u, CharacterSheet.Dir.SW))
@@ -1339,6 +1348,45 @@ func _draw_unit(u: Combatant) -> void:
 		draw_set_transform(Vector2.ZERO)
 	if mode != Mode.EXPLORATION:
 		_draw_health_bar(u, at)
+
+
+func _has_creatures() -> bool:
+	return not enemies.is_empty() and _enemy_variant(0) == CREATURE_VARIANT
+
+
+# Escolhe a animação da Criatura de Sangue: morte, ataque (durante a mira), transição ao entrar em
+# combate, andar ou parada.
+func _draw_creature(u: Combatant, at: Vector2, walking: bool, dist: float) -> void:
+	var now := Time.get_ticks_msec()
+	var dir: CharacterSheet.Dir = facing8.get(u, CharacterSheet.Dir.SW)
+	var anim := "idle"
+	var f := 0
+	if not u.is_alive():
+		if not creature_clock.has(u):
+			creature_clock[u] = now
+		anim = "death"
+		f = mini(int((now - creature_clock[u]) / 1000.0 * CreatureSheet.FPS["death"]), creature.frame_count("death") - 1)
+	else:
+		creature_clock.erase(u)
+		var attacking := false
+		for job in fx.jobs:
+			if job["attacker"] == u:
+				anim = "attack"
+				var n := creature.frame_count("attack")
+				f = mini(int(CombatFx.aim_progress(job) * n), n - 1)
+				attacking = true
+				break
+		if not attacking:
+			var since := (now - combat_started_ms) / 1000.0
+			if mode == Mode.COMBAT and since < TRANSITION_SECONDS:
+				anim = "transition"
+				f = mini(int(since * CreatureSheet.FPS["transition"]), creature.frame_count("transition") - 1)
+			elif walking:
+				anim = "walk"
+				f = int(dist / (WALK_FRAME_PIXELS * 6.0 / creature.frame_count("walk"))) % creature.frame_count("walk")
+			else:
+				f = int(now / 1000.0 * CreatureSheet.FPS["idle"]) % creature.frame_count("idle")
+	creature.draw(self, at, anim, f, dir)
 
 
 # Barra de vida com nome (modelo B): desce no impacto e deixa um rastro claro por 0,6 s.

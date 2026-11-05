@@ -74,5 +74,24 @@
     "fraquezas": [],
     "chefe": false,
     "fases": []
+  },
+  {
+    "id": "criatura_sangue",
+    "nome": "Criatura de Sangue",
+    "provisorio": true,
+    "pv": 20,
+    "pa": 3,
+    "agi": 1,
+    "percepcao_px": 300,
+    "precisao": 0,
+    "defesa": 0.0,
+    "ataques": [
+      "garra_criatura"
+    ],
+    "comportamento": "cerca",
+    "resistencias": [],
+    "fraquezas": [],
+    "chefe": false,
+    "fases": []
   }
 ]
