@@ -67,7 +67,7 @@ func advance(unit: Combatant, target: Combatant) -> bool:
 		room._start_move(unit, PackedVector2Array([unit.pos, spot]))
 		await room.move_finished
 		return true
-	var full := room.pathfinder.find_path(unit.pos, stand, room._obstacles(unit), unit.radius)
+	var full: PackedVector2Array = room.pathfinder.find_path(unit.pos, stand, room._obstacles(unit), unit.radius)
 	if full.is_empty() and not _gap_jumped:
 		# Sem caminho até o alvo (ex.: ponto livre fechado entre a sebe e a árvore): salta, sem gastar
 		# PA, para o ponto livre mais perto do alvo de onde há caminho; se não houver, passa o turno.
@@ -81,7 +81,7 @@ func advance(unit: Combatant, target: Combatant) -> bool:
 		return true
 	if full.size() < 2:
 		return false
-	var plan := room.rules.plan_move(full, unit.pa, unit.moved_px)
+	var plan: Dictionary = room.rules.plan_move(full, unit.pa, unit.moved_px)
 	if CombatRules.path_length(plan.path) < 1.0 or (plan.cost > 0 and not room.turns.spend(unit, plan.cost)):
 		return false
 	unit.moved_px += CombatRules.path_length(plan.path)
@@ -100,7 +100,7 @@ func jump_spot(unit: Combatant, target: Combatant, strict := false) -> Vector2:
 
 # Igual, para um ponto qualquer `goal`; `gap` é a folga que fica entre o ponto de parada e o objetivo.
 func spot_toward(unit: Combatant, goal: Vector2, gap: float, strict := false) -> Vector2:
-	var obstacles := room._obstacles(unit)
+	var obstacles: Array[Rect2] = room._obstacles(unit)
 	var candidates: Array[Vector2] = []
 	for ring in range(1, 26):
 		for k in 16:
