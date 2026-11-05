@@ -39,6 +39,11 @@ func _action_slots() -> Array:
 	return slots
 
 
+# Posição do kit entre as casas da barra (depois da arma e da reserva, se houver).
+func kit_index() -> int:
+	return 2 if room._reserve_id() != "" else 1
+
+
 func _bar_width(n: int) -> float:
 	return BAR_PAD * 2 + n * BAR_SLOT + (n - 1) * BAR_GAP + BAR_DIVIDER + BAR_END_W
 

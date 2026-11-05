@@ -385,6 +385,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_player_pass()
 			elif _reserve_id() != "" and action_bar._action_rect(1, n).has_point(screen):
 				_swap_weapon()
+			elif action_bar._action_rect(action_bar.kit_index(), n).has_point(screen):
+				_use_kit_button()
 			return
 		var click := _resolve_click(get_global_mouse_position())
 		if mode == Mode.EXPLORATION:
@@ -743,8 +745,10 @@ func _revive(fallen: Combatant) -> void:
 	var cost := int(kit["custo_pa_combate"])
 	if inventory.count(KIT_ID) <= 0:
 		_reject("requirement")
+		hud.show_notice("Sem kit de primeiros socorros")
 	elif CombatRules.gap(player, fallen) > REVIVE_REACH:
 		_reject("out_of_range")
+		hud.show_notice("Chegue mais perto de %s para reanimar" % fallen.name)
 	elif not turns.spend(player, cost):
 		_reject("no_pa")
 	else:
@@ -752,6 +756,18 @@ func _revive(fallen: Combatant) -> void:
 		fallen.pv = maxi(floori(fallen.max_pv * float(kit["valor"])), 1)
 		_popup(fallen.pos, "REANIMADO", "heal")
 	_after_player_action()
+
+
+# Ícone do kit na barra de combate: reanima o aliado caído que está encostado no controlado.
+func _use_kit_button() -> void:
+	if not _player_ready():
+		return
+	for m in party:
+		if m != player and not m.is_alive() and not m.dead and CombatRules.gap(player, m) <= REVIVE_REACH:
+			_revive(m)
+			return
+	_reject("out_of_range")
+	hud.show_notice("Nenhum aliado caído encostado em %s" % player.name)
 
 
 func _fallen_at(p: Vector2) -> Combatant:
