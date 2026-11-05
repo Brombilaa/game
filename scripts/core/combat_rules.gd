@@ -14,6 +14,7 @@ extends RefCounted
 
 var cfg: CombatConfig
 var rng: RandomNumberGenerator
+var units: Array = []  # todos em combate (a sala atualiza); usado para achar o aliado que flanqueia
 
 
 func _init(config: CombatConfig, random: RandomNumberGenerator = null) -> void:
@@ -113,12 +114,33 @@ func hit_chance(attacker: Combatant, target: Combatant, covers: Array = [], stea
 	var chance := float(w["base_chance"]) + attacker.hit_bonus
 	if stealth:
 		chance += cfg.value("stealth_hit_bonus")
+	if flanker(attacker, target) != null:
+		chance += cfg.value("flank_hit_bonus")
 	chance += maxi(attacker.initiative - 1, 0) * cfg.value("agi_hit_bonus")  # initiative = AGI
 	chance -= _range_penalty(w, gap(attacker, target))
 	var c := cover_between(attacker.pos, target, covers)
 	if c and c.kind == "partial":
 		chance -= float(cfg.cover("partial")["hit_penalty"])
 	return clampf(chance, cfg.value("hit_chance_min"), cfg.value("hit_chance_max"))
+
+
+# Aliado do atacante que flanqueia o alvo (M4): vivo, a até `flank_max_distance_m` do alvo e do lado
+# oposto ao atacante (ângulo em torno do alvo de `flank_min_angle_deg` ou mais). Null se nenhum.
+func flanker(attacker: Combatant, target: Combatant) -> Combatant:
+	var reach := cfg.value("flank_max_distance_m") * cfg.value("pixels_per_meter")
+	var min_angle := deg_to_rad(cfg.value("flank_min_angle_deg"))
+	var to_attacker := attacker.pos - target.pos
+	if to_attacker.length() < 0.001:
+		return null
+	for u: Combatant in units:
+		if u == attacker or u == target or not u.is_alive() or u.side != attacker.side:
+			continue
+		var to_ally := u.pos - target.pos
+		if to_ally.length() > reach or to_ally.length() < 0.001:
+			continue
+		if absf(to_attacker.angle_to(to_ally)) >= min_angle:
+			return u
+	return null
 
 
 # -5% a cada 2 m completos além da distância ideal da arma.
@@ -150,7 +172,7 @@ func attack_blocker(attacker: Combatant, target: Combatant, walls: Array[Rect2],
 # stealth: ataque furtivo contra inimigo sem alerta (bônus de acerto e multiplicador de dano).
 # Retorna {ok, reason, chance, hit, blocked, crit, damage, cover}.
 func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers: Array, stealth := false) -> Dictionary:
-	var result := {"ok": false, "reason": "", "chance": 0.0, "hit": false, "blocked": false, "crit": false, "damage": 0, "cover": ""}
+	var result := {"ok": false, "reason": "", "chance": 0.0, "hit": false, "blocked": false, "crit": false, "damage": 0, "cover": "", "flank": false}
 	result.reason = attack_blocker(attacker, target, walls, covers)
 	if result.reason != "":
 		return result
@@ -159,6 +181,7 @@ func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers:
 	var c := cover_between(attacker.pos, target, covers)
 	if c:
 		result.cover = c.kind
+	result.flank = flanker(attacker, target) != null
 	result.chance = hit_chance(attacker, target, covers, stealth)
 	if rng.randf() >= result.chance:
 		return result
