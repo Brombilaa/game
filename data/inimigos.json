@@ -12,7 +12,7 @@
     "ataques": [
       "faca_teste"
     ],
-    "comportamento": "agressivo",
+    "comportamento": "cerca",
     "resistencias": [],
     "fraquezas": [],
     "chefe": false,
@@ -31,7 +31,7 @@
     "ataques": [
       "pistola_teste"
     ],
-    "comportamento": "agressivo",
+    "comportamento": "atirador",
     "resistencias": [],
     "fraquezas": [],
     "chefe": false,

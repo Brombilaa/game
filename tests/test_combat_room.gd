@@ -16,6 +16,7 @@ func _run() -> void:
 	await _test_party()
 	await _test_gear()
 	await _test_small_upgrades()
+	await _test_enemy_roles()
 	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
 	room.rules.rng.seed = 3
 	root.add_child(room)
@@ -205,6 +206,39 @@ func _test_party() -> void:
 	room._revive(seguidor)
 	_check(seguidor.pv == seguidor.max_pv / 2 and room.inventory.count(room.KIT_ID) == 0, "kit reanima com metade do PV")
 	_check(lider.pa == pa_before - 2, "reanimar custa 2 PA")
+	room.queue_free()
+	await process_frame
+
+
+func _test_enemy_roles() -> void:
+	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
+	root.add_child(room)
+	await process_frame
+	var cultista: Combatant = room.enemies[0]
+	var atirador: Combatant = room.enemies[1]
+	_check(cultista.behavior == "cerca" and atirador.behavior == "atirador", "os papéis vêm do inimigos.json")
+	var alvo: Combatant = room.party[0]
+	alvo.pos = Vector2(200, 300)
+	# Dois cultistas: cada um escolhe um lado diferente do alvo.
+	var outro: Combatant = room.cfg.make_enemy("cultista", Vector2(700, 300))
+	room.enemies.append(outro)
+	cultista.pos = Vector2(700, 280)
+	var a: Vector2 = room.ai.stand_point(cultista, alvo)
+	var b: Vector2 = room.ai.stand_point(outro, alvo)
+	_check(a.distance_to(b) > 20.0, "cultistas cercam o alvo por lados diferentes")
+	# Atirador: ponto livre, e se não for o ponto de distância pura, tem cobertura parcial.
+	atirador.pos = Vector2(900, 300)
+	var stand: Vector2 = room.ai.stand_point(atirador, alvo)
+	_check(stand.is_finite(), "atirador acha onde parar")
+	var far := alvo.pos.move_toward(atirador.pos, alvo.radius + atirador.radius + 2.0 + float(atirador.weapon["max_range"]) * 0.85)
+	if stand.distance_to(far) > 1.0:
+		var probe := Combatant.new()
+		probe.radius = atirador.radius
+		probe.pos = stand
+		var c: Cover = room.rules.cover_between(alvo.pos, probe, room.covers)
+		_check(c != null and c.kind == "partial", "atirador que sai do ponto distante vai para uma cobertura parcial")
+	else:
+		_check(true, "atirador para a 85% do alcance")
 	room.queue_free()
 	await process_frame
 
