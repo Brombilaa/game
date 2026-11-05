@@ -24,7 +24,6 @@ signal move_finished
 
 const SPEED := 180.0
 const STAND_OFFSET := 6.0
-const ENEMY_STEP_SECONDS := 0.4
 const FOLLOW_DISTANCE := 60.0  # distância fixa do seguidor ao líder (provisório)
 const FOLLOW_SPREAD := 1.0  # variação do ângulo do seguidor em radianos (provisório)
 const REVIVE_REACH := 16.0  # borda a borda: "adjacente" para reanimar
@@ -713,7 +712,7 @@ func _player_move(click: Vector2) -> void:
 func _player_unstick(click: Vector2) -> void:
 	if not Pathfinder.is_free(click, _obstacles(player), player.radius) or not _player_trapped():
 		return
-	var spot := _spot_toward(player, click, 0.0, true)
+	var spot := ai.spot_toward(player, click, 0.0, true)
 	if spot == Vector2.INF:
 		return
 	busy = true
@@ -947,112 +946,18 @@ func _cover_at(p: Vector2) -> Cover:
 
 
 # --- Turno do inimigo --------------------------------------------------------
-# IA provisória: ataca enquanto puder; se não puder, anda em direção ao agente até
-# ficar a meio alcance da arma e tenta de novo. Comportamento por inimigo é PENDENTE.
+# A IA mora em EnemyAi (scripts/exploration/enemy_ai.gd); a sala só entrega o turno e responde pelo
+# movimento animado (_start_move/move_finished) e pela encenação do ataque (_show_attack).
 
-var _gap_jumped := false  # o inimigo da vez já saltou por falta de rota neste turno
+var ai := EnemyAi.new(self)
 
 
 func _run_enemy_turn(unit: Combatant) -> void:
-	busy = true
-	_gap_jumped = false
-	while mode == Mode.COMBAT and turns.is_turn_of(unit):
-		await get_tree().create_timer(ENEMY_STEP_SECONDS).timeout
-		if not turns.is_turn_of(unit):
-			break
-		var target := _enemy_target(unit)
-		if target == null:
-			turns.end_turn()
-			break
-		if rules.attack_blocker(unit, target, _sight_blockers(), covers) == "":
-			_show_attack(unit, target, rules.attack(unit, target, _sight_blockers(), covers))
-			while fx.animating() and mode == Mode.COMBAT:
-				await get_tree().process_frame  # a vez só passa depois da animação inteira
-			turns.action_done()
-			continue
-		if not await _enemy_advance(unit, target):
-			turns.end_turn()
-	busy = false
-	queue_redraw()
+	await ai.run_turn(unit)
 
 
-# Alvo do inimigo (P8, provisório): o membro de pé com menor "distância ajustada" pela ameaça. Quem está
-# com metade do PV ou menos, ou sem SAN, pesa como se estivesse a 60% da distância. Empate: o mais perto.
 func _enemy_target(unit: Combatant) -> Combatant:
-	var best: Combatant = null
-	var best_score := INF
-	for m in party:
-		if not m.is_alive():
-			continue
-		var score := unit.pos.distance_to(m.pos)
-		if m.pv * 2 <= m.max_pv or (m.max_san > 0 and m.san <= 0):
-			score *= 0.6
-		if score < best_score:
-			best_score = score
-			best = m
-	return best
-
-
-# Retorna false se não houver como se aproximar.
-func _enemy_advance(unit: Combatant, target: Combatant) -> bool:
-	var stand := target.pos.move_toward(unit.pos, target.radius + unit.radius + 2.0 + float(unit.weapon["max_range"]) * 0.5)
-	if not Pathfinder.is_free(unit.pos, _obstacles(unit), unit.radius):
-		# Preso dentro de um obstáculo (ex.: surgiu atrás da árvore): salta para o ponto livre
-		# mais perto do alvo, sem gastar PA, e segue o turno de lá (Léo, 01/11/2026).
-		var spot := _jump_spot(unit, target)
-		if spot == Vector2.INF:
-			return false
-		_start_move(unit, PackedVector2Array([unit.pos, spot]))
-		await move_finished
-		return true
-	var full := pathfinder.find_path(unit.pos, stand, _obstacles(unit), unit.radius)
-	if full.is_empty() and not _gap_jumped:
-		# Sem caminho até o alvo (ex.: ponto livre fechado entre a sebe e a árvore): salta, sem gastar
-		# PA, para o ponto livre mais perto do alvo de onde há caminho; se não houver, passa o turno.
-		# Um salto desses por turno, para não saltar em círculos se o destino continuar sem rota.
-		var out := _jump_spot(unit, target, true)
-		if out == Vector2.INF:
-			return false
-		_gap_jumped = true
-		_start_move(unit, PackedVector2Array([unit.pos, out]))
-		await move_finished
-		return true
-	if full.size() < 2:
-		return false
-	var plan := rules.plan_move(full, unit.pa, unit.moved_px)
-	if CombatRules.path_length(plan.path) < 1.0 or (plan.cost > 0 and not turns.spend(unit, plan.cost)):
-		return false
-	unit.moved_px += CombatRules.path_length(plan.path)
-	_start_move(unit, plan.path)
-	await move_finished
-	turns.action_done()
-	return true
-
-
-# Ponto livre perto de `unit` de onde há caminho até o alvo; entre os candidatos, o mais perto do
-# alvo (na prática, o lado da frente do obstáculo). Vector2.INF se não houver.
-# Com `strict`, só vale ponto com caminho até o alvo (evita saltar em círculos sem progresso).
-func _jump_spot(unit: Combatant, target: Combatant, strict := false) -> Vector2:
-	return _spot_toward(unit, target.pos, target.radius + unit.radius + 2.0, strict)
-
-
-# Igual, para um ponto qualquer `goal`; `gap` é a folga que fica entre o ponto de parada e o objetivo.
-func _spot_toward(unit: Combatant, goal: Vector2, gap: float, strict := false) -> Vector2:
-	var obstacles := _obstacles(unit)
-	var candidates: Array[Vector2] = []
-	for ring in range(1, 26):
-		for k in 16:
-			var spot := unit.pos + Vector2.from_angle(TAU * k / 16.0) * ring * 8.0
-			if Pathfinder.is_free(spot, obstacles, unit.radius):
-				candidates.append(spot)
-	candidates.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.distance_to(goal) < b.distance_to(goal))
-	for spot in candidates.slice(0, 40 if strict else 12):
-		var stand := goal.move_toward(spot, gap)
-		if pathfinder.find_path(spot, stand, obstacles, unit.radius).size() > 1:
-			return spot
-	if strict or candidates.is_empty():
-		return Vector2.INF
-	return candidates[0]
+	return ai.pick_target(unit)
 
 
 # --- Feedback ----------------------------------------------------------------
