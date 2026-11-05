@@ -1161,6 +1161,8 @@ func _draw() -> void:
 		_draw_preview(font)
 	_draw_fx()
 	_draw_san_tint()
+	var tr_view := get_canvas_transform().affine_inverse() * Rect2(Vector2.ZERO, get_viewport_rect().size)
+	draw_rect(tr_view, Color(0.95, 0.5, 0.18, 0.04))  # luz quente leve das 17h na sala de teste
 	_draw_hud(font)
 	for p in popups:
 		_draw_popup(font, p)
@@ -1297,12 +1299,38 @@ func _draw_range(center: Vector2, radius: float, color: Color) -> void:
 	draw_polyline(pts, color, 1.0)
 
 
+# Luz das 17h (Léo, 05/11/2026; valores provisórios): a sombra é uma mancha suave e sem forma
+# (bokeh grande e limpo), levemente deslocada para longe do sol, em tom frio.
+const SHADOW_COLOR := Color(0.06, 0.05, 0.14, 0.42)
+const SHADOW_OFFSET := Vector2(0.9, 0.42)  # deslocamento da mancha (fração do raio)
+const SHADOW_SCALE := 2.4  # tamanho da mancha em relação ao raio do contato
+static var _soft_shadow: Texture2D
+
+
+# Textura radial com queda suave (centro cheio, borda transparente), criada uma vez.
+static func _soft_shadow_texture() -> Texture2D:
+	if _soft_shadow == null:
+		var n := 64
+		var img := Image.create(n, n, false, Image.FORMAT_RGBA8)
+		var c := (n - 1) * 0.5
+		for y in n:
+			for x in n:
+				var d := Vector2(x - c, y - c).length() / c
+				img.set_pixel(x, y, Color(1, 1, 1, 1.0 - smoothstep(0.0, 1.0, d)))
+		_soft_shadow = ImageTexture.create_from_image(img)
+	return _soft_shadow
+
+
+func _draw_cast_shadow(at: Vector2, _height: float, radius: float) -> void:
+	var r := radius * SHADOW_SCALE
+	var center := at + SHADOW_OFFSET * radius * 0.8
+	draw_texture_rect(_soft_shadow_texture(), Rect2(center - Vector2(r, r * 0.5), Vector2(r * 2.0, r)), false, SHADOW_COLOR)
+
+
 func _draw_unit(u: Combatant) -> void:
 	var at := _iso(u.pos)
 	at += fx.offset_of(u)  # arremessado pelo tiro ou desviando dele
-	draw_set_transform(at, 0.0, Vector2(1.0, 0.5))  # sombra achatada sob os pés
-	draw_circle(Vector2.ZERO, 26.0, Color(0, 0, 0, 0.45))
-	draw_set_transform(Vector2.ZERO)
+	_draw_cast_shadow(at, CharacterSheet.HEIGHT, 26.0)
 	if turns and u == turns.current:
 		draw_set_transform(at, 0.0, Vector2(1.0, 0.5))
 		draw_arc(Vector2.ZERO, 36.0, 0.0, TAU, 32, PlaceholderArt.color("destaque"), 2.0)

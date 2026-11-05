@@ -17,7 +17,8 @@ const DOT_RADIUS := 6.0  # bolinha da pista, em px do desenho
 const DOT_HIT := 14.0  # raio em que o clique na bolinha vale (px do desenho)
 const CLUE_NEAR := 260.0  # a bolinha ganha um anel quando o controlado chega perto
 const STAND_FACTOR := 0.85  # distância de parada, em fração do raio da pista
-const DUSK_TINT := Color(0.95, 0.55, 0.2, 0.09)  # véu do entardecer quente (Léo escolheu o modelo A, 30/10)
+const DUSK_TINT := Color(0.95, 0.55, 0.2, 0.1)  # véu do fim de tarde, 17h: sol baixo, laranja nas áreas claras (Léo, 05/11; provisório)
+const DUSK_COOL := Color(0.16, 0.14, 0.42, 0.07)  # penumbra fria que escurece e esfria o conjunto (sombras azuladas)
 const VOID_COLOR := Color(0.078, 0.07, 0.063)  # além da névoa do fundo estendido
 const CAMERA_ZOOM := 1.5  # zoom inicial da câmera (a roda do mouse muda); câmera aproximada: o fundo estendido cobre o que ela mostra (Léo, 30/10)
 const VIGNETTE_SIZE := 128  # textura da vinheta, esticada sobre a tela
@@ -176,6 +177,7 @@ func _draw() -> void:
 	_draw_fx()
 	_draw_san_tint()
 	# Véu quente e vinheta cobrem o cenário e os personagens, mas ficam por baixo do HUD.
+	draw_rect(view, DUSK_COOL)
 	draw_rect(view, DUSK_TINT)
 	draw_texture_rect(vignette, view, false)
 	_draw_hud(font)
@@ -207,9 +209,7 @@ func _draw_hud(font: Font) -> void:
 # Figura provisória de NPC (corpo, cabeça e nome) até a arte do Caio e da Letícia existir.
 func _draw_npc(font: Font, npc_id: String) -> void:
 	var at := _iso(scenario.npcs[npc_id])
-	draw_set_transform(at, 0.0, Vector2(1.0, 0.5))
-	draw_circle(Vector2.ZERO, 22.0, Color(0, 0, 0, 0.4))
-	draw_set_transform(Vector2.ZERO)
+	_draw_cast_shadow(at, 86.0, 22.0)
 	draw_rect(Rect2(at + Vector2(-11, -66), Vector2(22, 60)), NPC_COLORS[npc_id])
 	draw_rect(Rect2(at + Vector2(-8, -86), Vector2(16, 18)), Color("#d6b292"))
 	var name_text: String = NPC_NAMES[npc_id]
