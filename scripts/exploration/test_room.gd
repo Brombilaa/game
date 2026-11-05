@@ -1155,7 +1155,7 @@ func _draw() -> void:
 	_draw_fx()
 	_draw_san_tint()
 	var tr_view := get_canvas_transform().affine_inverse() * Rect2(Vector2.ZERO, get_viewport_rect().size)
-	draw_rect(tr_view, Color(0.95, 0.5, 0.18, 0.08))  # luz quente das 17h na sala de teste
+	draw_rect(tr_view, Color(0.95, 0.5, 0.18, 0.04))  # luz quente leve das 17h na sala de teste
 	_draw_hud(font)
 	for p in popups:
 		_draw_popup(font, p)
@@ -1292,23 +1292,32 @@ func _draw_range(center: Vector2, radius: float, color: Color) -> void:
 	draw_polyline(pts, color, 1.0)
 
 
-# Luz das 17h (Léo, 05/11/2026; valores provisórios): sol baixo vindo da esquerda-atrás, então a sombra
-# cai para a direita e para a frente, longa e fria. Contato escuro sob os pés + sombra alongada.
-const SUN_SHADOW_DIR := Vector2(0.9, 0.42)  # direção da sombra na tela
-const SUN_SHADOW_LENGTH := 0.65  # comprimento da sombra em múltiplos da altura do personagem
-const SHADOW_COLOR := Color(0.07, 0.06, 0.16, 0.5)  # sombra fria, azulada
-const CONTACT_COLOR := Color(0.05, 0.04, 0.1, 0.5)
+# Luz das 17h (Léo, 05/11/2026; valores provisórios): a sombra é uma mancha suave e sem forma
+# (bokeh grande e limpo), levemente deslocada para longe do sol, em tom frio.
+const SHADOW_COLOR := Color(0.06, 0.05, 0.14, 0.42)
+const SHADOW_OFFSET := Vector2(0.9, 0.42)  # deslocamento da mancha (fração do raio)
+const SHADOW_SCALE := 2.4  # tamanho da mancha em relação ao raio do contato
+static var _soft_shadow: Texture2D
 
 
-func _draw_cast_shadow(at: Vector2, height: float, radius: float) -> void:
-	var dir := SUN_SHADOW_DIR.normalized()
-	var side := Vector2(-dir.y, dir.x)
-	var tip := at + dir * height * SUN_SHADOW_LENGTH
-	var w0 := radius * 1.1
-	draw_colored_polygon(PackedVector2Array([at + side * w0 * 0.5, tip + side * 5.0, tip - side * 5.0, at - side * w0 * 0.5]), SHADOW_COLOR)
-	draw_set_transform(at, 0.0, Vector2(1.0, 0.5))
-	draw_circle(Vector2.ZERO, radius, CONTACT_COLOR)
-	draw_set_transform(Vector2.ZERO)
+# Textura radial com queda suave (centro cheio, borda transparente), criada uma vez.
+static func _soft_shadow_texture() -> Texture2D:
+	if _soft_shadow == null:
+		var n := 64
+		var img := Image.create(n, n, false, Image.FORMAT_RGBA8)
+		var c := (n - 1) * 0.5
+		for y in n:
+			for x in n:
+				var d := Vector2(x - c, y - c).length() / c
+				img.set_pixel(x, y, Color(1, 1, 1, 1.0 - smoothstep(0.0, 1.0, d)))
+		_soft_shadow = ImageTexture.create_from_image(img)
+	return _soft_shadow
+
+
+func _draw_cast_shadow(at: Vector2, _height: float, radius: float) -> void:
+	var r := radius * SHADOW_SCALE
+	var center := at + SHADOW_OFFSET * radius * 0.8
+	draw_texture_rect(_soft_shadow_texture(), Rect2(center - Vector2(r, r * 0.5), Vector2(r * 2.0, r)), false, SHADOW_COLOR)
 
 
 func _draw_unit(u: Combatant) -> void:
