@@ -1154,6 +1154,8 @@ func _draw() -> void:
 		_draw_preview(font)
 	_draw_fx()
 	_draw_san_tint()
+	var tr_view := get_canvas_transform().affine_inverse() * Rect2(Vector2.ZERO, get_viewport_rect().size)
+	draw_rect(tr_view, Color(0.95, 0.5, 0.18, 0.08))  # luz quente das 17h na sala de teste
 	_draw_hud(font)
 	for p in popups:
 		_draw_popup(font, p)
@@ -1290,12 +1292,29 @@ func _draw_range(center: Vector2, radius: float, color: Color) -> void:
 	draw_polyline(pts, color, 1.0)
 
 
+# Luz das 17h (Léo, 05/11/2026; valores provisórios): sol baixo vindo da esquerda-atrás, então a sombra
+# cai para a direita e para a frente, longa e fria. Contato escuro sob os pés + sombra alongada.
+const SUN_SHADOW_DIR := Vector2(0.9, 0.42)  # direção da sombra na tela
+const SUN_SHADOW_LENGTH := 0.65  # comprimento da sombra em múltiplos da altura do personagem
+const SHADOW_COLOR := Color(0.07, 0.06, 0.16, 0.5)  # sombra fria, azulada
+const CONTACT_COLOR := Color(0.05, 0.04, 0.1, 0.5)
+
+
+func _draw_cast_shadow(at: Vector2, height: float, radius: float) -> void:
+	var dir := SUN_SHADOW_DIR.normalized()
+	var side := Vector2(-dir.y, dir.x)
+	var tip := at + dir * height * SUN_SHADOW_LENGTH
+	var w0 := radius * 1.1
+	draw_colored_polygon(PackedVector2Array([at + side * w0 * 0.5, tip + side * 5.0, tip - side * 5.0, at - side * w0 * 0.5]), SHADOW_COLOR)
+	draw_set_transform(at, 0.0, Vector2(1.0, 0.5))
+	draw_circle(Vector2.ZERO, radius, CONTACT_COLOR)
+	draw_set_transform(Vector2.ZERO)
+
+
 func _draw_unit(u: Combatant) -> void:
 	var at := _iso(u.pos)
 	at += fx.offset_of(u)  # arremessado pelo tiro ou desviando dele
-	draw_set_transform(at, 0.0, Vector2(1.0, 0.5))  # sombra achatada sob os pés
-	draw_circle(Vector2.ZERO, 26.0, Color(0, 0, 0, 0.45))
-	draw_set_transform(Vector2.ZERO)
+	_draw_cast_shadow(at, CharacterSheet.HEIGHT, 26.0)
 	if turns and u == turns.current:
 		draw_set_transform(at, 0.0, Vector2(1.0, 0.5))
 		draw_arc(Vector2.ZERO, 36.0, 0.0, TAU, 32, PlaceholderArt.color("destaque"), 2.0)
