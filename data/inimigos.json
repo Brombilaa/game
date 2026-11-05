@@ -50,7 +50,7 @@
     "ataques": [
       "faca_cultista"
     ],
-    "comportamento": "agressivo",
+    "comportamento": "cerca",
     "resistencias": [],
     "fraquezas": [],
     "chefe": false,
@@ -69,7 +69,7 @@
     "ataques": [
       "tiro_atirador"
     ],
-    "comportamento": "agressivo",
+    "comportamento": "atirador",
     "resistencias": [],
     "fraquezas": [],
     "chefe": false,

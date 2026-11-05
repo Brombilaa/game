@@ -57,7 +57,7 @@ func pick_target(unit: Combatant) -> Combatant:
 
 # Retorna false se não houver como se aproximar.
 func advance(unit: Combatant, target: Combatant) -> bool:
-	var stand := target.pos.move_toward(unit.pos, target.radius + unit.radius + 2.0 + float(unit.weapon["max_range"]) * 0.5)
+	var stand := stand_point(unit, target)
 	if not Pathfinder.is_free(unit.pos, room._obstacles(unit), unit.radius):
 		# Preso dentro de um obstáculo (ex.: surgiu atrás da árvore): salta para o ponto livre
 		# mais perto do alvo, sem gastar PA, e segue o turno de lá (Léo, 01/11/2026).
@@ -116,3 +116,65 @@ func spot_toward(unit: Combatant, goal: Vector2, gap: float, strict := false) ->
 		return Vector2.INF
 	return candidates[0]
 
+
+
+# --- Papéis (M3, provisório; ver data/inimigos.json, campo "comportamento") -----------------
+# agressivo: aproxima até meio alcance da arma. cerca: cada cultista escolhe um lado do alvo, em
+# vez de todos chegarem pelo mesmo ponto. atirador: para longe (85% do alcance) e, quando acha,
+# prefere um ponto com cobertura parcial por perto de onde ainda tem linha de tiro.
+const SURROUND_STEP := 0.7  # radianos entre um cultista e o próximo ao redor do alvo
+const SHOOTER_RANGE_FACTOR := 0.85
+const COVER_SEARCH_RADIUS := 140.0
+
+
+func stand_point(unit: Combatant, target: Combatant) -> Vector2:
+	var reach := target.radius + unit.radius + 2.0
+	var max_range := float(unit.weapon["max_range"])
+	var plain := target.pos.move_toward(unit.pos, reach + max_range * 0.5)
+	match unit.behavior:
+		"cerca":
+			var mates: Array[Combatant] = []
+			for e: Combatant in room.enemies:
+				if e.is_alive() and e.behavior == "cerca":
+					mates.append(e)
+			if mates.size() < 2:
+				return plain
+			var offset := (mates.find(unit) - (mates.size() - 1) * 0.5) * SURROUND_STEP
+			var away := (unit.pos - target.pos).normalized()
+			var spot := target.pos + away.rotated(offset) * (reach + max_range * 0.5)
+			if Pathfinder.is_free(spot, room._obstacles(unit), unit.radius):
+				return spot
+			return plain
+		"atirador":
+			var far := target.pos.move_toward(unit.pos, reach + max_range * SHOOTER_RANGE_FACTOR)
+			var cover_spot := _cover_spot(unit, target, far)
+			return far if cover_spot == Vector2.INF else cover_spot
+	return plain
+
+
+# Ponto livre perto de `near` com cobertura parcial contra `target` e linha de tiro liberada.
+func _cover_spot(unit: Combatant, target: Combatant, near: Vector2) -> Vector2:
+	var probe := Combatant.new()
+	probe.radius = unit.radius
+	probe.weapon = unit.weapon
+	probe.side = unit.side
+	probe.initiative = unit.initiative
+	var obstacles: Array[Rect2] = room._obstacles(unit)
+	var best := Vector2.INF
+	var best_dist := INF
+	for ring in range(1, 8):
+		for k in 16:
+			var spot := near + Vector2.from_angle(TAU * k / 16.0) * ring * COVER_SEARCH_RADIUS / 7.0
+			if not Pathfinder.is_free(spot, obstacles, unit.radius):
+				continue
+			probe.pos = spot
+			var c: Cover = room.rules.cover_between(target.pos, probe, room.covers)
+			if c == null or c.kind != "partial":
+				continue
+			if room.rules.attack_blocker(probe, target, room._sight_blockers(), room.covers) != "":
+				continue
+			var d := unit.pos.distance_to(spot)
+			if d < best_dist:
+				best_dist = d
+				best = spot
+	return best
