@@ -101,7 +101,7 @@ func _place_label() -> String:
 
 
 func _enemy_variant(_i: int) -> String:
-	return "cultista"
+	return CREATURE_VARIANT  # Criatura de Sangue no lugar dos cultistas (Léo, 5/11)
 
 
 # Os NPCs também bloqueiam o caminho.

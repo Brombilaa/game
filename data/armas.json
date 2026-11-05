@@ -213,5 +213,27 @@
     "carregador": null,
     "reserva_maxima": null,
     "efeitos_criticos": []
+  },
+  {
+    "id": "garra_criatura",
+    "nome": "Garra da Criatura de Sangue",
+    "provisorio": true,
+    "tipo": "corpo_a_corpo",
+    "arma_longa": false,
+    "dano": [
+      3,
+      5
+    ],
+    "custo_pa": 1,
+    "precisao_base": 0.75,
+    "alcance_maximo": 1.0,
+    "distancia_ideal": [
+      0.0,
+      1.0
+    ],
+    "carregador": 0,
+    "reserva_maxima": 0,
+    "efeitos_criticos": [],
+    "bonus_mira": null
   }
 ]
