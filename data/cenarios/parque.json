@@ -25,7 +25,11 @@
 		{"id": "banco_2", "rect": [680, 590, 90, 50]},
 		{"id": "banco_quebrado", "rect": [860, 375, 80, 50]},
 		{"id": "carrossel", "rect": [905, 775, 110, 110]},
-		{"id": "balanco", "rect": [1130, 670, 130, 60]},
+		{"id": "balanco", "rect": [1130, 670, 130, 60], "_nota": "só o assento; os quatro pés da armação são os balanco_pe_*"},
+		{"id": "balanco_pe_1", "rect": [1109, 616, 20, 20]},
+		{"id": "balanco_pe_2", "rect": [1109, 760, 20, 20]},
+		{"id": "balanco_pe_3", "rect": [1262, 616, 18, 20]},
+		{"id": "balanco_pe_4", "rect": [1261, 763, 19, 20]},
 		{"id": "arvore", "rect": [1065, 135, 130, 130]},
 		{"id": "mata_1", "rect": [820, 28, 380, 64], "_nota": "sebe inteira, com a abertura, como parede"},
 		{"id": "mata_2", "rect": [1040, 60, 240, 60], "_nota": "sebe atrás da árvore, como parede"},
@@ -33,8 +37,8 @@
 		{"id": "arbusto_2", "rect": [365, 405, 80, 70]},
 		{"id": "arbusto_3", "rect": [180, 535, 90, 70]},
 		{"id": "arbusto_4", "rect": [1190, 295, 90, 70]},
-		{"id": "pneus_oeste", "rect": [610, 680, 110, 280]},
-		{"id": "pneus_arvore", "rect": [1170, 335, 90, 80]}
+		{"id": "pneus_oeste", "rect": [572, 612, 76, 316], "_nota": "três pneus alinhados em x≈610 (y 645 a 890); medido sobre o fundo em 5/11"},
+		{"id": "pneus_arvore", "rect": [1112, 312, 78, 75], "_nota": "pilha de dois pneus ao lado da árvore; medido sobre o fundo em 5/11"}
 	],
 	"pistas": [
 		{"id": "marcas_pneu", "pos": [760, 560], "raio": 70, "ordem": 1, "bolinha": [0, -28], "texto": "Marcas largas de pneu. Vão da terra central até a entrada, como se algo tivesse sido arrastado."},

@@ -57,8 +57,28 @@ func _run() -> void:
 	# A árvore, os arbustos e os pneus mantêm o grupo afastado (Léo, 30/10): ninguém chega colado no tronco.
 	var near_tree: PackedVector2Array = room.pathfinder.find_path(room.player.pos, Vector2(1130, 250), room._obstacles(room.player), room.player.radius)
 	_check(near_tree.is_empty(), "não há rota até o pé da árvore")
-	var by_tree: PackedVector2Array = room.pathfinder.find_path(room.player.pos, Vector2(1130, 320), room._obstacles(room.player), room.player.radius)
+	var by_tree: PackedVector2Array = room.pathfinder.find_path(room.player.pos, Vector2(1130, 285), room._obstacles(room.player), room.player.radius)
 	_check(by_tree.size() > 1, "há rota até a frente da árvore, a pista continua alcançável")
+
+	# Todas as pistas continuam alcançáveis a pé (há ponto livre dentro do raio com rota até lá).
+	for cid in room.scenario.clues:
+		var clue: Dictionary = room.scenario.clues[cid]
+		var reached := false
+		for angle in 16:
+			var goal: Vector2 = clue["pos"] + Vector2.RIGHT.rotated(TAU * angle / 16.0) * (float(clue["raio"]) - 4.0)
+			if Rect2(Vector2.ZERO, room.scenario.size).has_point(goal) and room.pathfinder.find_path(room.player.pos, goal, room._obstacles(room.player), room.player.radius).size() > 1:
+				reached = true
+				break
+		_check(reached, "pista alcançável a pé: " + cid)
+
+	# Os pés da armação do balanço bloqueiam o caminho; o espaço entre eles continua livre.
+	for i in range(1, 5):
+		var foot: Rect2 = room.scenario.colliders["balanco_pe_%d" % i]
+		_check(not Pathfinder.is_free(foot.get_center(), room._obstacles(room.player), room.player.radius), "pé %d do balanço é sólido" % i)
+	_check(Pathfinder.is_free(Vector2(1197, 640), room._obstacles(room.player), room.player.radius), "dá para passar entre os pés do balanço")
+	# Os pneus ficam onde estão no desenho: o do meio é sólido e o chão da areia ao lado, livre.
+	_check(not Pathfinder.is_free(Vector2(610, 765), room._obstacles(room.player), room.player.radius), "pneus a oeste são sólidos")
+	_check(Pathfinder.is_free(Vector2(700, 800), room._obstacles(room.player), room.player.radius), "a areia ao lado dos pneus é livre")
 
 	# A árvore só abre depois das outras pistas.
 	room._inspect("arvore_simbolo")
