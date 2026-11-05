@@ -1,0 +1,44 @@
+<script type="importmap">{"imports":{"three":"./three/build/three.module.js","three/addons/":"./three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {FBXLoader} from 'three/addons/loaders/FBXLoader.js';
+const Q=new URLSearchParams(location.search);
+const W=parseInt(Q.get('w')||'1152'),Z=parseFloat(Q.get('z')||'1.12'),HC=432*Z;
+const root=await new FBXLoader().loadAsync('skin.fbx');
+let mesh;root.traverse(c=>{if(c.isSkinnedMesh)mesh=c});
+const bones=[];root.traverse(b=>{if(b.isBone)bones.push(b)});
+const byName={};bones.forEach(b=>byName[b.name]=b);
+// textura da malha
+let tex=Array.isArray(mesh.material)?mesh.material[0].map:mesh.material.map;
+if(Q.get('tex')==='flat'){tex=await new THREE.TextureLoader().loadAsync('tex_flat.png');tex.colorSpace=THREE.SRGBColorSpace;tex.flipY=true;}
+if(tex){tex.minFilter=THREE.LinearMipmapLinearFilter;tex.anisotropy=8}
+const tones=(Q.get('tones')||'90,150,205,255').split(',').map(Number);
+const gm=new THREE.DataTexture(new Uint8Array(tones.flatMap(t=>[t,t,t,255])),tones.length,1,THREE.RGBAFormat);gm.minFilter=gm.magFilter=THREE.NearestFilter;gm.needsUpdate=true;
+const gain=parseFloat(Q.get('gain')||'1.6');
+const matC=new THREE.MeshToonMaterial({map:tex,gradientMap:gm,side:THREE.DoubleSide,color:new THREE.Color(gain,gain,gain)});
+const matN=new THREE.MeshNormalMaterial({side:THREE.DoubleSide});
+mesh.material=matC;mesh.frustumCulled=false;
+const r=new THREE.WebGLRenderer({antialias:false,preserveDrawingBuffer:true,alpha:true});r.setSize(W,W);r.setPixelRatio(1);r.setClearColor(0,0);document.body.appendChild(r.domElement);
+const sc=new THREE.Scene();const rig=new THREE.Group();rig.add(root);sc.add(rig);
+const el=Math.atan(0.5);const cam=new THREE.OrthographicCamera(-W/2/HC,W/2/HC,W/2/HC,-W/2/HC,-20,20);
+const YC=parseFloat(Q.get('yc')||String((179*6-W/2)/(Math.cos(el)*HC)));
+cam.position.set(0,Math.sin(el)*10+YC,Math.cos(el)*10);cam.lookAt(0,YC,0);
+sc.add(new THREE.AmbientLight(0xffffff,parseFloat(Q.get('amb')||'0.6')));
+const key=new THREE.DirectionalLight(0xffffff,2.0);key.position.set(-4,6,5);sc.add(key);
+const fill=new THREE.DirectionalLight(0xffffff,1.0);fill.position.set(0,3,8);sc.add(fill);
+rig.position.y=parseFloat(Q.get('lift')||'0')*6/(Math.cos(el)*HC);
+const HP=parseFloat(Q.get('hp')||'0')*Math.PI/180;
+const clips={};
+window.loadAnim=async(name)=>{
+  let c;if(name==='__skin'){c=root.animations[0]}else{const o=await new FBXLoader().loadAsync(encodeURI(name+'.fbx'));c=o.animations[0];}
+  c=c.clone();const t=c.tracks.find(t=>/Hips\.position/.test(t.name));const v=t.values;let mx=0,mz=0;const n=v.length/3;
+  for(let i=0;i<n;i++){mx+=v[i*3];mz+=v[i*3+2]}mx/=n;mz/=n;if(Q.get('ref')==='first'){mx=v[0];mz=v[2]}if(Q.get('ref')==='last'){mx=v[(n-1)*3];mz=v[(n-1)*3+2]}for(let i=0;i<n;i++){v[i*3]-=mx;v[i*3+2]-=mz}
+  clips[name]=c;return {dur:c.duration}};
+const mixer=new THREE.AnimationMixer(root);
+window.shot=(name,time,dir,mode)=>{
+  mixer.stopAllAction();const a=mixer.clipAction(clips[name]);a.play();mixer.setTime(time);
+  if(HP){for(const n of ['Neck','Head']){const b=byName['mixamorig'+n];b.rotateX(-HP*(n==='Head'?0.6:0.4))}}
+  rig.rotation.y=dir*Math.PI/4;rig.updateMatrixWorld(true);
+  mesh.material=mode==='n'?matN:matC;r.render(sc,cam);return r.domElement.toDataURL('image/png');};
+window.done=true;
+</script>
