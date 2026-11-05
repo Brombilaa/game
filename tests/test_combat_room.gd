@@ -206,6 +206,18 @@ func _test_party() -> void:
 	room._revive(seguidor)
 	_check(seguidor.pv == seguidor.max_pv / 2 and room.inventory.count(room.KIT_ID) == 0, "kit reanima com metade do PV")
 	_check(lider.pa == pa_before - 2, "reanimar custa 2 PA")
+
+	# Pelo ícone da barra: sem caído encostado recusa e não gasta o kit; encostado reanima.
+	room.inventory.add(room.KIT_ID, 1)
+	seguidor.take_damage(999)
+	seguidor.pos = lider.pos + Vector2(200, 0)
+	lider.pa = 3
+	room._use_kit_button()
+	_check(not seguidor.is_alive() and room.inventory.count(room.KIT_ID) == 1 and lider.pa == 3, "ícone do kit: longe não gasta kit nem PA")
+	seguidor.pos = lider.pos + Vector2(0, 24)
+	room._use_kit_button()
+	_check(seguidor.is_alive() and room.inventory.count(room.KIT_ID) == 0 and lider.pa == 1, "ícone do kit reanima o caído encostado")
+	_check(room.action_bar._action_slots()[room.action_bar.kit_index()][0] == "kit", "kit_index aponta para a casa do kit")
 	room.queue_free()
 	await process_frame
 
