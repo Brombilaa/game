@@ -57,7 +57,7 @@ func _run() -> void:
 	# A árvore, os arbustos e os pneus mantêm o grupo afastado (Léo, 30/10): ninguém chega colado no tronco.
 	var near_tree: PackedVector2Array = room.pathfinder.find_path(room.player.pos, Vector2(1130, 250), room._obstacles(room.player), room.player.radius)
 	_check(near_tree.is_empty(), "não há rota até o pé da árvore")
-	var by_tree: PackedVector2Array = room.pathfinder.find_path(room.player.pos, Vector2(1130, 320), room._obstacles(room.player), room.player.radius)
+	var by_tree: PackedVector2Array = room.pathfinder.find_path(room.player.pos, Vector2(1130, 285), room._obstacles(room.player), room.player.radius)
 	_check(by_tree.size() > 1, "há rota até a frente da árvore, a pista continua alcançável")
 
 	# Todas as pistas continuam alcançáveis a pé (há ponto livre dentro do raio com rota até lá).
