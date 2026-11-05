@@ -12,8 +12,8 @@ func _init() -> void:
 		_check(sheet.frame_count(anim) >= 8, "%s: ao menos 8 quadros" % anim)
 		for d in ["se", "e", "ne", "s", "n"]:
 			var tex: Texture2D = sheet.textures[anim][d]
-			_check(tex != null and tex.get_height() == AnimSheet.FRAME, "%s_%s: altura de %d px" % [anim, d, AnimSheet.FRAME])
-			_check(tex != null and tex.get_width() == sheet.frame_count(anim) * AnimSheet.FRAME, "%s_%s: largura é múltiplo do quadro" % [anim, d])
+			_check(tex != null and tex.get_height() == AnimSheet.frame_size(anim).y, "%s_%s: altura de %d px" % [anim, d, AnimSheet.frame_size(anim).y])
+			_check(tex != null and tex.get_width() == sheet.frame_count(anim) * AnimSheet.frame_size(anim).x, "%s_%s: largura é múltiplo do quadro" % [anim, d])
 	if failures == 0:
 		print("OK: animações do Nikolai 3D")
 	quit(failures)

@@ -233,6 +233,7 @@ var agent_sheets: Array[CharacterSheet] = []
 var enemy_sheets := {}  # variante -> CharacterSheet
 
 var creature := CreatureSheet.new()  # Criatura de Sangue (parque)
+var nikolai_clock := {}  # Combatant -> {"anim": String, "start": ms}: dano, morte ou levantar do Nikolai 3D
 var creature_clock := {}  # inimigo -> segundo (ms) em que a morte começou
 var combat_started_ms := -100000
 var nikolai3d := AnimSheet.new()  # Nikolai em 3D renderizado como pixel art (teste das animações)
@@ -1108,6 +1109,8 @@ func _on_fx_impact(job: Dictionary) -> void:
 	else:
 		_popup(target.pos, "-%d" % r.damage, "crit" if r.crit else "damage")
 		hit_shake[target] = CRIT_SHAKE_SECONDS if r.crit else HIT_SHAKE_SECONDS
+		if target.is_alive() and looks.get(target, 0) == 1 and not enemies.has(target):
+			nikolai_clock[target] = {"anim": "hit", "start": Time.get_ticks_msec()}  # reação ao golpe (Nikolai 3D)
 	if not target.is_alive():
 		_popup(target.pos, "ABATIDO" if target.side == Combatant.Side.ENEMY else "CAIU", "down")
 	queue_redraw()
@@ -1349,6 +1352,10 @@ func _draw_unit(u: Combatant) -> void:
 			var f := int(Time.get_ticks_msec() / 1000.0 * AnimSheet.FPS[anim]) % count
 			if walking and anim3d_pick < 0:
 				f = int(walk_dist.get(u, 0.0) / (WALK_FRAME_PIXELS * 6.0 / count)) % count  # passo por distância
+			var pose := _nikolai_pose(u) if anim3d_pick < 0 else []
+			if not pose.is_empty():
+				anim = pose[0]
+				f = pose[1]
 			nikolai3d.draw(self, at, anim, f, facing8.get(u, CharacterSheet.Dir.SE))
 		else:
 			var frames: Array = CharacterSheet.WALK_FRAMES if walking else CharacterSheet.IDLE_FRAMES
@@ -1376,6 +1383,37 @@ func _draw_unit(u: Combatant) -> void:
 		draw_set_transform(Vector2.ZERO)
 	if mode != Mode.EXPLORATION:
 		_draw_health_bar(u, at)
+
+
+# Animação de ataque do Nikolai 3D por arma; sem ela (espada, por exemplo) ele não muda de pose.
+const ATTACK_ANIM := {"pistola": "pistol_shoot", "escopeta": "rifle_fire", "fuzil_precisao": "rifle_fire", "soco": "punch"}
+
+
+# Pose de combate do Nikolai 3D: [animação, quadro] ou [] quando vale parado/andando.
+# Morte (fica no último quadro até reanimar), levantar, dano e a mira do ataque (durante a mira do CombatFx).
+func _nikolai_pose(u: Combatant) -> Array:
+	var now := Time.get_ticks_msec()
+	if not u.is_alive() and not fx.hold_pv.has(u):  # o tombo espera o impacto do tiro
+		if nikolai_clock.get(u, {}).get("anim", "") != "death":
+			nikolai_clock[u] = {"anim": "death", "start": now}
+		var n := nikolai3d.frame_count("death")
+		return ["death", mini(int((now - nikolai_clock[u]["start"]) / 1000.0 * AnimSheet.FPS["death"]), n - 1)]
+	if nikolai_clock.has(u):
+		var c: Dictionary = nikolai_clock[u]
+		if c["anim"] == "death":
+			nikolai_clock[u] = {"anim": "getup", "start": now}  # reanimado: levanta
+			c = nikolai_clock[u]
+		var anim: String = c["anim"]
+		var f := int((now - c["start"]) / 1000.0 * AnimSheet.FPS[anim])
+		if f < nikolai3d.frame_count(anim):
+			return [anim, f]
+		nikolai_clock.erase(u)
+	for job in fx.jobs:
+		if job["attacker"] == u and ATTACK_ANIM.has(str(u.weapon["id"])):
+			var attack: String = ATTACK_ANIM[str(u.weapon["id"])]
+			var n := nikolai3d.frame_count(attack)
+			return [attack, mini(int(CombatFx.aim_progress(job) * n), n - 1)]
+	return []
 
 
 func _has_creatures() -> bool:

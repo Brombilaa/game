@@ -13,8 +13,14 @@ const FPS := {
 	"idle": 4.0, "walk": 10.0, "pistol_idle": 6.0, "pistol_walk": 10.0, "crouch_walk": 8.0,
 	"rifle_walk": 10.0, "run": 14.0, "pickup_object": 10.0, "pickup": 5.0, "opening": 5.0,
 	"pistol_aim_prov": 6.0,
+	"pistol_shoot": 8.0, "rifle_fire": 12.0, "punch": 10.0, "kick": 10.0, "hit": 8.0, "death": 8.0, "getup": 5.0,
 }
-const NAMES := ["idle", "walk", "pistol_idle", "pistol_walk", "crouch_walk", "rifle_walk", "run", "pickup_object", "pickup", "opening", "pistol_aim_prov"]
+# Animações com o corpo mais largo ou baixo que o quadro padrão (deitado, lance do soco) usam quadro maior;
+# os pés ficam em x = metade da largura e na mesma linha PIVOT.y.
+const BIG := Vector2i(576, 512)
+const FRAME_OF := {"punch": BIG, "kick": BIG, "death": Vector2i(704, 512), "getup": BIG}  # morte: o corpo deitado é mais comprido
+const NAMES := ["idle", "walk", "pistol_idle", "pistol_walk", "crouch_walk", "rifle_walk", "run", "pickup_object", "pickup", "opening", "pistol_aim_prov",
+	"pistol_shoot", "rifle_fire", "punch", "kick", "hit", "death", "getup"]
 
 var textures := {}  # animação -> {"se": Texture2D, ...}
 
@@ -27,17 +33,23 @@ func _init() -> void:
 		textures[anim] = per_dir
 
 
+# Tamanho do quadro da animação na folha, em pixels.
+static func frame_size(anim: String) -> Vector2i:
+	return FRAME_OF.get(anim, Vector2i(FRAME, FRAME))
+
+
 func frame_count(anim: String) -> int:
-	return int(textures[anim]["e"].get_width() / FRAME)
+	return int(textures[anim]["e"].get_width() / frame_size(anim).x)
 
 
 # Desenha o quadro `frame` da animação virado para `dir`, com os pés em `pos`.
 func draw(canvas: CanvasItem, pos: Vector2, anim: String, frame: int, dir: CharacterSheet.Dir) -> void:
 	var info: Array = CharacterSheet.SHEET_OF[dir]
 	var tex: Texture2D = textures[anim][info[0]]
-	var size := Vector2(FRAME, FRAME) * SCALE
-	var src := Rect2(frame * FRAME, 0, FRAME, FRAME)
-	var pivot := PIVOT * SCALE
+	var fs := Vector2(frame_size(anim))
+	var size := fs * SCALE
+	var src := Rect2(frame * fs.x, 0, fs.x, fs.y)
+	var pivot := Vector2(fs.x * 0.5, PIVOT.y) * SCALE
 	var origin := (pos - pivot).round()
 	if info[1]:
 		canvas.draw_set_transform(Vector2(origin.x + pivot.x, origin.y), 0.0, Vector2(-1, 1))
