@@ -34,4 +34,4 @@ python3 -I tools/sprites/cenario.py movel assets/sprites/cenario moveis_raw.png 
 - `chao`: cada losango vira um tile exato de 96×48. `--ignorar N` pula o N-ésimo (o carpete, em ordem de leitura, foi descartado a pedido do Léo).
 - `parede`: escala única pela largura média (96 px = 2 losangos ao longo do eixo). `x_*` corre pelo eixo x (parede norte), `y_*` pelo eixo y (oeste e parede da porta).
 - `movel`: a primeira figura da folha é o herói de referência (128 px) e dá a escala; `--ajustes` corrige móveis que o ChatGPT desenhou grandes demais.
-- Cada folha gera um JSON com a âncora da peça (meio da base da parede, pés do móvel) lido por `Scenery`.
+- Cada folha gera um JSON com a âncora da peça (meio da base da parede, pés do móvel) (o cenário em arte saiu da sala de teste em 05/11/2026).

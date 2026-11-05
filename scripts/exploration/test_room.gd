@@ -13,10 +13,10 @@ extends Node2D
 # Visual provisório: resolução interna 960×540 (DEC-2026-10-29-10), câmera segue a unidade
 # em foco e a sala rola. Vista isométrica 2:1 (DEC-2026-10-29-08): a lógica continua em
 # coordenadas planas de 1280×720 e só o desenho e o clique passam pela projeção (`_iso`).
-# Chão em losangos de 96×48 (um losango = TILE_WORLD unidades da sala); paredes, porta e
-# coberturas são caixas; tudo é desenhado por ordem de profundidade (x + y).
+# A sala é cinza e leve (Léo, 05/11/2026): chão liso, paredes, porta e coberturas são caixas
+# cinzas desenhadas por ordem de profundidade (x + y); o cenário de arte saiu daqui.
 # O agente usa a folha real do Nikolai, do Miguel ou do Fernando (CharacterSheet, 128 px; só o visual
-# muda); inimigos e chão são arte provisória (PlaceholderArt ampliada, losangos lisos).
+# muda); o atirador ainda é arte provisória (PlaceholderArt ampliada).
 
 enum Mode { EXPLORATION, COMBAT, GAME_OVER }
 
@@ -61,17 +61,13 @@ const IDLE_FRAME_SECONDS := 0.7
 const PLACEHOLDER_SCALE := 2.7  # arte provisória de 32×48 ampliada para ~130 px (a altura do herói)
 const TILE_WORLD := 64.0  # lado de um losango do chão, em unidades da sala
 const TILE_SCREEN := Vector2(96, 48)  # losango 2:1 na tela (V-21)
-const BLOCK_HEIGHT := 176.0  # altura na tela das paredes: ~1,35× o herói de 128 px (a arte tem 171 px)
-const FRONT_WALL_HEIGHT := 24.0  # paredes voltadas para a câmera
-const FRONT_WALL_COLOR := Color("3b2a1d")  # madeira escura do rodapé da arte
-const WALL_SPAN := 128.0  # um painel de parede cobre 2 losangos (96 px de tela) ao longo do eixo
-# Cobertura -> móvel que a representa. O guarda-roupa é o bloco sólido do meio da sala.
-const COVER_PROPS := {"partial": "movel_caixote", "full": "movel_estante"}
-const BLOCK_PROP := "movel_guarda_roupa"
-const BLOCK_CENTER := Vector2(460, 220)  # centro do Rect2(400, 200, 120, 40) de `walls`
-const WALL_BACK := 0  # eixo x, voltada para +y (norte da sala)
-const DOOR_OFFSET := Vector2(8, 0)  # ajuste fino da porta dentro do vão da parede
-const WALL_SIDE := 1  # eixo y, voltada para +x (oeste da sala e parede da porta)
+const WALL_HEIGHT := 72.0  # altura na tela das paredes e do bloco do meio
+const FRONT_WALL_HEIGHT := 24.0  # paredes voltadas para a câmera (sul e leste), baixas para não esconder a sala
+const FLOOR_COLOR := Color(0.33, 0.34, 0.36)
+const WALL_COLOR := Color(0.5, 0.51, 0.54)
+const DOOR_COLOR := Color(0.42, 0.37, 0.33)
+const COVER_COLORS := {"partial": Color(0.6, 0.6, 0.58), "full": Color(0.4, 0.41, 0.46)}
+const COVER_HEIGHTS := {"partial": 22.0, "full": 64.0}
 const AGENT_SHEETS := [  # visuais dos membros do grupo (Fernando, Nikolai, Miguel)
 	"res://assets/sprites/personagens/fernando",
 	"res://assets/sprites/personagens/nikolai",
@@ -159,7 +155,6 @@ var idle_frame := 0
 var cursor_kind := GameCursor.Kind.ARROW
 var agent_sheets: Array[CharacterSheet] = []
 var enemy_sheets := {}  # variante -> CharacterSheet
-var scenery := Scenery.new()
 var nikolai3d := AnimSheet.new()  # Nikolai em 3D renderizado como pixel art (teste das animações)
 var use_3d := true  # tecla V troca entre o Nikolai 3D e o sprite 2D
 var anim3d_pick := -1  # tecla N: -1 = automático (parado/andando); senão o índice em AnimSheet.NAMES
@@ -196,7 +191,7 @@ func _ready() -> void:
 	var corners := [_iso(Vector2.ZERO), _iso(Vector2(ROOM_SIZE.x, 0)), _iso(Vector2(0, ROOM_SIZE.y)), _iso(Vector2(ROOM_SIZE))]
 	camera.limit_left = int(corners[2].x) - 16
 	camera.limit_right = int(corners[1].x) + 16
-	camera.limit_top = int(corners[0].y) - int(BLOCK_HEIGHT) - 16
+	camera.limit_top = int(corners[0].y) - int(WALL_HEIGHT) - 16
 	camera.limit_bottom = int(corners[3].y) + 16
 	camera.position = _iso(player.pos)
 	add_child(camera)
@@ -1028,34 +1023,19 @@ func _draw() -> void:
 	# Peças ordenadas por profundidade: quanto maior x + y, mais perto da câmera.
 	var items: Array = []
 	for w in walls:
-		# As paredes de frente (sul e leste) ficam baixas para não esconder a sala.
 		var front: bool = w.end.y >= ROOM_SIZE.y or w.end.x >= ROOM_SIZE.x
-		if not front:
-			continue
 		for piece in _pieces(w):
 			if _visible(piece.get_center()):
-				items.append({"key": piece.get_center().x + piece.get_center().y, "block": piece, "front": FRONT_WALL_COLOR, "top": FRONT_WALL_COLOR.lightened(0.1), "height": FRONT_WALL_HEIGHT})
-	var panels: Array = []
-	panels.append_array(_wall_run(WALL_BACK, 8.0, 0.0, ROOM_SIZE.x))
-	panels.append_array(_wall_run(WALL_SIDE, 8.0, 0.0, ROOM_SIZE.y))
-	var door_mid := door.get_center()
-	panels.append_array(_wall_run(WALL_SIDE, door_mid.x, 0.0, door_mid.y - WALL_SPAN * 0.5))
-	panels.append_array(_wall_run(WALL_SIDE, door_mid.x, door_mid.y + WALL_SPAN * 0.5, ROOM_SIZE.y))
-	panels.append({"at": door_mid, "name": "parede_y_vao"})
-	for p in panels:
-		if _visible(p.at):
-			items.append({"key": p.at.x + p.at.y, "panel": p})
+				items.append({"key": piece.get_center().x + piece.get_center().y, "block": piece, "color": WALL_COLOR, "height": FRONT_WALL_HEIGHT if front else WALL_HEIGHT})
 	if not door_open:
-		items.append({"key": door_mid.x + door_mid.y + 0.5, "door": true})
-	if _visible(BLOCK_CENTER):
-		items.append({"key": BLOCK_CENTER.x + BLOCK_CENTER.y, "prop": BLOCK_PROP, "at": BLOCK_CENTER})
+		items.append({"key": door.get_center().x + door.get_center().y + 0.5, "block": door, "color": DOOR_COLOR, "height": WALL_HEIGHT})
 	for c: Cover in covers:
 		if not _visible(c.rect.get_center()):
 			continue
 		if c.is_destroyed():
 			_draw_outline(c.rect, PlaceholderArt.color("chao_claro"))
 			continue
-		items.append({"key": c.rect.get_center().x + c.rect.get_center().y, "prop": COVER_PROPS[c.kind], "at": c.rect.get_center(), "cover": c})
+		items.append({"key": c.rect.get_center().x + c.rect.get_center().y, "block": c.rect, "color": COVER_COLORS[c.kind], "height": COVER_HEIGHTS[c.kind], "cover": c})
 	for u in _drawn_units():
 		if _visible(u.pos):
 			items.append({"key": u.pos.x + u.pos.y, "unit": u})
@@ -1064,19 +1044,11 @@ func _draw() -> void:
 		if it.has("unit"):
 			_draw_unit(it.unit)
 			continue
-		if it.has("panel"):
-			scenery.draw(self, it.panel.name, _iso(it.panel.at))
-		elif it.has("door"):
-			# A porta fecha o vão da parede lateral; a arte original olha para o outro lado, por isso espelha.
-			scenery.draw(self, "movel_porta", _iso(door.get_center()) + DOOR_OFFSET, true)
-		elif it.has("prop"):
-			scenery.draw(self, it.prop, _iso(it.at))
-			if it.has("cover"):
-				var c: Cover = it.cover
-				var label := "P" if c.kind == "partial" else "C"
-				draw_string(font, _iso(it.at) + Vector2(-14, -scenery.height_of(it.prop) - 6), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.8))
-		else:
-			_draw_box(it.block, it.front, it.top, it.height)
+		_draw_box(it.block, it.color, it.height)
+		if it.has("cover"):
+			var c: Cover = it.cover
+			var label := "P" if c.kind == "partial" else "C"
+			draw_string(font, _iso(c.rect.get_center()) + Vector2(-4, -it.height - 6), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.8))
 	if mode == Mode.COMBAT:
 		_draw_preview(font)
 	_draw_fx()
@@ -1166,27 +1138,18 @@ func _draw_popup(font: Font, p: Dictionary) -> void:
 		draw_string(font, tag_at, tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(0.95, 0.35, 0.25, alpha))
 
 
-# Chão: um tile de 96×48 por losango, sorteado de forma fixa entre as variações.
+# Chão liso e cinza. A sala é dividida pela parede do meio; cada metade só aparece quando está visível
+# (porta fechada esconde o outro lado) e a abertura da porta aparece com ela aberta.
 func _draw_floor() -> void:
-	for ty in int(ceil(ROOM_SIZE.y / TILE_WORLD)):
-		for tx in int(ceil(ROOM_SIZE.x / TILE_WORLD)):
-			if not _visible((Vector2(tx, ty) + Vector2(0.5, 0.5)) * TILE_WORLD):
-				continue
-			var c := _iso((Vector2(tx, ty) + Vector2(0.5, 0.5)) * TILE_WORLD)
-			draw_texture(scenery.floor_texture(tx, ty), (c - TILE_SCREEN * 0.5).round())
+	for r in [Rect2(0, 0, 600, ROOM_SIZE.y), Rect2(624, 0, ROOM_SIZE.x - 624, ROOM_SIZE.y)]:
+		if _visible(r.get_center()):
+			_draw_floor_rect(r)
+	if door_open:
+		_draw_floor_rect(Rect2(600, 0, 24, ROOM_SIZE.y))
 
 
-# Painéis de parede ao longo de um trecho [from, to]; o último painel recua para não sair do trecho.
-func _wall_run(axis: int, fixed: float, from: float, to: float) -> Array:
-	var out: Array = []
-	var n := maxi(1, int(ceil((to - from) / WALL_SPAN)))
-	var step := (to - from - WALL_SPAN) / (n - 1) if n > 1 else 0.0
-	for i in n:
-		var mid := (from + WALL_SPAN * 0.5 + step * i) if n > 1 else (from + to) * 0.5
-		var at := Vector2(mid, fixed) if axis == WALL_BACK else Vector2(fixed, mid)
-		var kind := "x_" if axis == WALL_BACK else "y_"
-		out.append({"at": at, "name": "parede_" + kind + Scenery.wall_variant(i)})
-	return out
+func _draw_floor_rect(r: Rect2) -> void:
+	draw_colored_polygon(PackedVector2Array([_iso(r.position), _iso(Vector2(r.end.x, r.position.y)), _iso(r.end), _iso(Vector2(r.position.x, r.end.y))]), FLOOR_COLOR)
 
 
 # Divide um retângulo longo em peças de no máximo um losango, para a ordem de desenho.
@@ -1202,15 +1165,15 @@ func _pieces(r: Rect2) -> Array[Rect2]:
 
 
 # Caixa vista de lado: faces voltadas para a câmera (+x e +y) e o topo claro.
-func _draw_box(r: Rect2, front: Color, top: Color, height: float) -> void:
+func _draw_box(r: Rect2, color: Color, height: float) -> void:
 	var lift := Vector2(0, -height)
 	var a := _iso(r.position)  # canto de trás
 	var b := _iso(Vector2(r.end.x, r.position.y))  # canto da direita
 	var c := _iso(r.end)  # canto da frente
 	var d := _iso(Vector2(r.position.x, r.end.y))  # canto da esquerda
-	draw_colored_polygon(PackedVector2Array([d, c, c + lift, d + lift]), front.darkened(0.12))  # face +y
-	draw_colored_polygon(PackedVector2Array([c, b, b + lift, c + lift]), front.darkened(0.3))  # face +x
-	draw_colored_polygon(PackedVector2Array([a + lift, b + lift, c + lift, d + lift]), top)
+	draw_colored_polygon(PackedVector2Array([d, c, c + lift, d + lift]), color.darkened(0.12))  # face +y
+	draw_colored_polygon(PackedVector2Array([c, b, b + lift, c + lift]), color.darkened(0.3))  # face +x
+	draw_colored_polygon(PackedVector2Array([a + lift, b + lift, c + lift, d + lift]), color.lightened(0.1))
 
 
 func _draw_outline(r: Rect2, color: Color) -> void:
