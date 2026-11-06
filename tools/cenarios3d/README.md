@@ -30,3 +30,4 @@ Visual: `assets/3d/pc_antigo.gdshader` (o filtro do JS: lavagem, 16 bits com dit
 postes 14 com queda 2,2. Tudo medido contra a página do JS.
 
 Copas: as esferas das copas (`jit` no protótipo) agora deslocam cada vértice pela posição, não por triângulo; antes os cantos compartilhados se separavam e a copa saía facetada e com frestas. As copas levam textura de folhas e mais cartões de folhas (gerador próprio de números aleatórios, para não mexer na posição das árvores). O protótipo atualizado está em `arte/estilo-pc-antigo/parque3d_bake_estilo_c.html`.
+Vista da van: árvores do entorno que ficam entre a câmera do jogo e a van (corredor de 16 de largura, em coordenadas do protótipo) não entram no cenário, para a copa não cobrir a van.
