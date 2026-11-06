@@ -1341,6 +1341,22 @@ func _draw_cast_shadow(at: Vector2, _height: float, radius: float) -> void:
 	draw_texture_rect(_soft_shadow_texture(), Rect2(center - Vector2(r, r * 0.5), Vector2(r * 2.0, r)), false, SHADOW_COLOR)
 
 
+const MEMBER_COLORS := {0: Color("#5c6b44"), 2: Color("#5e4a82")}  # figuras provisórias: Fernando (olivo) e Miguel (roxo)
+
+
+# Figura provisória (corpo, cabeça e nome), como a do Caio e da Letícia no parque.
+func _draw_member_placeholder(u: Combatant, at: Vector2) -> void:
+	var color: Color = MEMBER_COLORS.get(looks.get(u, 0), Color("#6a6a6a"))
+	draw_rect(Rect2(at + Vector2(-11, -66), Vector2(22, 60)), color)
+	draw_rect(Rect2(at + Vector2(-8, -86), Vector2(16, 18)), Color("#d6b292"))
+	if turns:
+		return  # em combate o nome já aparece sobre a barra de vida
+	var font := ThemeDB.fallback_font
+	var width := font.get_string_size(u.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
+	draw_string_outline(font, at + Vector2(-width * 0.5, -94), u.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, 3, Color(0.05, 0.03, 0.02))
+	draw_string(font, at + Vector2(-width * 0.5, -94), u.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(0.93, 0.89, 0.8))
+
+
 func _draw_unit(u: Combatant) -> void:
 	var at := _iso(u.pos)
 	at += fx.offset_of(u)  # arremessado pelo tiro ou desviando dele
@@ -1368,6 +1384,8 @@ func _draw_unit(u: Combatant) -> void:
 				anim = pose[0]
 				f = pose[1]
 			nikolai3d.draw(self, at, anim, f, facing8.get(u, CharacterSheet.Dir.SE))
+		elif use_3d:
+			_draw_member_placeholder(u, at)  # Fernando e Miguel: figura provisória até a arte 3D existir
 		else:
 			var frames: Array = CharacterSheet.WALK_FRAMES if walking else CharacterSheet.IDLE_FRAMES
 			var n := walk_n % frames.size() if walking else idle_frame
