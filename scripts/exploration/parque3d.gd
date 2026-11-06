@@ -109,14 +109,14 @@ func _ambiente() -> void:
 func _cenario() -> void:
 	var cena: Node = (load(CENARIO) as PackedScene).instantiate()
 	mundo.add_child(cena)
-	# Texturas grandes (chão, grama) ficam com pixels nítidos como no protótipo; as pequenas seguem suavizadas.
+	# Texturas grandes (chão, grama) com mipmap linear e anisotropia, mais próximo da suavização do protótipo.
 	for m in cena.find_children("*", "MeshInstance3D", true, false):
 		var mi := m as MeshInstance3D
 		for i in mi.mesh.get_surface_count():
 			var mat := mi.get_active_material(i)
 			if mat is BaseMaterial3D and mat.albedo_texture and mat.albedo_texture.get_width() >= 512:
 				var novo := mat.duplicate() as BaseMaterial3D
-				novo.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS
+				novo.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 				mi.set_surface_override_material(i, novo)
 
 
