@@ -17,12 +17,13 @@ const ZOOM := 1.5
 const ALVO := Vector3(8.2, 0.0, 10.2)
 # O FBX do Mixamo chega em centímetros (0,01); 2,2 unidades de altura = herói de 128 px (memória do projeto).
 const ESCALA_FBX := 2.2 / 0.01779
-const EMISSAO_PERSONAGEM := 0.1
+const EMISSAO_PERSONAGEM := 0.0
 const GRUPO := [Vector2(450, 690), Vector2(510, 660), Vector2(570, 625)]
 
 # Luz ajustada à mão para casar com o render de referência do three.js (estilo PC antigo).
-@export var luz_sol := 0.15
-@export var luz_ambiente := 0.0
+@export var luz_sol := 0.25
+@export var luz_poste := 4.0
+@export var luz_ambiente := 0.06
 @export var um_andando := false  # liga o Nikolai do meio com esqueleto e a animação de andar
 var camera: Camera3D
 var mundo: SubViewport  # o 3D é desenhado a ~1000 px de altura com MSAA 4x e ampliado, como o protótipo
@@ -85,9 +86,18 @@ func _ambiente() -> void:
 	env.background_mode = Environment.BG_COLOR
 	env.background_color = Color("8c8f86")
 	env.sky = sky
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	env.ambient_light_sky_contribution = 1.0
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color("e8e4f4")
 	env.ambient_light_energy = luz_ambiente
+	# Fog(0x8c8f86, 41, 81) do protótipo (smoothstep, aproximada por uma curva quadrática de 41 a 68), cor convertida para linear como no three.js.
+	env.fog_enabled = true
+	env.fog_mode = Environment.FOG_MODE_DEPTH
+	env.fog_light_color = Color("8c8f86").srgb_to_linear()
+	env.fog_light_energy = 1.0
+	env.fog_sun_scatter = 0.0
+	env.fog_depth_begin = 41.0
+	env.fog_depth_end = 68.0
+	env.fog_depth_curve = 2.0
 	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	var we := WorldEnvironment.new()
 	we.environment = env
@@ -111,6 +121,12 @@ func _ambiente() -> void:
 func _cenario() -> void:
 	var cena: Node = (load(CENARIO) as PackedScene).instantiate()
 	mundo.add_child(cena)
+	# Postes: PointLight(0xffd694, 14, 14, decay 1,6) do protótipo.
+	for l in cena.find_children("*", "OmniLight3D", true, false):
+		var o := l as OmniLight3D
+		o.light_energy = luz_poste
+		o.omni_range = 14.0
+		o.omni_attenuation = 1.6
 	# Texturas grandes (chão, grama) com mipmap linear e anisotropia, mais próximo da suavização do protótipo.
 	for m in cena.find_children("*", "MeshInstance3D", true, false):
 		var mi := m as MeshInstance3D

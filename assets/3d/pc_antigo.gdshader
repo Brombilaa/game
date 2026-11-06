@@ -6,7 +6,7 @@ shader_type canvas_item;
 // 3) filter: saturate(.84) contrast(1.06) sobre o resultado
 // 4) grão: ruído 256x256 esticado na tela, mix-blend-mode: overlay a 7%
 uniform sampler2D tela : hint_screen_texture, filter_linear;
-uniform float nevoa : hint_range(0.0, 1.0) = 0.15;  // Fog(0x8c8f86, 41, 81) a ~47 unidades da câmera
+uniform float nevoa : hint_range(0.0, 1.0) = 0.0;  // a névoa agora é do próprio 3D (Environment, 41 a 81 unidades)
 uniform vec3 cor_nevoa : source_color = vec3(0.549, 0.561, 0.525);
 
 float bayer(vec2 p) {
@@ -28,8 +28,7 @@ float ruido(vec2 uv) {
 
 void fragment() {
 	vec3 s = texture(tela, SCREEN_UV).rgb;
-	s = mix(s, cor_nevoa, nevoa);
-	vec3 c = pow(s, vec3(2.2));
+	vec3 c = s;  // a textura do SubViewport já vem em linear, como o render target do three.js
 	float l = dot(c, vec3(0.299, 0.587, 0.114));
 	c = mix(vec3(l), c, 0.92);
 	c = c * 0.97 + 0.008;
