@@ -53,6 +53,8 @@ jobs:
           echo "ZIP=$name.zip" >> "$GITHUB_ENV"
 
       - uses: actions/upload-artifact@v4
+        # a cota de armazenamento de artifacts esgota e não deve impedir o release "latest"
+        continue-on-error: true
         with:
           name: windows
           path: ${{ env.ZIP }}
