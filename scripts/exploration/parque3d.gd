@@ -16,16 +16,19 @@ const ZOOM := 1.5
 const ALVO := Vector3(8.2, 0.0, 10.2)
 # O FBX do Mixamo chega em centímetros (0,01); 2,2 unidades de altura = herói de 128 px (memória do projeto).
 const ESCALA_FBX := 2.2 / 0.01779
+const EMISSAO_PERSONAGEM := 0.3
 const GRUPO := [Vector2(450, 690), Vector2(510, 660), Vector2(570, 625)]
 
 # Luz ajustada à mão para casar com o render de referência do three.js (estilo PC antigo).
-@export var luz_sol := 0.25
-@export var luz_ambiente := 0.3
+@export var luz_sol := 0.45
+@export var luz_ambiente := 0.15
 var camera: Camera3D
+var mundo: SubViewport  # o 3D é desenhado a ~1000 px de altura com MSAA 4x e ampliado, como o protótipo
 var agentes: Array[Node3D] = []
 
 
 func _ready() -> void:
+	_mundo()
 	_ambiente()
 	_cenario()
 	_camera()
@@ -34,41 +37,97 @@ func _ready() -> void:
 	_efeito_pc_antigo()
 
 
+func _mundo() -> void:
+	mundo = SubViewport.new()
+	mundo.msaa_3d = Viewport.MSAA_4X
+	mundo.own_world_3d = true
+	mundo.transparent_bg = false
+	mundo.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	add_child(mundo)
+	var tr := TextureRect.new()
+	tr.texture = mundo.get_texture()
+	tr.set_anchors_preset(Control.PRESET_FULL_RECT)
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_SCALE
+	tr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var camada := CanvasLayer.new()
+	camada.layer = -1
+	camada.add_child(tr)
+	add_child(camada)
+	_ajustar_resolucao()
+	get_viewport().size_changed.connect(_ajustar_resolucao)
+
+
+# pcSize() do protótipo: altura de renderização min(altura da janela, 1000 px).
+func _ajustar_resolucao() -> void:
+	var janela := get_viewport().get_visible_rect().size
+	var k := minf(1.0, 1000.0 / janela.y)
+	var real := DisplayServer.window_get_size()
+	var kk := minf(1.0, 1000.0 / float(real.y))
+	mundo.size = Vector2i(maxi(2, roundi(real.x * kk)), maxi(2, roundi(real.y * kk)))
+
+
 func _ambiente() -> void:
+	# HemisphereLight(0xe8e4f4, 0x6a6a70) do protótipo: céu claro em cima, chão cinza embaixo.
+	var ceu := ProceduralSkyMaterial.new()
+	ceu.sky_top_color = Color("e8e4f4")
+	ceu.sky_horizon_color = Color("b9b7bd")
+	ceu.ground_horizon_color = Color("b9b7bd")
+	ceu.ground_bottom_color = Color("6a6a70")
+	ceu.sky_curve = 0.5
+	ceu.ground_curve = 0.5
+	var sky := Sky.new()
+	sky.sky_material = ceu
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
 	env.background_color = Color("8c8f86")
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color("e8e4f4")
+	env.sky = sky
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+	env.ambient_light_sky_contribution = 1.0
 	env.ambient_light_energy = luz_ambiente
 	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	var we := WorldEnvironment.new()
 	we.environment = env
-	add_child(we)
+	mundo.add_child(we)
+	# DirectionalLight(0xffdcb8) em (4, 6, 4.5) apontando para (10, 0, 7.5), sombra PCF suave de 2048.
+	RenderingServer.directional_shadow_atlas_set_size(4096, true)
 	var sol := DirectionalLight3D.new()
 	sol.light_color = Color("ffdcb8")
 	sol.light_energy = luz_sol
 	sol.shadow_enabled = true
+	sol.shadow_blur = 2.0
+	sol.shadow_bias = 0.03
+	sol.shadow_normal_bias = 1.0
 	sol.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
-	sol.directional_shadow_max_distance = 30.0
+	sol.directional_shadow_max_distance = 75.0
+	mundo.add_child(sol)
 	sol.position = Vector3(4, 6, 4.5)
-	add_child(sol)
-	sol.look_at(Vector3.ZERO, Vector3.UP)
+	sol.look_at(Vector3(10, 0, 7.5), Vector3.UP)
 
 
 func _cenario() -> void:
 	var cena: Node = (load(CENARIO) as PackedScene).instantiate()
-	add_child(cena)
+	mundo.add_child(cena)
+	# Texturas grandes (chão, grama) ficam com pixels nítidos como no protótipo; as pequenas seguem suavizadas.
+	for m in cena.find_children("*", "MeshInstance3D", true, false):
+		var mi := m as MeshInstance3D
+		for i in mi.mesh.get_surface_count():
+			var mat := mi.get_active_material(i)
+			if mat is BaseMaterial3D and mat.albedo_texture and mat.albedo_texture.get_width() >= 512:
+				var novo := mat.duplicate() as BaseMaterial3D
+				novo.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS
+				mi.set_surface_override_material(i, novo)
 
 
 func _camera() -> void:
 	camera = Camera3D.new()
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	camera.keep_aspect = Camera3D.KEEP_HEIGHT
-	camera.size = 540.0 / (PX_POR_UNIDADE * ZOOM)
+	camera.size = 5.54  # 1080 px / 195 px por unidade: mesmo enquadramento do render de referência
 	camera.near = 0.5
 	camera.far = 200.0
-	add_child(camera)
+	mundo.add_child(camera)
 	var az := PI / 4.0
 	camera.position = ALVO + Vector3(cos(ELEV) * sin(az), sin(ELEV), cos(ELEV) * cos(az)) * DIST
 	camera.look_at(ALVO, Vector3.UP)
@@ -80,7 +139,17 @@ func _agente(px: Vector2, i: int) -> Node3D:
 	corpo.position = Vector3(px.x / 64.0, 0.0, px.y / 64.0)
 	corpo.rotation.y = PI / 4.0
 	corpo.scale = Vector3.ONE * ESCALA_FBX
-	add_child(corpo)
+	mundo.add_child(corpo)
+	# No three.js o material padrão ainda recebe luz especular e ambiente que o Godot não repete, então o casaco preto
+	# saía mais escuro. Um pouco de emissão da própria textura levanta os pretos sem lavar as cores.
+	for m in corpo.find_children("*", "MeshInstance3D", true, false):
+		var mat := (m as MeshInstance3D).get_active_material(0)
+		if mat is StandardMaterial3D:
+			var novo := mat.duplicate() as StandardMaterial3D
+			novo.emission_enabled = true
+			novo.emission_texture = novo.albedo_texture
+			novo.emission_energy_multiplier = EMISSAO_PERSONAGEM
+			(m as MeshInstance3D).set_surface_override_material(0, novo)
 	var raiz: Node = corpo.get_node("ni_skin")  # as trilhas do Mixamo começam em "Skeleton3D:..."
 	var respirar: Animation = null  # o próprio modelo traz o Breathing Idle do Mixamo
 	for a in corpo.find_children("*", "AnimationPlayer", true, false):
