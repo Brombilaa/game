@@ -6,6 +6,7 @@ extends Node3D
 
 const CENARIO := "res://assets/3d/parque/parque_cenario.glb"
 const NIKOLAI := "res://assets/3d/personagens/nikolai.glb"
+const NIKOLAI_ESTATICO := "res://assets/3d/personagens/nikolai_estatico.glb"
 const ANIM_ANDAR := "res://assets/3d/animacoes/nikolai_andar.fbx"
 const ANIM_PARADO := "res://assets/3d/animacoes/nikolai_parado.fbx"
 # Câmera ortográfica fixa, mesma do fundo assado: elevação atan(17,3/42,4), azimute 45°.
@@ -16,12 +17,13 @@ const ZOOM := 1.5
 const ALVO := Vector3(8.2, 0.0, 10.2)
 # O FBX do Mixamo chega em centímetros (0,01); 2,2 unidades de altura = herói de 128 px (memória do projeto).
 const ESCALA_FBX := 2.2 / 0.01779
-const EMISSAO_PERSONAGEM := 0.3
+const EMISSAO_PERSONAGEM := 0.1
 const GRUPO := [Vector2(450, 690), Vector2(510, 660), Vector2(570, 625)]
 
 # Luz ajustada à mão para casar com o render de referência do three.js (estilo PC antigo).
-@export var luz_sol := 0.45
-@export var luz_ambiente := 0.15
+@export var luz_sol := 0.15
+@export var luz_ambiente := 0.0
+@export var um_andando := false  # liga o Nikolai do meio com esqueleto e a animação de andar
 var camera: Camera3D
 var mundo: SubViewport  # o 3D é desenhado a ~1000 px de altura com MSAA 4x e ampliado, como o protótipo
 var agentes: Array[Node3D] = []
@@ -134,7 +136,39 @@ func _camera() -> void:
 	camera.make_current()
 
 
+# Mesma malha estática da referência em JS (pose de repouso do protótipo), com a altura de 2,2 unidades.
+func _agente_estatico(px: Vector2) -> Node3D:
+	var corpo: Node3D = (load(NIKOLAI_ESTATICO) as PackedScene).instantiate()
+	mundo.add_child(corpo)
+	var caixa := AABB()
+	var primeiro := true
+	for m in corpo.find_children("*", "MeshInstance3D", true, false):
+		var mi := m as MeshInstance3D
+		var b := mi.global_transform * mi.get_aabb()
+		caixa = b if primeiro else caixa.merge(b)
+		primeiro = false
+	var k := 2.2 / caixa.size.y
+	corpo.scale = Vector3.ONE * k
+	corpo.position = Vector3(px.x / 64.0, -caixa.position.y * k, px.y / 64.0)
+	corpo.rotation.y = PI / 4.0
+	_luz_personagem(corpo)
+	return corpo
+
+
+func _luz_personagem(corpo: Node3D) -> void:
+	for m in corpo.find_children("*", "MeshInstance3D", true, false):
+		var mat := (m as MeshInstance3D).get_active_material(0)
+		if mat is StandardMaterial3D:
+			var novo := mat.duplicate() as StandardMaterial3D
+			novo.emission_enabled = true
+			novo.emission_texture = novo.albedo_texture
+			novo.emission_energy_multiplier = EMISSAO_PERSONAGEM
+			(m as MeshInstance3D).set_surface_override_material(0, novo)
+
+
 func _agente(px: Vector2, i: int) -> Node3D:
+	if i != 1 or not um_andando:
+		return _agente_estatico(px)
 	var corpo: Node3D = (load(NIKOLAI) as PackedScene).instantiate()
 	corpo.position = Vector3(px.x / 64.0, 0.0, px.y / 64.0)
 	corpo.rotation.y = PI / 4.0

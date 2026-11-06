@@ -3,8 +3,8 @@ extends SceneTree
 func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
 	var saida: String = args[0] if args.size() > 0 else "parque3d.png"
-	var sol: float = float(args[2]) if args.size() > 2 else 0.45
-	var amb: float = float(args[3]) if args.size() > 3 else 0.15
+	var sol: float = float(args[2]) if args.size() > 2 else 0.15
+	var amb: float = float(args[3]) if args.size() > 3 else 0.0
 	var giro: float = float(args[1]) if args.size() > 1 else 0.0
 	var cena: Node = load("res://scenes/exploration/parque3d.tscn").instantiate()
 	cena.luz_sol = sol
