@@ -20,12 +20,15 @@ const ESCALA_FBX := 2.2 / 0.01779
 # Tons medidos contra a referência: folhas um pouco mais vivas; casaco com leve ajuste frio (o sol vem por trás
 # dos personagens, então o tom depende quase só do céu/chão).
 const TOM_FOLHAGEM := 1.1
+# Multiplicador de cor por material do cenário (nome mN do glb), medido contra a referência JS (tools/calibrar_tons.py gera o arquivo).
+const TONS_MATERIAIS := preload("res://assets/3d/parque/tons_materiais.gd")
 const TOM_PERSONAGEM := Color(1.4, 1.55, 1.55)  # calibrado contra o casaco da referência (sombreamento facetado)
 const GRUPO := [Vector2(450, 690), Vector2(510, 660), Vector2(570, 625)]
 
 # Luz ajustada à mão para casar com o render de referência do three.js (estilo PC antigo).
 @export var luz_sol := 0.22
-@export var luz_poste := 4.0
+@export var luz_poste := 14.0
+@export var queda_poste := 2.2
 @export var forca_oclusao := 1.5
 @export var raio_oclusao := 0.6
 @export var luz_ceu := 0.07  # HemisphereLight do JS: diferença céu/chão (de cima positiva, de baixo negativa)
@@ -42,6 +45,7 @@ func _ready() -> void:
 	_cenario()
 	_camera()
 	_oclusao()
+	_neblina()
 	for i in GRUPO.size():
 		agentes.append(_agente(GRUPO[i], i))
 	_efeito_pc_antigo()
@@ -96,15 +100,7 @@ func _ambiente() -> void:
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.72, 0.71, 0.76)  # média do céu e do chão do HemisphereLight
 	env.ambient_light_energy = luz_ambiente
-	# Fog(0x8c8f86, 41, 81) do protótipo (smoothstep, aproximada por uma curva quadrática de 41 a 68), cor convertida para linear como no three.js.
-	env.fog_enabled = true
-	env.fog_mode = Environment.FOG_MODE_DEPTH
-	env.fog_light_color = Color("8c8f86").srgb_to_linear()
-	env.fog_light_energy = 1.0
-	env.fog_sun_scatter = 0.0
-	env.fog_depth_begin = 41.0
-	env.fog_depth_end = 68.0
-	env.fog_depth_curve = 2.0
+	env.fog_enabled = false  # a névoa é a do JS, feita em _neblina() (a curva do Godot é outra)
 	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	var we := WorldEnvironment.new()
 	we.environment = env
@@ -146,14 +142,17 @@ func _ambiente() -> void:
 func _cenario() -> void:
 	var cena: Node = (load(CENARIO) as PackedScene).instantiate()
 	mundo.add_child(cena)
-	# Postes: PointLight(0xffd694, 14, 14, decay 1,6) do protótipo.
+	# Postes: PointLight(0xffd694, 14, 14, decay 1,6) do protótipo. Energia, queda e um tom mais alaranjado
+	# medidos contra a poça de luz da referência (a queda do Godot com 1,6 espalhava a luz demais).
 	for l in cena.find_children("*", "OmniLight3D", true, false):
 		var o := l as OmniLight3D
 		o.light_energy = luz_poste
+		o.light_color = Color("ffd694") * Color(1.1, 0.86, 0.82)
 		o.omni_range = 14.0
-		o.omni_attenuation = 1.6
+		o.omni_attenuation = queda_poste
 	# Materiais: sem brilho especular (o protótipo usa Lambert) e, nas texturas grandes (chão, grama), mipmap linear com anisotropia.
 	var copias := {}
+	var tons: Dictionary = TONS_MATERIAIS.TONS
 	for m in cena.find_children("*", "MeshInstance3D", true, false):
 		var mi := m as MeshInstance3D
 		for i in mi.mesh.get_surface_count():
@@ -167,6 +166,9 @@ func _cenario() -> void:
 					# são decalques (símbolo, marcas, terra, borda do chão) e ficam como estão.
 					if novo.transparency == BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR:
 						novo.albedo_color = novo.albedo_color * Color(TOM_FOLHAGEM, TOM_FOLHAGEM, TOM_FOLHAGEM, 1.0)
+					if tons.has(mat.resource_name):  # tom medido contra a referência JS, por material
+						var t: Array = tons[mat.resource_name]
+						novo.albedo_color = novo.albedo_color * Color(t[0], t[1], t[2], 1.0)
 					if mat.albedo_texture and mat.albedo_texture.get_width() >= 512:
 						novo.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 					copias[mat] = novo
@@ -187,6 +189,22 @@ func _oclusao() -> void:
 	m.shader = load("res://assets/3d/oclusao.gdshader")
 	m.set_shader_parameter("forca", forca_oclusao)
 	m.set_shader_parameter("raio", raio_oclusao)
+	q.material_override = m
+	camera.add_child(q)
+	q.position = Vector3(0, 0, -1)
+
+
+# Névoa do JS (Fog 0x8c8f86, 41 a 81, smoothstep na profundidade): quadrado na frente da câmera, depois da oclusão.
+func _neblina() -> void:
+	var q := MeshInstance3D.new()
+	var malha := QuadMesh.new()
+	malha.size = Vector2(2, 2)
+	q.mesh = malha
+	q.extra_cull_margin = 16384.0
+	q.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var m := ShaderMaterial.new()
+	m.shader = load("res://assets/3d/neblina.gdshader")
+	m.render_priority = 10
 	q.material_override = m
 	camera.add_child(q)
 	q.position = Vector3(0, 0, -1)

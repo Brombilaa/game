@@ -8,8 +8,8 @@ shader_type canvas_item;
 uniform sampler2D tela : hint_screen_texture, filter_linear;
 uniform float nevoa : hint_range(0.0, 1.0) = 0.0;  // a névoa agora é do próprio 3D (Environment, 41 a 81 unidades)
 // Correção de cor medida contra a referência (regressão em linear): o Godot sai um pouco menos saturado e mais verde.
-uniform float corr_saturacao = 1.25;
-uniform vec3 corr_ganho = vec3(0.93, 0.85, 0.95);
+uniform float corr_saturacao = 1.17;
+uniform vec3 corr_ganho = vec3(0.93, 0.85, 0.91);
 uniform vec3 cor_nevoa : source_color = vec3(0.549, 0.561, 0.525);
 
 float bayer(vec2 p) {
