@@ -2,13 +2,15 @@
 
 O cenário nasce no protótipo three.js `/mnt/project-files/arte/estilo-pc-antigo/parque3d_bake_estilo_c.html`: caminho de acesso C (asfalto, meio-fio, calçada;
 na página o parâmetro `?v=C` é o padrão), folhagem C, copas refeitas e casas refeitas. Sem o caminho C a rua da van volta ao modelo antigo.
+O caminho de acesso é uma fita curva com textura própria (asfalto que se mistura com terra e grama) e a laje antiga foi
+apagada do chão: use `arte/estilo-pc-antigo/chao_sem_laje_flip.jpg` como `chao.jpg` no passo 3.
 Para levar ao Godot:
 
 1. Insira `exportScene.js` no HTML do protótipo (e o import do `GLTFExporter`), sirva a pasta por HTTP
    (com `node_modules/three@0.160`) e rode `exportar_cenario.js` (playwright). Ele chama `bake` (para aplicar a mesma
    visibilidade da câmera do jogo), exporta só o que está na janela x −16..36, z −14..30 e grava `parque_cenario.glb` (~22 MB).
 2. Reduza com `@gltf-transform/cli`: `dedup`, `flatten`, `join`, `weld` (22 MB → ~11 MB, 89 malhas).
-3. `node finalizar_cenario.mjs entrada.glb saida.glb chao.jpg`: tira o metal padrão do exportador (0,5) e escurece o vidro
+3. `node finalizar_cenario.mjs entrada.glb saida.glb chao.jpg` (depois de trocar o glb, rode `godot --headless --path . --import`, senão o Godot usa o cache antigo): tira o metal padrão do exportador (0,5) e escurece o vidro
    (metal real) como o three.js faz sem mapa de ambiente; troca a textura do chão pela original (o exportador limita a
    1024 px; `chao.jpg` é o JPEG `planTex` do HTML invertido na vertical); gera normais chapadas, viradas para fora, nos
    materiais marcados com `extras.flat`; e dá a cada material o nome `mN`.
