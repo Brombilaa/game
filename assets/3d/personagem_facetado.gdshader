@@ -4,15 +4,22 @@ shader_type spatial;
 render_mode diffuse_lambert, specular_disabled;
 
 uniform sampler2D textura : source_color, filter_linear_mipmap_anisotropic;
-uniform vec4 cor : source_color = vec4(1.0);
+uniform vec4 cor = vec4(1.0);  // multiplicador linear (sem source_color: valores acima de 1 não podem passar pela conversão sRGB)
 uniform bool usa_textura = true;
-uniform vec3 hemi_ceu = vec3(1.0);
-uniform vec3 hemi_chao = vec3(1.0);
+// Contraste da textura em volta da cor média dela (em sRGB), medido contra a referência: no Godot o casaco
+// mostrava manchas frias e a pele ficava pálida.
+uniform vec3 media_textura = vec3(0.098, 0.086, 0.078);  // cor típica do casaco (mediana da textura): o contraste gira em volta dela
+uniform vec3 contraste = vec3(1.0);
+// Luz fria somada nas sombras do personagem: no JS o casaco na sombra sai cinza neutro (céu azulado do
+// HemisphereLight); no Godot saía marrom. Medido contra a referência.
+uniform vec3 luz_fria = vec3(0.0);
 
 void fragment() {
 	vec3 base = cor.rgb;
 	if (usa_textura) {
-		base *= texture(textura, UV).rgb;
+		vec3 t = pow(texture(textura, UV).rgb, vec3(1.0 / 2.2));
+		t = max(media_textura + (t - media_textura) * contraste, vec3(0.0));
+		base *= pow(t, vec3(2.2));
 	}
 	ALBEDO = base;
 	ROUGHNESS = 1.0;
@@ -22,8 +29,5 @@ void fragment() {
 		n = -n;
 	}
 	NORMAL = n;
-	// HemisphereLight do JS: faces para cima pegam o céu claro, para baixo o chão escuro.
-	// O ambiente do Godot é uma cor só (a média dos dois); este fator devolve a variação.
-	float t = 0.5 * (INV_VIEW_MATRIX * vec4(n, 0.0)).y + 0.5;
-	ALBEDO *= mix(hemi_chao, hemi_ceu, t);
+	EMISSION = luz_fria;
 }

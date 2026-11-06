@@ -22,7 +22,11 @@ const ESCALA_FBX := 2.2 / 0.01779
 const TOM_FOLHAGEM := 1.1
 # Multiplicador de cor por material do cenário (nome mN do glb), medido contra a referência JS (tools/calibrar_tons.py gera o arquivo).
 const TONS_MATERIAIS := preload("res://assets/3d/parque/tons_materiais.gd")
-const TOM_PERSONAGEM := Color(1.4, 1.55, 1.55)  # calibrado contra o casaco da referência (sombreamento facetado)
+# Personagem (shader facetado), medido contra a referência: multiplicador linear, contraste da textura em volta da cor
+# do casaco e uma luz fria somada (o casaco na sombra sai cinza neutro no JS, não marrom).
+const TOM_PERSONAGEM := Color(1.72, 1.95, 1.45)
+const CONTRASTE_PERSONAGEM := Vector3(0.85, 0.72, 0.8)
+const LUZ_FRIA_PERSONAGEM := Vector3(0.006, 0.024, 0.026)
 const GRUPO := [Vector2(450, 690), Vector2(510, 660), Vector2(570, 625)]
 
 # Luz ajustada à mão para casar com o render de referência do three.js (estilo PC antigo).
@@ -258,6 +262,8 @@ func _facetar(corpo: Node3D) -> void:
 				novo.set_shader_parameter("textura", st.albedo_texture)
 				novo.set_shader_parameter("usa_textura", st.albedo_texture != null)
 				novo.set_shader_parameter("cor", st.albedo_color * TOM_PERSONAGEM)
+				novo.set_shader_parameter("contraste", CONTRASTE_PERSONAGEM)
+				novo.set_shader_parameter("luz_fria", LUZ_FRIA_PERSONAGEM)
 			mi.set_surface_override_material(s, novo)
 
 
@@ -290,7 +296,7 @@ func _luz_personagem(corpo: Node3D) -> void:
 		var mat := (m as MeshInstance3D).get_active_material(0)
 		if mat is StandardMaterial3D:
 			var novo := mat.duplicate() as StandardMaterial3D
-			novo.albedo_color = TOM_PERSONAGEM * 0.6
+			novo.albedo_color = Color(0.6, 0.6, 0.6)
 			novo.metallic_specular = 0.0
 			(m as MeshInstance3D).set_surface_override_material(0, novo)
 
