@@ -22,3 +22,9 @@ builds/
 .DS_Store
 Thumbs.db
 *.tmp
+
+# Cena 3D: o Godot extrai as texturas embutidas dos .glb/.fbx ao importar; elas voltam sozinhas ao reimportar
+assets/3d/**/*_[0-9].png
+assets/3d/**/*_[0-9][0-9].png
+assets/3d/**/*_[0-9].png.import
+assets/3d/**/*_[0-9][0-9].png.import
