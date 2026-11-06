@@ -27,6 +27,8 @@ const TONS_MATERIAIS := preload("res://assets/3d/parque/tons_materiais.gd")
 const TOM_PERSONAGEM := Color(1.72, 1.95, 1.45)
 const CONTRASTE_PERSONAGEM := Vector3(0.85, 0.72, 0.8)
 const LUZ_FRIA_PERSONAGEM := Vector3(0.006, 0.024, 0.026)
+const TOM_BOINA := Vector3(0.60, 0.52, 0.56)  # boina mais escura e menos vermelha, medida contra o JS (junto com o pivô media_boina)
+const CONTRASTE_BOINA := Vector3(0.2, 0.2, 0.25)  # as manchas escuras do tecido quase somem no JS
 const GRUPO := [Vector2(450, 690), Vector2(510, 660), Vector2(570, 625)]
 
 # Luz ajustada à mão para casar com o render de referência do three.js (estilo PC antigo).
@@ -264,6 +266,11 @@ func _facetar(corpo: Node3D) -> void:
 				novo.set_shader_parameter("cor", st.albedo_color * TOM_PERSONAGEM)
 				novo.set_shader_parameter("contraste", CONTRASTE_PERSONAGEM)
 				novo.set_shader_parameter("luz_fria", LUZ_FRIA_PERSONAGEM)
+				var cx := mi.mesh.get_aabb()
+				novo.set_shader_parameter("altura_min", cx.position.y)
+				novo.set_shader_parameter("altura_max", cx.end.y)
+				novo.set_shader_parameter("tom_boina", TOM_BOINA)
+				novo.set_shader_parameter("contraste_boina", CONTRASTE_BOINA)
 			mi.set_surface_override_material(s, novo)
 
 
