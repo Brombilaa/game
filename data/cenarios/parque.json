@@ -56,21 +56,21 @@
 			"cutscene_depois": "morte_caio"}
 	],
 	"oclusores": [
-		{"id": "arvore", "arquivo": "res://assets/sprites/cenario/parque/oclusao/arvore.png", "pos": [1236, 69]},
+		{"id": "arvore", "arquivo": "res://assets/sprites/cenario/parque/oclusao/arvore.png", "pos": [1220, 53]},
 		{"id": "van", "arquivo": "res://assets/sprites/cenario/parque/oclusao/van.png", "pos": [26, 222]},
 		{"id": "banco_1", "arquivo": "res://assets/sprites/cenario/parque/oclusao/banco_1.png", "pos": [835, 191]},
 		{"id": "banco_2", "arquivo": "res://assets/sprites/cenario/parque/oclusao/banco_2.png", "pos": [744, 442]},
 		{"id": "banco_quebrado", "arquivo": "res://assets/sprites/cenario/parque/oclusao/banco_quebrado.png", "pos": [1085, 430]},
 		{"id": "carrossel", "arquivo": "res://assets/sprites/cenario/parque/oclusao/carrossel.png", "pos": [767, 565]},
 		{"id": "balanco", "arquivo": "res://assets/sprites/cenario/parque/oclusao/balanco.png", "pos": [1020, 493]},
-		{"id": "mata_1", "arquivo": "res://assets/sprites/cenario/parque/oclusao/mata_1.png", "pos": [1237, 300]},
-		{"id": "mata_2", "arquivo": "res://assets/sprites/cenario/parque/oclusao/mata_2.png", "pos": [1183, 272]},
+		{"id": "mata_1", "arquivo": "res://assets/sprites/cenario/parque/oclusao/mata_1.png", "pos": [1242, 166]},
+		{"id": "mata_2", "arquivo": "res://assets/sprites/cenario/parque/oclusao/mata_2.png", "pos": [1187, 102]},
 		{"id": "arbusto_1", "arquivo": "res://assets/sprites/cenario/parque/oclusao/arbusto_1.png", "pos": [429, 157]},
-		{"id": "arbusto_2", "arquivo": "res://assets/sprites/cenario/parque/oclusao/arbusto_2.png", "pos": [671, 305]},
-		{"id": "arbusto_3", "arquivo": "res://assets/sprites/cenario/parque/oclusao/arbusto_3.png", "pos": [425, 230]},
-		{"id": "arbusto_4", "arquivo": "res://assets/sprites/cenario/parque/oclusao/arbusto_4.png", "pos": [1367, 483]},
+		{"id": "arbusto_2", "arquivo": "res://assets/sprites/cenario/parque/oclusao/arbusto_2.png", "pos": [684, 304]},
+		{"id": "arbusto_3", "arquivo": "res://assets/sprites/cenario/parque/oclusao/arbusto_3.png", "pos": [444, 255]},
+		{"id": "arbusto_4", "arquivo": "res://assets/sprites/cenario/parque/oclusao/arbusto_4.png", "pos": [1367, 498]},
 		{"id": "pneus_oeste", "arquivo": "res://assets/sprites/cenario/parque/oclusao/pneus_oeste.png", "pos": [529, 514]},
-		{"id": "pneus_arvore", "arquivo": "res://assets/sprites/cenario/parque/oclusao/pneus_arvore.png", "pos": [1319, 536]}
+		{"id": "pneus_arvore", "arquivo": "res://assets/sprites/cenario/parque/oclusao/pneus_arvore.png", "pos": [1319, 534]}
 	],
 	"_pendencias": ["Criatura de Sangue no lugar do cultista (feito em 5/11); ficha provisória igual à do cultista", "pistas de ordem 2 só liberam depois de todas as de ordem 1"]
 }
