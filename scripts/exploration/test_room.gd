@@ -370,6 +370,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			_player_delay()
 		elif event.pressed and event.keycode == KEY_Q:
 			_swap_weapon()
+		elif event.pressed and event.keycode == KEY_G and use_3d and looks.get(player, 0) == 1:
+			nikolai_clock[player] = {"anim": "reload", "start": Time.get_ticks_msec()}  # teste da recarga (ainda não há munição no jogo)
+			queue_redraw()
 		elif event.pressed and event.keycode == KEY_V:
 			use_3d = not use_3d
 			_popup(player.pos, "Nikolai 3D" if use_3d else "Nikolai 2D")
@@ -1010,6 +1013,8 @@ func gear_use(m: Combatant, bag_index: int) -> String:
 			return "PA insuficientes"
 	m.conditions.erase(cures[effect])
 	inventory.remove(id)
+	if use_3d and looks.get(m, 0) == 1:
+		nikolai_clock[m] = {"anim": "pickup_object", "start": Time.get_ticks_msec()}  # gesto de usar o item
 	queue_redraw()
 	return "%s usou %s" % [m.name, cfg.game_data.get_entry("itens", id)["nome"]]
 
@@ -1373,6 +1378,8 @@ func _draw_unit(u: Combatant) -> void:
 	if i < 0:
 		if use_3d and looks.get(u, 0) == 1:
 			var anim := "walk" if walking else "idle"
+			if u.crouched:  # agachado (tecla C): parado ou andando agachado
+				anim = "crouch_walk" if walking else "crouch_idle"
 			if anim3d_pick >= 0:
 				anim = AnimSheet.NAMES[anim3d_pick]
 			var count := nikolai3d.frame_count(anim)

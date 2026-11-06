@@ -14,7 +14,7 @@ const ROOT := "res://assets/sprites/personagens/nikolai3d/nikolai3d_%s_%s.png"
 const FPS := {
 	"idle": 3.0, "walk": 8.0, "pistol_idle": 4.5, "pistol_walk": 8.0, "crouch_walk": 6.0,
 	"rifle_walk": 8.0, "run": 11.0, "pickup_object": 8.0, "pickup": 4.0, "opening": 4.0,
-	"pistol_aim_prov": 5.0,
+	"pistol_aim_prov": 5.0, "crouch_idle": 3.0, "reload": 6.0,
 	"pistol_shoot": 6.0, "rifle_fire": 9.0, "punch": 8.0, "kick": 8.0, "hit": 6.0, "death": 6.0, "getup": 4.0,
 }
 # Animações com o corpo mais largo ou baixo que o quadro padrão (deitado, lance do soco) usam quadro maior;
@@ -22,7 +22,7 @@ const FPS := {
 const BIG := Vector2i(576, 512)
 const FRAME_OF := {"punch": BIG, "kick": BIG, "death": Vector2i(704, 512), "getup": BIG}  # morte: o corpo deitado é mais comprido
 const NAMES := ["idle", "walk", "pistol_idle", "pistol_walk", "crouch_walk", "rifle_walk", "run", "pickup_object", "pickup", "opening", "pistol_aim_prov",
-	"pistol_shoot", "rifle_fire", "punch", "kick", "hit", "death", "getup"]
+	"crouch_idle", "reload", "pistol_shoot", "rifle_fire", "punch", "kick", "hit", "death", "getup"]
 
 var textures := {}  # animação -> {"se": Texture2D, ...}
 
