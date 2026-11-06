@@ -6,7 +6,9 @@ extends RefCounted
 
 const ROOT := "res://assets/sprites/personagens/criatura_sangue/criatura_%s_%s.png"
 const SCALE := 0.5
-const FPS := {"idle": 3.7, "transition": 10.0, "walk": 6.0, "attack": 5.0, "death": 7.5}
+# Quadros por segundo PROVISÓRIOS (Léo, 06/11/2026: estavam rápidos demais). Antes: idle 3,7, transição 10,
+# andar 6 (hoje o andar vai por distância, ver CREATURE_WALK_CYCLE_PIXELS), ataque 5 (hoje vai por CREATURE_ATTACK_SECONDS), morte 7,5.
+const FPS := {"idle": 3.0, "transition": 6.0, "walk": 6.0, "attack": 5.0, "death": 5.0}
 const NAMES := ["idle", "transition", "walk", "attack", "death"]
 const FRAME := {"idle": 384, "transition": 384, "walk": 384, "attack": 448, "death": 384}
 const PIVOT := {
