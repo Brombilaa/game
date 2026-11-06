@@ -14,3 +14,6 @@ Personagem: FBX "With Skin" do Mixamo → importado pelo Godot → gravado como 
 As animações vêm dos FBX do Mixamo (só esqueleto) em `assets/3d/animacoes/`; as trilhas usam `Skeleton3D:mixamorig_*`.
 
 Captura: `xvfb-run -a godot --path . --rendering-driver opengl3 --resolution 1920x1080 -s tools/capturar_parque3d.gd -- saida.png [graus]`.
+
+Depois do `join`/`weld`, troque `metallicFactor` 0.5 por 0 e `roughnessFactor` 0.5 por 1 no JSON do glb (o exportador usa 0.5; sem isso o Godot escurece tudo).
+Visual: shader `assets/3d/pc_antigo.gdshader` (névoa 15%, lavagem leve, 16 bits com dithering). Luz do Godot: sol 0,25 e ambiente 0,3, ajustadas por comparação numérica com o render de referência do three.js.
