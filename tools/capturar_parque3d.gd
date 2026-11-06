@@ -1,14 +1,16 @@
 extends SceneTree
-# Captura do parque 3D (opção 3). xvfb-run -a godot --path . --rendering-driver opengl3 --resolution 1920x1080 -s tools/capturar_parque3d.gd -- saida.png [graus de giro da câmera] [luz do sol] [luz ambiente]
+# Captura do parque 3D (opção 3). xvfb-run -a godot --path . --rendering-driver opengl3 --resolution 1920x1080 -s tools/capturar_parque3d.gd -- saida.png [graus de giro da câmera] [luz do sol] [luz ambiente] [zoom] [alvo x] [alvo z]
 func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
 	var saida: String = args[0] if args.size() > 0 else "parque3d.png"
 	var sol: float = float(args[2]) if args.size() > 2 else 0.22
-	var amb: float = float(args[3]) if args.size() > 3 else 0.17
+	var amb: float = float(args[3]) if args.size() > 3 else 0.10
 	var giro: float = float(args[1]) if args.size() > 1 else 0.0
 	var cena: Node = load("res://scenes/exploration/parque3d.tscn").instantiate()
 	cena.luz_sol = sol
 	cena.luz_ambiente = amb
+	if OS.get_environment("AO") != "":
+		cena.forca_oclusao = float(OS.get_environment("AO"))
 	if OS.get_environment("CEU") != "":
 		cena.luz_ceu = float(OS.get_environment("CEU"))
 	root.add_child(cena)
