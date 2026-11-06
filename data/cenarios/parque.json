@@ -58,7 +58,7 @@
 	"oclusores": [
 		{"id": "arvore", "arquivo": "res://assets/sprites/cenario/parque/oclusao/arvore.png", "pos": [1236, 69]},
 		{"id": "van", "arquivo": "res://assets/sprites/cenario/parque/oclusao/van.png", "pos": [26, 222]},
-		{"id": "banco_1", "arquivo": "res://assets/sprites/cenario/parque/oclusao/banco_1.png", "pos": [835, 192]},
+		{"id": "banco_1", "arquivo": "res://assets/sprites/cenario/parque/oclusao/banco_1.png", "pos": [835, 191]},
 		{"id": "banco_2", "arquivo": "res://assets/sprites/cenario/parque/oclusao/banco_2.png", "pos": [744, 442]},
 		{"id": "banco_quebrado", "arquivo": "res://assets/sprites/cenario/parque/oclusao/banco_quebrado.png", "pos": [1085, 430]},
 		{"id": "carrossel", "arquivo": "res://assets/sprites/cenario/parque/oclusao/carrossel.png", "pos": [767, 565]},
