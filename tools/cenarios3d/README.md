@@ -1,6 +1,7 @@
 # Cenário 3D do parque para o Godot (opção 3 do Léo, 06/11/2026)
 
-O cenário nasce no protótipo three.js (`/mnt/project-files/arte/caminho-acesso/parque3d_bake_caminho_c.html`).
+O cenário nasce no protótipo three.js `/mnt/project-files/arte/estilo-pc-antigo/parque3d_bake_estilo_c.html`: caminho de acesso C (asfalto, meio-fio, calçada;
+na página o parâmetro `?v=C` é o padrão), folhagem C, copas refeitas e casas refeitas. Sem o caminho C a rua da van volta ao modelo antigo.
 Para levar ao Godot:
 
 1. Insira `exportScene.js` no HTML do protótipo (e o import do `GLTFExporter`), sirva a pasta por HTTP
