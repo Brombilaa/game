@@ -17,13 +17,15 @@ const ZOOM := 1.5
 const ALVO := Vector3(8.2, 0.0, 10.2)
 # O FBX do Mixamo chega em centímetros (0,01); 2,2 unidades de altura = herói de 128 px (memória do projeto).
 const ESCALA_FBX := 2.2 / 0.01779
-const EMISSAO_PERSONAGEM := 0.0
+# O casaco sai mais claro no Godot do que na referência; medido na comparação: ~55% do tom da textura.
+const TOM_PERSONAGEM := 0.6
 const GRUPO := [Vector2(450, 690), Vector2(510, 660), Vector2(570, 625)]
 
 # Luz ajustada à mão para casar com o render de referência do three.js (estilo PC antigo).
-@export var luz_sol := 0.6
+@export var luz_sol := 0.22
 @export var luz_poste := 4.0
-@export var luz_ambiente := 0.03
+@export var luz_ceu := 0.0  # metade de cima do HemisphereLight: luz de cima sem sombra
+@export var luz_ambiente := 0.17
 @export var um_andando := false  # liga o Nikolai do meio com esqueleto e a animação de andar
 var camera: Camera3D
 var mundo: SubViewport  # o 3D é desenhado a ~1000 px de altura com MSAA 4x e ampliado, como o protótipo
@@ -87,7 +89,7 @@ func _ambiente() -> void:
 	env.background_color = Color("8c8f86")
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.78, 0.76, 0.74)  # média do HemisphereLight do protótipo, sem o azul
+	env.ambient_light_color = Color(0.72, 0.71, 0.76)  # média do céu e do chão do HemisphereLight
 	env.ambient_light_energy = luz_ambiente
 	# Fog(0x8c8f86, 41, 81) do protótipo (smoothstep, aproximada por uma curva quadrática de 41 a 68), cor convertida para linear como no three.js.
 	env.fog_enabled = true
@@ -104,6 +106,14 @@ func _ambiente() -> void:
 	mundo.add_child(we)
 	# DirectionalLight(0xffdcb8) em (4, 6, 4.5) apontando para (10, 0, 7.5), sombra PCF suave de 2048.
 	RenderingServer.directional_shadow_atlas_set_size(4096, true)
+	# HemisphereLight = média constante + parte que cresce com a normal para cima.
+	var ceu_luz := DirectionalLight3D.new()
+	ceu_luz.light_color = Color(0.89, 0.87, 1.0)
+	ceu_luz.light_energy = luz_ceu
+	ceu_luz.shadow_enabled = false
+	ceu_luz.light_specular = 0.0
+	mundo.add_child(ceu_luz)
+	ceu_luz.rotation_degrees = Vector3(-90, 0, 0)
 	var sol := DirectionalLight3D.new()
 	sol.light_color = Color("ffdcb8")
 	sol.light_energy = luz_sol
@@ -137,6 +147,11 @@ func _cenario() -> void:
 				if not copias.has(mat):
 					var novo := mat.duplicate() as BaseMaterial3D
 					novo.metallic_specular = 0.0
+					novo.diffuse_mode = BaseMaterial3D.DIFFUSE_LAMBERT
+					# Folhas com alfa: recorte (alphaTest do protótipo) em vez de mistura, para projetarem sombra.
+					if novo.transparency == BaseMaterial3D.TRANSPARENCY_ALPHA and novo.albedo_texture:
+						novo.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+						novo.alpha_scissor_threshold = 0.5
 					if mat.albedo_texture and mat.albedo_texture.get_width() >= 512:
 						novo.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 					copias[mat] = novo
@@ -181,9 +196,8 @@ func _luz_personagem(corpo: Node3D) -> void:
 		var mat := (m as MeshInstance3D).get_active_material(0)
 		if mat is StandardMaterial3D:
 			var novo := mat.duplicate() as StandardMaterial3D
-			novo.emission_enabled = true
-			novo.emission_texture = novo.albedo_texture
-			novo.emission_energy_multiplier = EMISSAO_PERSONAGEM
+			novo.albedo_color = Color(TOM_PERSONAGEM, TOM_PERSONAGEM, TOM_PERSONAGEM)
+			novo.metallic_specular = 0.0
 			(m as MeshInstance3D).set_surface_override_material(0, novo)
 
 
@@ -195,16 +209,7 @@ func _agente(px: Vector2, i: int) -> Node3D:
 	corpo.rotation.y = PI / 4.0
 	corpo.scale = Vector3.ONE * ESCALA_FBX
 	mundo.add_child(corpo)
-	# No three.js o material padrão ainda recebe luz especular e ambiente que o Godot não repete, então o casaco preto
-	# saía mais escuro. Um pouco de emissão da própria textura levanta os pretos sem lavar as cores.
-	for m in corpo.find_children("*", "MeshInstance3D", true, false):
-		var mat := (m as MeshInstance3D).get_active_material(0)
-		if mat is StandardMaterial3D:
-			var novo := mat.duplicate() as StandardMaterial3D
-			novo.emission_enabled = true
-			novo.emission_texture = novo.albedo_texture
-			novo.emission_energy_multiplier = EMISSAO_PERSONAGEM
-			(m as MeshInstance3D).set_surface_override_material(0, novo)
+	_luz_personagem(corpo)
 	var raiz: Node = corpo.get_node("ni_skin")  # as trilhas do Mixamo começam em "Skeleton3D:..."
 	var respirar: Animation = null  # o próprio modelo traz o Breathing Idle do Mixamo
 	for a in corpo.find_children("*", "AnimationPlayer", true, false):

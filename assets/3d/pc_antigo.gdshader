@@ -7,6 +7,9 @@ shader_type canvas_item;
 // 4) grão: ruído 256x256 esticado na tela, mix-blend-mode: overlay a 7%
 uniform sampler2D tela : hint_screen_texture, filter_linear;
 uniform float nevoa : hint_range(0.0, 1.0) = 0.0;  // a névoa agora é do próprio 3D (Environment, 41 a 81 unidades)
+// Correção de cor medida contra a referência (regressão em linear): o Godot sai um pouco menos saturado e mais verde.
+uniform float corr_saturacao = 1.25;
+uniform vec3 corr_ganho = vec3(0.93, 0.85, 0.95);
 uniform vec3 cor_nevoa : source_color = vec3(0.549, 0.561, 0.525);
 
 float bayer(vec2 p) {
@@ -29,6 +32,8 @@ float ruido(vec2 uv) {
 void fragment() {
 	vec3 s = texture(tela, SCREEN_UV).rgb;
 	vec3 c = s;  // a textura do SubViewport já vem em linear, como o render target do three.js
+	float lz = dot(c, vec3(0.2126, 0.7152, 0.0722));
+	c = max(mix(vec3(lz), c, corr_saturacao), 0.0) * corr_ganho;
 	float l = dot(c, vec3(0.299, 0.587, 0.114));
 	c = mix(vec3(l), c, 0.92);
 	c = c * 0.97 + 0.008;
