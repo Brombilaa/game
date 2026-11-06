@@ -52,13 +52,15 @@ jobs:
           (cd build/windows && zip -q "../../$name.zip" OrdemParanormal.exe)
           echo "ZIP=$name.zip" >> "$GITHUB_ENV"
 
+      # Na main o zip já vai para o release "latest"; guardar também como artifact só estoura a cota.
       - uses: actions/upload-artifact@v4
+        if: github.ref != 'refs/heads/main'
         # a cota de armazenamento de artifacts esgota e não deve impedir o release "latest"
         continue-on-error: true
         with:
           name: windows
           path: ${{ env.ZIP }}
-          retention-days: 3
+          retention-days: 1
 
       - name: Publicar no GitHub Releases
         if: startsWith(github.ref, 'refs/tags/v')
