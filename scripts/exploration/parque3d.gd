@@ -21,9 +21,9 @@ const EMISSAO_PERSONAGEM := 0.0
 const GRUPO := [Vector2(450, 690), Vector2(510, 660), Vector2(570, 625)]
 
 # Luz ajustada à mão para casar com o render de referência do three.js (estilo PC antigo).
-@export var luz_sol := 0.25
+@export var luz_sol := 0.6
 @export var luz_poste := 4.0
-@export var luz_ambiente := 0.06
+@export var luz_ambiente := 0.03
 @export var um_andando := false  # liga o Nikolai do meio com esqueleto e a animação de andar
 var camera: Camera3D
 var mundo: SubViewport  # o 3D é desenhado a ~1000 px de altura com MSAA 4x e ampliado, como o protótipo
@@ -87,7 +87,7 @@ func _ambiente() -> void:
 	env.background_color = Color("8c8f86")
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color("e8e4f4")
+	env.ambient_light_color = Color(0.78, 0.76, 0.74)  # média do HemisphereLight do protótipo, sem o azul
 	env.ambient_light_energy = luz_ambiente
 	# Fog(0x8c8f86, 41, 81) do protótipo (smoothstep, aproximada por uma curva quadrática de 41 a 68), cor convertida para linear como no three.js.
 	env.fog_enabled = true
@@ -127,15 +127,20 @@ func _cenario() -> void:
 		o.light_energy = luz_poste
 		o.omni_range = 14.0
 		o.omni_attenuation = 1.6
-	# Texturas grandes (chão, grama) com mipmap linear e anisotropia, mais próximo da suavização do protótipo.
+	# Materiais: sem brilho especular (o protótipo usa Lambert) e, nas texturas grandes (chão, grama), mipmap linear com anisotropia.
+	var copias := {}
 	for m in cena.find_children("*", "MeshInstance3D", true, false):
 		var mi := m as MeshInstance3D
 		for i in mi.mesh.get_surface_count():
 			var mat := mi.get_active_material(i)
-			if mat is BaseMaterial3D and mat.albedo_texture and mat.albedo_texture.get_width() >= 512:
-				var novo := mat.duplicate() as BaseMaterial3D
-				novo.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
-				mi.set_surface_override_material(i, novo)
+			if mat is BaseMaterial3D:
+				if not copias.has(mat):
+					var novo := mat.duplicate() as BaseMaterial3D
+					novo.metallic_specular = 0.0
+					if mat.albedo_texture and mat.albedo_texture.get_width() >= 512:
+						novo.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+					copias[mat] = novo
+				mi.set_surface_override_material(i, copias[mat])
 
 
 func _camera() -> void:
