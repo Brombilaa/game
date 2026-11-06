@@ -8,5 +8,6 @@ Gera as folhas `assets/sprites/personagens/nikolai3d/nikolai3d_<animação>_<dir
    `ref=first` ancora o quadro inicial (ataques, morte), `ref=last` o final (levantar); sem `ref` o movimento é centrado pela média (andar, correr).
    Quadro maior (soco, chute, morte, levantar): acrescentar `w=1728` (morte `w=2112`).
 3. `python3 -I build_combate.py r <saída>` pixeliza (paleta de `r/walk`, `r/idle`, `r/run`, contorno na cor do tecido) e alinha os pés em 368.
+4. Estilo do cenário (Léo, 06/11): `python3 -I estilizar.py <pasta> <saída> 2 32` reduz os pixels, usa paleta única e refaz o contorno; as folhas mantêm o tamanho.
 
 Quadros: 384×384; soco, chute e levantar 576×512; morte 704×512 (ver `AnimSheet.FRAME_OF`).
