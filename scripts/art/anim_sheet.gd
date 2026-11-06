@@ -9,11 +9,13 @@ const SCALE := 0.5  # tamanho na tela: a folha tem o dobro dos pixels do 2D
 const PIVOT := Vector2(192, 358)  # pés no quadro da folha (o mesmo ponto do 2D, a 2x)
 const ROOT := "res://assets/sprites/personagens/nikolai3d/nikolai3d_%s_%s.png"
 # Animação -> quadros por segundo. A ordem é a do ciclo da tecla N na sala de teste.
+# PROVISÓRIO (Léo, 06/11/2026: estavam rápidas demais; ~70% dos valores antigos). Andar do jogo vai por distância (NIKOLAI_WALK_CYCLE_PIXELS)
+# e ataques por NIKOLAI_ATTACK_SECONDS; estes valores valem para parada, morte, levantar, dano e para o ciclo de teste (tecla N).
 const FPS := {
-	"idle": 4.0, "walk": 10.0, "pistol_idle": 6.0, "pistol_walk": 10.0, "crouch_walk": 8.0,
-	"rifle_walk": 10.0, "run": 14.0, "pickup_object": 10.0, "pickup": 5.0, "opening": 5.0,
-	"pistol_aim_prov": 6.0,
-	"pistol_shoot": 8.0, "rifle_fire": 12.0, "punch": 10.0, "kick": 10.0, "hit": 8.0, "death": 8.0, "getup": 5.0,
+	"idle": 3.0, "walk": 8.0, "pistol_idle": 4.5, "pistol_walk": 8.0, "crouch_walk": 6.0,
+	"rifle_walk": 8.0, "run": 11.0, "pickup_object": 8.0, "pickup": 4.0, "opening": 4.0,
+	"pistol_aim_prov": 5.0,
+	"pistol_shoot": 6.0, "rifle_fire": 9.0, "punch": 8.0, "kick": 8.0, "hit": 6.0, "death": 6.0, "getup": 4.0,
 }
 # Animações com o corpo mais largo ou baixo que o quadro padrão (deitado, lance do soco) usam quadro maior;
 # os pés ficam em x = metade da largura e na mesma linha PIVOT.y.

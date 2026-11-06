@@ -69,15 +69,15 @@ func camera_focus() -> Vector2:
 
 
 # Enfileira a encenação de um ataque já resolvido. `pv_before` é o PV do alvo antes do golpe.
-func start(attacker: Combatant, target: Combatant, r: Dictionary, pv_before: int) -> void:
+func start(attacker: Combatant, target: Combatant, r: Dictionary, pv_before: int, aim_seconds: float = AIM_SECONDS) -> void:
 	hold_pv[target] = pv_before
 	cam_pair = [attacker, target]
-	jobs.append({"attacker": attacker, "target": target, "r": r, "from_pv": pv_before, "time": 0.0})
+	jobs.append({"attacker": attacker, "target": target, "r": r, "from_pv": pv_before, "time": 0.0, "aim": aim_seconds})
 
 
 # Progresso da mira (0 a 1) do trabalho.
 static func aim_progress(job: Dictionary) -> float:
-	return clampf(job["time"] / AIM_SECONDS, 0.0, 1.0)
+	return clampf(job["time"] / float(job.get("aim", AIM_SECONDS)), 0.0, 1.0)
 
 
 # Abatidos que ainda estão sendo encenados (mira pendente ou arremesso em curso).
@@ -150,7 +150,7 @@ func update(delta: float) -> void:
 	# Por último: o que nasce no impacto só começa a envelhecer no próximo quadro.
 	for job in jobs.duplicate():
 		job["time"] += delta
-		if job["time"] >= AIM_SECONDS:
+		if job["time"] >= float(job.get("aim", AIM_SECONDS)):
 			jobs.erase(job)
 			_impact(job)
 

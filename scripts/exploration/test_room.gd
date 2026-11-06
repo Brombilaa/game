@@ -57,9 +57,15 @@ const POPUP_STYLES := {
 
 # Quadro da caminhada avança por distância percorrida na tela (não por tempo): os pés não deslizam,
 # cada unidade tem a sua própria fase e o ritmo é o mesmo em todas as direções.
-const WALK_FRAME_PIXELS := 15.0
+# VALORES PROVISÓRIOS (Léo pediu animações mais lentas, 06/11/2026; ajustar testando no jogo).
+# Velocidade de andar = 180 px/s, então ciclo/180 = segundos por passo completo.
+const WALK_FRAME_PIXELS := 20.0  # Fernando e demais folhas 2D de 6 quadros: ciclo de 120 px = 0,67 s (antes 90 px = 0,5 s)
+const NIKOLAI_WALK_CYCLE_PIXELS := 144.0  # Nikolai 3D: 0,8 s por passo completo (antes 0,5 s)
+const CREATURE_WALK_CYCLE_PIXELS := 180.0  # Criatura de Sangue: 1,0 s por ciclo (antes 0,5 s)
+const NIKOLAI_ATTACK_SECONDS := 0.8  # mira/golpe do Nikolai (antes 0,6 s)
+const CREATURE_ATTACK_SECONDS := 1.2  # golpe da Criatura, 16 quadros (antes 0,6 s = 27 quadros/s)
 
-const IDLE_FRAME_SECONDS := 0.7
+const IDLE_FRAME_SECONDS := 0.9  # antes 0,7
 
 const PLACEHOLDER_SCALE := 2.7  # arte provisória de 32×48 ampliada para ~130 px (a altura do herói)
 
@@ -95,7 +101,7 @@ const ENEMY_VARIANTS := ["cultista", "atirador"]  # mesma ordem de `enemies`
 const ENEMY_SHEETS := {"cultista": "res://assets/sprites/personagens/cultista"}
 # Variantes em 3D renderizado como pixel art (CreatureSheet): idle, andar, transição, ataque e morte.
 const CREATURE_VARIANT := "criatura_sangue"
-const TRANSITION_SECONDS := 0.9  # a transição (entrada em combate) toca uma vez ao começar o combate
+const TRANSITION_SECONDS := 2.0  # a transição (entrada em combate) toca uma vez ao começar o combate; 12 quadros a 6/s (provisório, antes 0,9 s e cortava o fim)
 
 
 var walls: Array[Rect2] = [
@@ -1073,7 +1079,12 @@ func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void
 		_reject(r.reason)
 		return
 	var before := mini(target.pv + int(r.get("damage", 0)), target.max_pv) if r.get("hit", false) else target.pv
-	fx.start(attacker, target, r, before)
+	var aim := CombatFx.AIM_SECONDS
+	if _has_creatures() and enemies.has(attacker):
+		aim = CREATURE_ATTACK_SECONDS
+	elif use_3d and looks.get(attacker, 0) == 1:
+		aim = NIKOLAI_ATTACK_SECONDS
+	fx.start(attacker, target, r, before, aim)
 	queue_redraw()
 
 
@@ -1351,7 +1362,7 @@ func _draw_unit(u: Combatant) -> void:
 			var count := nikolai3d.frame_count(anim)
 			var f := int(Time.get_ticks_msec() / 1000.0 * AnimSheet.FPS[anim]) % count
 			if walking and anim3d_pick < 0:
-				f = int(walk_dist.get(u, 0.0) / (WALK_FRAME_PIXELS * 6.0 / count)) % count  # passo por distância
+				f = int(walk_dist.get(u, 0.0) / (NIKOLAI_WALK_CYCLE_PIXELS / count)) % count  # passo por distância
 			var pose := _nikolai_pose(u) if anim3d_pick < 0 else []
 			if not pose.is_empty():
 				anim = pose[0]
@@ -1449,7 +1460,7 @@ func _draw_creature(u: Combatant, at: Vector2, walking: bool, dist: float) -> vo
 				f = mini(int(since * CreatureSheet.FPS["transition"]), creature.frame_count("transition") - 1)
 			elif walking:
 				anim = "walk"
-				f = int(dist / (WALK_FRAME_PIXELS * 6.0 / creature.frame_count("walk"))) % creature.frame_count("walk")
+				f = int(dist / (CREATURE_WALK_CYCLE_PIXELS / creature.frame_count("walk"))) % creature.frame_count("walk")
 			else:
 				f = int(now / 1000.0 * CreatureSheet.FPS["idle"]) % creature.frame_count("idle")
 	creature.draw(self, at, anim, f, dir)
