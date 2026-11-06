@@ -13,6 +13,10 @@ uniform vec3 contraste = vec3(1.0);
 // Luz fria somada nas sombras do personagem: no JS o casaco na sombra sai cinza neutro (céu azulado do
 // HemisphereLight); no Godot saía marrom. Medido contra a referência.
 uniform vec3 luz_fria = vec3(0.0);
+// Tom da luz direcional (sol) no personagem: a cor foi calibrada na vista do jogo, onde o casaco fica quase todo
+// na sombra; de costas, no sol, ele saía marrom-avermelhado e no JS sai cinza. Casaco e boina têm tons próprios.
+uniform vec3 tom_sol = vec3(1.0);
+uniform vec3 tom_sol_boina = vec3(1.0);
 // Boina: no Godot saía avermelhada e clara demais. Ela é o topo da malha, então a correção vale acima de
 // uma altura (fração da altura total do modelo, no espaço da malha).
 uniform float altura_min = 0.0;
@@ -23,6 +27,7 @@ uniform vec3 tom_boina = vec3(1.0);
 uniform vec3 media_boina = vec3(0.436, 0.411, 0.389);  // mediana da textura na boina (no mesmo espaço de t)
 uniform vec3 contraste_boina = vec3(1.0);
 varying float altura;
+varying float na_boina;
 
 void vertex() {
 	altura = (VERTEX.y - altura_min) / max(altura_max - altura_min, 1e-4);
@@ -38,6 +43,7 @@ void fragment() {
 		t = max(media + (t - media) * mix(contraste, contraste_boina, boina), vec3(0.0));
 		base *= pow(t, vec3(2.2));
 	}
+	na_boina = boina;
 	ALBEDO = base * mix(vec3(1.0), tom_boina, boina);
 	ROUGHNESS = 1.0;
 	METALLIC = 0.0;
@@ -47,4 +53,10 @@ void fragment() {
 	}
 	NORMAL = n;
 	EMISSION = luz_fria;
+}
+
+// Lambert igual ao padrão do Godot, só com o tom nas luzes direcionais.
+void light() {
+	vec3 tom = LIGHT_IS_DIRECTIONAL ? mix(tom_sol, tom_sol_boina, na_boina) : vec3(1.0);
+	DIFFUSE_LIGHT += clamp(dot(NORMAL, LIGHT), 0.0, 1.0) * ATTENUATION * LIGHT_COLOR / PI * tom;
 }

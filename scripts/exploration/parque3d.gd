@@ -28,6 +28,9 @@ const TOM_PERSONAGEM := Color(1.72, 1.95, 1.45)
 const CONTRASTE_PERSONAGEM := Vector3(0.85, 0.72, 0.8)
 const LUZ_FRIA_PERSONAGEM := Vector3(0.006, 0.024, 0.026)
 const TOM_BOINA := Vector3(0.60, 0.52, 0.56)  # boina mais escura e menos vermelha, medida contra o JS (junto com o pivô media_boina)
+# Tom do sol no personagem (de costas a 180°, medido contra o JS): o lado no sol saía marrom-avermelhado.
+const SOL_PERSONAGEM := Vector3(0.66, 1.41, 2.18)
+const SOL_BOINA := Vector3(0.85, 0.92, 1.15)
 const CONTRASTE_BOINA := Vector3(0.2, 0.2, 0.25)  # as manchas escuras do tecido quase somem no JS
 const GRUPO := [Vector2(450, 690), Vector2(510, 660), Vector2(570, 625)]
 
@@ -264,6 +267,8 @@ func _facetar(corpo: Node3D) -> void:
 				novo.set_shader_parameter("textura", st.albedo_texture)
 				novo.set_shader_parameter("usa_textura", st.albedo_texture != null)
 				novo.set_shader_parameter("cor", st.albedo_color * TOM_PERSONAGEM)
+				novo.set_shader_parameter("tom_sol", SOL_PERSONAGEM)
+				novo.set_shader_parameter("tom_sol_boina", SOL_BOINA)
 				novo.set_shader_parameter("contraste", CONTRASTE_PERSONAGEM)
 				novo.set_shader_parameter("luz_fria", LUZ_FRIA_PERSONAGEM)
 				var cx := mi.mesh.get_aabb()
