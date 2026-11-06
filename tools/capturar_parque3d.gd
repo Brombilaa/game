@@ -1,10 +1,12 @@
 extends SceneTree
-# Captura do parque 3D (opção 3). xvfb-run -a godot --path . --rendering-driver opengl3 --resolution 1920x1080 -s tools/capturar_parque3d.gd -- saida.png [graus de giro da câmera]
+# Captura do parque 3D (opção 3). xvfb-run -a godot --path . --rendering-driver opengl3 --resolution 1920x1080 -s tools/capturar_parque3d.gd -- saida.png [graus de giro da câmera] [estilo 0-3]
 func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
 	var saida: String = args[0] if args.size() > 0 else "parque3d.png"
 	var giro: float = float(args[1]) if args.size() > 1 else 0.0
+	var est: int = int(args[2]) if args.size() > 2 else 1
 	var cena: Node = load("res://scenes/exploration/parque3d.tscn").instantiate()
+	cena.estilo = est
 	root.add_child(cena)
 	for i in 10:
 		await process_frame

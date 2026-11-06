@@ -18,6 +18,15 @@ const ALVO := Vector3(8.2, 0.0, 10.2)
 const ESCALA_FBX := 2.2 / 0.01779
 const GRUPO := [Vector2(450, 690), Vector2(510, 660), Vector2(570, 625)]
 
+# Modelos de TV antiga (o Léo escolhe um; 0 = só PC antigo, sem efeito de tela).
+const ESTILOS := {
+	0: {"lavagem": 0.2},
+	1: {"nome": "Tubo suave", "curvatura": 0.06, "scan": 0.22, "scan_altura": 4.0, "aberracao": 0.5, "borrao": 0.6, "ruido": 0.03, "vinheta": 0.5, "lavagem": 0.15},
+	2: {"nome": "VHS", "curvatura": 0.02, "scan": 0.10, "scan_altura": 4.0, "aberracao": 2.0, "borrao": 1.8, "ruido": 0.10, "tracking": 1.0, "vinheta": 0.35, "lavagem": 0.35},
+	3: {"nome": "CRT pesado", "curvatura": 0.16, "scan": 0.55, "scan_altura": 3.0, "mascara": 0.5, "aberracao": 0.7, "borrao": 0.7, "ruido": 0.02, "vinheta": 0.7, "bloom": 0.6, "brilho": 1.25, "lavagem": 0.12},
+}
+@export var estilo := 1
+var tela_material: ShaderMaterial
 var camera: Camera3D
 var agentes: Array[Node3D] = []
 
@@ -84,6 +93,8 @@ func _agente(px: Vector2, i: int) -> Node3D:
 		if a is AnimationPlayer and a.has_animation("mixamo_com"):
 			respirar = (a as AnimationPlayer).get_animation("mixamo_com").duplicate()
 			respirar.loop_mode = Animation.LOOP_LINEAR
+			for t in respirar.get_track_count():  # trilhas vêm como "ni_skin/Skeleton3D:..."; o player já parte de ni_skin
+				respirar.track_set_path(t, NodePath(String(respirar.track_get_path(t)).trim_prefix("ni_skin/")))
 		a.free()
 	var player := AnimationPlayer.new()
 	corpo.add_child(player)
@@ -106,7 +117,7 @@ func _animacao(caminho: String, laco: bool) -> Animation:
 	return a
 
 
-# Efeito "PC antigo" (direção B): cor em 16 bits (5-6-5) com dithering ordenado, leve lavagem.
+# Efeito de tela: PC antigo (16 bits com dithering) mais o modelo de TV antiga escolhido em `estilo`.
 func _efeito_pc_antigo() -> void:
 	var camada := CanvasLayer.new()
 	camada.layer = 100
@@ -114,7 +125,17 @@ func _efeito_pc_antigo() -> void:
 	r.set_anchors_preset(Control.PRESET_FULL_RECT)
 	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var m := ShaderMaterial.new()
-	m.shader = load("res://assets/3d/pc_antigo.gdshader")
+	m.shader = load("res://assets/3d/tv_antiga.gdshader")
+	tela_material = m
 	r.material = m
 	camada.add_child(r)
 	add_child(camada)
+	aplicar_estilo(estilo)
+
+
+func aplicar_estilo(i: int) -> void:
+	estilo = i
+	for k in ESTILOS[0]:
+		tela_material.set_shader_parameter(k, ESTILOS[0][k])
+	for k in ["curvatura", "scan", "scan_altura", "mascara", "aberracao", "borrao", "ruido", "tracking", "vinheta", "bloom", "brilho", "lavagem"]:
+		tela_material.set_shader_parameter(k, ESTILOS[i].get(k, 4.0 if k == "scan_altura" else (1.0 if k == "brilho" else 0.0)))
