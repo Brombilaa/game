@@ -11,11 +11,13 @@ const ROOT := "res://assets/sprites/personagens/%s/%s_%s_%s.png"  # pasta, prefi
 # Animação -> quadros por segundo. A ordem é a do ciclo da tecla N na sala de teste.
 # PROVISÓRIO (Léo, 06/11/2026: estavam rápidas demais; ~70% dos valores antigos). Andar do jogo vai por distância (NIKOLAI_WALK_CYCLE_PIXELS)
 # e ataques por NIKOLAI_ATTACK_SECONDS; estes valores valem para parada, morte, levantar, dano e para o ciclo de teste (tecla N).
+# 07/11/2026 (Léo: "não estão fluidas"): as folhas passaram a ter o dobro de quadros (morte 20 em vez de 12), então os valores
+# dobraram para manter a mesma duração. A recarga continua com 12 quadros.
 const FPS := {
-	"idle": 3.0, "walk": 8.0, "pistol_idle": 4.5, "pistol_walk": 8.0, "crouch_walk": 6.0,
-	"rifle_walk": 8.0, "run": 11.0, "pickup_object": 8.0, "pickup": 4.0, "opening": 4.0,
-	"pistol_aim_prov": 5.0, "crouch_idle": 3.0, "reload": 6.0,
-	"pistol_shoot": 6.0, "rifle_fire": 9.0, "punch": 8.0, "kick": 8.0, "hit": 6.0, "death": 6.0, "getup": 4.0,
+	"idle": 6.0, "walk": 16.0, "pistol_idle": 9.0, "pistol_walk": 16.0, "crouch_walk": 12.0,
+	"rifle_walk": 16.0, "run": 22.0, "pickup_object": 16.0, "pickup": 8.0, "opening": 8.0,
+	"pistol_aim_prov": 10.0, "crouch_idle": 6.0, "reload": 6.0,
+	"pistol_shoot": 12.0, "rifle_fire": 18.0, "punch": 16.0, "kick": 16.0, "hit": 12.0, "death": 10.0, "getup": 8.0,
 }
 # Animações com o corpo mais largo ou baixo que o quadro padrão (deitado, lance do soco) usam quadro maior;
 # os pés ficam em x = metade da largura e na mesma linha PIVOT.y.
@@ -24,16 +26,26 @@ const FRAME_OF := {"punch": BIG, "kick": BIG, "death": Vector2i(704, 512), "getu
 const NAMES := ["idle", "walk", "pistol_idle", "pistol_walk", "crouch_walk", "rifle_walk", "run", "pickup_object", "pickup", "opening", "pistol_aim_prov",
 	"crouch_idle", "reload", "pistol_shoot", "rifle_fire", "punch", "kick", "hit", "death", "getup"]
 
-var textures := {}  # animação -> {"se": Texture2D, ...}
+var textures := {}  # animação -> {"se": Texture2D, ...}; carregadas na primeira vez que a animação aparece
+var folder := ""
+var prefix := ""
 
 
 # O Fernando usa as mesmas animações do Nikolai (mesmo esqueleto do Mixamo): `AnimSheet.new("fernando3d", "fernando3d")`.
-func _init(folder := "nikolai3d", prefix := "nikolai3d") -> void:
-	for anim in NAMES:
+# As folhas são carregadas sob demanda: as 20 animações de um personagem em memória de vídeo passariam de 1 GB.
+func _init(p_folder := "nikolai3d", p_prefix := "nikolai3d") -> void:
+	folder = p_folder
+	prefix = p_prefix
+
+
+# Folha da animação numa direção ("se", "e", "ne", "s", "n").
+func texture(anim: String, d: String) -> Texture2D:
+	if not textures.has(anim):
 		var per_dir := {}
-		for d in ["se", "e", "ne", "s", "n"]:
-			per_dir[d] = load(ROOT % [folder, prefix, anim, d])
+		for dd in ["se", "e", "ne", "s", "n"]:
+			per_dir[dd] = load(ROOT % [folder, prefix, anim, dd])
 		textures[anim] = per_dir
+	return textures[anim][d]
 
 
 # Tamanho do quadro da animação na folha, em pixels.
@@ -42,13 +54,13 @@ static func frame_size(anim: String) -> Vector2i:
 
 
 func frame_count(anim: String) -> int:
-	return int(textures[anim]["e"].get_width() / frame_size(anim).x)
+	return int(texture(anim, "e").get_width() / frame_size(anim).x)
 
 
 # Desenha o quadro `frame` da animação virado para `dir`, com os pés em `pos`.
 func draw(canvas: CanvasItem, pos: Vector2, anim: String, frame: int, dir: CharacterSheet.Dir) -> void:
 	var info: Array = CharacterSheet.SHEET_OF[dir]
-	var tex: Texture2D = textures[anim][info[0]]
+	var tex: Texture2D = texture(anim, info[0])
 	var fs := Vector2(frame_size(anim))
 	var size := fs * SCALE
 	var src := Rect2(frame * fs.x, 0, fs.x, fs.y)
