@@ -88,9 +88,9 @@ const COVER_COLORS := {"partial": Color(0.6, 0.6, 0.58), "full": Color(0.4, 0.41
 const COVER_HEIGHTS := {"partial": 22.0, "full": 64.0}
 
 const AGENT_SHEETS := [  # visuais dos membros do grupo (Fernando, Nikolai, Miguel)
-	"res://assets/sprites/personagens/fernando",
-	"res://assets/sprites/personagens/nikolai",
-	"res://assets/sprites/personagens/miguel",
+	"res://assets/sprites/personagens/legado_2d/fernando",
+	"res://assets/sprites/personagens/legado_2d/nikolai",
+	"res://assets/sprites/personagens/legado_2d/miguel",
 ]
 
 const ROOM_SIZE := Vector2i(1280, 720)
@@ -98,7 +98,7 @@ const ROOM_SIZE := Vector2i(1280, 720)
 const ENEMY_VARIANTS := ["cultista", "atirador"]  # mesma ordem de `enemies`
 
 # Variantes que já têm folha real; as outras seguem com PlaceholderArt.
-const ENEMY_SHEETS := {"cultista": "res://assets/sprites/personagens/cultista"}
+const ENEMY_SHEETS := {"cultista": "res://assets/sprites/personagens/legado_2d/cultista"}
 # Variantes em 3D renderizado como pixel art (CreatureSheet): idle, andar, transição, ataque e morte.
 const CREATURE_VARIANT := "criatura_sangue"
 const TRANSITION_SECONDS := 2.0  # a transição (entrada em combate) toca uma vez ao começar o combate; 12 quadros a 6/s (provisório, antes 0,9 s e cortava o fim)

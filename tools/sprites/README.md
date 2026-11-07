@@ -23,10 +23,10 @@ Com o Nikolai (29/10/2026) as alturas de origem variaram menos de 3% entre as di
 Folhas de chão, paredes e móveis do ChatGPT (originais em `/mnt/project-files/arte/cenario_originais/`):
 
 ```
-python3 -I tools/sprites/cenario.py chao  assets/sprites/cenario chao_raw.png --prefixo chao --ignorar 4
-python3 -I tools/sprites/cenario.py parede assets/sprites/cenario paredes_raw.png --prefixo parede --largura 96 \
+python3 -I tools/sprites/cenario.py chao  assets/sprites/cenario/salas_2d chao_raw.png --prefixo chao --ignorar 4
+python3 -I tools/sprites/cenario.py parede assets/sprites/cenario/salas_2d paredes_raw.png --prefixo parede --largura 96 \
     --nomes x_lisa,x_janela,x_vao,x_quebrada,y_lisa,y_janela,y_vao,y_quebrada
-python3 -I tools/sprites/cenario.py movel assets/sprites/cenario moveis_raw.png --prefixo movel \
+python3 -I tools/sprites/cenario.py movel assets/sprites/cenario/salas_2d moveis_raw.png --prefixo movel \
     --nomes estante,escrivaninha,cadeira,cama,caixote,guarda_roupa,candelabro,porta,mesa_redonda \
     --ajustes cadeira=0.65,caixote=0.6,mesa_redonda=0.6,cama=0.85,escrivaninha=0.8,porta=0.85,estante=0.9
 ```
