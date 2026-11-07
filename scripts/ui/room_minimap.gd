@@ -13,9 +13,9 @@ func _init(owner_room: TestRoom) -> void:
 # Minimapa: radar redondo visto de cima, centrado no controlado (Léo escolheu, 29/10/2026).
 # Só desenha o que o grupo já descobriu: o outro lado de uma porta nunca aberta não aparece,
 # e inimigos só aparecem enquanto estão à vista.
-const RADAR_CENTER := Vector2(866, 88)  # pixels da tela
-const RADAR_RADIUS := 56.0  # área do mapa; o aro da moldura A fica 6 px para fora
-const RADAR_SCALE := 0.11  # pixels do radar por unidade da sala
+const RADAR_CENTER := Vector2(898, 62)  # pixels da tela
+const RADAR_RADIUS := 40.0  # área do mapa; o aro da moldura A fica 6 px para fora
+const RADAR_SCALE := 0.08  # pixels do radar por unidade da sala
 const RADAR_GRID := 64.0  # um losango do chão, em unidades da sala
 const RADAR_INK := Color(0.07, 0.05, 0.04)
 const RADAR_FLOOR := Color(0.25, 0.2, 0.15)
@@ -144,7 +144,7 @@ func _draw_minimap(font: Font, to_world: Transform2D) -> void:
 		room.draw_arc(at, 8.5, 0.0, TAU, 24, room.party_hud.FRAME_OUTER, 1.0)
 		room.draw_string(font, at + Vector2(-8.5, 3.5), c[0], HORIZONTAL_ALIGNMENT_CENTER, 17, 10, room.party_hud.FRAME_ACCENT)
 	# Placa com o local e o modo logo abaixo.
-	var plate := Rect2(center + Vector2(-65, rim + 12), Vector2(130, 37))
+	var plate := Rect2(center + Vector2(-50, rim + 9), Vector2(100, 30))
 	room.party_hud._draw_frame(plate)
-	room.draw_string(font, plate.position + Vector2(0, 15), room._place_label(), HORIZONTAL_ALIGNMENT_CENTER, plate.size.x, 8, Color(0.73, 0.65, 0.52))
-	room.draw_string(font, plate.position + Vector2(0, 28), HudText.mode_label(room.mode == room.Mode.COMBAT), HORIZONTAL_ALIGNMENT_CENTER, plate.size.x, 11, Color(0.93, 0.89, 0.8))
+	room.draw_string(font, plate.position + Vector2(0, 12), room._place_label(), HORIZONTAL_ALIGNMENT_CENTER, plate.size.x, 8, Color(0.73, 0.65, 0.52))
+	room.draw_string(font, plate.position + Vector2(0, 24), HudText.mode_label(room.mode == room.Mode.COMBAT), HORIZONTAL_ALIGNMENT_CENTER, plate.size.x, 9, Color(0.93, 0.89, 0.8))
