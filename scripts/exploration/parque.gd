@@ -206,6 +206,11 @@ func _draw_hud(font: Font) -> void:
 	draw_set_transform(Vector2.ZERO)
 
 
+# Objetivos do HUD: investigar o parque, depois o símbolo da árvore; em combate, sobreviver.
+func _objectives() -> Array[Dictionary]:
+	return Objectives.build(scenario.clues, seen_clues, mode == Mode.COMBAT)
+
+
 # Figura provisória de NPC (corpo, cabeça e nome) até a arte do Caio e da Letícia existir.
 func _draw_npc(font: Font, npc_id: String) -> void:
 	var at := _iso(scenario.npcs[npc_id])
