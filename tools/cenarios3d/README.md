@@ -24,9 +24,9 @@ As animações vêm dos FBX do Mixamo (só esqueleto) em `assets/3d/animacoes/`;
 
 Captura: `xvfb-run -a godot --path . --rendering-driver opengl3 --resolution 1920x1080 -s tools/capturar_parque3d.gd -- saida.png [graus]`.
 
-Visual: `assets/3d/pc_antigo.gdshader` (o filtro do JS: lavagem, 16 bits com dithering, saturação/contraste do CSS, grão),
-`assets/3d/neblina.gdshader` (Fog do JS, 41 a 81 com smoothstep), `assets/3d/oclusao.gdshader` (SSAO) e
-`assets/3d/personagem_facetado.gdshader`. Luz: sol 0,22; céu/chão do HemisphereLight = ambiente 0,10 + luz de cima 0,07 + luz de baixo -0,07;
+Visual: `assets/3d/shaders/pc_antigo.gdshader` (o filtro do JS: lavagem, 16 bits com dithering, saturação/contraste do CSS, grão),
+`assets/3d/shaders/neblina.gdshader` (Fog do JS, 41 a 81 com smoothstep), `assets/3d/shaders/oclusao.gdshader` (SSAO) e
+`assets/3d/shaders/personagem_facetado.gdshader`. Luz: sol 0,22; céu/chão do HemisphereLight = ambiente 0,10 + luz de cima 0,07 + luz de baixo -0,07;
 postes 14 com queda 2,2. Tudo medido contra a página do JS.
 
 Copas: as esferas das copas (`jit` no protótipo) agora deslocam cada vértice pela posição, não por triângulo; antes os cantos compartilhados se separavam e a copa saía facetada e com frestas. As copas levam textura de folhas e mais cartões de folhas (gerador próprio de números aleatórios, para não mexer na posição das árvores). O protótipo atualizado está em `arte/estilo-pc-antigo/parque3d_bake_estilo_c.html`.

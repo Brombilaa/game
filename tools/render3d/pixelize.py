@@ -3,7 +3,7 @@ from PIL import Image
 from scipy import ndimage
 F=int(os.environ.get('F','6'))
 def palette(n=28):
-    ims=[np.array(Image.open(p).convert('RGBA')) for p in glob.glob('/home/user/game/assets/sprites/personagens/nikolai_*.png')]
+    ims=[np.array(Image.open(p).convert('RGBA')) for p in glob.glob('/home/user/game/assets/sprites/personagens/legado_2d/nikolai_*.png')]
     px=np.concatenate([i[i[...,3]>200][:,:3] for i in ims])
     q=Image.fromarray(px[None,:,:].astype(np.uint8)).quantize(n,method=Image.MEDIANCUT,dither=Image.NONE)
     pal=np.array(q.getpalette()[:n*3]).reshape(-1,3)

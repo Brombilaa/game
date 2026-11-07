@@ -195,7 +195,7 @@ func _oclusao() -> void:
 	q.extra_cull_margin = 16384.0
 	q.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var m := ShaderMaterial.new()
-	m.shader = load("res://assets/3d/oclusao.gdshader")
+	m.shader = load("res://assets/3d/shaders/oclusao.gdshader")
 	m.set_shader_parameter("forca", forca_oclusao)
 	m.set_shader_parameter("raio", raio_oclusao)
 	q.material_override = m
@@ -212,7 +212,7 @@ func _neblina() -> void:
 	q.extra_cull_margin = 16384.0
 	q.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var m := ShaderMaterial.new()
-	m.shader = load("res://assets/3d/neblina.gdshader")
+	m.shader = load("res://assets/3d/shaders/neblina.gdshader")
 	m.render_priority = 10
 	q.material_override = m
 	camera.add_child(q)
@@ -255,7 +255,7 @@ func _agente_estatico(px: Vector2) -> Node3D:
 
 # Troca o material da malha estática pelo shader facetado (a luz do sol passa a modelar o corpo, como no JS).
 func _facetar(corpo: Node3D) -> void:
-	var sh := load("res://assets/3d/personagem_facetado.gdshader") as Shader
+	var sh := load("res://assets/3d/shaders/personagem_facetado.gdshader") as Shader
 	for m in corpo.find_children("*", "MeshInstance3D", true, false):
 		var mi := m as MeshInstance3D
 		for s in mi.mesh.get_surface_count():
@@ -360,7 +360,7 @@ func _efeito_pc_antigo() -> void:
 	r.set_anchors_preset(Control.PRESET_FULL_RECT)
 	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var m := ShaderMaterial.new()
-	m.shader = load("res://assets/3d/pc_antigo.gdshader")
+	m.shader = load("res://assets/3d/shaders/pc_antigo.gdshader")
 	r.material = m
 	camada.add_child(r)
 	add_child(camada)

@@ -10,7 +10,7 @@
 - `scripts/art/`: arte provisória gerada por código (paleta de teste, inimigos, chão) e `CharacterSheet`, que desenha as folhas de poses reais em `assets/sprites/personagens/`.
 - `tools/sprites/`: conversor das imagens do ChatGPT em folhas de sprites do jogo.
 - `scripts/audio/`: efeitos e música por evento sonoro (`data/audio_cues.json`).
-- `assets/`: arte, áudio e fontes (versionados com Git LFS).
+- `assets/`: arte, áudio e fontes (versionados com Git LFS). Pastas e nomes em `docs/convencoes-arte.md`.
 - `data/`: valores de balanceamento editáveis (armas, inimigos, itens).
 - `tests/`: testes automatizados das regras. Rodam no GitHub Actions a cada PR (`.github/workflows/tests.yml`); localmente: `godot --headless --path . -s tests/test_<nome>.gd`.
 

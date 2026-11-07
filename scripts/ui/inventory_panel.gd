@@ -30,7 +30,7 @@ const SHORT_RANGE := ["pistola"]
 
 # Moldura pintada pelo Léo (ChatGPT, 30/10/2026): 1278x1230, centro transparente. Desenhada em faixas
 # (cantos fixos, trechos retos esticados) um pouco maior que a área do conteúdo.
-const FRAME_TEX := preload("res://assets/sprites/ui/inventario_moldura.png")
+const FRAME_TEX := preload("res://assets/sprites/ui/inv/moldura.png")
 const FRAME_SCALE := 0.33
 const FRAME_PAD := Vector2(16, 0)  # quanto a moldura sai do conteúdo à esquerda e em cima
 const FRAME_SIZE := Vector2(506, 516)
