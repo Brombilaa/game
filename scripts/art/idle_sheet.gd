@@ -1,13 +1,13 @@
 class_name IdleSheet
 extends RefCounted
-# Personagem com só a animação de parado (idle), em 3D renderizado no estilo PC antigo: Fernando e Caio por enquanto.
-# Folhas `<nome>_idle_<s|se|e|ne|n>.png`, 16 quadros de 384 px em fila, desenhados a 50% (mesmo tamanho e pivô do AnimSheet).
+# Personagem com só a animação de parado (idle), em 3D renderizado no estilo PC antigo: o Caio (morre no primeiro mapa).
+# Folhas `<nome>_idle_<s|se|e|ne|n>.png`, 32 quadros de 384 px em fila, desenhados a 50% (mesmo tamanho e pivô do AnimSheet).
 # SO, O e NO espelham SE, E e NE, como em CharacterSheet.
 
 const FRAME := 384
 const SCALE := 0.5
 const PIVOT := Vector2(192, 358)
-const FPS := 2.0  # o ciclo do Mixamo tem 8,3 s para 16 quadros: velocidade original
+const FPS := 4.0  # o ciclo do Mixamo tem 8,3 s para 32 quadros: velocidade original
 
 var textures := {}  # direção ("se", "e", ...) -> Texture2D
 
