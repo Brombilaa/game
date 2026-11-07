@@ -33,6 +33,8 @@ assets/fonts/SpecialElite-Regular.ttf -filter -diff -merge -text
 assets/fonts/CinzelDecorative-Bold.ttf -filter -diff -merge -text
 assets/sprites/personagens/*.png -filter -diff -merge -text
 assets/sprites/personagens/nikolai3d/*.png -filter -diff -merge -text
+assets/sprites/personagens/fernando3d/*.png -filter -diff -merge -text
+assets/sprites/personagens/caio3d/*.png -filter -diff -merge -text
 # O cenário isométrico (chão, paredes, móveis) também vai direto no Git, como os personagens.
 assets/sprites/cenario/*.png -filter -diff -merge -text
 assets/sprites/cenario/parque/*.png -filter -diff -merge -text
