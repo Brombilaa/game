@@ -243,7 +243,7 @@ var creature := CreatureSheet.new()  # Criatura de Sangue (parque)
 var nikolai_clock := {}  # Combatant -> {"anim": String, "start": ms}: dano, morte ou levantar do Nikolai 3D
 var creature_clock := {}  # inimigo -> segundo (ms) em que a morte começou
 var combat_started_ms := -100000
-var fernando3d := IdleSheet.new("fernando3d", "fernando3d")  # Fernando em 3D: só a animação de parado por enquanto
+var fernando3d := AnimSheet.new("fernando3d", "fernando3d")  # Fernando em 3D: as mesmas animações do Nikolai, no esqueleto dele
 var nikolai3d := AnimSheet.new()  # Nikolai em 3D renderizado como pixel art (teste das animações)
 
 var use_3d := true  # tecla V troca entre o Nikolai 3D e o sprite 2D
@@ -372,7 +372,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_player_delay()
 		elif event.pressed and event.keycode == KEY_Q:
 			_swap_weapon()
-		elif event.pressed and event.keycode == KEY_G and use_3d and looks.get(player, 0) == 1:
+		elif event.pressed and event.keycode == KEY_G and use_3d and _sheet3d(player) != null:
 			nikolai_clock[player] = {"anim": "reload", "start": Time.get_ticks_msec()}  # teste da recarga (ainda não há munição no jogo)
 			queue_redraw()
 		elif event.pressed and event.keycode == KEY_V:
@@ -1015,7 +1015,7 @@ func gear_use(m: Combatant, bag_index: int) -> String:
 			return "PA insuficientes"
 	m.conditions.erase(cures[effect])
 	inventory.remove(id)
-	if use_3d and looks.get(m, 0) == 1:
+	if use_3d and _sheet3d(m) != null:
 		nikolai_clock[m] = {"anim": "pickup_object", "start": Time.get_ticks_msec()}  # gesto de usar o item
 	queue_redraw()
 	return "%s usou %s" % [m.name, cfg.game_data.get_entry("itens", id)["nome"]]
@@ -1089,7 +1089,7 @@ func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void
 	var aim := CombatFx.AIM_SECONDS
 	if _has_creatures() and enemies.has(attacker):
 		aim = CREATURE_ATTACK_SECONDS
-	elif use_3d and looks.get(attacker, 0) == 1:
+	elif use_3d and _sheet3d(attacker) != null:
 		aim = NIKOLAI_ATTACK_SECONDS
 	fx.start(attacker, target, r, before, aim)
 	queue_redraw()
@@ -1127,7 +1127,7 @@ func _on_fx_impact(job: Dictionary) -> void:
 	else:
 		_popup(target.pos, "-%d" % r.damage, "crit" if r.crit else "damage")
 		hit_shake[target] = CRIT_SHAKE_SECONDS if r.crit else HIT_SHAKE_SECONDS
-		if target.is_alive() and looks.get(target, 0) == 1 and not enemies.has(target):
+		if target.is_alive() and _sheet3d(target) != null and not enemies.has(target):
 			nikolai_clock[target] = {"anim": "hit", "start": Time.get_ticks_msec()}  # reação ao golpe (Nikolai 3D)
 	if not target.is_alive():
 		_popup(target.pos, "ABATIDO" if target.side == Combatant.Side.ENEMY else "CAIU", "down")
@@ -1378,13 +1378,14 @@ func _draw_unit(u: Combatant) -> void:
 	var walk_n := int(walk_dist.get(u, 0.0) / WALK_FRAME_PIXELS)
 	var i := enemies.find(u)
 	if i < 0:
-		if use_3d and looks.get(u, 0) == 1:
+		if use_3d and _sheet3d(u) != null:  # Nikolai e Fernando: mesmas animações
+			var sheet := _sheet3d(u)
 			var anim := "walk" if walking else "idle"
 			if u.crouched:  # agachado (tecla C): parado ou andando agachado
 				anim = "crouch_walk" if walking else "crouch_idle"
 			if anim3d_pick >= 0:
 				anim = AnimSheet.NAMES[anim3d_pick]
-			var count := nikolai3d.frame_count(anim)
+			var count := sheet.frame_count(anim)
 			var f := int(Time.get_ticks_msec() / 1000.0 * AnimSheet.FPS[anim]) % count
 			if walking and anim3d_pick < 0:
 				f = int(walk_dist.get(u, 0.0) / (NIKOLAI_WALK_CYCLE_PIXELS / count)) % count  # passo por distância
@@ -1392,10 +1393,7 @@ func _draw_unit(u: Combatant) -> void:
 			if not pose.is_empty():
 				anim = pose[0]
 				f = pose[1]
-			nikolai3d.draw(self, at, anim, f, facing8.get(u, CharacterSheet.Dir.SE))
-		elif use_3d and looks.get(u, 0) == 0:
-			# Fernando: só tem a animação de parado (andando, desliza nela até as outras existirem)
-			fernando3d.draw(self, at, fernando3d.frame_at(Time.get_ticks_msec()), facing8.get(u, CharacterSheet.Dir.SE))
+			sheet.draw(self, at, anim, f, facing8.get(u, CharacterSheet.Dir.SE))
 		elif use_3d:
 			_draw_member_placeholder(u, at)  # Miguel: figura provisória até a arte 3D existir
 		else:
@@ -1426,6 +1424,18 @@ func _draw_unit(u: Combatant) -> void:
 		_draw_health_bar(u, at)
 
 
+# Folha 3D do personagem (Nikolai ou Fernando); null para quem ainda não tem arte 3D.
+func _sheet3d(u: Combatant) -> AnimSheet:
+	if enemies.has(u):
+		return null
+	match looks.get(u, 0):
+		1:
+			return nikolai3d
+		0:
+			return fernando3d
+	return null
+
+
 # Animação de ataque do Nikolai 3D por arma; sem ela (espada, por exemplo) ele não muda de pose.
 const ATTACK_ANIM := {"pistola": "pistol_shoot", "escopeta": "rifle_fire", "fuzil_precisao": "rifle_fire", "soco": "punch"}
 
@@ -1433,11 +1443,12 @@ const ATTACK_ANIM := {"pistola": "pistol_shoot", "escopeta": "rifle_fire", "fuzi
 # Pose de combate do Nikolai 3D: [animação, quadro] ou [] quando vale parado/andando.
 # Morte (fica no último quadro até reanimar), levantar, dano e a mira do ataque (durante a mira do CombatFx).
 func _nikolai_pose(u: Combatant) -> Array:
+	var sheet := _sheet3d(u)
 	var now := Time.get_ticks_msec()
 	if not u.is_alive() and not fx.hold_pv.has(u):  # o tombo espera o impacto do tiro
 		if nikolai_clock.get(u, {}).get("anim", "") != "death":
 			nikolai_clock[u] = {"anim": "death", "start": now}
-		var n := nikolai3d.frame_count("death")
+		var n := sheet.frame_count("death")
 		return ["death", mini(int((now - nikolai_clock[u]["start"]) / 1000.0 * AnimSheet.FPS["death"]), n - 1)]
 	if nikolai_clock.has(u):
 		var c: Dictionary = nikolai_clock[u]
@@ -1446,13 +1457,13 @@ func _nikolai_pose(u: Combatant) -> Array:
 			c = nikolai_clock[u]
 		var anim: String = c["anim"]
 		var f := int((now - c["start"]) / 1000.0 * AnimSheet.FPS[anim])
-		if f < nikolai3d.frame_count(anim):
+		if f < sheet.frame_count(anim):
 			return [anim, f]
 		nikolai_clock.erase(u)
 	for job in fx.jobs:
 		if job["attacker"] == u and ATTACK_ANIM.has(str(u.weapon["id"])):
 			var attack: String = ATTACK_ANIM[str(u.weapon["id"])]
-			var n := nikolai3d.frame_count(attack)
+			var n := sheet.frame_count(attack)
 			return [attack, mini(int(CombatFx.aim_progress(job) * n), n - 1)]
 	return []
 

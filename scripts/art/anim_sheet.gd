@@ -7,7 +7,7 @@ extends RefCounted
 const FRAME := 384  # lado do quadro na folha, em pixels
 const SCALE := 0.5  # tamanho na tela: a folha tem o dobro dos pixels do 2D
 const PIVOT := Vector2(192, 358)  # pés no quadro da folha (o mesmo ponto do 2D, a 2x)
-const ROOT := "res://assets/sprites/personagens/nikolai3d/nikolai3d_%s_%s.png"
+const ROOT := "res://assets/sprites/personagens/%s/%s_%s_%s.png"  # pasta, prefixo, animação, direção
 # Animação -> quadros por segundo. A ordem é a do ciclo da tecla N na sala de teste.
 # PROVISÓRIO (Léo, 06/11/2026: estavam rápidas demais; ~70% dos valores antigos). Andar do jogo vai por distância (NIKOLAI_WALK_CYCLE_PIXELS)
 # e ataques por NIKOLAI_ATTACK_SECONDS; estes valores valem para parada, morte, levantar, dano e para o ciclo de teste (tecla N).
@@ -27,11 +27,12 @@ const NAMES := ["idle", "walk", "pistol_idle", "pistol_walk", "crouch_walk", "ri
 var textures := {}  # animação -> {"se": Texture2D, ...}
 
 
-func _init() -> void:
+# O Fernando usa as mesmas animações do Nikolai (mesmo esqueleto do Mixamo): `AnimSheet.new("fernando3d", "fernando3d")`.
+func _init(folder := "nikolai3d", prefix := "nikolai3d") -> void:
 	for anim in NAMES:
 		var per_dir := {}
 		for d in ["se", "e", "ne", "s", "n"]:
-			per_dir[d] = load(ROOT % [anim, d])
+			per_dir[d] = load(ROOT % [folder, prefix, anim, d])
 		textures[anim] = per_dir
 
 
