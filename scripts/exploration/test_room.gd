@@ -215,6 +215,7 @@ var hud := CombatHud.new()
 var party_hud := RoomPartyHud.new(self)
 var action_bar := RoomActionBar.new(self)
 var minimap := RoomMinimap.new(self)
+var objectives_hud := RoomObjectivesHud.new(self)
 
 var audio := AudioDirector.new()
 
@@ -1801,6 +1802,7 @@ func _draw_hud(font: Font) -> void:
 	for i in party.size():
 		party_hud._draw_sheet(font, party[i], to_world * _portrait_rect(i).position)
 	minimap._draw_minimap(font, to_world)
+	objectives_hud._draw_objectives(font, to_world, _objectives())
 	if mode == Mode.COMBAT and turns:
 		party_hud._draw_turn_order(font, to_world)
 		if _player_ready():
@@ -1825,6 +1827,11 @@ func _known_rects() -> Array[Rect2]:
 	if not out.is_empty():
 		out.append(Rect2(door.position.x, 0, door.size.x, ROOM_SIZE.y))  # a parede da porta
 	return out
+
+
+# Objetivos mostrados no HUD; a sala de teste não tem, as áreas derivadas (parque) trocam.
+func _objectives() -> Array[Dictionary]:
+	return []
 
 
 # Nome do local na placa do radar; as áreas derivadas trocam.
