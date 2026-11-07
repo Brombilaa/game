@@ -23,13 +23,13 @@ func _init() -> void:
 	_check(CharacterSheet.IDLE_FRAMES + CharacterSheet.WALK_FRAMES == [0, 1, 2, 3, 4, 5, 6, 7], "parado e andando cobrem os 8 quadros")
 
 	for who in ["fernando", "miguel", "nikolai"]:
-		var sheet := CharacterSheet.new("res://assets/sprites/personagens/" + who)
+		var sheet := CharacterSheet.new("res://assets/sprites/personagens/legado_2d/" + who)
 		_check(sheet.portrait != null and sheet.portrait.get_width() == 64 and sheet.portrait.get_height() == 64, "%s: retrato de 64 px" % who)
 		var big := load("res://assets/sprites/retratos/%s_128.png" % who) as Texture2D
 		_check(big != null and big.get_width() == 128, "%s: retrato de 128 px" % who)
 		var img := sheet.portrait.get_image()
 		_check(img.get_pixel(0, 0).a == 0.0 and img.get_pixel(32, 40).a == 1.0, "%s: fundo transparente e rosto opaco" % who)
-	_check(CharacterSheet.new("res://assets/sprites/personagens/cultista").portrait == null, "cultista segue sem retrato próprio")
+	_check(CharacterSheet.new("res://assets/sprites/personagens/legado_2d/cultista").portrait == null, "cultista segue sem retrato próprio")
 
 	print("Falhas: %d" % failures)
 	quit(1 if failures > 0 else 0)
@@ -37,7 +37,7 @@ func _init() -> void:
 
 
 func _check_sheet(who: String) -> void:
-	var sheet := CharacterSheet.new("res://assets/sprites/personagens/" + who)
+	var sheet := CharacterSheet.new("res://assets/sprites/personagens/legado_2d/" + who)
 	_check(sheet.frame_count() == 8, "%s: 8 quadros na folha" % who)
 	_check(sheet.textures["e"].get_height() == CharacterSheet.FRAME, "%s: folha de uma fila só" % who)
 
