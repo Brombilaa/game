@@ -243,6 +243,7 @@ var creature := CreatureSheet.new()  # Criatura de Sangue (parque)
 var nikolai_clock := {}  # Combatant -> {"anim": String, "start": ms}: dano, morte ou levantar do Nikolai 3D
 var creature_clock := {}  # inimigo -> segundo (ms) em que a morte começou
 var combat_started_ms := -100000
+var fernando3d := IdleSheet.new("fernando3d", "fernando3d")  # Fernando em 3D: só a animação de parado por enquanto
 var nikolai3d := AnimSheet.new()  # Nikolai em 3D renderizado como pixel art (teste das animações)
 
 var use_3d := true  # tecla V troca entre o Nikolai 3D e o sprite 2D
@@ -1347,7 +1348,7 @@ func _draw_cast_shadow(at: Vector2, _height: float, radius: float) -> void:
 	draw_texture_rect(_soft_shadow_texture(), Rect2(center - Vector2(r, r * 0.5), Vector2(r * 2.0, r)), false, SHADOW_COLOR)
 
 
-const MEMBER_COLORS := {0: Color("#5c6b44"), 2: Color("#5e4a82")}  # figuras provisórias: Fernando (olivo) e Miguel (roxo)
+const MEMBER_COLORS := {2: Color("#5e4a82")}  # figura provisória: Miguel (roxo); o Fernando já tem a folha de parado em 3D
 
 
 # Figura provisória (corpo, cabeça e nome), como a do Caio e da Letícia no parque.
@@ -1392,8 +1393,11 @@ func _draw_unit(u: Combatant) -> void:
 				anim = pose[0]
 				f = pose[1]
 			nikolai3d.draw(self, at, anim, f, facing8.get(u, CharacterSheet.Dir.SE))
+		elif use_3d and looks.get(u, 0) == 0:
+			# Fernando: só tem a animação de parado (andando, desliza nela até as outras existirem)
+			fernando3d.draw(self, at, fernando3d.frame_at(Time.get_ticks_msec()), facing8.get(u, CharacterSheet.Dir.SE))
 		elif use_3d:
-			_draw_member_placeholder(u, at)  # Fernando e Miguel: figura provisória até a arte 3D existir
+			_draw_member_placeholder(u, at)  # Miguel: figura provisória até a arte 3D existir
 		else:
 			var frames: Array = CharacterSheet.WALK_FRAMES if walking else CharacterSheet.IDLE_FRAMES
 			var n := walk_n % frames.size() if walking else idle_frame
