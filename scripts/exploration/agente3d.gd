@@ -24,10 +24,27 @@ const MODELOS := {
 # Animações das folhas que ainda não existem no Mixamo: usam a mais próxima.
 const TROCA := {"rifle_walk": "pistol_walk", "pickup": "pickup_object", "opening": "pickup_object", "pistol_aim_prov": "pistol_idle", "reload": "pistol_idle"}
 
+static var relogio_teste := -1  # ms fixos para testes e capturas (-1 = relógio do jogo)
 static var _libs := {}  # caminho -> AnimationLibrary, carregada uma vez
 var modelo: Node3D
-var player: AnimationPlayer
+var player: AnimationPlayer  # guarda a biblioteca (duração e laço de cada animação); quem move o esqueleto é a árvore
 var atual := ""
+# Fluidez (Léo, 08/11: "ainda mais fluidas, estão duras"). O jogo manda a fase em degraus (quadro inteiro da folha,
+# 6 a 22 por segundo) e trocava de animação de uma vez. Agora a fase anda contínua entre os degraus e cada troca de
+# animação é uma mistura curta das duas (árvore: duas animações com busca de tempo e um Blend2).
+const MISTURA := 0.22  # segundos de mistura numa troca de animação
+const MISTURA_GOLPE := 0.1  # entrando num golpe: mais curta, para não atrasar o disparo
+var arvore: AnimationTree
+var _velha := ""  # animação que está saindo (congelada na fase em que estava)
+var _fase_velha := 0.0
+var _mistura := 1.0  # 0 = só a velha, 1 = só a atual
+var _dur_mistura := MISTURA
+var _fase := 0.0  # fase contínua desenhada
+var _alvo := -1.0  # último degrau recebido
+var _passo := 0.0  # tamanho do degrau (fase)
+var _ritmo := 0.0  # fase por segundo, medida pelos degraus
+var _mudou := 0  # ms da última troca de degrau
+var _ultima_pose := -1
 var esqueleto: Skeleton3D
 var pistola: Node3D  # arma na mão direita (só os agentes; aparece nas animações de pistola)
 var espingarda: Node3D  # escopeta/fuzil (animações de rifle)
@@ -54,6 +71,8 @@ func _init(pasta: String) -> void:
 	esqueleto.get_parent().add_child(player)
 	player.root_node = player.get_path_to(esqueleto.get_parent())
 	player.add_animation_library("", _libs[caminho])
+	player.active = false
+	_montar_arvore(_libs[caminho])
 	# Altura e pés no chão pela caixa da malha em repouso.
 	var caixa := AABB()
 	var primeiro := true
@@ -101,8 +120,31 @@ func _facetar(boina: bool, textura: Texture2D) -> void:
 			mi.set_surface_override_material(s, novo)
 
 
-# Põe o corpo na animação `anim`, na fase `fase` (0 a 1) do ciclo.
-func pose(anim: String, fase: float) -> void:
+# Duas animações (A sai, B entra), cada uma com busca de tempo, misturadas por um Blend2. Avançada à mão (delta 0).
+func _montar_arvore(lib: AnimationLibrary) -> void:
+	arvore = AnimationTree.new()
+	esqueleto.get_parent().add_child(arvore)
+	arvore.root_node = arvore.get_path_to(esqueleto.get_parent())
+	arvore.add_animation_library("", lib)
+	arvore.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
+	var bt := AnimationNodeBlendTree.new()
+	for k in ["a", "b"]:
+		var an := AnimationNodeAnimation.new()
+		an.animation = "idle"
+		bt.add_node(k, an)
+		bt.add_node("t" + k, AnimationNodeTimeSeek.new())
+		bt.connect_node("t" + k, 0, k)
+	bt.add_node("mix", AnimationNodeBlend2.new())
+	bt.connect_node("mix", 0, "ta")  # "in": a que sai
+	bt.connect_node("mix", 1, "tb")  # "blend": a que entra
+	bt.connect_node("output", 0, "mix")
+	arvore.tree_root = bt
+	arvore.active = true
+
+
+# Põe o corpo na animação `anim`, na fase `fase` (0 a 1) do ciclo. `continua`: a fase já vem contínua (golpes do
+# combate, calculados pelo relógio); senão ela chega em degraus de quadro e aqui anda suave entre eles.
+func pose(anim: String, fase: float, continua := false) -> void:
 	if pistola:  # sem arma na mão, a animação de tiro parecia um gesto qualquer (Léo, 08/11: "animações estranhas")
 		pistola.visible = anim.begins_with("pistol")
 		espingarda.visible = anim.begins_with("rifle")
@@ -111,12 +153,79 @@ func pose(anim: String, fase: float) -> void:
 		anim = "idle"
 	if not player.has_animation(anim):
 		return
+	var agora := Time.get_ticks_msec() if relogio_teste < 0 else relogio_teste
+	var dt := 0.0 if _ultima_pose < 0 else minf((agora - _ultima_pose) / 1000.0, 0.25)
+	_ultima_pose = agora
+	var a := player.get_animation(anim)
+	var laco := a.loop_mode != Animation.LOOP_NONE
 	if anim != atual:
-		player.play(anim)
-		player.speed_scale = 0.0
+		if atual != "":
+			_velha = atual
+			_fase_velha = _fase
+			_mistura = 0.0
+			_dur_mistura = MISTURA_GOLPE if continua else MISTURA
 		atual = anim
-	var dur := player.get_animation(anim).length
-	player.seek(clampf(fase, 0.0, 0.999) * dur, true)
+		_fase = fase
+		_alvo = fase
+		_ritmo = 0.0
+		_passo = 0.0
+		_mudou = agora
+	elif continua:
+		_fase = fase
+	else:
+		_suavizar(fase, laco, agora, dt)
+	_mistura = minf(_mistura + dt / _dur_mistura, 1.0)
+	var bt := arvore.tree_root as AnimationNodeBlendTree
+	var velha := _velha if _mistura < 1.0 and _velha != "" else anim
+	(bt.get_node("a") as AnimationNodeAnimation).animation = velha
+	(bt.get_node("b") as AnimationNodeAnimation).animation = anim
+	arvore.set("parameters/ta/seek_request", _tempo(velha, _fase_velha if velha != anim else _fase))
+	arvore.set("parameters/tb/seek_request", _tempo(anim, _fase))
+	# Suave nas pontas (smoothstep), para a mistura não começar nem parar de repente.
+	arvore.set("parameters/mix/blend_amount", _mistura * _mistura * (3.0 - 2.0 * _mistura))
+	arvore.advance(0.0)
+
+
+func _tempo(anim: String, fase: float) -> float:
+	var a := player.get_animation(anim)
+	var f := fposmod(fase, 1.0) if a.loop_mode != Animation.LOOP_NONE else clampf(fase, 0.0, 0.999)
+	return f * a.length
+
+
+# Fase contínua a partir dos degraus: anda no ritmo medido entre degraus e é puxada de leve para o meio do degrau
+# atual (o quadro inteiro fica, em média, meio degrau atrás do tempo de verdade).
+func _suavizar(alvo: float, laco: bool, agora: int, dt: float) -> void:
+	if alvo != _alvo:
+		var passo := _dif(alvo, _alvo, laco)
+		var intervalo := (agora - _mudou) / 1000.0
+		if passo > 0.0 and passo < 0.34 and intervalo > 0.0 and intervalo < 1.0:
+			var r := passo / intervalo
+			_ritmo = r if _ritmo == 0.0 else lerpf(_ritmo, r, 0.5)
+			_passo = passo if _passo == 0.0 else lerpf(_passo, passo, 0.5)
+		else:
+			_ritmo = 0.0  # salto (volta ao início, pausa, outro ritmo): segue o degrau até medir de novo
+			_fase = alvo
+		_alvo = alvo
+		_mudou = agora
+	if _ritmo == 0.0:
+		_fase = alvo
+		return
+	# Degrau parado por bem mais que o esperado (fim de animação sem laço, personagem parou): não anda sozinho.
+	if (agora - _mudou) / 1000.0 < 1.5 * _passo / _ritmo:
+		_fase += _ritmo * dt
+	var erro := _dif(alvo + _passo * 0.5, _fase, laco)
+	if absf(erro) > maxf(3.0 * _passo, 0.25):
+		_fase = alvo
+	else:
+		_fase += erro * (1.0 - exp(-8.0 * dt))
+	_fase = fposmod(_fase, 1.0) if laco else clampf(_fase, 0.0, 0.999)
+
+
+func _dif(a: float, b: float, laco: bool) -> float:
+	var d := a - b
+	if laco:
+		d = fposmod(d + 0.5, 1.0) - 0.5
+	return d
 
 
 # Gira suavemente para `yaw` (o jogo só tem 8 direções; no 3D a troca seca de direção parecia um salto).

@@ -318,6 +318,7 @@ func _model3d(pasta: String, pos: Vector2, anim: String, fase: float, dir: Chara
 	ag.position = Vector3(g.x / 64.0, 0.0, g.y / 64.0)
 	var frente := _uniso(pos + DIR_TELA[dir] * 32.0) - g
 	var golpe: Dictionary = golpes.get(drawing_key, {})
+	var continua := false  # fase do golpe já vem do relógio (contínua)
 	if not golpe.is_empty():
 		var t := (Time.get_ticks_msec() - int(golpe["inicio"])) / 1000.0
 		var g3: Array = GOLPE_3D[golpe["anim"]]
@@ -329,10 +330,11 @@ func _model3d(pasta: String, pos: Vector2, anim: String, fase: float, dir: Chara
 		else:
 			anim = golpe["anim"]
 			fase = f
+			continua = true
 			if alvo.pos != (drawing_key as Combatant).pos:
 				frente = alvo.pos - (drawing_key as Combatant).pos  # mira exata no alvo, não nas 8 direções
 	ag.virar(atan2(frente.x, frente.y))
-	ag.pose(anim, fase)
+	ag.pose(anim, fase, continua)
 	if drawing_key is Combatant:
 		ag.clarao(fx.white_alpha(drawing_key))
 	agentes_usados[drawing_key] = true
