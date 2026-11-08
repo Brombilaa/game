@@ -93,6 +93,7 @@ func _ready() -> void:
 	_build_dialog()
 	if world3d:
 		fx.muzzle_at = _arma3d
+	fx.chest_px = _chest_px
 
 
 # Paredes e coberturas a partir das colisões do cenário; o grupo começa na entrada.
@@ -393,6 +394,11 @@ func _attack_started(attacker: Combatant, target: Combatant, aim: float) -> void
 	var g3: Array = GOLPE_3D[anim]
 	var dur: float = (agentes[attacker] as Agente3D).player.get_animation(anim).length
 	golpes[attacker] = {"anim": anim, "inicio": Time.get_ticks_msec(), "mira": aim, "duracao": dur, "alvo": target}
+
+
+# Altura do peito dos modelos 3D em px do desenho (medida nas capturas: agente ~78, Criatura de Sangue ~100).
+func _chest_px(u: Combatant) -> float:
+	return 100.0 if _has_creatures() and enemies.has(u) else 78.0
 
 
 func _flash_in_3d(u: Combatant) -> bool:

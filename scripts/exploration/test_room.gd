@@ -256,6 +256,7 @@ var anim3d_tick := 0
 
 func _ready() -> void:
 	fx.iso = _iso
+	fx.chest_px = _chest_px
 	fx.impact.connect(_on_fx_impact)
 	RenderingServer.set_default_clear_color(Color(0.03, 0.025, 0.02))  # fora da sala e salas fechadas: escuridão
 	hud.room_draws_hud = true  # a sala desenha modo, PA e fim do turno na moldura A
@@ -1561,26 +1562,38 @@ func _drawn_units() -> Array[Combatant]:
 	return out
 
 
+# Altura do peito em px do desenho: onde a mira e o impacto pousam (a sala 2D usa 60; o parque 3D, a do modelo).
+func _chest_px(_u: Combatant) -> float:
+	return 60.0
+
+
+# Mira do ataque (Léo, 08/11): só um traço de luz da arma até o peito do alvo, parado, sem anel nem ponto
+# de mira e sem animação de crescer ou fechar (ele gostou da linha e pediu para tirar o resto).
+func _draw_aim(a: Combatant, t: Combatant, _p: float) -> void:
+	var to := _iso(t.pos) + fx.offset_of(t) + Vector2(0, -_chest_px(t))
+	var from := _iso(a.pos) + Vector2(0, -_chest_px(a))
+	var hand: Vector2 = fx.muzzle_at.call(a) if fx.muzzle_at.is_valid() else Vector2.INF
+	if hand != Vector2.INF:
+		from = hand
+	var core := Color(1.0, 0.3, 0.24)
+	var pts := PackedVector2Array()
+	var cols := PackedColorArray()
+	var glow := PackedColorArray()
+	for i in 17:
+		var k := i / 16.0
+		pts.append(from.lerp(to, k))
+		cols.append(Color(core.r, core.g, core.b, 0.06 + 0.62 * k))
+		glow.append(Color(core.r, core.g, core.b, 0.03 + 0.14 * k))
+	draw_polyline_colors(pts, glow, 5.0, true)
+	draw_polyline_colors(pts, cols, 1.3, true)
+
+
 # Mira, clarão, partículas e flash vermelho do modelo B, por cima da cena e por baixo do HUD.
 func _draw_fx() -> void:
 	for job in fx.jobs:
 		var a: Combatant = job["attacker"]
 		var t: Combatant = job["target"]
-		var p := CombatFx.aim_progress(job)
-		var from := _iso(a.pos) + Vector2(0, -60)
-		var to := _iso(t.pos) + fx.offset_of(t) + Vector2(0, -60)
-		var red := Color(0.95, 0.2, 0.2, 0.55 + 0.35 * p)
-		var dist := from.distance_to(to)
-		var dir := (to - from).normalized()
-		var d := 0.0
-		while d < dist:  # linha tracejada vermelha
-			draw_line(from + dir * d, from + dir * minf(d + 6.0, dist), red, 1.5)
-			d += 11.0
-		var radius := lerpf(26.0, 7.0, p)  # o retículo fecha em 0,6 s
-		draw_arc(to, radius, 0.0, TAU, 28, red, 2.0)
-		for k in 4:
-			var v := Vector2.from_angle(k * PI * 0.5)
-			draw_line(to + v * (radius + 4.0), to + v * (radius - 4.0), red, 2.0)
+		_draw_aim(a, t, CombatFx.aim_progress(job))
 	for m in fx.muzzles:  # clarão de 2 quadros
 		var big: bool = m["time"] > CombatFx.MUZZLE_SECONDS * 0.5
 		var r := 9.0 if big else 5.0
