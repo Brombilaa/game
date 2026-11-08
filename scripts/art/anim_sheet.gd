@@ -59,6 +59,8 @@ func frame_count(anim: String) -> int:
 
 # Desenha o quadro `frame` da animação virado para `dir`, com os pés em `pos`.
 func draw(canvas: CanvasItem, pos: Vector2, anim: String, frame: int, dir: CharacterSheet.Dir) -> void:
+	if canvas.has_method("_model3d") and canvas._model3d(folder, pos, anim, float(frame) / maxf(frame_count(anim), 1), dir):
+		return  # parque 3D: o modelo 3D do personagem faz a pose no lugar da folha
 	var info: Array = CharacterSheet.SHEET_OF[dir]
 	var tex: Texture2D = texture(anim, info[0])
 	var fs := Vector2(frame_size(anim))
