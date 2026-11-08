@@ -48,6 +48,7 @@ var zoom_time := 0.0
 var zoom_pulse := ZOOM_PULSE  # força do pulso atual
 var cam_pair: Array = []  # [atacante, alvo] do último ataque encenado: a câmera acompanha os dois
 var iso: Callable  # posição da sala -> posição de desenho
+var chest_px: Callable  # unidade -> altura do peito em px do desenho (padrão 60)
 var muzzle_at: Callable  # atacante -> posição de desenho da arma (Vector2.INF se não souber); o parque 3D usa a mão do modelo
 var rng := RandomNumberGenerator.new()
 
@@ -161,8 +162,8 @@ func _impact(job: Dictionary) -> void:
 	var attacker: Combatant = job["attacker"]
 	var target: Combatant = job["target"]
 	var r: Dictionary = job["r"]
-	var from := _screen(attacker.pos) + Vector2(0, -60)
-	var to := _screen(target.pos) + Vector2(0, -60)
+	var from := _screen(attacker.pos) + Vector2(0, -_chest(attacker))
+	var to := _screen(target.pos) + Vector2(0, -_chest(target))
 	var dir := (to - from).normalized() if to != from else Vector2.RIGHT
 	var hand: Vector2 = muzzle_at.call(attacker) if muzzle_at.is_valid() else Vector2.INF
 	if hand != Vector2.INF:  # clarão e fumaça saem da arma, não do meio do corpo
@@ -198,6 +199,10 @@ func _impact(job: Dictionary) -> void:
 	for i in (16 if crit else 10):  # sangue
 		particles.append({"pos": to, "vel": dir * rng.randf_range(40.0, 140.0) + Vector2(rng.randf_range(-50, 50), rng.randf_range(-90, -10)), "life": 0.55, "max": 0.55, "kind": "blood", "size": rng.randf_range(1.5, 3.0)})
 	impact.emit(job)
+
+
+func _chest(u: Combatant) -> float:
+	return float(chest_px.call(u)) if chest_px.is_valid() else 60.0
 
 
 func _screen(p: Vector2) -> Vector2:
