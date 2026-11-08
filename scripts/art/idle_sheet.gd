@@ -10,9 +10,11 @@ const PIVOT := Vector2(192, 358)
 const FPS := 4.0  # o ciclo do Mixamo tem 8,3 s para 32 quadros: velocidade original
 
 var textures := {}  # direção ("se", "e", ...) -> Texture2D
+var folder := ""
 
 
-func _init(folder: String, prefix: String) -> void:
+func _init(p_folder: String, prefix: String) -> void:
+	folder = p_folder
 	for d in ["se", "e", "ne", "s", "n"]:
 		textures[d] = load("res://assets/sprites/personagens/%s/%s_idle_%s.png" % [folder, prefix, d])
 
@@ -27,6 +29,8 @@ func frame_at(now_msec: int) -> int:
 
 
 func draw(canvas: CanvasItem, pos: Vector2, frame: int, dir: CharacterSheet.Dir) -> void:
+	if canvas.has_method("_model3d") and canvas._model3d(folder, pos, "idle", float(frame) / frame_count(), dir):
+		return  # parque 3D: o modelo 3D faz a pose no lugar da folha
 	var info: Array = CharacterSheet.SHEET_OF[dir]
 	var tex: Texture2D = textures[info[0]]
 	var size := Vector2(FRAME, FRAME) * SCALE
