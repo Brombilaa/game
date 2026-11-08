@@ -1567,46 +1567,25 @@ func _chest_px(_u: Combatant) -> float:
 	return 60.0
 
 
-# Mira do ataque (Léo, 08/11: a de antes era um tracejado fino e um alvo chapado, na altura da coxa).
-# Agora: um traço de luz que sai da arma e cresce até o peito do alvo, com um retículo de anel partido que
-# gira e se fecha com suavidade, trava (ponto central e brilho) no fim e tem sombra para ler sobre a mata.
-func _draw_aim(a: Combatant, t: Combatant, p: float) -> void:
+# Mira do ataque (Léo, 08/11): só um traço de luz da arma até o peito do alvo, parado, sem anel nem ponto
+# de mira e sem animação de crescer ou fechar (ele gostou da linha e pediu para tirar o resto).
+func _draw_aim(a: Combatant, t: Combatant, _p: float) -> void:
 	var to := _iso(t.pos) + fx.offset_of(t) + Vector2(0, -_chest_px(t))
 	var from := _iso(a.pos) + Vector2(0, -_chest_px(a))
 	var hand: Vector2 = fx.muzzle_at.call(a) if fx.muzzle_at.is_valid() else Vector2.INF
 	if hand != Vector2.INF:
 		from = hand
 	var core := Color(1.0, 0.3, 0.24)
-	var lock := smoothstep(0.7, 1.0, p)  # trava no fim
-	var grow := 1.0 - pow(1.0 - clampf(p / 0.35, 0.0, 1.0), 3.0)  # o traço cresce nos primeiros 35%
-	var tip := from.lerp(to, grow)
 	var pts := PackedVector2Array()
 	var cols := PackedColorArray()
 	var glow := PackedColorArray()
 	for i in 17:
 		var k := i / 16.0
-		pts.append(from.lerp(tip, k))
-		cols.append(Color(core.r, core.g, core.b, (0.06 + 0.62 * k) * (0.6 + 0.4 * p)))
-		glow.append(Color(core.r, core.g, core.b, (0.03 + 0.14 * k) * (0.6 + 0.4 * p)))
+		pts.append(from.lerp(to, k))
+		cols.append(Color(core.r, core.g, core.b, 0.06 + 0.62 * k))
+		glow.append(Color(core.r, core.g, core.b, 0.03 + 0.14 * k))
 	draw_polyline_colors(pts, glow, 5.0, true)
 	draw_polyline_colors(pts, cols, 1.3, true)
-	var ease := p * p * (3.0 - 2.0 * p)
-	var radius := lerpf(34.0, 12.0, ease)
-	var spin := (1.0 - ease) * PI * 0.8
-	var alpha := clampf(p / 0.2, 0.0, 1.0) * (0.75 + 0.25 * lock)
-	var ring := core.lerp(Color(1.0, 0.8, 0.7), lock * 0.6)
-	ring.a = alpha
-	var shade := Color(0.05, 0.0, 0.0, 0.5 * alpha)
-	for pass_i in 2:  # primeiro a sombra, depois o anel
-		var col := shade if pass_i == 0 else ring
-		var w := 3.6 if pass_i == 0 else 1.6
-		for q in 4:  # quatro arcos com folga entre eles
-			var a0 := spin + q * PI * 0.5 + 0.28
-			draw_arc(to, radius, a0, a0 + PI * 0.5 - 0.56, 12, col, w, true)
-			var dir := Vector2.from_angle(spin + q * PI * 0.5)
-			draw_line(to + dir * (radius + 5.0), to + dir * (radius - 1.0), col, w, true)
-	draw_circle(to, 2.0 + 1.5 * lock, Color(shade.r, shade.g, shade.b, shade.a * lock))
-	draw_circle(to, 1.3 + 1.0 * lock, Color(1.0, 0.55 + 0.3 * lock, 0.5 + 0.3 * lock, alpha * lock))
 
 
 # Mira, clarão, partículas e flash vermelho do modelo B, por cima da cena e por baixo do HUD.
