@@ -280,12 +280,27 @@ func _hurt(m: Combatant) -> bool:
 	return m.pv > 0 and float(m.pv) / maxf(1.0, float(m.max_pv)) <= CharacterSheet.HURT_BELOW
 
 
+var _creature_portrait: Texture2D
+
+
+func _creature_face() -> Texture2D:
+	var path := "res://assets/sprites/retratos/criatura_64.png"
+	if _creature_portrait == null and ResourceLoader.exists(path):
+		_creature_portrait = load(path)
+	return _creature_portrait
+
+
 func _draw_face(u: Combatant, rect: Rect2) -> void:
 	var i := room.enemies.find(u)
 	if i < 0:
 		room.agent_sheets[room.looks.get(u, 0)].draw_portrait(room, rect, _hurt(u))
 		return
 	var variant := room._enemy_variant(i)
+	if variant == room.CREATURE_VARIANT:  # retrato próprio da Criatura de Sangue
+		var face := _creature_face()
+		if face:
+			room.draw_texture_rect(face, rect, false)
+			return
 	if room.enemy_sheets.has(variant):
 		room.enemy_sheets[variant].draw_portrait(room, rect)
 	else:
