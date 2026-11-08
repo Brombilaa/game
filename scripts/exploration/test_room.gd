@@ -245,6 +245,7 @@ var creature_clock := {}  # inimigo -> segundo (ms) em que a morte começou
 var combat_started_ms := -100000
 var fernando3d := AnimSheet.new("fernando3d", "fernando3d")  # Fernando em 3D: as mesmas animações do Nikolai, no esqueleto dele
 var nikolai3d := AnimSheet.new()  # Nikolai em 3D renderizado como pixel art (teste das animações)
+var miguel3d := AnimSheet.new("miguel3d", "miguel3d", nikolai3d)  # Miguel: só modelo 3D (parque), quadros contados pelo Nikolai
 
 var use_3d := true  # tecla V troca entre o Nikolai 3D e o sprite 2D
 
@@ -1454,7 +1455,14 @@ func _sheet3d(u: Combatant) -> AnimSheet:
 			return nikolai3d
 		0:
 			return fernando3d
+		2:
+			return miguel3d if _modelos_3d() and Agente3D.tem_modelo("miguel3d") else null
 	return null
+
+
+# Sala com personagens 3D de verdade (o parque); aqui, na sala de teste, só existem as folhas.
+func _modelos_3d() -> bool:
+	return false
 
 
 # Animação de ataque do Nikolai 3D por arma; sem ela (espada, por exemplo) ele não muda de pose.

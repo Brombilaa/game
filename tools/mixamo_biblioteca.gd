@@ -21,6 +21,11 @@ const SAIDA_CRIATURA := "res://assets/3d/animacoes/criatura.res"
 const NOMES_CRIATURA := ["idle", "transition", "walk", "attack", "death"]
 const LACO_CRIATURA := ["idle", "walk"]
 const SAIDA_CAIO := "res://assets/3d/animacoes/caio.res"
+# Miguel (Léo, 08/11): como o Caio, Breathing Idle do próprio FBX e as outras animações do Nikolai/Fernando, com as
+# posições na escala dele (as rotações locais do Mixamo valem para qualquer esqueleto do Mixamo).
+#   godot --headless --path . -s tools/mixamo_biblioteca.gd -- miguel
+const SAIDA_MIGUEL := "res://assets/3d/animacoes/miguel.res"
+const MODELO_MIGUEL := "res://assets/3d/personagens/miguel.fbx"
 const MODELO_CAIO := "res://assets/3d/personagens/caio.fbx"
 
 
@@ -36,17 +41,19 @@ func _escala(modelo: String, a: Animation) -> float:
 
 func _initialize() -> void:
 	var criatura := "criatura" in OS.get_cmdline_user_args()
-	var caio := "caio" in OS.get_cmdline_user_args()
+	var miguel := "miguel" in OS.get_cmdline_user_args()
+	var caio := "caio" in OS.get_cmdline_user_args() or miguel  # o Miguel segue o mesmo caminho do Caio
+	var modelo := MODELO_MIGUEL if miguel else MODELO_CAIO
 	var fonte := FONTE_CRIATURA if criatura else FONTE
-	var saida := SAIDA_CRIATURA if criatura else (SAIDA_CAIO if caio else SAIDA)
+	var saida := SAIDA_CRIATURA if criatura else (SAIDA_MIGUEL if miguel else (SAIDA_CAIO if caio else SAIDA))
 	var escala := 1.0  # posições (quadril) na unidade do esqueleto do modelo
 	var laco: Array = LACO_CRIATURA if criatura else LACO
 	var lib := AnimationLibrary.new()
 	for nome in (NOMES_CRIATURA if criatura else NOMES):
-		# Caio: o idle vem do próprio FBX dele (Léo, 08/11: com o idle do Nikolai ficava corcunda e com as mãos para frente,
+		# Caio e Miguel: o idle vem do próprio FBX (Léo, 08/11: com o idle do Nikolai ficava corcunda e com as mãos para frente,
 		# porque a pose de repouso do esqueleto dele é outra). Já está na escala do modelo, então não reescala.
 		var proprio: bool = caio and nome == "idle"
-		var cena: Node = (load(MODELO_CAIO if proprio else fonte % nome) as PackedScene).instantiate()
+		var cena: Node = (load(modelo if proprio else fonte % nome) as PackedScene).instantiate()
 		var ap: AnimationPlayer = cena.find_children("*", "AnimationPlayer", true, false)[0]
 		var a: Animation = ap.get_animation("mixamo_com").duplicate(true)
 		cena.free()
@@ -59,7 +66,7 @@ func _initialize() -> void:
 					a.track_set_key_value(t, k, Vector3(p0.x, p.y, p0.z))
 		if caio and not proprio:
 			if escala == 1.0:
-				escala = _escala(MODELO_CAIO, a)
+				escala = _escala(modelo, a)
 			for t in a.get_track_count():
 				if a.track_get_type(t) == Animation.TYPE_POSITION_3D:
 					for k in a.track_get_key_count(t):

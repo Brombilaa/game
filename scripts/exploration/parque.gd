@@ -306,6 +306,10 @@ func _draw_unit(u: Combatant) -> void:
 
 # Chamado pelo AnimSheet antes de desenhar a folha: se o personagem tem modelo 3D (Agente3D), o modelo faz a pose
 # e a folha não é desenhada. A fase (quadro / total) mantém o mesmo tempo das animações do jogo.
+func _modelos_3d() -> bool:
+	return world3d != null
+
+
 func _model3d(pasta: String, pos: Vector2, anim: String, fase: float, dir: CharacterSheet.Dir) -> bool:
 	if world3d == null or drawing_key == null or not Agente3D.tem_modelo(pasta):
 		return false
