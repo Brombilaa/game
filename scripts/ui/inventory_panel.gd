@@ -425,7 +425,7 @@ func _draw_portrait(font: Font, i: int) -> void:
 	var m: Combatant = room.party[i]
 	var on := i == viewed
 	draw_rect(r, Color(0.16, 0.12, 0.09))
-	room.agent_sheets[room.looks.get(m, 0)].draw_portrait(self, r.grow(-3))
+	room.agent_sheets[room.looks.get(m, 0)].draw_portrait(self, r.grow(-3), m.is_alive() and float(m.pv) / maxf(1.0, float(m.max_pv)) <= CharacterSheet.HURT_BELOW)
 	if not m.is_alive():
 		draw_rect(r, Color(0.4, 0, 0, 0.5))
 	var hover := r.has_point(get_viewport().get_mouse_position())

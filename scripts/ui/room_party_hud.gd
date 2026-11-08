@@ -101,7 +101,7 @@ func _draw_sheet(font: Font, m: Combatant, i: int, to_world: Transform2D) -> voi
 	room.draw_rect(r, CARD_BG)
 	var face := Rect2(r.position, Vector2(r.size.x, r.size.x))
 	room.draw_rect(face, Color(0.16, 0.12, 0.09))
-	room.agent_sheets[room.looks.get(m, 0)].draw_portrait(room, face)
+	room.agent_sheets[room.looks.get(m, 0)].draw_portrait(room, face, _hurt(m))
 	if not m.is_alive():
 		room.draw_rect(face, Color(0.4, 0, 0, 0.5))
 	var strip := Rect2(face.position + Vector2(0, face.size.y - 11.0), Vector2(face.size.x, 11.0))
@@ -275,12 +275,32 @@ func _draw_tooltip(font: Font, top_center: Vector2, title: String, detail: Strin
 		room.draw_string(font, tip.position + Vector2(0, 26), detail, HORIZONTAL_ALIGNMENT_CENTER, tip.size.x, 9, Color(0.72, 0.65, 0.52))
 
 
+# Retrato ferido quando o PV está baixo (e a pessoa ainda não caiu).
+func _hurt(m: Combatant) -> bool:
+	return m.pv > 0 and float(m.pv) / maxf(1.0, float(m.max_pv)) <= CharacterSheet.HURT_BELOW
+
+
+var _creature_portrait: Texture2D
+
+
+func _creature_face() -> Texture2D:
+	var path := "res://assets/sprites/retratos/criatura_64.png"
+	if _creature_portrait == null and ResourceLoader.exists(path):
+		_creature_portrait = load(path)
+	return _creature_portrait
+
+
 func _draw_face(u: Combatant, rect: Rect2) -> void:
 	var i := room.enemies.find(u)
 	if i < 0:
-		room.agent_sheets[room.looks.get(u, 0)].draw_portrait(room, rect)
+		room.agent_sheets[room.looks.get(u, 0)].draw_portrait(room, rect, _hurt(u))
 		return
 	var variant := room._enemy_variant(i)
+	if variant == room.CREATURE_VARIANT:  # retrato próprio da Criatura de Sangue
+		var face := _creature_face()
+		if face:
+			room.draw_texture_rect(face, rect, false)
+			return
 	if room.enemy_sheets.has(variant):
 		room.enemy_sheets[variant].draw_portrait(room, rect)
 	else:
