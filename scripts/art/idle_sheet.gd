@@ -33,6 +33,9 @@ func draw(canvas: CanvasItem, pos: Vector2, frame: int, dir: CharacterSheet.Dir)
 	var src := Rect2(frame * FRAME, 0, FRAME, FRAME)
 	var pivot := PIVOT * SCALE
 	var origin := (pos - pivot).round()
+	if canvas.has_method("_sprite3d"):  # parque 3D: o quadro vira um cartão dentro do mundo 3D
+		canvas._sprite3d(tex, src, pivot / SCALE, SCALE, info[1], pos)
+		return
 	if info[1]:
 		canvas.draw_set_transform(Vector2(origin.x + pivot.x, origin.y), 0.0, Vector2(-1, 1))
 		canvas.draw_texture_rect_region(tex, Rect2(Vector2(-pivot.x, 0), size), src)
