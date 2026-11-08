@@ -48,6 +48,7 @@ var zoom_time := 0.0
 var zoom_pulse := ZOOM_PULSE  # força do pulso atual
 var cam_pair: Array = []  # [atacante, alvo] do último ataque encenado: a câmera acompanha os dois
 var iso: Callable  # posição da sala -> posição de desenho
+var muzzle_at: Callable  # atacante -> posição de desenho da arma (Vector2.INF se não souber); o parque 3D usa a mão do modelo
 var rng := RandomNumberGenerator.new()
 
 
@@ -163,6 +164,10 @@ func _impact(job: Dictionary) -> void:
 	var from := _screen(attacker.pos) + Vector2(0, -60)
 	var to := _screen(target.pos) + Vector2(0, -60)
 	var dir := (to - from).normalized() if to != from else Vector2.RIGHT
+	var hand: Vector2 = muzzle_at.call(attacker) if muzzle_at.is_valid() else Vector2.INF
+	if hand != Vector2.INF:  # clarão e fumaça saem da arma, não do meio do corpo
+		from = hand - dir * 22.0  # o clarão nasce em from + dir * 22: na boca do cano
+		dir = (to - from).normalized() if to != from else dir
 	hold_pv.erase(target)
 	if not attacker.weapon.get("melee", false):
 		muzzles.append({"pos": from + dir * 22.0, "dir": dir, "time": MUZZLE_SECONDS})

@@ -19,6 +19,7 @@ uniform vec3 tom_sol = vec3(1.0);
 uniform vec3 tom_sol_boina = vec3(1.0);
 // Boina: no Godot saía avermelhada e clara demais. Ela é o topo da malha, então a correção vale acima de
 // uma altura (fração da altura total do modelo, no espaço da malha).
+uniform float clarao = 0.0;  // 0 a 1: o personagem pisca branco ao levar o golpe (no lugar da mancha 2D)
 uniform float altura_min = 0.0;
 uniform float altura_max = 1.0;
 uniform float boina_inicio = 0.89;
@@ -52,7 +53,7 @@ void fragment() {
 		n = -n;
 	}
 	NORMAL = n;
-	EMISSION = luz_fria;
+	EMISSION = luz_fria + vec3(0.55) * clarao;
 }
 
 // Lambert igual ao padrão do Godot, só com o tom nas luzes direcionais.
