@@ -23,6 +23,10 @@ const PORTRAIT := Rect2(66, 48, 60, 60)
 
 var textures := {}  # "se" -> Texture2D
 var portrait: Texture2D  # retrato próprio (assets/sprites/retratos); sem ele, recorta o rosto da folha S
+var portrait_hurt: Texture2D  # retrato "bem ferido" (PV baixo); sem ele, usa o normal
+
+# Fração de PV em que o retrato passa para a versão ferida (provisório até o Léo testar).
+const HURT_BELOW := 0.34
 
 
 func _init(prefix: String) -> void:
@@ -31,6 +35,9 @@ func _init(prefix: String) -> void:
 	var own := "res://assets/sprites/retratos/%s_64.png" % prefix.get_file()
 	if ResourceLoader.exists(own):
 		portrait = load(own)
+	var hurt := "res://assets/sprites/retratos/%s_ferido_64.png" % prefix.get_file()
+	if ResourceLoader.exists(hurt):
+		portrait_hurt = load(hurt)
 
 
 func frame_count() -> int:
@@ -58,8 +65,8 @@ func draw(canvas: CanvasItem, pos: Vector2, frame: int, dir: Dir) -> void:
 
 
 # Retrato desenhado dentro de `rect`: o retrato próprio, ou o rosto do quadro parado de frente.
-func draw_portrait(canvas: CanvasItem, rect: Rect2) -> void:
+func draw_portrait(canvas: CanvasItem, rect: Rect2, hurt := false) -> void:
 	if portrait:
-		canvas.draw_texture_rect(portrait, rect, false)
+		canvas.draw_texture_rect(portrait_hurt if hurt and portrait_hurt else portrait, rect, false)
 		return
 	canvas.draw_texture_rect_region(textures["s"], rect, PORTRAIT)

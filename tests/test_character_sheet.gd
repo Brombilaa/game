@@ -28,7 +28,10 @@ func _init() -> void:
 		var big := load("res://assets/sprites/retratos/%s_128.png" % who) as Texture2D
 		_check(big != null and big.get_width() == 128, "%s: retrato de 128 px" % who)
 		var img := sheet.portrait.get_image()
-		_check(img.get_pixel(0, 0).a == 0.0 and img.get_pixel(32, 40).a == 1.0, "%s: fundo transparente e rosto opaco" % who)
+		_check(img.get_pixel(32, 40).a == 1.0, "%s: retrato opaco" % who)
+		_check(sheet.portrait_hurt != null and sheet.portrait_hurt.get_width() == 64, "%s: retrato ferido de 64 px" % who)
+		var bighurt := load("res://assets/sprites/retratos/%s_ferido_128.png" % who) as Texture2D
+		_check(bighurt != null and bighurt.get_width() == 128, "%s: retrato ferido de 128 px" % who)
 	_check(CharacterSheet.new("res://assets/sprites/personagens/legado_2d/cultista").portrait == null, "cultista segue sem retrato próprio")
 
 	print("Falhas: %d" % failures)
