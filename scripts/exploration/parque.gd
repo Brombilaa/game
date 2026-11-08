@@ -91,6 +91,8 @@ func _ready() -> void:
 		camera.limit_bottom = int(corners[3].y) + 16
 	vignette = _make_vignette()
 	_build_dialog()
+	if world3d:
+		fx.muzzle_at = _arma3d
 
 
 # Paredes e coberturas a partir das colisões do cenário; o grupo começa na entrada.
@@ -315,8 +317,24 @@ func _model3d(pasta: String, pos: Vector2, anim: String, fase: float, dir: Chara
 	var g := _uniso(pos)
 	ag.position = Vector3(g.x / 64.0, 0.0, g.y / 64.0)
 	var frente := _uniso(pos + DIR_TELA[dir] * 32.0) - g
-	ag.rotation.y = atan2(frente.x, frente.y)
+	var golpe: Dictionary = golpes.get(drawing_key, {})
+	if not golpe.is_empty():
+		var t := (Time.get_ticks_msec() - int(golpe["inicio"])) / 1000.0
+		var g3: Array = GOLPE_3D[golpe["anim"]]
+		var dur: float = golpe["duracao"]
+		var f: float = g3[0] * t / golpe["mira"] if t < golpe["mira"] else g3[0] + (t - golpe["mira"]) * g3[2] / dur
+		var alvo: Combatant = golpe["alvo"]
+		if f >= g3[1] or not (drawing_key as Combatant).is_alive():
+			golpes.erase(drawing_key)  # terminou o arremate (ou caiu no meio): volta à pose do jogo
+		else:
+			anim = golpe["anim"]
+			fase = f
+			if alvo.pos != (drawing_key as Combatant).pos:
+				frente = alvo.pos - (drawing_key as Combatant).pos  # mira exata no alvo, não nas 8 direções
+	ag.virar(atan2(frente.x, frente.y))
 	ag.pose(anim, fase)
+	if drawing_key is Combatant:
+		ag.clarao(fx.white_alpha(drawing_key))
 	agentes_usados[drawing_key] = true
 	# Sombra de contato: reaproveita a mancha dos cartões (cartão escondido).
 	if cards_used == cards.size():
@@ -326,6 +344,66 @@ func _model3d(pasta: String, pos: Vector2, anim: String, fase: float, dir: Chara
 	blobs[cards_used].visible = true
 	cards_used += 1
 	return true
+
+
+# Golpes com modelo 3D (Léo, 08/11: combate dessincronizado). Antes a animação inteira era espremida na mira e o
+# impacto vinha no último quadro, bem depois do tiro que se via. Agora a animação toca na velocidade dela, o impacto
+# (dano, clarão, sangue) cai no quadro do disparo e o resto do movimento continua depois, até o fim do arremate.
+# Animação -> [fase do disparo, fase em que o arremate termina, velocidade]. Fases medidas pelo movimento da mão
+# direita nos clipes do Mixamo (pico de velocidade = golpe ou coice).
+const GOLPE_3D := {
+	"pistol_shoot": [0.6, 0.85, 1.5],
+	"rifle_fire": [0.12, 0.45, 1.0],
+	"punch": [0.27, 0.6, 1.0],
+	"kick": [0.375, 0.7, 1.0],
+	"attack": [0.5, 0.78, 1.33],  # Criatura de Sangue: o segundo golpe, o mais forte
+}
+var golpes := {}  # Combatant -> {"anim", "inicio" (ms), "mira" (s), "duracao" (s do clipe), "alvo"}
+
+
+# Animação de golpe do atacante quando ele tem modelo 3D; "" quando não tem (fica a mira de antes).
+func _golpe3d(attacker: Combatant) -> String:
+	if world3d == null or not agentes.has(attacker):
+		return ""
+	if _has_creatures() and enemies.has(attacker):
+		return "attack"
+	if enemies.has(attacker):
+		return ""
+	return ATTACK_ANIM.get(str(attacker.weapon.get("id", "")), "")
+
+
+func _attack_aim(attacker: Combatant) -> float:
+	var anim := _golpe3d(attacker)
+	if anim == "" or not (agentes[attacker] as Agente3D).player.has_animation(anim):
+		return super(attacker)
+	var g3: Array = GOLPE_3D[anim]
+	return g3[0] * (agentes[attacker] as Agente3D).player.get_animation(anim).length / g3[2]
+
+
+func _attack_started(attacker: Combatant, target: Combatant, aim: float) -> void:
+	var anim := _golpe3d(attacker)
+	if anim == "" or not (agentes[attacker] as Agente3D).player.has_animation(anim):
+		return
+	var g3: Array = GOLPE_3D[anim]
+	var dur: float = (agentes[attacker] as Agente3D).player.get_animation(anim).length
+	golpes[attacker] = {"anim": anim, "inicio": Time.get_ticks_msec(), "mira": aim, "duracao": dur, "alvo": target}
+
+
+func _flash_in_3d(u: Combatant) -> bool:
+	return agentes_usados.has(u)
+
+
+# Onde está a arma (mão direita do modelo) em coordenadas de desenho, para o clarão do tiro sair dela.
+func _arma3d(u: Combatant) -> Vector2:
+	var ag: Agente3D = agentes.get(u)
+	if world3d == null or ag == null or not ag.visible:
+		return Vector2.INF
+	var mao := ag.boca_arma()
+	var cam: Camera3D = world3d.camera
+	if cam.is_position_behind(mao):
+		return Vector2.INF
+	var tela := cam.unproject_position(mao) * (get_viewport_rect().size / Vector2(world3d.mundo.size))
+	return get_canvas_transform().affine_inverse() * tela
 
 
 func _new_card() -> void:

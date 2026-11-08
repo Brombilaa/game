@@ -1086,13 +1086,32 @@ func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void
 		_reject(r.reason)
 		return
 	var before := mini(target.pv + int(r.get("damage", 0)), target.max_pv) if r.get("hit", false) else target.pv
-	var aim := CombatFx.AIM_SECONDS
-	if _has_creatures() and enemies.has(attacker):
-		aim = CREATURE_ATTACK_SECONDS
-	elif use_3d and _sheet3d(attacker) != null:
-		aim = NIKOLAI_ATTACK_SECONDS
+	# Quem ataca vira para o alvo (antes atirava para onde estivesse olhando: Léo, 08/11, "combate dessincronizado").
+	if target.pos != attacker.pos:
+		facing8[attacker] = CharacterSheet.dir_from_vector(_iso(target.pos) - _iso(attacker.pos))  # direção vista na tela
+	var aim := _attack_aim(attacker)
 	fx.start(attacker, target, r, before, aim)
+	_attack_started(attacker, target, aim)
 	queue_redraw()
+
+
+# Duração da mira até o impacto (o golpe acerta no fim dela).
+func _attack_aim(attacker: Combatant) -> float:
+	if _has_creatures() and enemies.has(attacker):
+		return CREATURE_ATTACK_SECONDS
+	if use_3d and _sheet3d(attacker) != null:
+		return NIKOLAI_ATTACK_SECONDS
+	return CombatFx.AIM_SECONDS
+
+
+# Verdadeiro quando o modelo 3D do personagem já pisca sozinho (o parque 3D); senão a mancha branca é desenhada.
+func _flash_in_3d(_u: Combatant) -> bool:
+	return false
+
+
+# Gancho para a sala encenar o golpe por conta própria (o parque 3D toca a animação do modelo).
+func _attack_started(_attacker: Combatant, _target: Combatant, _aim: float) -> void:
+	pass
 
 
 const LOG_SECONDS := 8.0
@@ -1125,6 +1144,8 @@ func _on_fx_impact(job: Dictionary) -> void:
 	elif not r.get("hit", false):
 		_popup(target.pos, "ERROU", "miss")
 	else:
+		if target.pos != attacker.pos and target.is_alive():
+			facing8[target] = CharacterSheet.dir_from_vector(_iso(attacker.pos) - _iso(target.pos))  # o atingido vira para quem bateu
 		_popup(target.pos, "-%d" % r.damage, "crit" if r.crit else "damage")
 		hit_shake[target] = CRIT_SHAKE_SECONDS if r.crit else HIT_SHAKE_SECONDS
 		if target.is_alive() and _sheet3d(target) != null and not enemies.has(target):
@@ -1416,7 +1437,7 @@ func _draw_unit(u: Combatant) -> void:
 			var size := Vector2(PlaceholderArt.FRAME_SIZE * PLACEHOLDER_SCALE)
 			draw_texture_rect(tex, Rect2((at - PlaceholderArt.PIVOT * PLACEHOLDER_SCALE).round(), size), false)
 	var flash := fx.white_alpha(u)
-	if flash > 0.0:  # alvo pisca branco (até a arte entregar os quadros de dano)
+	if flash > 0.0 and not _flash_in_3d(u):  # alvo pisca branco (até a arte entregar os quadros de dano)
 		draw_set_transform(at + Vector2(0, -CharacterSheet.HEIGHT * 0.5), 0.0, Vector2(0.55, 1.0))
 		draw_circle(Vector2.ZERO, CharacterSheet.HEIGHT * 0.42, Color(1, 1, 1, 0.75 * flash))
 		draw_set_transform(Vector2.ZERO)
