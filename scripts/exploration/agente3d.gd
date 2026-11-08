@@ -15,8 +15,8 @@ const ALTURA := 2.2  # unidades 3D (herói de 128 px)
 const MODELOS := {
 	"nikolai3d": {"modelo": "res://assets/3d/personagens/nikolai.glb", "boina": true, "armas": true},
 	"fernando3d": {"modelo": "res://assets/3d/personagens/fernando.fbx", "armas": true},
-	# Caio: o Léo vai remodelar (08/11, "ficou péssimo"); até lá ele volta a ser o cartão da folha de parado.
-	# "caio3d": {"modelo": "res://assets/3d/personagens/caio.fbx", "biblioteca": "res://assets/3d/animacoes/caio.res", "giro": PI},  # exportado em metros e de costas
+	# Caio: remodelado pelo Léo (08/11, versão corrigida v2, só com o idle do Mixamo; as outras animações vêm da biblioteca).
+	"caio3d": {"modelo": "res://assets/3d/personagens/caio.fbx", "biblioteca": "res://assets/3d/animacoes/caio.res"},  # versão corrigida v2 (08/11): já de frente, posições na escala dele (caio.res)
 	# Léo, 08/11: Criatura e Caio no mesmo nível do Nikolai e do Fernando. Textura A (aprovada em 05/11); 2,0 m contra 1,8 m dos agentes.
 	"criatura": {"modelo": "res://assets/3d/personagens/criatura.fbx", "biblioteca": "res://assets/3d/animacoes/criatura.res",
 		"textura": "res://assets/3d/personagens/criatura_textura.png", "altura": 2.45},
