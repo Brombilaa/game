@@ -8,7 +8,7 @@ on:
 jobs:
   godot:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     env:
       GODOT_VERSION: 4.3-stable
     steps:
@@ -23,7 +23,7 @@ jobs:
 
       # Gera o cache de class_name (.godot/) que os testes usam.
       - name: Importar o projeto
-        run: timeout 120 "$GODOT" --headless --path . --import || true
+        run: timeout 400 "$GODOT" --headless --path . --import || true
 
       - name: Rodar os testes
         run: |
@@ -43,7 +43,7 @@ jobs:
   # Não bloqueia a PR (continue-on-error) enquanto o ambiente gráfico do CI não provar ser estável.
   capturas:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     continue-on-error: true
     env:
       GODOT_VERSION: 4.3-stable
@@ -61,7 +61,7 @@ jobs:
           echo "GODOT=$RUNNER_TEMP/Godot_v${GODOT_VERSION}_linux.x86_64" >> "$GITHUB_ENV"
 
       - name: Importar o projeto
-        run: timeout 120 "$GODOT" --headless --path . --import || true
+        run: timeout 400 "$GODOT" --headless --path . --import || true
 
       - name: Capturar as cenas
         run: |

@@ -13,6 +13,8 @@ const BIG_PROPS := ["van", "lago", "lago_2", "lago_3", "lago_4", "arvore", "mata
 const NPC_RADIUS := 14.0
 const NPC_NAMES := {"caio": "Caio", "leticia": "Letícia"}
 const NPC_COLORS := {"caio": Color("#46628a"), "leticia": Color("#885050")}  # figuras provisórias
+var caio3d := IdleSheet.new("caio3d", "caio3d")  # Caio: só a animação de parado (morre no primeiro mapa)
+
 const DOT_RADIUS := 6.0  # bolinha da pista, em px do desenho
 const DOT_HIT := 14.0  # raio em que o clique na bolinha vale (px do desenho)
 const CLUE_NEAR := 260.0  # a bolinha ganha um anel quando o controlado chega perto
@@ -211,10 +213,14 @@ func _objectives() -> Array[Dictionary]:
 	return Objectives.build(scenario.clues, seen_clues, mode == Mode.COMBAT)
 
 
-# Figura provisória de NPC (corpo, cabeça e nome) até a arte do Caio e da Letícia existir.
+# Caio tem a folha de parado em 3D; a Letícia ainda é figura provisória (corpo, cabeça e nome).
 func _draw_npc(font: Font, npc_id: String) -> void:
 	var at := _iso(scenario.npcs[npc_id])
 	_draw_cast_shadow(at, 86.0, 22.0)
+	if npc_id == "caio":
+		caio3d.draw(self, at, caio3d.frame_at(Time.get_ticks_msec()), CharacterSheet.Dir.SE)
+		queue_redraw()  # a respiração anima
+		return
 	draw_rect(Rect2(at + Vector2(-11, -66), Vector2(22, 60)), NPC_COLORS[npc_id])
 	draw_rect(Rect2(at + Vector2(-8, -86), Vector2(16, 18)), Color("#d6b292"))
 	var name_text: String = NPC_NAMES[npc_id]
