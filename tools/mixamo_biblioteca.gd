@@ -43,7 +43,10 @@ func _initialize() -> void:
 	var laco: Array = LACO_CRIATURA if criatura else LACO
 	var lib := AnimationLibrary.new()
 	for nome in (NOMES_CRIATURA if criatura else NOMES):
-		var cena: Node = (load(fonte % nome) as PackedScene).instantiate()
+		# Caio: o idle vem do próprio FBX dele (Léo, 08/11: com o idle do Nikolai ficava corcunda e com as mãos para frente,
+		# porque a pose de repouso do esqueleto dele é outra). Já está na escala do modelo, então não reescala.
+		var proprio: bool = caio and nome == "idle"
+		var cena: Node = (load(MODELO_CAIO if proprio else fonte % nome) as PackedScene).instantiate()
 		var ap: AnimationPlayer = cena.find_children("*", "AnimationPlayer", true, false)[0]
 		var a: Animation = ap.get_animation("mixamo_com").duplicate(true)
 		cena.free()
@@ -54,7 +57,7 @@ func _initialize() -> void:
 				for k in a.track_get_key_count(t):
 					var p: Vector3 = a.track_get_key_value(t, k)
 					a.track_set_key_value(t, k, Vector3(p0.x, p.y, p0.z))
-		if caio:
+		if caio and not proprio:
 			if escala == 1.0:
 				escala = _escala(MODELO_CAIO, a)
 			for t in a.get_track_count():
