@@ -3,7 +3,7 @@ extends RefCounted
 # Painel "OBJETIVOS" do HUD, abaixo da placa do radar (moldura A). Só desenha; o conteúdo vem
 # de `Objectives.build` e a sala fornece a lista em `_objectives()`. Pixels da tela (960×540).
 
-const PANEL_POS := Vector2(806, 156)
+const PANEL_POS := Vector2(806, 126)
 const PANEL_W := 146.0
 const ROW_H := 13.0
 const INK := Color(0.93, 0.89, 0.8)

@@ -54,43 +54,119 @@ func _draw_diamond(c: Vector2, r: float, color: Color) -> void:
 	room.draw_colored_polygon(PackedVector2Array([c + Vector2(0, -r), c + Vector2(r, 0), c + Vector2(0, r), c + Vector2(-r, 0)]), color)
 
 
-# Ficha de um membro do grupo: retrato numa moldura e, ao lado, nome, PV e SAN em outra.
-# As medidas são do desenho em tamanho cheio e passam por `_k` (SHEET_SCALE).
-func _draw_sheet(font: Font, m: Combatant, pos: Vector2) -> void:
+# Cartões do grupo em coluna (Preto liso, Léo 08/11/2026): retrato quadrado, duas barras chapadas
+# (PV e SAN, com os números dentro) e uma etiqueta; entre os cartões fica a corrente, clicável.
+const CARD_X := 8.0
+const CARD_TOP := 8.0
+const CARD_W := 62.0
+const CARD_W_ON := 70.0  # o cartão ativo é maior
+const CARD_BELOW := 37.0  # barras e etiqueta embaixo do retrato
+const LINK_H := 11.0  # altura do elo entre cartões
+const CARD_BG := Color(0.043, 0.043, 0.05)
+const BAR_PV := Color(0.82, 0.23, 0.27)
+const BAR_SAN := Color(0.31, 0.56, 0.88)
+const LINK_ON := Color(0.84, 0.8, 0.7)
+const LINK_OFF := Color(0.95, 0.55, 0.2)
+
+
+# Retângulo do cartão `i` (em pixels da tela): o ativo é mais largo e fica centrado na coluna.
+func card_rect(i: int) -> Rect2:
+	var y := CARD_TOP
+	for k in i:
+		y += _card_w(k) + CARD_BELOW + LINK_H
+	var w := _card_w(i)
+	return Rect2(Vector2(CARD_X + (CARD_W_ON - w) * 0.5, y), Vector2(w, w + CARD_BELOW))
+
+
+# Retângulo clicável do elo entre o cartão `i` e o `i + 1` (em pixels da tela).
+func link_rect(i: int) -> Rect2:
+	var c := card_rect(i)
+	return Rect2(Vector2(CARD_X + CARD_W_ON * 0.5 - 12.0, c.end.y), Vector2(24.0, LINK_H))
+
+
+func _card_w(i: int) -> float:
+	return CARD_W_ON if room.party[i] == room.player else CARD_W
+
+
+# Cartão de um membro do grupo (`screen` = onde fica na tela; `to_world` leva a tela para onde se desenha).
+func _draw_sheet(font: Font, m: Combatant, i: int, to_world: Transform2D) -> void:
 	var active := m == room.player
-	var face_box := Rect2(pos, Vector2(room._k(75), room._k(75)))
-	var info := Rect2(pos + Vector2(room._k(73), room._k(10)), Vector2(room._k(150), room._k(56)))
-	_draw_frame(info, false, SHEET_SCALE)
-	_draw_frame(face_box, false, SHEET_SCALE)
-	var face := face_box.grow(-room._k(6))
+	var sr := card_rect(i)
+	var r := Rect2(to_world * sr.position, sr.size)
+	room.draw_rect(r.grow(2.0), Color.BLACK)  # só um contorno preto
+	if active:  # anel branco entre dois pretos
+		room.draw_rect(r.grow(4.0), Color.BLACK, false, 1.0)
+		room.draw_rect(r.grow(3.0), Color.WHITE, false, 1.0)
+		room.draw_rect(r.grow(2.0), Color.BLACK, false, 1.0)
+	room.draw_rect(r, CARD_BG)
+	var face := Rect2(r.position, Vector2(r.size.x, r.size.x))
 	room.draw_rect(face, Color(0.16, 0.12, 0.09))
 	room.agent_sheets[room.looks.get(m, 0)].draw_portrait(room, face)
 	if not m.is_alive():
 		room.draw_rect(face, Color(0.4, 0, 0, 0.5))
-	if active:
-		room.draw_rect(face_box.grow(-room._k(1)), FRAME_ACCENT, false, 1.5)
-	var left := info.position.x + room._k(11)
-	room.draw_string(font, Vector2(left, info.position.y + room._k(17)), m.name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, room._fs(13), FRAME_ACCENT if active else Color(0.91, 0.87, 0.79))
-	var status := ""
-	if m.dead:
-		status = "MORTO"
-	elif not m.is_alive():
-		status = "CAÍDO"
-	elif room.mode == room.Mode.COMBAT and room.turns and room.turns.current == m:
-		status = "na vez"
-	elif room.mode == room.Mode.COMBAT:
-		status = "aguardando"
-	elif m.crouched:
-		status = "agachado"
-	if status != "":
-		room.draw_string(font, Vector2(left, info.position.y + room._k(17)), status, HORIZONTAL_ALIGNMENT_RIGHT, info.size.x - room._k(22), room._fs(10), Color(1, 0.45, 0.45) if status in ["MORTO", "CAÍDO"] else Color(0.66, 0.6, 0.49))
-	_draw_bar(font, Vector2(left - room._k(3), info.position.y + room._k(22)), "pv", m.pv, m.max_pv, Color(0.74, 0.16, 0.16), Color(0.45, 0.07, 0.07))
-	_draw_bar(font, Vector2(left - room._k(3), info.position.y + room._k(37)), "san", m.san, m.max_san, Color(0.33, 0.52, 0.8), Color(0.15, 0.26, 0.5))
+	var strip := Rect2(face.position + Vector2(0, face.size.y - 11.0), Vector2(face.size.x, 11.0))
+	room.draw_rect(strip, Color(0, 0, 0, 0.62))
+	room.draw_string(font, strip.position + Vector2(3, 8.5), m.name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, strip.size.x - 12.0, 8, Color(0.95, 0.93, 0.88))
+	if m == room.player:  # coroa pequena do líder
+		var c := strip.position + Vector2(strip.size.x - 7.0, 5.5)
+		room.draw_colored_polygon(PackedVector2Array([c + Vector2(-3.5, 2.5), c + Vector2(-3.5, -2.5), c + Vector2(-1.7, 0), c + Vector2(0, -3), c + Vector2(1.7, 0), c + Vector2(3.5, -2.5), c + Vector2(3.5, 2.5)]), Color(0.93, 0.8, 0.38))
 	var k := 0
-	for id in CONDITION_ICONS:  # condições ativas embaixo do retrato
+	for id in CONDITION_ICONS:  # condições ativas no canto de cima do retrato
 		if m.has_condition(id):
-			_draw_condition(Rect2(pos + Vector2(room._k(1) + k * room._k(21), room._k(76)), Vector2(room._k(20), room._k(20))), id)
+			_draw_condition(Rect2(face.position + Vector2(2 + k * 12.0, 2), Vector2(11, 11)), id)
 			k += 1
+	var y := face.end.y + 3.0
+	_draw_flat_bar(font, Rect2(Vector2(r.position.x, y), Vector2(r.size.x, 8.0)), m.pv, m.max_pv, BAR_PV)
+	_draw_flat_bar(font, Rect2(Vector2(r.position.x, y + 10.0), Vector2(r.size.x, 7.0)), m.san, m.max_san, BAR_SAN)
+	var status := _status_text(m)
+	var pill := Rect2(Vector2(r.position.x, y + 19.0), Vector2(r.size.x, 9.0))
+	if status[0] != "":
+		room.draw_rect(pill, Color(0, 0, 0, 0.7))
+		room.draw_string(font, pill.position + Vector2(0, 7.0), status[0], HORIZONTAL_ALIGNMENT_CENTER, pill.size.x, 7, status[1])
+
+
+# Texto e cor da etiqueta de baixo do cartão.
+func _status_text(m: Combatant) -> Array:
+	if m.dead:
+		return ["MORTO", Color(1, 0.45, 0.45)]
+	if not m.is_alive():
+		return ["CAÍDO", Color(1, 0.45, 0.45)]
+	if room.mode == room.Mode.COMBAT:
+		if room.turns and room.turns.current == m:
+			return ["na vez", Color.WHITE]
+		return ["aguardando", Color(0.66, 0.66, 0.7)]
+	if m == room.player:
+		return ["líder", Color.WHITE]
+	if room.unlinked.has(m):
+		return ["parado", LINK_OFF]
+	return ["seguindo", Color(0.66, 0.66, 0.7)]
+
+
+# Barra chapada: fundo escuro, preenchimento liso e o número à direita.
+func _draw_flat_bar(font: Font, bar: Rect2, value: int, maximum: int, color: Color) -> void:
+	room.draw_rect(bar, Color(0.1, 0.1, 0.12))
+	if maximum > 0:
+		room.draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(float(value) / maximum, 0.0, 1.0), bar.size.y)), color)
+	room.draw_string(font, bar.position + Vector2(0, bar.size.y - 1.5), "%d/%d" % [value, maximum], HORIZONTAL_ALIGNMENT_RIGHT, bar.size.x - 2.0, 7, Color.WHITE)
+
+
+# Corrente entre os cartões: dois elos presos quando o de baixo segue; soltos, com um risco laranja, quando parou.
+func _draw_links(font: Font, to_world: Transform2D) -> void:
+	var mouse := room.get_viewport().get_mouse_position()
+	for i in room.party.size() - 1:
+		var sr := link_rect(i)
+		var c := to_world * sr.get_center()
+		var follower: Combatant = room.party[i + 1]
+		var off: bool = room.unlinked.has(follower)
+		var col := LINK_OFF if off else LINK_ON
+		var d := 3.0 if off else 1.6
+		room.draw_arc(c + Vector2(0, -d), 3.2, 0.0, TAU, 16, col, 1.2)
+		room.draw_arc(c + Vector2(0, d), 3.2, 0.0, TAU, 16, col, 1.2)
+		if off:
+			room.draw_line(c + Vector2(-4, 4), c + Vector2(4, -4), LINK_OFF, 1.2)
+		if sr.has_point(mouse):
+			var tip := "Soltar: %s para de seguir" % follower.name if not off else "Prender: %s volta a seguir" % follower.name
+			_draw_tooltip(font, to_world * (Vector2(sr.end.x + 4.0 + 90.0, sr.position.y - 4.0)), tip, "")
 
 
 # Ícone de condição: quadrado escuro com o símbolo na cor da condição.
