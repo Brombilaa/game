@@ -143,6 +143,8 @@ var follow_paths := {}  # seguidor -> rota restante na exploração
 
 var follow_offsets := {}  # seguidor -> posição relativa ao líder
 
+var unlinked := {}  # seguidores soltos da corrente do grupo: não acompanham o líder
+
 var follow_rng := RandomNumberGenerator.new()
 
 var inventory: Inventory  # mochila compartilhada do grupo (20 espaços)
@@ -395,6 +397,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		queue_redraw()  # atualiza a prévia de chance/custo sob o cursor
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var screen := get_viewport().get_mouse_position()
+		var link := _link_at(screen)
+		if link >= 0:
+			_toggle_link(party[link + 1])
+			return
 		var portrait := _portrait_at(screen)
 		if portrait:
 			_switch_to(portrait)
@@ -1774,6 +1780,7 @@ func _switch_to(m: Combatant) -> void:
 		moving_unit = null
 	pending_door = false
 	follow_paths.erase(m)
+	unlinked.erase(m)  # o novo líder volta à corrente
 	player = m
 	_reset_follow_offsets(Vector2.RIGHT)
 	queue_redraw()
@@ -1793,9 +1800,29 @@ func _reset_follow_offsets(heading: Vector2) -> void:
 		k += 1
 
 
+# Solta o seguidor da corrente (ele para de acompanhar o líder) ou o prende de volta.
+func _toggle_link(m: Combatant) -> void:
+	if m == player:
+		return
+	if unlinked.has(m):
+		unlinked.erase(m)
+	else:
+		unlinked[m] = true
+		follow_paths.erase(m)
+	queue_redraw()
+
+
+# Índice do elo (entre o cartão i e o i + 1) sob o ponto da tela, ou -1.
+func _link_at(screen: Vector2) -> int:
+	for i in party.size() - 1:
+		if party_hud.link_rect(i).has_point(screen):
+			return i
+	return -1
+
+
 func _update_followers(delta: float) -> void:
 	for m in party:
-		if m == player or not m.is_alive():
+		if m == player or not m.is_alive() or unlinked.has(m):
 			continue
 		var goal: Vector2 = player.pos + follow_offsets.get(m, Vector2.LEFT * FOLLOW_DISTANCE)
 		var route: PackedVector2Array = follow_paths.get(m, PackedVector2Array())
@@ -1855,12 +1882,12 @@ func _fs(size: int) -> int:
 
 
 func _portrait_rect(i: int) -> Rect2:
-	return Rect2(Vector2(8, 8 + i * _k(98)), party_hud.SHEET_SIZE)  # sobra espaço para os ícones de condição
+	return party_hud.card_rect(i)
 
 
 # Mouse sobre uma ficha ou sobre o rodapé de ações: sem prévia de movimento ou ataque.
 func _mouse_on_hud(screen: Vector2) -> bool:
-	if _portrait_at(screen):
+	if _portrait_at(screen) or _link_at(screen) >= 0:
 		return true
 	if mode != Mode.COMBAT or not _player_ready():
 		return false
@@ -1880,7 +1907,8 @@ func _portrait_at(screen: Vector2) -> Combatant:
 func _draw_hud(font: Font) -> void:
 	var to_world := _hud_to_world()
 	for i in party.size():
-		party_hud._draw_sheet(font, party[i], to_world * _portrait_rect(i).position)
+		party_hud._draw_sheet(font, party[i], i, to_world)
+	party_hud._draw_links(font, to_world)
 	minimap._draw_minimap(font, to_world)
 	objectives_hud._draw_objectives(font, to_world, _objectives())
 	if mode == Mode.COMBAT and turns:

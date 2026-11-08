@@ -13,9 +13,9 @@ func _init(owner_room: TestRoom) -> void:
 # Minimapa: radar redondo visto de cima, centrado no controlado (Léo escolheu, 29/10/2026).
 # Só desenha o que o grupo já descobriu: o outro lado de uma porta nunca aberta não aparece,
 # e inimigos só aparecem enquanto estão à vista.
-const RADAR_CENTER := Vector2(898, 62)  # pixels da tela
-const RADAR_RADIUS := 40.0  # área do mapa; o aro da moldura A fica 6 px para fora
-const RADAR_SCALE := 0.08  # pixels do radar por unidade da sala
+const RADAR_CENTER := Vector2(910, 40)  # pixels da tela
+const RADAR_RADIUS := 28.0  # área do mapa; o aro da moldura A fica 6 px para fora
+const RADAR_SCALE := 0.056  # pixels do radar por unidade da sala
 const RADAR_GRID := 64.0  # um losango do chão, em unidades da sala
 const RADAR_INK := Color(0.07, 0.05, 0.04)
 const RADAR_FLOOR := Color(0.25, 0.2, 0.15)
