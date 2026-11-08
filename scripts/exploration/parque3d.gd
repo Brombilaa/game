@@ -46,6 +46,8 @@ const GRUPO := [Vector2(450, 690), Vector2(510, 660), Vector2(570, 625)]
 # Embutido no jogo (parque.gd): sem os três Nikolai de exemplo e com o filtro PC antigo só sobre o mundo 3D
 # (o HUD e os textos, desenhados por cima, não passam pelo filtro).
 @export var embutido := false
+@export var nevoa_forca := 1.0  # névoa de distância do JS (1 = igual ao protótipo)
+@export var nevoa_baixa := 0.0  # névoa rente ao chão (0 desliga)
 var camada_mundo: CanvasLayer
 var camera: Camera3D
 var mundo: SubViewport  # o 3D é desenhado a ~1000 px de altura com MSAA 4x e ampliado, como o protótipo
@@ -218,6 +220,8 @@ func _neblina() -> void:
 	q.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var m := ShaderMaterial.new()
 	m.shader = load("res://assets/3d/shaders/neblina.gdshader")
+	m.set_shader_parameter("forca", nevoa_forca)
+	m.set_shader_parameter("baixa", nevoa_baixa)
 	m.render_priority = 10
 	q.material_override = m
 	camera.add_child(q)

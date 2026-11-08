@@ -32,6 +32,8 @@ const USE_WORLD3D := true
 const PARQUE3D := preload("res://scenes/exploration/parque3d.tscn")
 const P3D := preload("res://scripts/exploration/parque3d.gd")
 const PX_UNIT := 67.88  # px do desenho por unidade 3D, nos eixos da câmera (48 / sqrt(0.5))
+const NEVOA_FORCA := 0.6  # névoa de distância do protótipo JS (1 = igual); modelo C, escolhido pelo Léo em 8/11
+const NEVOA_BAIXA := 0.55  # névoa rente ao chão (modelo C, escolhido pelo Léo em 8/11)
 const CARD_LIFT := 0.3  # cartão adiantado na direção da câmera: a sola não afunda no chão (não muda o lugar na tela)
 
 var scenario: Scenario
@@ -63,6 +65,12 @@ func _ready() -> void:
 	if USE_WORLD3D:
 		world3d = PARQUE3D.instantiate()
 		world3d.embutido = true
+		world3d.nevoa_forca = NEVOA_FORCA
+		world3d.nevoa_baixa = NEVOA_BAIXA
+		if OS.get_environment("NEVOA") != "":  # comparação de modelos de névoa: "forca,baixa"
+			var v := OS.get_environment("NEVOA").split(",")
+			world3d.nevoa_forca = float(v[0])
+			world3d.nevoa_baixa = float(v[1])
 		add_child(world3d)
 	super()
 	var corners := [_iso(Vector2.ZERO), _iso(Vector2(scenario.size.x, 0)), _iso(Vector2(0, scenario.size.y)), _iso(scenario.size)]
@@ -200,9 +208,10 @@ func _draw() -> void:
 	_draw_fx()
 	_draw_san_tint()
 	# Véu quente e vinheta cobrem o cenário e os personagens, mas ficam por baixo do HUD.
-	draw_rect(view, DUSK_COOL)
-	draw_rect(view, DUSK_TINT)
-	draw_texture_rect(vignette, view, false)
+	if world3d == null:  # no 3D a luz e a névoa vêm da própria cena; o véu e a vinheta ficavam chapados por cima (Léo, 08/11)
+		draw_rect(view, DUSK_COOL)
+		draw_rect(view, DUSK_TINT)
+		draw_texture_rect(vignette, view, false)
 	_draw_hud(font)
 	for p in popups:
 		_draw_popup(font, p)

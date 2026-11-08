@@ -71,11 +71,13 @@ func _run() -> void:
 				break
 		_check(reached, "pista alcançável a pé: " + cid)
 
-	# Os pés da armação do balanço bloqueiam o caminho; o espaço entre eles continua livre.
+	# Os pés da armação do balanço bloqueiam o caminho e, desde 8/11 (Léo: colisão do parquinho pequena), o vão entre eles também.
 	for i in range(1, 5):
 		var foot: Rect2 = room.scenario.colliders["balanco_pe_%d" % i]
 		_check(not Pathfinder.is_free(foot.get_center(), room._obstacles(room.player), room.player.radius), "pé %d do balanço é sólido" % i)
-	_check(Pathfinder.is_free(Vector2(1197, 640), room._obstacles(room.player), room.player.radius), "dá para passar entre os pés do balanço")
+	_check(not Pathfinder.is_free(Vector2(1197, 640), room._obstacles(room.player), room.player.radius), "o vão do balanço é sólido")
+	_check(not Pathfinder.is_free(Vector2(960, 830), room._obstacles(room.player), room.player.radius), "o centro do carrossel é sólido")
+	_check(not Pathfinder.is_free(Vector2(895, 830), room._obstacles(room.player), room.player.radius), "o aro do carrossel é sólido")
 	# Os pneus ficam onde estão no desenho: o do meio é sólido e o chão da areia ao lado, livre.
 	_check(not Pathfinder.is_free(Vector2(610, 765), room._obstacles(room.player), room.player.radius), "pneus a oeste são sólidos")
 	_check(Pathfinder.is_free(Vector2(700, 800), room._obstacles(room.player), room.player.radius), "a areia ao lado dos pneus é livre")
