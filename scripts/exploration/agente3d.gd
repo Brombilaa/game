@@ -23,6 +23,15 @@ const MODELOS := {
 	"criatura": {"modelo": "res://assets/3d/personagens/criatura.fbx", "biblioteca": "res://assets/3d/animacoes/criatura.res",
 		"textura": "res://assets/3d/personagens/criatura_textura.png", "altura": 2.45},
 }
+# Distância (unidades 3D) de um ciclo completo de cada caminhada, medida pelo pé de cada modelo (Léo, 08/11: "algumas
+# animações estão rápidas ao caminhar e outras lentas"). O ciclo anda pela distância percorrida no chão, então o pé não
+# escorrega e a velocidade é a mesma em qualquer direção (antes contava a distância na tela, que muda com a direção).
+const PASSADA := {
+	"nikolai3d": {"walk": 1.93, "crouch_walk": 1.54, "pistol_walk": 2.09, "run": 2.15},
+	"fernando3d": {"walk": 2.14, "crouch_walk": 1.71, "pistol_walk": 2.32, "run": 2.38},
+	"miguel3d": {"walk": 2.23, "crouch_walk": 1.81, "pistol_walk": 2.42, "run": 2.49},
+	"caio3d": {"walk": 2.23, "crouch_walk": 1.81, "pistol_walk": 2.42, "run": 2.49},
+}
 # Animações das folhas que ainda não existem no Mixamo: usam a mais próxima.
 const TROCA := {"rifle_walk": "pistol_walk", "pickup": "pickup_object", "opening": "pickup_object", "pistol_aim_prov": "pistol_idle", "reload": "pistol_idle"}
 
@@ -47,6 +56,10 @@ var _passo := 0.0  # tamanho do degrau (fase)
 var _ritmo := 0.0  # fase por segundo, medida pelos degraus
 var _mudou := 0  # ms da última troca de degrau
 var _ultima_pose := -1
+var _pasta := ""
+var _andado := 0.0  # distância percorrida no chão (unidades 3D), para o ciclo da caminhada
+var _ultima_pos := Vector3.INF
+var _desvio := randf()  # cada personagem respira fora de sincronia com os outros
 var esqueleto: Skeleton3D
 var pistola: Node3D  # arma na mão direita (só os agentes; aparece nas animações de pistola)
 var espingarda: Node3D  # escopeta/fuzil (animações de rifle)
@@ -59,6 +72,7 @@ static func tem_modelo(pasta: String) -> bool:
 
 
 func _init(pasta: String) -> void:
+	_pasta = pasta
 	var info: Dictionary = MODELOS[pasta]
 	modelo = (load(info["modelo"]) as PackedScene).instantiate()
 	add_child(modelo)
@@ -160,12 +174,25 @@ func pose(anim: String, fase: float, continua := false) -> void:
 	_ultima_pose = agora
 	var a := player.get_animation(anim)
 	var laco := a.loop_mode != Animation.LOOP_NONE
+	var golpe := continua  # só os golpes do combate chegam com a fase pronta
+	var chao := Vector3(position.x, 0.0, position.z)
+	if _ultima_pos != Vector3.INF:
+		_andado += minf(chao.distance_to(_ultima_pos), 1.0)  # teleporte (troca de área) não conta
+	_ultima_pos = chao
+	if not continua:
+		var passada: Dictionary = PASSADA.get(_pasta, {})
+		if passada.has(anim):  # caminhada: pela distância andada
+			fase = fposmod(_andado / passada[anim], 1.0)
+			continua = true
+		elif laco:  # parado em laço (respirar, mira): na velocidade do próprio clipe, não na da folha
+			fase = fposmod(agora / 1000.0 / a.length + _desvio, 1.0)
+			continua = true
 	if anim != atual:
 		if atual != "":
 			_velha = atual
 			_fase_velha = _fase
 			_mistura = 0.0
-			_dur_mistura = MISTURA_GOLPE if continua else MISTURA
+			_dur_mistura = MISTURA_GOLPE if golpe else MISTURA
 		atual = anim
 		_fase = fase
 		_alvo = fase

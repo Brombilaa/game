@@ -32,7 +32,7 @@ const TOM_BOINA := Vector3(0.60, 0.52, 0.56)  # boina mais escura e menos vermel
 const SOL_PERSONAGEM := Vector3(0.66, 1.41, 2.18)
 const SOL_BOINA := Vector3(0.85, 0.92, 1.15)
 const CONTRASTE_BOINA := Vector3(0.2, 0.2, 0.25)  # as manchas escuras do tecido quase somem no JS
-const GRUPO := [Vector2(450, 690), Vector2(510, 660), Vector2(570, 625)]
+const GRUPO := [Vector2(450, 690), Vector2(510, 660), Vector2(545, 610)]  # Miguel fora dos pneus (colisão maior desde a PR #120 o prendia)
 
 # Luz ajustada à mão para casar com o render de referência do three.js (estilo PC antigo).
 @export var luz_sol := 0.22
