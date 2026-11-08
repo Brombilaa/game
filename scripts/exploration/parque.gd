@@ -51,9 +51,9 @@ var world3d: Node3D  # parque3d.gd embutido
 var cards: Array[MeshInstance3D] = []  # cartões dos personagens no 3D, reaproveitados a cada quadro
 var blobs: Array[MeshInstance3D] = []  # sombra de contato sob cada cartão
 var cards_used := 0
-var agentes := {}  # personagem (Combatant) -> Agente3D, modelo 3D com esqueleto
+var agentes := {}  # personagem (Combatant) ou id do NPC -> Agente3D, modelo 3D com esqueleto
 var agentes_usados := {}  # personagens com modelo desenhado neste quadro
-var drawing_unit: Combatant  # personagem sendo desenhado (para o AnimSheet achar o modelo dele)
+var drawing_key: Variant = null  # personagem (ou id do NPC) sendo desenhado, para a folha achar o modelo dele
 
 
 func _ready() -> void:
@@ -297,27 +297,27 @@ const DIR_TELA := [Vector2(1, 0), Vector2(1, 0.5), Vector2(0, 1), Vector2(-1, 0.
 
 
 func _draw_unit(u: Combatant) -> void:
-	drawing_unit = u
+	drawing_key = u
 	super(u)
-	drawing_unit = null
+	drawing_key = null
 
 
 # Chamado pelo AnimSheet antes de desenhar a folha: se o personagem tem modelo 3D (Agente3D), o modelo faz a pose
 # e a folha não é desenhada. A fase (quadro / total) mantém o mesmo tempo das animações do jogo.
 func _model3d(pasta: String, pos: Vector2, anim: String, fase: float, dir: CharacterSheet.Dir) -> bool:
-	if world3d == null or drawing_unit == null or not Agente3D.tem_modelo(pasta):
+	if world3d == null or drawing_key == null or not Agente3D.tem_modelo(pasta):
 		return false
-	var ag: Agente3D = agentes.get(drawing_unit)
+	var ag: Agente3D = agentes.get(drawing_key)
 	if ag == null:
 		ag = Agente3D.new(pasta)
 		world3d.mundo.add_child(ag)
-		agentes[drawing_unit] = ag
+		agentes[drawing_key] = ag
 	var g := _uniso(pos)
 	ag.position = Vector3(g.x / 64.0, 0.0, g.y / 64.0)
 	var frente := _uniso(pos + DIR_TELA[dir] * 32.0) - g
 	ag.rotation.y = atan2(frente.x, frente.y)
 	ag.pose(anim, fase)
-	agentes_usados[drawing_unit] = true
+	agentes_usados[drawing_key] = true
 	# Sombra de contato: reaproveita a mancha dos cartões (cartão escondido).
 	if cards_used == cards.size():
 		_new_card()
@@ -391,7 +391,9 @@ func _draw_npc(font: Font, npc_id: String) -> void:
 	var at := _iso(scenario.npcs[npc_id])
 	_draw_cast_shadow(at, 86.0, 22.0)
 	if npc_id == "caio":
+		drawing_key = npc_id
 		caio3d.draw(self, at, caio3d.frame_at(Time.get_ticks_msec()), CharacterSheet.Dir.SE)
+		drawing_key = null
 		queue_redraw()  # a respiração anima
 		return
 	draw_rect(Rect2(at + Vector2(-11, -66), Vector2(22, 60)), NPC_COLORS[npc_id])

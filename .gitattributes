@@ -49,3 +49,5 @@ assets/sprites/ui/inventario_moldura.png -filter -diff -merge -text
 assets/sprites/ui/inv/*.png -filter -diff -merge -text
 assets/sprites/ui/condicoes/*.png -filter -diff -merge -text
 assets/sprites/personagens/criatura_sangue/*.png -filter -diff -merge -text
+# Textura da Criatura de Sangue 3D (o FBX do Mixamo não traz a textura embutida).
+assets/3d/personagens/criatura_textura.png -filter -diff -merge -text
