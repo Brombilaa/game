@@ -51,6 +51,9 @@ var world3d: Node3D  # parque3d.gd embutido
 var cards: Array[MeshInstance3D] = []  # cartões dos personagens no 3D, reaproveitados a cada quadro
 var blobs: Array[MeshInstance3D] = []  # sombra de contato sob cada cartão
 var cards_used := 0
+var agentes := {}  # personagem (Combatant) -> Agente3D, modelo 3D com esqueleto
+var agentes_usados := {}  # personagens com modelo desenhado neste quadro
+var drawing_unit: Combatant  # personagem sendo desenhado (para o AnimSheet achar o modelo dele)
 
 
 func _ready() -> void:
@@ -166,6 +169,7 @@ func _draw() -> void:
 	if world3d:
 		_sync_camera3d()
 		cards_used = 0
+		agentes_usados.clear()
 	else:
 		draw_rect(view, VOID_COLOR)  # fora do parque é escuro, não o cinza do render
 		if extended:
@@ -201,6 +205,8 @@ func _draw() -> void:
 			draw_texture(occluder_textures[o["id"]], o["pos"] - scenario.backdrop_origin)
 	if world3d:
 		_hide_unused_cards()
+		for u in agentes:
+			agentes[u].visible = agentes_usados.has(u)
 	if mode == Mode.EXPLORATION:
 		_draw_clue_hints()  # por cima dos recortes: a bolinha da árvore ficava escondida atrás da copa
 	if mode == Mode.COMBAT:
@@ -285,6 +291,41 @@ func _sprite3d(tex: Texture2D, src: Rect2, pivot: Vector2, scale: float, flip: b
 	card.visible = true
 	blob.position = feet + Vector3(0.0, 0.02, 0.0)
 	blob.visible = true
+
+
+const DIR_TELA := [Vector2(1, 0), Vector2(1, 0.5), Vector2(0, 1), Vector2(-1, 0.5), Vector2(-1, 0), Vector2(-1, -0.5), Vector2(0, -1), Vector2(1, -0.5)]  # CharacterSheet.Dir na tela
+
+
+func _draw_unit(u: Combatant) -> void:
+	drawing_unit = u
+	super(u)
+	drawing_unit = null
+
+
+# Chamado pelo AnimSheet antes de desenhar a folha: se o personagem tem modelo 3D (Agente3D), o modelo faz a pose
+# e a folha não é desenhada. A fase (quadro / total) mantém o mesmo tempo das animações do jogo.
+func _model3d(pasta: String, pos: Vector2, anim: String, fase: float, dir: CharacterSheet.Dir) -> bool:
+	if world3d == null or drawing_unit == null or not Agente3D.tem_modelo(pasta):
+		return false
+	var ag: Agente3D = agentes.get(drawing_unit)
+	if ag == null:
+		ag = Agente3D.new(pasta)
+		world3d.mundo.add_child(ag)
+		agentes[drawing_unit] = ag
+	var g := _uniso(pos)
+	ag.position = Vector3(g.x / 64.0, 0.0, g.y / 64.0)
+	var frente := _uniso(pos + DIR_TELA[dir] * 32.0) - g
+	ag.rotation.y = atan2(frente.x, frente.y)
+	ag.pose(anim, fase)
+	agentes_usados[drawing_unit] = true
+	# Sombra de contato: reaproveita a mancha dos cartões (cartão escondido).
+	if cards_used == cards.size():
+		_new_card()
+	cards[cards_used].visible = false
+	blobs[cards_used].position = ag.position + Vector3(0.0, 0.02, 0.0)
+	blobs[cards_used].visible = true
+	cards_used += 1
+	return true
 
 
 func _new_card() -> void:
