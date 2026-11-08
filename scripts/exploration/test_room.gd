@@ -1793,6 +1793,14 @@ func _update_followers(delta: float) -> void:
 				# Dois seguidores se encostaram e um ficou dentro do obstáculo do outro: sem esta rota
 				# de reserva (só paredes e coberturas) ele ficaria parado para sempre.
 				route = pathfinder.find_path(m.pos, goal, _obstacles(m, false), m.radius)
+			if route.is_empty():
+				# Ainda sem rota: ele está dentro de uma colisão do cenário (Léo, 08/11: "Miguel tá travado", nasceu
+				# dentro dos pneus). Sai para o ponto livre mais próximo e tenta de novo no próximo quadro.
+				var livre := _ponto_livre_perto(m)
+				if livre != m.pos:
+					m.pos = livre
+					queue_redraw()
+					continue
 			if not route.is_empty():
 				route.remove_at(0)
 		if route.is_empty():
@@ -1807,6 +1815,21 @@ func _update_followers(delta: float) -> void:
 			route.remove_at(0)
 		follow_paths[m] = route
 		queue_redraw()
+
+
+# Ponto mais próximo de `m` fora das colisões do cenário (anéis de 8 em 8 px, até 96 px); sem nenhum, a própria posição.
+func _ponto_livre_perto(m: Combatant) -> Vector2:
+	for raio in range(8, 97, 8):
+		for k in 16:
+			var q := m.pos + Vector2.RIGHT.rotated(TAU * k / 16.0) * raio
+			var livre := true
+			for o in _obstacles(m, false):
+				if (o as Rect2).grow(m.radius).has_point(q):
+					livre = false
+					break
+			if livre:
+				return q
+	return m.pos
 
 
 # Medida do desenho em tamanho cheio -> pixels da ficha na escala atual.

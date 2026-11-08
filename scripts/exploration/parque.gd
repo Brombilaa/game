@@ -32,8 +32,8 @@ const USE_WORLD3D := true
 const PARQUE3D := preload("res://scenes/exploration/parque3d.tscn")
 const P3D := preload("res://scripts/exploration/parque3d.gd")
 const PX_UNIT := 67.88  # px do desenho por unidade 3D, nos eixos da câmera (48 / sqrt(0.5))
-const NEVOA_FORCA := 0.6  # névoa de distância do protótipo JS (1 = igual); modelo C, escolhido pelo Léo em 8/11
-const NEVOA_BAIXA := 0.55  # névoa rente ao chão (modelo C, escolhido pelo Léo em 8/11)
+const NEVOA_FORCA := 0.15  # névoa de distância do protótipo JS (1 = igual). Léo, 08/11: "muito forte e num png forte"; antes 0,6 (modelo C)
+const NEVOA_BAIXA := 0.3  # névoa rente ao chão, só até a canela e em fiapos (antes 0,55 até a cintura)
 const CARD_LIFT := 0.3  # cartão adiantado na direção da câmera: a sola não afunda no chão (não muda o lugar na tela)
 
 var scenario: Scenario

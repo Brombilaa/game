@@ -15,7 +15,7 @@
 	},
 	"_oclusores": "recortes do fundo (mesmos pixels) desenhados por cima de quem está atrás do objeto; pos = canto do recorte na imagem do fundo; a ordem usa o retângulo de colisão de mesmo id (gerados por fonte_3d/shot3.js)",
 	"inicio": {
-		"grupo": [[450, 690], [510, 660], [570, 625]],
+		"grupo": [[450, 690], [510, 660], [545, 610]],
 		"npcs": [{"id": "caio", "pos": [330, 740]}, {"id": "leticia", "pos": [390, 705]}]
 	},
 	"colisoes": [

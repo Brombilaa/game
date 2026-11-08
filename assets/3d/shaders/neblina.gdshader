@@ -12,7 +12,7 @@ uniform float forca = 1.0;  // multiplica a névoa de distância do JS (1 = igua
 // Névoa baixa (Léo, 08/11: a névoa de distância parecia um PNG por cima): camada rente ao chão que
 // vai sumindo com a altura e se mexe devagar, presa ao mundo e não à tela. 0 desliga.
 uniform float baixa = 0.0;
-uniform float altura = 1.4;  // unidades 3D (o herói tem 2,2)
+uniform float altura = 0.7;  // unidades 3D (o herói tem 2,2): só até a canela (Léo, 08/11: forte demais)
 uniform vec3 cor_baixa = vec3(0.30, 0.31, 0.29);
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
@@ -39,7 +39,7 @@ void fragment() {
 	if (baixa > 0.0 && d < 1.0) {
 		vec3 mundo = (INV_VIEW_MATRIX * vec4(v.xyz / v.w, 1.0)).xyz;
 		float n = fbm(mundo.xz * 0.35 + vec2(TIME * 0.05, TIME * 0.02));
-		rente = (1.0 - smoothstep(0.0, altura, mundo.y)) * mix(0.35, 1.0, n) * baixa;
+		rente = (1.0 - smoothstep(0.0, altura, mundo.y)) * smoothstep(0.25, 0.85, n) * baixa;  // fiapos com buracos, não um véu contínuo
 	}
 	float a = clamp(distante + rente - distante * rente, 0.0, 1.0);
 	ALBEDO = mix(cor_baixa, cor, distante / max(distante + rente, 0.0001));
