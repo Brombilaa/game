@@ -29,13 +29,15 @@ const NAMES := ["idle", "walk", "pistol_idle", "pistol_walk", "crouch_walk", "ri
 var textures := {}  # animação -> {"se": Texture2D, ...}; carregadas na primeira vez que a animação aparece
 var folder := ""
 var prefix := ""
+var quadros: AnimSheet  # personagem só em 3D (sem folhas, ex.: Miguel): conta os quadros pelas folhas desta
 
 
 # O Fernando usa as mesmas animações do Nikolai (mesmo esqueleto do Mixamo): `AnimSheet.new("fernando3d", "fernando3d")`.
 # As folhas são carregadas sob demanda: as 20 animações de um personagem em memória de vídeo passariam de 1 GB.
-func _init(p_folder := "nikolai3d", p_prefix := "nikolai3d") -> void:
+func _init(p_folder := "nikolai3d", p_prefix := "nikolai3d", p_quadros: AnimSheet = null) -> void:
 	folder = p_folder
 	prefix = p_prefix
+	quadros = p_quadros
 
 
 # Folha da animação numa direção ("se", "e", "ne", "s", "n").
@@ -54,6 +56,8 @@ static func frame_size(anim: String) -> Vector2i:
 
 
 func frame_count(anim: String) -> int:
+	if quadros:
+		return quadros.frame_count(anim)
 	return int(texture(anim, "e").get_width() / frame_size(anim).x)
 
 
@@ -61,6 +65,8 @@ func frame_count(anim: String) -> int:
 func draw(canvas: CanvasItem, pos: Vector2, anim: String, frame: int, dir: CharacterSheet.Dir) -> void:
 	if canvas.has_method("_model3d") and canvas._model3d(folder, pos, anim, float(frame) / maxf(frame_count(anim), 1), dir):
 		return  # parque 3D: o modelo 3D do personagem faz a pose no lugar da folha
+	if quadros:
+		return  # sem folhas próprias: só existe como modelo 3D
 	var info: Array = CharacterSheet.SHEET_OF[dir]
 	var tex: Texture2D = texture(anim, info[0])
 	var fs := Vector2(frame_size(anim))
