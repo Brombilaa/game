@@ -26,6 +26,13 @@ const CAMERA_ZOOM := 1.5  # zoom inicial da câmera (a roda do mouse muda); câm
 const VIGNETTE_SIZE := 128  # textura da vinheta, esticada sobre a tela
 const VIGNETTE_STRENGTH := 0.4
 const FRAME_BG := Color(0.063, 0.043, 0.031, 0.95)
+# Cenário 3D ao vivo (Léo, 08/11/2026: migração completa para o parque 3D). O fundo assado e os recortes de
+# oclusão ficam só como reserva (USE_WORLD3D = false). A projeção é a mesma: 1 unidade 3D = 64 px do plano.
+const USE_WORLD3D := true
+const PARQUE3D := preload("res://scenes/exploration/parque3d.tscn")
+const P3D := preload("res://scripts/exploration/parque3d.gd")
+const PX_UNIT := 67.88  # px do desenho por unidade 3D, nos eixos da câmera (48 / sqrt(0.5))
+const CARD_LIFT := 0.3  # cartão adiantado na direção da câmera: a sola não afunda no chão (não muda o lugar na tela)
 
 var scenario: Scenario
 var backdrop: Texture2D
@@ -38,6 +45,10 @@ var dialog_clue := ""
 var dialog_text: Label
 var dialog_image: TextureRect
 var vignette: Texture2D
+var world3d: Node3D  # parque3d.gd embutido
+var cards: Array[MeshInstance3D] = []  # cartões dos personagens no 3D, reaproveitados a cada quadro
+var blobs: Array[MeshInstance3D] = []  # sombra de contato sob cada cartão
+var cards_used := 0
 
 
 func _ready() -> void:
@@ -49,6 +60,10 @@ func _ready() -> void:
 	for o in scenario.occluders:
 		occluder_textures[o["id"]] = load(o["arquivo"])
 	_load_layout()
+	if USE_WORLD3D:
+		world3d = PARQUE3D.instantiate()
+		world3d.embutido = true
+		add_child(world3d)
 	super()
 	var corners := [_iso(Vector2.ZERO), _iso(Vector2(scenario.size.x, 0)), _iso(Vector2(0, scenario.size.y)), _iso(scenario.size)]
 	camera.zoom = Vector2(CAMERA_ZOOM, CAMERA_ZOOM)
@@ -140,10 +155,14 @@ func _draw() -> void:
 	var _draw_t0 := Time.get_ticks_usec()
 	var font := ThemeDB.fallback_font
 	var view := get_canvas_transform().affine_inverse() * Rect2(Vector2.ZERO, get_viewport_rect().size)
-	draw_rect(view, VOID_COLOR)  # fora do parque é escuro, não o cinza do render
-	if extended:
-		draw_texture(extended, scenario.extended_pos - scenario.backdrop_origin)
-	draw_texture(backdrop, -scenario.backdrop_origin)
+	if world3d:
+		_sync_camera3d()
+		cards_used = 0
+	else:
+		draw_rect(view, VOID_COLOR)  # fora do parque é escuro, não o cinza do render
+		if extended:
+			draw_texture(extended, scenario.extended_pos - scenario.backdrop_origin)
+		draw_texture(backdrop, -scenario.backdrop_origin)
 	if mode == Mode.EXPLORATION:
 		for e in enemies:
 			if e.is_alive():
@@ -157,7 +176,7 @@ func _draw() -> void:
 	# Oclusão: o recorte de cada objeto é desenhado logo antes do primeiro personagem que está na
 	# frente dele (todos os de antes ficam cobertos; os da frente são desenhados depois, por cima).
 	var after := {}  # índice do item -> recortes a desenhar depois dele
-	for o in scenario.occluders:
+	for o in ([] if world3d else scenario.occluders):  # no 3D a profundidade já esconde quem está atrás
 		var cut := items.size()
 		for i in items.size():
 			if Scenario.in_front(items[i].pos, o["rect"]):
@@ -172,6 +191,8 @@ func _draw() -> void:
 			_draw_npc(font, items[i].npc)
 		for o in after.get(i, []):
 			draw_texture(occluder_textures[o["id"]], o["pos"] - scenario.backdrop_origin)
+	if world3d:
+		_hide_unused_cards()
 	if mode == Mode.EXPLORATION:
 		_draw_clue_hints()  # por cima dos recortes: a bolinha da árvore ficava escondida atrás da copa
 	if mode == Mode.COMBAT:
@@ -206,6 +227,108 @@ func _draw_hud(font: Font) -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE / camera.zoom.x)
 	super(font)
 	draw_set_transform(Vector2.ZERO)
+
+
+# --- Parque 3D ----------------------------------------------------------------------------------
+
+# Câmera 3D na mesma vista da Camera2D: o centro da tela cai no mesmo ponto do chão e o zoom vira o tamanho ortográfico.
+func _sync_camera3d() -> void:
+	var cam: Camera3D = world3d.camera
+	var view := get_viewport_rect().size
+	var xf := get_canvas_transform()
+	var center := _uniso(xf.affine_inverse() * (view * 0.5))
+	var target := Vector3(center.x / 64.0, 0.0, center.y / 64.0)
+	cam.size = view.y / (xf.get_scale().y * PX_UNIT)
+	cam.position = target + _to_camera() * P3D.DIST
+	cam.look_at(target, Vector3.UP)
+
+
+# Direção do chão para a câmera (azimute de 45°, elevação ELEV do parque3d).
+func _to_camera() -> Vector3:
+	var e: float = P3D.ELEV
+	return Vector3(cos(e) * sin(PI / 4.0), sin(e), cos(e) * cos(PI / 4.0))
+
+
+# Chamado pelas folhas (AnimSheet, IdleSheet, CreatureSheet) no lugar de desenhar no 2D: o quadro vira um
+# cartão em pé nos pés do personagem, virado para a câmera, com a altura corrigida pela inclinação da câmera
+# (assim ocupa na tela exatamente o mesmo lugar do desenho 2D).
+func _sprite3d(tex: Texture2D, src: Rect2, pivot: Vector2, scale: float, flip: bool, pos: Vector2) -> void:
+	if cards_used == cards.size():
+		_new_card()
+	var card := cards[cards_used]
+	var blob := blobs[cards_used]
+	cards_used += 1
+	var cos_e := cos(P3D.ELEV)
+	var w := src.size.x * scale / PX_UNIT
+	var h := src.size.y * scale / (PX_UNIT * cos_e)
+	(card.mesh as QuadMesh).size = Vector2(w, h)
+	var m := card.material_override as ShaderMaterial
+	var ts := tex.get_size()
+	m.set_shader_parameter("folha", tex)
+	m.set_shader_parameter("regiao", Vector4(src.position.x / ts.x, src.position.y / ts.y, src.size.x / ts.x, src.size.y / ts.y))
+	m.set_shader_parameter("espelhar", flip)
+	var g := _uniso(pos)
+	var feet := Vector3(g.x / 64.0, 0.0, g.y / 64.0)
+	var right := Vector3(cos(PI / 4.0), 0.0, -sin(PI / 4.0))
+	var dx := (src.size.x * 0.5 - pivot.x) * scale / PX_UNIT * (-1.0 if flip else 1.0)
+	var dy := (pivot.y - src.size.y * 0.5) * scale / (PX_UNIT * cos_e)
+	card.position = feet + _to_camera() * CARD_LIFT + right * dx + Vector3(0.0, dy, 0.0)
+	card.visible = true
+	blob.position = feet + Vector3(0.0, 0.02, 0.0)
+	blob.visible = true
+
+
+func _new_card() -> void:
+	var card := MeshInstance3D.new()
+	card.mesh = QuadMesh.new()
+	var m := ShaderMaterial.new()
+	m.shader = preload("res://assets/3d/shaders/personagem_cartao.gdshader")
+	card.material_override = m
+	card.rotation.y = PI / 4.0  # de frente para a câmera
+	card.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	card.extra_cull_margin = 4.0
+	world3d.mundo.add_child(card)
+	cards.append(card)
+	var blob := MeshInstance3D.new()
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(1.0, 1.0)
+	blob.mesh = plane
+	blob.material_override = _blob_material()
+	blob.rotation.y = PI / 4.0
+	blob.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	world3d.mundo.add_child(blob)
+	blobs.append(blob)
+
+
+var _blob_mat: StandardMaterial3D
+# Sombra de contato: mancha suave sob os pés (o Compatibility não tem sombra de contato nem decal).
+func _blob_material() -> StandardMaterial3D:
+	if _blob_mat:
+		return _blob_mat
+	var img := Image.create(64, 64, false, Image.FORMAT_RGBA8)
+	for y in 64:
+		for x in 64:
+			var d := Vector2(x - 31.5, y - 31.5).length() / 31.5
+			var a := clampf(1.0 - d, 0.0, 1.0)
+			img.set_pixel(x, y, Color(0, 0, 0, a * a * 0.5))
+	_blob_mat = StandardMaterial3D.new()
+	_blob_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_blob_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_blob_mat.albedo_texture = ImageTexture.create_from_image(img)
+	_blob_mat.disable_receive_shadows = true
+	return _blob_mat
+
+
+func _hide_unused_cards() -> void:
+	for i in range(cards_used, cards.size()):
+		cards[i].visible = false
+		blobs[i].visible = false
+
+
+# No 3D a sombra vem da mancha de contato embaixo do cartão; a elipse 2D ficaria por cima das árvores.
+func _draw_cast_shadow(at: Vector2, height: float, radius: float) -> void:
+	if world3d == null:
+		super(at, height, radius)
 
 
 # Objetivos do HUD: investigar o parque, depois o símbolo da árvore; em combate, sobreviver.

@@ -43,6 +43,10 @@ const GRUPO := [Vector2(450, 690), Vector2(510, 660), Vector2(570, 625)]
 @export var luz_ceu := 0.07  # HemisphereLight do JS: diferença céu/chão (de cima positiva, de baixo negativa)
 @export var luz_ambiente := 0.10  # média do céu e do chão; com luz_ceu, o chão plano recebe ~0,17 como antes
 @export var um_andando := false  # liga o Nikolai do meio com esqueleto e a animação de andar
+# Embutido no jogo (parque.gd): sem os três Nikolai de exemplo e com o filtro PC antigo só sobre o mundo 3D
+# (o HUD e os textos, desenhados por cima, não passam pelo filtro).
+@export var embutido := false
+var camada_mundo: CanvasLayer
 var camera: Camera3D
 var mundo: SubViewport  # o 3D é desenhado a ~1000 px de altura com MSAA 4x e ampliado, como o protótipo
 var agentes: Array[Node3D] = []
@@ -55,8 +59,9 @@ func _ready() -> void:
 	_camera()
 	_oclusao()
 	_neblina()
-	for i in GRUPO.size():
-		agentes.append(_agente(GRUPO[i], i))
+	if not embutido:
+		for i in GRUPO.size():
+			agentes.append(_agente(GRUPO[i], i))
 	_efeito_pc_antigo()
 
 
@@ -74,10 +79,10 @@ func _mundo() -> void:
 	tr.stretch_mode = TextureRect.STRETCH_SCALE
 	tr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var camada := CanvasLayer.new()
-	camada.layer = -1
-	camada.add_child(tr)
-	add_child(camada)
+	camada_mundo = CanvasLayer.new()
+	camada_mundo.layer = -1
+	camada_mundo.add_child(tr)
+	add_child(camada_mundo)
 	_ajustar_resolucao()
 	get_viewport().size_changed.connect(_ajustar_resolucao)
 
@@ -362,5 +367,8 @@ func _efeito_pc_antigo() -> void:
 	var m := ShaderMaterial.new()
 	m.shader = load("res://assets/3d/shaders/pc_antigo.gdshader")
 	r.material = m
+	if embutido:  # logo depois do mundo, na mesma camada: filtra só o 3D
+		camada_mundo.add_child(r)
+		return
 	camada.add_child(r)
 	add_child(camada)
