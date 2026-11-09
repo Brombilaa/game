@@ -13,7 +13,7 @@ func _init(owner_room: TestRoom) -> void:
 # Minimapa: radar redondo visto de cima, centrado no controlado (Léo escolheu, 29/10/2026).
 # Só desenha o que o grupo já descobriu: o outro lado de uma porta nunca aberta não aparece,
 # e inimigos só aparecem enquanto estão à vista.
-const RADAR_CENTER := Vector2(910, 40)  # pixels da tela
+const RADAR_CENTER := Vector2(916, 42)  # o aro encosta no canto direito (borda em 950)  # pixels da tela
 const RADAR_RADIUS := 28.0  # área do mapa; o aro da moldura A fica 6 px para fora
 const RADAR_SCALE := 0.056  # pixels do radar por unidade da sala
 const RADAR_GRID := 64.0  # um losango do chão, em unidades da sala
@@ -69,7 +69,7 @@ func _draw_minimap(font: Font, to_world: Transform2D) -> void:
 			room.draw_polyline(seg, color, width)
 
 	# Fundo escuro no círculo inteiro do aro.
-	room.draw_circle(center, RADAR_RADIUS + 6, Color(0.04, 0.03, 0.02, 0.92))
+	room.draw_circle(center, RADAR_RADIUS + 1, Color(0.03, 0.03, 0.04, 0.92))
 	for c in known:
 		fill.call(c, RADAR_FLOOR)
 		# Grade fraca de losangos do chão, só no que já foi visto.
@@ -134,17 +134,24 @@ func _draw_minimap(font: Font, to_world: Transform2D) -> void:
 	tri.append(tri[0])
 	room.draw_polyline(tri, RADAR_INK, 1.0)
 
-	# Moldura A: aro de bronze, filete interno e N, L, S e O em medalhões nos pontos cardeais.
-	var rim := RADAR_RADIUS + 6
-	room.draw_arc(center, rim, 0.0, TAU, 72, room.party_hud.FRAME_OUTER, 2.5)
-	room.draw_arc(center, RADAR_RADIUS + 1, 0.0, TAU, 72, room.party_hud.FRAME_INNER, 1.0)
+	# Aro no estilo dos cartões: contornos pretos, linha clara fina, marcas de grau e N, L, S e O em
+	# medalhões escuros; sombra por dentro para o mapa parecer afundado.
+	room.draw_arc(center, RADAR_RADIUS - 1.0, 0.0, TAU, 72, Color(0, 0, 0, 0.35), 2.0)
+	for k in 24:
+		var d := Vector2.RIGHT.rotated(TAU * k / 24.0)
+		room.draw_line(center + d * (RADAR_RADIUS - 2.5), center + d * RADAR_RADIUS, Color(1, 1, 1, 0.22), 0.5)
+	room.draw_arc(center, RADAR_RADIUS + 1.0, 0.0, TAU, 72, Color.BLACK, 2.0)
+	room.draw_arc(center, RADAR_RADIUS + 2.6, 0.0, TAU, 72, Color(0.04, 0.04, 0.05, 0.8), 1.0)
+	room.draw_arc(center, RADAR_RADIUS + 3.2, 0.0, TAU, 72, Color(1, 1, 1, 0.22), 0.5)
+	room.draw_arc(center, RADAR_RADIUS + 4.0, 0.0, TAU, 72, Color.BLACK, 1.0)
 	for c in [["N", Vector2.UP], ["L", Vector2.RIGHT], ["S", Vector2.DOWN], ["O", Vector2.LEFT]]:
-		var at: Vector2 = center + c[1] * rim
-		room.draw_circle(at, 8.5, Color(0.07, 0.047, 0.031))
-		room.draw_arc(at, 8.5, 0.0, TAU, 24, room.party_hud.FRAME_OUTER, 1.0)
-		room.draw_string(font, at + Vector2(-8.5, 3.5), c[0], HORIZONTAL_ALIGNMENT_CENTER, 17, 10, room.party_hud.FRAME_ACCENT)
-	# Placa com o local e o modo logo abaixo.
-	var plate := Rect2(center + Vector2(-50, rim + 9), Vector2(100, 30))
-	room.party_hud._draw_frame(plate)
-	room.draw_string(font, plate.position + Vector2(0, 12), room._place_label(), HORIZONTAL_ALIGNMENT_CENTER, plate.size.x, 8, Color(0.73, 0.65, 0.52))
-	room.draw_string(font, plate.position + Vector2(0, 24), HudText.mode_label(room.mode == room.Mode.COMBAT), HORIZONTAL_ALIGNMENT_CENTER, plate.size.x, 9, Color(0.93, 0.89, 0.8))
+		var at: Vector2 = center + c[1] * (RADAR_RADIUS + 4.0)
+		room.draw_circle(at, 5.5, Color.BLACK)
+		room.draw_circle(at, 4.5, Color(0.03, 0.03, 0.04))
+		room.draw_arc(at, 4.5, 0.0, TAU, 20, Color(1, 1, 1, 0.22), 0.5)
+		room.draw_string(font, at + Vector2(-5.5, 2.6), c[0], HORIZONTAL_ALIGNMENT_CENTER, 11, 7, Color(0.96, 0.94, 0.9))
+	# Local e modo logo abaixo, sem placa: texto solto com sombra leve, alinhado à direita do aro.
+	var right := center.x + RADAR_RADIUS + 4.0
+	var base := center.y + RADAR_RADIUS + 18.0
+	room.party_hud._draw_soft_text(font, Vector2(right - 120.0, base), room._place_label(), HORIZONTAL_ALIGNMENT_RIGHT, 120.0, 7, Color(0.78, 0.77, 0.74))
+	room.party_hud._draw_soft_text(font, Vector2(right - 120.0, base + 12.0), HudText.mode_label(room.mode == room.Mode.COMBAT), HORIZONTAL_ALIGNMENT_RIGHT, 120.0, 10, Color(0.96, 0.94, 0.9))

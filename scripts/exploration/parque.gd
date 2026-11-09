@@ -233,6 +233,11 @@ func _hud_to_world() -> Transform2D:
 	return Transform2D(0.0, -get_canvas_transform().origin)
 
 
+# O HUD é desenhado com a escala inversa ao zoom (ver _draw_hud).
+func _hud_draw_scale() -> Vector2:
+	return Vector2.ONE / camera.zoom.x
+
+
 # Afastar até o limite em que a câmera ainda cabe na imagem estendida (nunca mostra fora dela).
 func _zoom_min() -> float:
 	if extended == null:

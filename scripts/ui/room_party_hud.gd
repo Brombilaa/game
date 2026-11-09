@@ -230,49 +230,108 @@ func _draw_bar(font: Font, at: Vector2, kind: String, value: int, maximum: int, 
 	room.draw_string(font, bar.position + Vector2(room._k(5), bar.size.y - room._k(2.5)), "%d/%d" % [value, maximum], HORIZONTAL_ALIGNMENT_LEFT, -1, room._fs(9), Color(0.96, 0.93, 0.85))
 
 
-# Faixa no topo: retratos emoldurados na ordem da rodada, inimigos em vermelho, o da vez sublinhado.
-func _draw_turn_order(font: Font, to_world: Transform2D) -> void:
+# --- Vidro fosco (Léo escolheu o "fosco profundo", 09/11/2026) ---------------------------------------
+# Placa escura translúcida (o desfoque vem do shader de HudBlur, por trás), contorno preto, linha clara
+# fina por dentro, brilho no topo e marcas nos cantos. Mesma linguagem dos cartões do grupo.
+const HAIR := Color(1, 1, 1, 0.2)
+const TURN_CELL := 42.0
+const TURN_GAP := 7.0
+const TURN_PAD := 9.0
+const TURN_TOP := 13.0
+
+
+func _draw_fosco(r: Rect2) -> void:
+	for k in 3:  # sombra suave embaixo
+		room.draw_rect(Rect2(r.position + Vector2(0, 2), r.size).grow(2.0 + k * 2.0), Color(0, 0, 0, 0.08), false, 2.0)
+	room.draw_rect(r, Color(0.03, 0.03, 0.04, 0.3))  # complemento do shader (a sala de teste não tem mundo 3D por trás)
+	room.draw_rect(r.grow(1.0), Color.BLACK, false, 1.0)
+	room.draw_rect(r.grow(-0.5), HAIR, false, 0.5)
+	room.draw_line(r.position + Vector2(1, 1.0), Vector2(r.end.x - 1, r.position.y + 1.0), Color(1, 1, 1, 0.16), 0.5)
+	for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:
+		var o: Vector2 = r.position + corner * r.size
+		var d := Vector2(1.0 - corner.x * 2.0, 1.0 - corner.y * 2.0)
+		room.draw_polyline(PackedVector2Array([o + Vector2(2.5, 5.5) * d, o + Vector2(2.5, 2.5) * d, o + Vector2(5.5, 2.5) * d]), Color(1, 1, 1, 0.5), 0.5)
+
+
+# Texto solto com uma sombra bem leve (sem placa), para o que fica no canto da tela.
+func _draw_soft_text(font: Font, pos: Vector2, text: String, align: int, width: float, size: int, color: Color) -> void:
+	for off in [Vector2(0.5, 1.0), Vector2(1.0, 0.5), Vector2(0, 1.5), Vector2(1.0, 1.5)]:
+		room.draw_string(font, pos + off, text, align, width, size, Color(0, 0, 0, 0.14))
+	room.draw_string(font, pos, text, align, width, size, color)
+
+
+func turn_order_units() -> Array[Combatant]:
 	var units: Array[Combatant] = []
 	for u in room.turns.order:
 		if u.is_alive():
 			units.append(u)
-	var step := 56.0
-	var width := units.size() * step + 14
-	var screen_pos := Vector2(480 - width * 0.5, 8)
-	var pos := to_world * screen_pos
+	return units
+
+
+# Placa da ordem dos turnos, em pixels da tela, centrada no topo.
+func turn_order_rect() -> Rect2:
+	var n := turn_order_units().size()
+	var w := n * (TURN_CELL + TURN_GAP) - TURN_GAP + TURN_PAD * 2
+	return Rect2(Vector2(roundf(480 - w * 0.5), TURN_TOP), Vector2(w, TURN_CELL + TURN_PAD * 2 + 4))
+
+
+# Ordem da rodada: retratos quadrados com o nome embaixo, anel branco em quem está na vez, anel vermelho
+# nos inimigos e o número da rodada numa aba sobre a borda de cima.
+func _draw_turn_order(font: Font, to_world: Transform2D) -> void:
+	var units := turn_order_units()
+	var sr := turn_order_rect()
+	var r := Rect2(to_world * sr.position, sr.size)
 	var mouse := room.get_viewport().get_mouse_position()
 	var hovered: Combatant = null
 	var hover_rect := Rect2()
-	_draw_frame(Rect2(pos, Vector2(width, 66)))
+	_draw_fosco(r)
+	var label := "RODADA %d" % room.turns.round_number
+	var tw := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 6).x + 12.0
+	var tab := Rect2(Vector2(r.get_center().x - tw * 0.5, r.position.y - 5.0), Vector2(tw, 10.0))
+	room.draw_rect(tab, Color(0.02, 0.02, 0.03))
+	room.draw_rect(tab.grow(1.0), Color.BLACK, false, 1.0)
+	room.draw_rect(tab.grow(-0.5), HAIR, false, 0.5)
+	room.draw_string(font, tab.position + Vector2(0, 7.2), label, HORIZONTAL_ALIGNMENT_CENTER, tab.size.x, 6, Color(0.96, 0.94, 0.9))
 	for k in units.size():
 		var u := units[k]
-		var cell := Rect2(pos + Vector2(10 + k * step, 7), Vector2(50, 50))
-		_draw_frame(cell, u.side == Combatant.Side.ENEMY)
-		var face := cell.grow(-4)
-		room.draw_rect(face, Color(0.16, 0.12, 0.09))
-		_draw_face(u, face)
-		if u == room.turns.current:
-			room.draw_rect(Rect2(cell.position + Vector2(5, 52), Vector2(40, 2)), FRAME_ACCENT)
-		if Rect2(screen_pos + Vector2(10 + k * step, 7), cell.size).has_point(mouse):
+		var off := Vector2(TURN_PAD + k * (TURN_CELL + TURN_GAP), TURN_PAD + 2.0)
+		var cell := Rect2(r.position + off, Vector2(TURN_CELL, TURN_CELL))
+		var enemy := u.side == Combatant.Side.ENEMY
+		room.draw_rect(cell, Color(0.09, 0.07, 0.05))
+		_draw_face(u, cell)
+		if enemy:
+			room.draw_rect(Rect2(cell.position + Vector2(0, cell.size.y * 0.55), Vector2(cell.size.x, cell.size.y * 0.45)), Color(0.5, 0.08, 0.1, 0.3))
+		room.draw_rect(Rect2(cell.position + Vector2(0, cell.size.y - 9.0), Vector2(cell.size.x, 9.0)), Color(0, 0, 0, 0.62))
+		room.draw_string(font, cell.position + Vector2(0, cell.size.y - 2.5), u.name.get_slice(" ", 0).to_upper(), HORIZONTAL_ALIGNMENT_CENTER, cell.size.x, 5, Color(0.96, 0.94, 0.9))
+		room.draw_rect(cell.grow(1.0), Color.BLACK, false, 1.0)
+		if u == room.turns.current:  # anel branco entre dois pretos
+			room.draw_rect(cell.grow(3.5), Color.BLACK, false, 1.0)
+			room.draw_rect(cell.grow(2.5), Color.WHITE, false, 1.0)
+			room.draw_rect(cell.grow(1.5), Color.BLACK, false, 1.0)
+		elif enemy:
+			room.draw_rect(cell.grow(1.75), Color(0.82, 0.22, 0.25), false, 1.0)
+		if Rect2(sr.position + off, cell.size).has_point(mouse):
 			hovered = u
 			hover_rect = cell
-			room.draw_rect(face, Color(1, 1, 1, 0.18))
-	room.draw_string(font, pos + Vector2(0, 80), "RODADA %d" % room.turns.round_number, HORIZONTAL_ALIGNMENT_CENTER, width, 9, Color(0.72, 0.65, 0.52))
-	if hovered:  # nome embaixo do retrato sob o mouse
-		_draw_tooltip(font, Vector2(hover_rect.get_center().x, hover_rect.end.y + 26), hovered.name.to_upper(), "", hovered.side == Combatant.Side.ENEMY)
+			room.draw_rect(cell, Color(1, 1, 1, 0.14))
+	if hovered:  # nome completo embaixo do retrato sob o mouse
+		_draw_tooltip(font, Vector2(hover_rect.get_center().x, hover_rect.end.y + 12), hovered.name.to_upper(), "", hovered.side == Combatant.Side.ENEMY)
 
 
-# Etiqueta flutuante centrada em `top_center`, com uma segunda linha opcional.
+# Etiqueta flutuante centrada em `top_center`, com uma segunda linha opcional (mesmo vidro das placas).
 func _draw_tooltip(font: Font, top_center: Vector2, title: String, detail: String, enemy := false) -> void:
 	var w := font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
 	if detail != "":
 		w = maxf(w, font.get_string_size(detail, HORIZONTAL_ALIGNMENT_LEFT, -1, 9).x)
 	var tip := Rect2(top_center - Vector2(w * 0.5 + 7, 0), Vector2(w + 14, 31 if detail != "" else 19))
-	room.draw_rect(tip, Color(0.05, 0.04, 0.03, 0.96))
-	room.draw_rect(tip, FRAME_ENEMY if enemy else FRAME_ACCENT, false, 1.0)
-	room.draw_string(font, tip.position + Vector2(0, 13), title, HORIZONTAL_ALIGNMENT_CENTER, tip.size.x, 12, Color(0.93, 0.89, 0.8))
+	room.draw_rect(tip, Color(0.04, 0.04, 0.05, 0.94))
+	room.draw_rect(tip.grow(1.0), Color.BLACK, false, 1.0)
+	room.draw_rect(tip.grow(-0.5), Color(0.82, 0.22, 0.25, 0.7) if enemy else HAIR, false, 0.5)
+	room.draw_string(font, tip.position + Vector2(0, 13), title, HORIZONTAL_ALIGNMENT_CENTER, tip.size.x, 12, Color(0.96, 0.94, 0.9))
 	if detail != "":
-		room.draw_string(font, tip.position + Vector2(0, 26), detail, HORIZONTAL_ALIGNMENT_CENTER, tip.size.x, 9, Color(0.72, 0.65, 0.52))
+		room.draw_string(font, tip.position + Vector2(0, 26), detail, HORIZONTAL_ALIGNMENT_CENTER, tip.size.x, 9, Color(0.66, 0.64, 0.6))
+
+
 
 
 # Retrato ferido quando o PV está baixo (e a pessoa ainda não caiu).
@@ -288,6 +347,7 @@ func _creature_face() -> Texture2D:
 	if _creature_portrait == null and ResourceLoader.exists(path):
 		_creature_portrait = load(path)
 	return _creature_portrait
+
 
 
 func _draw_face(u: Combatant, rect: Rect2) -> void:
