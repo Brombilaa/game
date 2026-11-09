@@ -217,6 +217,7 @@ var hud := CombatHud.new()
 var party_hud := RoomPartyHud.new(self)
 var action_bar := RoomActionBar.new(self)
 var minimap := RoomMinimap.new(self)
+var hud_blur := HudBlur.new(self)
 var objectives_hud := RoomObjectivesHud.new(self)
 
 var audio := AudioDirector.new()
@@ -264,6 +265,7 @@ func _ready() -> void:
 	hud.room_draws_hud = true  # a sala desenha modo, PA e fim do turno na moldura A
 	add_child(hud)
 	add_child(audio)
+	add_child(hud_blur)
 	for path in AGENT_SHEETS:
 		agent_sheets.append(CharacterSheet.new(path))
 	looks[party[0]] = 0
@@ -1547,6 +1549,8 @@ func _draw_creature(u: Combatant, at: Vector2, walking: bool, dist: float) -> vo
 func _draw_health_bar(u: Combatant, at: Vector2) -> void:
 	var font := ThemeDB.fallback_font
 	var bar := Rect2(at + Vector2(-26, -CharacterSheet.HEIGHT - 8), Vector2(52, 6))
+	if _under_hud_panel(bar.get_center()):  # o nome e a barra não aparecem através do vidro fosco do HUD
+		return
 	var shown := float(fx.displayed_pv(u)) / maxf(u.max_pv, 1)
 	draw_string_outline(font, bar.position + Vector2(0, -3), u.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, 4, Color(0.05, 0.03, 0.02))
 	draw_string(font, bar.position + Vector2(0, -3), u.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(0.93, 0.89, 0.8))
@@ -1678,11 +1682,17 @@ func _draw_hit_label(font: Font, at: Vector2, target: Combatant) -> void:
 	for l in lines:
 		w = maxf(w, font.get_string_size(l, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x)
 	var box := Rect2(at + Vector2(16, -24 - 15 * lines.size()), Vector2(w + 12, 8 + 15 * lines.size()))
-	draw_rect(box, Color(0.07, 0.05, 0.035, 0.92))
-	draw_rect(box.grow(-0.5), Color(0.73, 0.55, 0.24), false, 1.0)
+	_draw_tag_box(box, Color(1, 1, 1, 0.22))
 	for i in lines.size():
 		var col := Color(0.89, 0.69, 0.3) if i == 0 else (Color(0.88, 0.55, 0.35) if i == 2 else Color(0.95, 0.9, 0.82))
 		draw_string(font, box.position + Vector2(6, 14 + 15 * i), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 12 if i == 0 else 11, col)
+
+
+# Etiqueta do jogo no mundo no estilo do HUD: placa escura, contorno preto e uma linha fina por dentro.
+func _draw_tag_box(box: Rect2, line: Color) -> void:
+	draw_rect(box, Color(0.04, 0.04, 0.05, 0.94))
+	draw_rect(box.grow(1.0), Color.BLACK, false, 1.0)
+	draw_rect(box.grow(-0.5), line, false, 0.75)
 
 
 # P2 (modelo B): linha de tiro tracejada; a cobertura que pesa ganha um escudo com a penalidade e a
@@ -1703,8 +1713,7 @@ func _draw_fire_line(font: Font, target: Combatant, blocker: String) -> void:
 		var at := from.lerp(to, k)
 		var label := "−%d%%" % roundi(float(cfg.cover("partial")["hit_penalty"]) * 100.0)
 		var r := Rect2(at + Vector2(-17, -26), Vector2(34, 16))
-		draw_rect(r, Color(0.07, 0.05, 0.035, 0.92))
-		draw_rect(r.grow(-0.5), Color(0.88, 0.55, 0.35), false, 1.0)
+		_draw_tag_box(r, Color(0.88, 0.55, 0.35, 0.6))
 		draw_string(font, r.position + Vector2(3, 12), label, HORIZONTAL_ALIGNMENT_CENTER, 28, 11, Color(0.88, 0.55, 0.35))
 
 
@@ -1731,8 +1740,7 @@ func _draw_move_path(font: Font, route: PackedVector2Array, reach: PackedVector2
 	var text := "%d PA%s" % [cost, " (parcial)" if over else ""]
 	var w := 36.0 if not over else 78.0
 	var tag := _iso(end_room) + Vector2(0, -20)
-	draw_rect(Rect2(tag - Vector2(w * 0.5, 9), Vector2(w, 16)), Color(0.04, 0.03, 0.025, 0.9))
-	draw_rect(Rect2(tag - Vector2(w * 0.5, 9), Vector2(w, 16)).grow(-0.5), gold, false, 0.75)
+	_draw_tag_box(Rect2(tag - Vector2(w * 0.5, 9), Vector2(w, 16)), Color(gold, 0.55))
 	draw_string(font, tag + Vector2(-w * 0.5 + 2, 3), text, HORIZONTAL_ALIGNMENT_CENTER, w - 4, 10, gold)
 
 
@@ -1923,6 +1931,30 @@ func _draw_hud(font: Font) -> void:
 # HUD com escala inversa ao zoom e troca isto por uma translação.
 func _hud_to_world() -> Transform2D:
 	return get_canvas_transform().affine_inverse()
+
+
+# Ponto do mundo que cai sobre uma placa de vidro fosco do HUD (com uma folga de 10 px).
+func _under_hud_panel(world: Vector2) -> bool:
+	var p := get_canvas_transform() * world
+	for r in _hud_blur_rects():
+		if r.grow(10.0).has_point(p):
+			return true
+	return false
+
+
+# Escala do desenho do HUD (a sala de teste desenha em pixels da tela; o parque troca pelo inverso do zoom).
+func _hud_draw_scale() -> Vector2:
+	return Vector2.ONE
+
+
+# Placas do HUD com vidro fosco por trás (pixels da tela): ordem dos turnos e barra de ações, no combate.
+func _hud_blur_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if mode == Mode.COMBAT and turns:
+		out.append(party_hud.turn_order_rect())
+		if _player_ready():
+			out.append(action_bar._bar_rect(action_bar._action_slots().size()))
+	return out
 
 
 # Partes da sala que o minimapa pode mostrar, em unidades da sala.

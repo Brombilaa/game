@@ -20,8 +20,6 @@ const BAR_PAD := 7.0  # da moldura até as casas
 const BAR_DIVIDER := 16.0  # vão entre as casas e o fim do turno
 const BAR_END_W := 92.0
 const BAR_BOTTOM := 532.0
-const BAR_FILL := Color(0.035, 0.026, 0.022, 0.84)
-const BAR_CRIMSON := Color(0.62, 0.09, 0.11)
 
 
 # Ações do rodapé no turno do jogador: [ícone, título, detalhe, ativa]. A arma secundária
@@ -91,123 +89,71 @@ func _draw_actions(font: Font, to_world: Transform2D) -> void:
 		room.party_hud._draw_tooltip(font, Vector2(er.get_center().x, er.position.y - 42), "Fim do turno", "Barra de espaço", true)
 
 
-# Moldura única: placa escura semitransparente, filete duplo de ouro velho, cantoneiras finas,
-# remates góticos nas pontas e um divisor com losango carmesim antes do fim do turno.
+# Moldura da barra: vidro fosco (o desfoque vem de HudBlur) e um fio claro antes do fim do turno.
 func _draw_bar_frame(r: Rect2, end_x: float) -> void:
-	room.draw_rect(r, BAR_FILL)
-	room.draw_rect(Rect2(r.position, Vector2(r.size.x, 1)), Color(1, 0.85, 0.6, 0.06))
-	room.draw_rect(r.grow(-0.5), room.party_hud.FRAME_OUTER, false, 1.0)
-	room.draw_rect(r.grow(-3), Color(room.party_hud.FRAME_INNER, 0.8), false, 0.5)
-	for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:
-		var o: Vector2 = r.position + corner * r.size
-		var d := Vector2(1.0 - corner.x * 2.0, 1.0 - corner.y * 2.0)
-		room.draw_polyline(PackedVector2Array([o + Vector2(1.5, 9) * d, o + Vector2(1.5, 1.5) * d, o + Vector2(9, 1.5) * d]), room.party_hud.FRAME_ACCENT, 1.0)
-		room.party_hud._draw_diamond(o + Vector2(5, 5) * d, 1.5, room.party_hud.FRAME_ACCENT)
-	for side in [-1.0, 1.0]:  # remates: ponta de lança com o losango carmesim
-		var c := Vector2(r.position.x if side < 0 else r.end.x, r.get_center().y)
-		var tip := c + Vector2(side * 7, 0)
-		room.draw_colored_polygon(PackedVector2Array([c + Vector2(0, -9), tip, c + Vector2(0, 9)]), room.party_hud.FRAME_FILL)
-		room.draw_polyline(PackedVector2Array([c + Vector2(0, -9), tip, c + Vector2(0, 9)]), room.party_hud.FRAME_OUTER, 1.0)
-		room.party_hud._draw_diamond(c + Vector2(side * 2.5, 0), 2.5, BAR_CRIMSON)
+	room.party_hud._draw_fosco(r)
 	var x := end_x - BAR_DIVIDER * 0.5
-	for dx in [-1.5, 1.5]:
-		room.draw_line(Vector2(x + dx, r.position.y + 6), Vector2(x + dx, r.end.y - 6), Color(room.party_hud.FRAME_INNER, 0.9), 0.5)
-	room.party_hud._draw_diamond(Vector2(x, r.get_center().y), 4.5, room.party_hud.FRAME_OUTER)
-	room.party_hud._draw_diamond(Vector2(x, r.get_center().y), 3.0, BAR_CRIMSON)
-	room.party_hud._draw_diamond(Vector2(x, r.position.y + 6), 1.5, room.party_hud.FRAME_ACCENT)
-	room.party_hud._draw_diamond(Vector2(x, r.end.y - 6), 1.5, room.party_hud.FRAME_ACCENT)
+	for k in 8:  # fio vertical que some nas pontas
+		var y0 := r.position.y + 6.0 + k * (r.size.y - 12.0) / 8.0
+		room.draw_line(Vector2(x, y0), Vector2(x, y0 + (r.size.y - 12.0) / 8.0), Color(1, 1, 1, 0.22 * sin(PI * (k + 0.5) / 8.0)), 0.5)
 
 
-# Faixa de PA sobre a borda de cima da barra: medalhão, trilho fino e uma gema lapidada por PA.
-# Gema acesa = PA disponível; soquete escuro = PA gasto; a próxima a ser gasta pulsa de leve.
+# PA sobre a borda de cima da barra: uma pílula chapada por PA. Branca = disponível, apagada = gasta;
+# a próxima a ser gasta pulsa de leve.
 func _draw_pa_strip(at: Vector2, total: int, left: int) -> void:
-	var step := 15.0
-	var end_x := at.x + 22.0 + total * step
-	room.draw_rect(Rect2(Vector2(at.x, at.y - 1.5), Vector2(end_x - at.x, 3)), Color(0.035, 0.026, 0.022))
-	room.draw_line(Vector2(at.x, at.y - 1.5), Vector2(end_x, at.y - 1.5), room.party_hud.FRAME_INNER, 0.5)
-	room.draw_line(Vector2(at.x, at.y + 1.5), Vector2(end_x, at.y + 1.5), room.party_hud.FRAME_INNER, 0.5)
-	room.party_hud._draw_diamond(Vector2(end_x + 2, at.y), 2.0, room.party_hud.FRAME_OUTER)
-	room.draw_circle(at, 7.5, Color(0.035, 0.026, 0.022))
-	room.draw_arc(at, 7.0, 0, TAU, 24, room.party_hud.FRAME_OUTER, 1.0)
-	room.draw_arc(at, 4.5, 0, TAU, 16, Color(room.party_hud.FRAME_INNER, 0.8), 0.5)
-	room.party_hud._draw_diamond(at, 2.5, BAR_CRIMSON)
 	var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 260.0)
 	for n in total:
-		var c := Vector2(at.x + 20.0 + n * step, at.y)
-		room.party_hud._draw_diamond(c, 6.5, Color(0.035, 0.026, 0.022))
-		room.party_hud._draw_diamond(c, 5.5, room.party_hud.FRAME_OUTER if n < left else room.party_hud.FRAME_INNER)
+		var pill := Rect2(Vector2(at.x + n * 14.0, at.y - 9.0), Vector2(11.0, 3.0))
+		room.draw_rect(pill.grow(1.0), Color.BLACK, false, 1.0)
 		if n < left:
-			if n == left - 1:
-				room.party_hud._draw_diamond(c, 8.0 + pulse, Color(room.party_hud.FRAME_ACCENT, 0.12 + 0.1 * pulse))
-			_draw_gem(c, 4.5)
+			room.draw_rect(pill, Color(1, 1, 1, 0.9 if n < left - 1 else 0.75 + 0.25 * pulse))
 		else:
-			room.party_hud._draw_diamond(c, 4.5, Color(0.09, 0.05, 0.045))
-			room.party_hud._draw_diamond(c, 1.5, Color(BAR_CRIMSON, 0.45))
+			room.draw_rect(pill, Color(1, 1, 1, 0.18))
 
 
-# Gema dourada lapidada: faces claras em cima à esquerda, escuras embaixo, brilho no topo.
-func _draw_gem(c: Vector2, r: float) -> void:
-	var top := c + Vector2(0, -r)
-	var right := c + Vector2(r, 0)
-	var bottom := c + Vector2(0, r)
-	var left := c + Vector2(-r, 0)
-	var mid := c + Vector2(-0.6, -0.6)
-	room.draw_colored_polygon(PackedVector2Array([top, mid, left]), Color(1.0, 0.9, 0.6))
-	room.draw_colored_polygon(PackedVector2Array([top, right, mid]), room.party_hud.FRAME_ACCENT)
-	room.draw_colored_polygon(PackedVector2Array([left, mid, bottom]), Color(0.72, 0.52, 0.22))
-	room.draw_colored_polygon(PackedVector2Array([mid, right, bottom]), Color(0.5, 0.33, 0.13))
-	room.draw_rect(Rect2(c + Vector2(-1.5, -2.5), Vector2(1, 1)), Color(1, 1, 0.9, 0.9))
-
-
-# Casa de ação: fundo escuro, filete de ouro velho e o ícone em pixel art no centro.
-# Selecionada: ouro forte com halo; sob o mouse: filete mais claro; indisponível: ícone apagado.
+# Casa de ação: fundo escuro, contorno preto, linha clara fina; a selecionada leva o anel branco
+# entre dois pretos (como os cartões do grupo); sob o mouse clareia; indisponível apaga o ícone.
 func _draw_slot(r: Rect2, slot: Array, selected: bool, hover: bool) -> void:
 	var enabled: bool = slot[3]
-	room.draw_rect(r, Color(0.055, 0.042, 0.035, 0.96))
-	room.draw_rect(Rect2(r.position + Vector2(1, 1), Vector2(r.size.x - 2, r.size.y * 0.45)), Color(1, 0.9, 0.7, 0.04))
-	room.draw_rect(Rect2(r.position + Vector2(1, r.size.y - 4), Vector2(r.size.x - 2, 3)), Color(0, 0, 0, 0.35))
-	# Contornos: filete externo de 2 px da janela (1.0) e interno de 1 px (0.5), sempre nas mesmas
-	# posições para as casas não parecerem de espessuras diferentes; a selecionada só muda de cor.
-	if selected:
-		room.draw_rect(r.grow(1.25), Color(room.party_hud.FRAME_ACCENT, 0.35), false, 0.5)
-		room.draw_rect(r.grow(-0.5), Color(1.0, 0.85, 0.5), false, 1.0)
-		room.draw_rect(r.grow(-2.75), Color(room.party_hud.FRAME_ACCENT, 0.6), false, 0.5)
-		for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:
-			room.party_hud._draw_diamond(r.position + corner * r.size, 1.75, Color(1.0, 0.85, 0.5))
-	else:
-		room.draw_rect(r.grow(-0.5), room.party_hud.FRAME_OUTER.lightened(0.25) if hover else Color(room.party_hud.FRAME_OUTER, 0.9), false, 1.0)
-		room.draw_rect(r.grow(-2.75), Color(room.party_hud.FRAME_INNER, 0.6), false, 0.5)
-	if hover:
-		room.draw_rect(r.grow(-3), Color(1, 0.9, 0.7, 0.07))
+	room.draw_rect(r, Color(0.075, 0.062, 0.052, 0.96))
+	room.draw_rect(Rect2(r.position + Vector2(0, r.size.y * 0.6), Vector2(r.size.x, r.size.y * 0.4)), Color(0, 0, 0, 0.22))
 	_draw_action_icon(r, slot[0], enabled)
 	if not enabled:
-		room.draw_rect(r.grow(-1), Color(0.02, 0.015, 0.012, 0.35))
+		room.draw_rect(r, Color(0.02, 0.015, 0.012, 0.4))
+	room.draw_rect(r.grow(1.0), Color.BLACK, false, 1.0)
+	if selected:
+		room.draw_rect(r.grow(3.5), Color.BLACK, false, 1.0)
+		room.draw_rect(r.grow(2.5), Color.WHITE, false, 1.0)
+		room.draw_rect(r.grow(1.5), Color.BLACK, false, 1.0)
+	else:
+		room.draw_rect(r.grow(-0.5), Color(1, 1, 1, 0.5 if hover else 0.2), false, 0.5)
+	if hover:
+		room.draw_rect(r, Color(1, 1, 1, 0.08))
 
 
-# Fim do turno: placa carmesim com a ampulheta em pixel art. Estados: normal, sob o mouse,
+# Fim do turno: botão carmesim chapado com a ampulheta. Estados: normal, sob o mouse (mais claro),
 # pressionado (desce 1 px e escurece) e indisponível (cinza).
 func _draw_end_turn(font: Font, er: Rect2, hover: bool, pressed: bool, enabled: bool) -> void:
 	var r := er
 	if pressed:
 		r.position.y += 1
-	var fill := Color(0.24, 0.04, 0.05, 0.95)
-	var edge := BAR_CRIMSON
-	var ink := Color(0.96, 0.84, 0.72)
+	var top := Color(0.75, 0.2, 0.23)
+	var bottom := Color(0.47, 0.09, 0.12)
+	var ink := Color(1, 1, 1)
 	if not enabled:
-		fill = Color(0.1, 0.08, 0.07, 0.9)
-		edge = Color(0.3, 0.26, 0.22)
-		ink = Color(0.45, 0.4, 0.35)
+		top = Color(0.2, 0.19, 0.2)
+		bottom = Color(0.12, 0.11, 0.12)
+		ink = Color(0.5, 0.49, 0.5)
 	elif pressed:
-		fill = Color(0.16, 0.025, 0.03, 0.95)
+		top = top.darkened(0.25)
+		bottom = bottom.darkened(0.25)
 	elif hover:
-		fill = Color(0.34, 0.06, 0.07, 0.95)
-		edge = Color(0.86, 0.2, 0.2)
-	room.draw_rect(r, fill)
-	room.draw_rect(Rect2(r.position + Vector2(1, 1), Vector2(r.size.x - 2, r.size.y * 0.45)), Color(1, 0.5, 0.4, 0.06 if not pressed else 0.0))
-	room.draw_rect(r.grow(-0.5), edge, false, 1.0)
-	room.draw_rect(r.grow(-2.5), Color(room.party_hud.FRAME_ACCENT, 0.45) if enabled else Color(edge, 0.5), false, 0.5)
-	for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:
-		room.party_hud._draw_diamond(r.position + corner * r.size, 2.0, edge.lightened(0.2))
+		top = top.lightened(0.15)
+		bottom = bottom.lightened(0.12)
+	room.draw_rect(r, bottom)
+	room.draw_rect(Rect2(r.position, Vector2(r.size.x, r.size.y * 0.55)), top)
+	room.draw_line(r.position + Vector2(1, 0.75), Vector2(r.end.x - 1, r.position.y + 0.75), Color(1, 1, 1, 0.28 if enabled else 0.08), 0.5)
+	room.draw_rect(r.grow(1.0), Color.BLACK, false, 1.0)
 	var glass := ItemIcons.ART_SIZE  # a ampulheta da arte é estreita; o quadro é o mesmo dos outros ícones
 	ItemIcons.draw(room, Rect2(r.position + Vector2(5, (r.size.y - glass) * 0.5), Vector2(glass, glass)), "ampulheta", enabled)
 	room.draw_string(font, r.position + Vector2(glass + 8, 17), "FIM DO", HORIZONTAL_ALIGNMENT_CENTER, r.size.x - glass - 14, 11, ink)
