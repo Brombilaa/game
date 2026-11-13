@@ -107,7 +107,12 @@
     -40
    ],
    "texto": "Pó em toda a mesa, menos num retângulo limpo: um livro grosso ficava aqui até pouco tempo.",
-   "provisorio": true
+   "provisorio": true,
+   "destaque": {
+    "nomes": [
+     "Mesh33"
+    ]
+   }
   }
  ],
  "gatilhos": [],

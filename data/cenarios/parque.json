@@ -45,8 +45,8 @@
 	],
 	"pistas": [
 		{"id": "marcas_pneu", "pos": [760, 560], "raio": 70, "ordem": 1, "bolinha": [0, -28], "texto": "Marcas largas de pneu. Vão da terra central até a entrada, como se algo tivesse sido arrastado."},
-		{"id": "balanco", "pos": [1200, 700], "raio": 100, "ordem": 1, "bolinha": [0, -125], "texto": "O assento do balanço está cheio de arranhões fundos."},
-		{"id": "banco_quebrado", "pos": [900, 400], "raio": 85, "ordem": 1, "bolinha": [0, -62], "texto": "Garras abriram as tábuas do banco. Há sangue seco na madeira."},
+		{"id": "balanco", "pos": [1200, 700], "raio": 100, "ordem": 1, "bolinha": [0, -125], "destaque": {"nomes": ["Mesh42", "Mesh43", "Mesh44"]}, "texto": "O assento do balanço está cheio de arranhões fundos."},
+		{"id": "banco_quebrado", "pos": [900, 400], "raio": 85, "ordem": 1, "bolinha": [0, -62], "destaque": {"nomes": ["Mesh28", "Mesh30"]}, "texto": "Garras abriram as tábuas do banco. Há sangue seco na madeira."},
 		{"id": "banco_velho", "pos": [440, 100], "raio": 85, "ordem": 1, "bolinha": [0, -62], "texto": "Um banco velho, coberto de limo."},
 		{"id": "arvore_simbolo", "pos": [1130, 235], "raio": 80, "ordem": 2, "bolinha": [6, -74], "areas": [[29, -250, 170, 150], [20, -70, 45, 75]], "_areas": "clique na árvore inteira: elipses [cx, cy, rx, ry] em px do desenho, relativas ao pé da pista (copa e tronco)", "texto": "Um símbolo pintado em vermelho no tronco. Parece sangrar.", "inspecao": "res://assets/sprites/cenario/parque/inspecao_simbolo.png"}
 	],

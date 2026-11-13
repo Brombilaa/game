@@ -120,6 +120,7 @@ def subsolo(d, p, ret):
     d["marca_ao_chegar"] = "subsolo_visitado"
     d["objetivos"] = [{"texto": "Investigar o subsolo", "pista": "livro_faltando"}, {"texto": "Voltar ao escritório"}]
     d["pistas"].append({"id": "livro_faltando", "pos": p(1.0, 3.4), "raio": 70, "ordem": 1, "bolinha": [0, -40],
+                        "destaque": {"nomes": ["Mesh33"]},  # a mesa (tampo) onde fica o retângulo limpo
                         "texto": "Pó em toda a mesa, menos num retângulo limpo: um livro grosso ficava aqui até pouco tempo.",
                         "provisorio": True})
     d["zonas"].append({"id": "escada", "ret": ret(4.2, 0.13, 1.27, 0.9), "acao": "ir", "para": "delegacia_21h", "chegada": "subsolo",
@@ -135,6 +136,7 @@ def biblioteca(d, p, ret):
 def fazenda(d, p, ret):
     d["objetivos"] = [{"texto": "Investigar o celeiro", "pista": "poco"}]
     d["pistas"].append({"id": "poco", "pos": p(6.2, 8.1), "raio": 90, "ordem": 1, "bolinha": [0, -30],
+                        "destaque": {"raio": 1.6, "max": 3.2, "sem": ["unlit", "add"]},  # pedras da boca do poço
                         "texto": "O poço antigo desce para o escuro. Lá embaixo ficam as ruínas.", "provisorio": True})
     # Grupo chega um pouco antes do portão, fora do alcance de quem está lá dentro (o atirador vê a 7 m: a chegada
     # recuou 2 m em 13/11).
