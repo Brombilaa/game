@@ -41,6 +41,8 @@ var backdrop: Texture2D
 var extended: Texture2D  # fundo com terreno e lago além do mapa
 var occluder_textures := {}  # id -> recorte do fundo
 var seen_clues: Array[String] = []
+var hover_forcado := ""  # só para capturas
+var pista_malhas := {}
 var pending_clue := ""
 var dialog_layer: CanvasLayer
 var dialog_clue := ""
@@ -279,6 +281,7 @@ func _draw() -> void:
 	if mode == Mode.EXPLORATION:
 		_draw_clue_hints()  # por cima dos recortes: a bolinha da árvore ficava escondida atrás da copa
 	if mode == Mode.COMBAT:
+		_apagar_destaques()
 		_draw_preview(font)
 	_draw_fx()
 	_draw_san_tint()
@@ -575,23 +578,66 @@ func _dot_pos(cid: String) -> Vector2:
 func _draw_clue_hints() -> void:
 	var available := scenario.available_clues(seen_clues)
 	var pulse := 0.65 + 0.35 * sin(Time.get_ticks_msec() / 260.0)
-	var hover := _clue_under(get_global_mouse_position()) if not dialog_layer.visible else ""
+	var hover: String = hover_forcado if hover_forcado != "" else (_clue_under(get_global_mouse_position()) if not dialog_layer.visible else "")
 	for cid in scenario.clues:
 		if seen_clues.has(cid):
+			if pista_malhas.has(cid) and not pista_malhas[cid].is_empty():
+				world3d.destacar(cid, pista_malhas[cid], 0.0, 0.0)
 			continue
 		var at := _dot_pos(cid)
-		var radius := DOT_RADIUS + (2.0 if cid == hover else 0.0)
-		# A pista ainda bloqueada (a árvore, antes das outras) fica apagada: clicar só avisa.
 		var locked := not available.has(cid)
-		var tint := Color(0.84, 0.68, 0.36) if not locked else Color(0.66, 0.2, 0.2)
-		var alpha := 1.0 if cid == hover else (pulse if not locked else 0.55)
-		draw_circle(at, radius + 2.0, Color(0.05, 0.03, 0.02, 0.85))
-		draw_circle(at, radius, Color(tint, alpha))
-		if locked:
-			continue
-		if player.pos.distance_to(scenario.clues[cid].pos) <= CLUE_NEAR:
-			draw_arc(at, radius + 5.0, 0.0, TAU, 24, Color(0.84, 0.68, 0.36, 0.5 * pulse), 1.0)
-	queue_redraw()  # a bolinha pulsa
+		var perto: bool = player.pos.distance_to(scenario.clues[cid].pos) <= CLUE_NEAR
+		var ativa: bool = cid == hover
+		var malhas := _malhas_pista(cid)
+		if malhas.is_empty():
+			_pista_bolinha(at, ativa, locked, perto, pulse)  # objetos sem malha própria no cenário mantêm a bolinha
+		else:
+			_pista_brilho(cid, malhas, at, ativa, locked, perto, pulse)
+	queue_redraw()  # o brilho e a bolinha pulsam
+
+
+func _apagar_destaques() -> void:
+	for cid in pista_malhas:
+		if not pista_malhas[cid].is_empty():
+			world3d.destacar(cid, pista_malhas[cid], 0.0, 0.0)
+
+
+func _pista_bolinha(at: Vector2, ativa: bool, locked: bool, perto: bool, pulse: float) -> void:
+	var radius := DOT_RADIUS + (2.0 if ativa else 0.0)
+	# A pista ainda bloqueada (a árvore, antes das outras) fica apagada: clicar só avisa.
+	var tint := Color(0.84, 0.68, 0.36) if not locked else Color(0.66, 0.2, 0.2)
+	var alpha := 1.0 if ativa else (pulse if not locked else 0.55)
+	draw_circle(at, radius + 2.0, Color(0.05, 0.03, 0.02, 0.85))
+	draw_circle(at, radius, Color(tint, alpha))
+	if not locked and perto:
+		draw_arc(at, radius + 5.0, 0.0, TAU, 24, Color(0.84, 0.68, 0.36, 0.5 * pulse), 1.0)
+
+
+# Malhas 3D do objeto da pista (dados: "destaque": {"estado": "tapete"}). Vazio quando o cenário não é 3D ou a pista não declara.
+func _malhas_pista(cid: String) -> Array:
+	if not pista_malhas.has(cid):
+		var c: Dictionary = scenario.clues[cid]
+		var d: Dictionary = c.get("destaque", {})
+		pista_malhas[cid] = world3d.malhas_em(Vector3(c.pos.x / 64.0, 0.0, c.pos.y / 64.0), str(d.get("estado", ""))) if world3d != null and world3d.has_method("malhas_em") and not d.is_empty() else []
+	return pista_malhas[cid]
+
+
+func _rotulo_pista(at: Vector2, texto: String) -> void:
+	var font := ThemeDB.fallback_font
+	var w := font.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
+	var r := Rect2(at + Vector2(-w * 0.5 - 8.0, -46.0), Vector2(w + 16.0, 22.0))
+	draw_rect(r, Color(0.05, 0.03, 0.02, 0.88))
+	draw_rect(r, Color(0.84, 0.68, 0.36), false, 1.0)
+	draw_string(font, r.position + Vector2(8.0, 16.0), texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.93, 0.89, 0.8))
+
+
+# Léo (13/11): o objeto respira um brilho dourado fraco (mais forte com o grupo perto); com o mouse em cima o brilho
+# abre, ganha borda branca e o rótulo "Examinar". A pista ainda bloqueada não brilha e o rótulo avisa.
+func _pista_brilho(cid: String, malhas: Array, at: Vector2, ativa: bool, locked: bool, perto: bool, pulse: float) -> void:
+	var base := 0.0 if locked else (0.16 + 0.12 * pulse if perto else 0.07 + 0.06 * pulse)
+	world3d.destacar(cid, malhas, 1.0 if ativa else 0.0, 0.5 if ativa else base)
+	if ativa:
+		_rotulo_pista(at, "Examinar" if not locked else "Ainda não")
 
 
 # --- Pistas ---------------------------------------------------------------------------------------
