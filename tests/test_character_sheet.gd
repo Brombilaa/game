@@ -32,7 +32,8 @@ func _init() -> void:
 		_check(sheet.portrait_hurt != null and sheet.portrait_hurt.get_width() == 64, "%s: retrato ferido de 64 px" % who)
 		var bighurt := load("res://assets/sprites/retratos/%s_ferido_128.png" % who) as Texture2D
 		_check(bighurt != null and bighurt.get_width() == 128, "%s: retrato ferido de 128 px" % who)
-	_check(CharacterSheet.new("res://assets/sprites/personagens/legado_2d/cultista").portrait == null, "cultista segue sem retrato próprio")
+	var cult := CharacterSheet.new("res://assets/sprites/personagens/legado_2d/cultista")
+	_check(cult.portrait != null and cult.portrait.get_width() == 64, "cultista: retrato de 64 px")
 
 	var cri := load("res://assets/sprites/retratos/criatura_64.png") as Texture2D
 	_check(cri != null and cri.get_width() == 64, "criatura: retrato de 64 px")
