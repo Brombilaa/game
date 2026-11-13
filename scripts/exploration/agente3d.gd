@@ -22,7 +22,7 @@ const MODELOS := {
 	# Miguel (Léo, 08/11): Breathing Idle do próprio FBX; as outras animações do Nikolai/Fernando transferidas para o esqueleto dele.
 	"miguel3d": {"modelo": "res://assets/3d/personagens/miguel.fbx", "biblioteca": "res://assets/3d/animacoes/miguel.res", "armas": true,
 		"bracos": {"origem": BIBLIOTECA, "ossos": ["LeftArm", "RightArm"],
-			"anims": ["walk", "run", "crouch_walk", "crouch_idle"], "junto": {"idle": 8.0, "walk": 8.0, "run": 6.0, "crouch_walk": 6.0}}},
+			"anims": ["walk", "run", "crouch_walk", "crouch_idle"], "junto": {"idle": 8.0, "walk": -4.0, "run": -4.0, "crouch_walk": 6.0}}},
 	# Caio: remodelado pelo Léo (08/11, versão corrigida v2, só com o idle do Mixamo; as outras animações vêm da biblioteca).
 	"caio3d": {"modelo": "res://assets/3d/personagens/caio.fbx", "biblioteca": "res://assets/3d/animacoes/caio.res"},  # versão corrigida v2 (08/11): já de frente, posições na escala dele (caio.res)
 	# Léo, 08/11: Criatura e Caio no mesmo nível do Nikolai e do Fernando. Textura A (aprovada em 05/11); 2,0 m contra 1,8 m dos agentes.
@@ -147,7 +147,8 @@ static func _corrigir_bracos(lib: AnimationLibrary, cfg: Dictionary, sk: Skeleto
 				continue
 			var p := String(a.track_get_path(t))
 			var d: Quaternion = delta.get(p, Quaternion.IDENTITY) if nome in cfg["anims"] else Quaternion.IDENTITY
-			# Mais junto ao corpo (sem entrar nele): `junto` = graus em torno da frente do corpo, com o sinal de cada lado.
+			# `junto` = graus em torno da frente do corpo (positivo fecha, negativo abre), com o sinal de cada lado. Andar e correr
+			# abrem 4° (Léo, 13/11: com 8° fechando, a mão atravessava a perna), sem dobrar o cotovelo.
 			var lado := 1.0 if p.ends_with(":mixamorig_LeftArm") else (-1.0 if p.ends_with(":mixamorig_RightArm") else 0.0)
 			if lado != 0.0 and junto.has(nome):
 				d = Quaternion(eixo["Left" if lado > 0.0 else "Right"], deg_to_rad(float(junto[nome])) * lado) * d
