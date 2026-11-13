@@ -756,8 +756,7 @@ func _on_combat_ended(result: TurnManager.Result) -> void:
 	queue_redraw()
 
 
-# Game Over (Léo): sem tela própria; a tela escurece bem devagar e o jogo volta ao último
-# save. A sala de teste ainda não carrega saves, então recarregar a cena é voltar ao início.
+# Game Over (Léo): sem tela própria; a tela escurece bem devagar e o jogo volta ao último save.
 func _game_over_fade() -> void:
 	fade_layer.layer = 100
 	fade.color = Color(0, 0, 0, 0)
@@ -770,7 +769,12 @@ func _game_over_fade() -> void:
 	tween.tween_property(fade, "color:a", 1.0, cfg.value("game_over_fade_seconds"))
 	await tween.finished
 	if get_tree().current_scene == self:
-		get_tree().reload_current_scene()
+		_voltar_ao_save()
+
+
+# A sala de teste não tem save: recomeça. O parque e os outros lugares voltam ao autosave.
+func _voltar_ao_save() -> void:
+	get_tree().reload_current_scene()
 
 
 # --- Turno do jogador --------------------------------------------------------

@@ -4,8 +4,8 @@ extends Control
 # Abertura de ~4,7 s: o símbolo é pintado traço por traço, as letras do nome surgem uma a uma
 # e o menu aparece; clique ou tecla pula a abertura. Depois o nome pulsa em vermelho e a luz de
 # vela treme atrás do símbolo. Tudo é desenhado por código (sem imagens), na tela de 960×540.
-# Carregar lista os 3 slots manuais do SaveSlots. O jogo ainda não lê saves, então carregar um slot
-# só guarda qual foi escolhido (`pending_slot`, também em Game.pending_slot) e abre o jogo.
+# Continuar (só aparece quando há save) abre o save mais recente; Carregar lista o automático e os 3
+# manuais, avisando save corrompido ou de versão mais nova. Quem lê o save e abre o lugar é o Progresso.
 # Opções vêm do autoload Game (GameOptions.shared()) e são gravadas a cada mudança.
 # Cenário da referência do Léo (30/10): mesa de investigação no escuro, vela acesa à esquerda,
 # símbolo pintado na parede e o nome em vermelho. Se existir BG_IMAGE (arte do ChatGPT), ela é
@@ -21,9 +21,10 @@ const ART_SIGIL_AT := Vector2(0.62, 0.3)  # na arte, o símbolo e o nome ficam n
 const ART_DARKEN := 0.25  # escurece a arte por igual, para o nome e o menu lerem por cima
 const TITLE := "PACTO CARMESIM"
 const ITEMS := [["new", "Novo jogo"], ["load", "Carregar"], ["opts", "Opções"], ["quit", "Sair do jogo"]]
+const CONTINUE_ITEM := ["continue", "Continuar"]  # primeiro item, só quando há um save que carrega
 const OPTION_ROWS := [["master", "Volume geral"], ["music", "Música"], ["sfx", "Efeitos"], ["fullscreen", "Tela cheia"], ["fast_combat", "Combate rápido (2x)"]]
 const TOGGLE_KEYS := ["fullscreen", "fast_combat"]
-const ROMAN := ["I", "II", "III"]
+const SLOT_MARK := {"auto": "A", "manual_1": "I", "manual_2": "II", "manual_3": "III"}
 const AREA_NAMES := {"test_room": "Sala de teste", "parque": "Parque"}
 
 # Tempos da abertura, em segundos.
@@ -84,6 +85,8 @@ var panel_focus := 0  # linha em foco no painel; a última é o "Fechar"
 var panel_fade := 0.0
 var save_dir := SaveSlots.DIR
 var slots: Array[Dictionary] = []
+var items: Array = ITEMS.duplicate()  # ITEMS, com Continuar na frente quando há save
+var continue_slot := ""  # slot que o Continuar abre
 var options_path := GameOptions.PATH
 var options := GameOptions.shared()
 var strokes := sigil_strokes()
@@ -102,6 +105,16 @@ func _ready() -> void:
 	if ResourceLoader.exists(BG_IMAGE):
 		bg_tex = load(BG_IMAGE)
 	GameCursor.apply(GameCursor.Kind.ARROW)
+	refresh_items()
+
+
+# Continuar só existe quando algum slot carrega; o foco começa nele.
+func refresh_items() -> void:
+	continue_slot = SaveSlots.latest(save_dir)
+	items = ITEMS.duplicate()
+	if continue_slot != "":
+		items.push_front(CONTINUE_ITEM)
+	focus = clampi(focus, 0, items.size() - 1)
 
 
 func _process(delta: float) -> void:
@@ -218,8 +231,29 @@ static func _quad(a: Vector2, c: Vector2, b: Vector2) -> PackedVector2Array:
 func refresh_slots() -> void:
 	slots.clear()
 	for entry in SaveSlots.list(save_dir):
-		if entry["slot"] != SaveSlots.AUTO:
-			slots.append(entry)
+		slots.append(entry)
+
+
+# Nome do lugar no slot: o rótulo gravado ("DELEGACIA · 21h" vira "Delegacia · 21h") ou o id da área.
+static func slot_label(entry: Dictionary) -> String:
+	var rotulo := str(entry.get("rotulo", ""))
+	if rotulo.is_empty():
+		return area_label(str(entry.get("area", "")))
+	var words := []
+	for w in rotulo.to_lower().split(" "):
+		words.append(w.substr(0, 1).to_upper() + w.substr(1) if w.length() > 0 and w[0] >= "a" and w[0] <= "z" else w)
+	return " ".join(words)
+
+
+# Linha de baixo do slot: quando salvou, ou o aviso de por que não carrega.
+static func slot_detail(entry: Dictionary) -> String:
+	match str(entry.get("status", "")):
+		SaveGame.CORRUPT:
+			return "Save corrompido, não dá para carregar"
+		SaveGame.NEWER:
+			return "Feito por uma versão mais nova do jogo"
+	var when := date_label(int(entry.get("saved_at", 0)))
+	return ("Automático · " + when) if entry.get("slot") == SaveSlots.AUTO else when
 
 
 static func area_label(area: String) -> String:
@@ -240,6 +274,8 @@ static func date_label(unix: int) -> String:
 
 func activate(item: String) -> void:
 	match item:
+		"continue":
+			_start_game(continue_slot)
 		"new":
 			_start_game("")
 		"load":
@@ -272,7 +308,12 @@ func _start_game(slot: String) -> bool:
 	var game := get_node_or_null("/root/Game")
 	if game:
 		game.pending_slot = slot
-	return Scenes.go(get_tree(), GAME_SCENE)
+	var ok := Progresso.novo_jogo(get_tree()) if slot == "" else Progresso.carregar(get_tree(), slot, save_dir)
+	if not ok:
+		starting = false
+		refresh_items()
+		refresh_slots()
+	return ok
 
 
 func _open(which: String) -> void:
@@ -327,7 +368,7 @@ func _gui_input(event: InputEvent) -> void:
 			return
 		var hit := _hit(event.position)
 		if hit.x == 0:
-			activate(ITEMS[hit.y][0])
+			activate(items[hit.y][0])
 		elif hit.x == 1:
 			panel_focus = hit.y
 			if panel == "opts" and hit.y < OPTION_ROWS.size() and not OPTION_ROWS[hit.y][0] in TOGGLE_KEYS:
@@ -353,11 +394,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	var handled := true
 	if panel == "":
 		if event.is_action("ui_up"):
-			_set_focus(posmod(focus - 1, ITEMS.size()))
+			_set_focus(posmod(focus - 1, items.size()))
 		elif event.is_action("ui_down"):
-			_set_focus(posmod(focus + 1, ITEMS.size()))
+			_set_focus(posmod(focus + 1, items.size()))
 		elif event.is_action("ui_accept"):
-			activate(ITEMS[focus][0])
+			activate(items[focus][0])
 		else:
 			handled = false
 	else:
@@ -384,7 +425,7 @@ func _hit(p: Vector2) -> Vector2i:
 			if _panel_row_rect(i).has_point(p):
 				return Vector2i(1, i)
 		return Vector2i(-1, -1)
-	for i in ITEMS.size():
+	for i in items.size():
 		if _item_rect(i).has_point(p):
 			return Vector2i(0, i)
 	return Vector2i(-1, -1)
@@ -397,7 +438,7 @@ func _menu_x() -> float:
 
 
 func _item_y(i: int) -> float:
-	return size.y * MENU_CENTER_Y + (i - (ITEMS.size() - 1) / 2.0) * MENU_GAP
+	return size.y * MENU_CENTER_Y + (i - (items.size() - 1) / 2.0) * MENU_GAP
 
 
 func _item_rect(i: int) -> Rect2:
@@ -419,7 +460,7 @@ func _flame_at() -> Vector2:
 
 
 func _panel_rect() -> Rect2:
-	var h := 262.0 if panel == "load" else 272.0
+	var h := 320.0 if panel == "load" else 272.0
 	var x := size.x * 0.33
 	return Rect2(x, (size.y - h) / 2.0, size.x * 0.96 - x, h)
 
@@ -689,15 +730,15 @@ func _draw_menu(font: Font, alpha: float) -> void:
 		return
 	var lx := _menu_x()
 	var top := _item_y(0) - MENU_GAP * 0.75
-	var bottom := _item_y(ITEMS.size() - 1) + MENU_GAP * 0.75
+	var bottom := _item_y(items.size() - 1) + MENU_GAP * 0.75
 	draw_line(Vector2(lx, top), Vector2(lx, bottom), Color(GOLD, 0.45 * alpha), 1.0)
 	_diamond(Vector2(lx, top - 4), 4.0, Color(GOLD, alpha), true)
 	_diamond(Vector2(lx, bottom + 4), 4.0, Color(GOLD, alpha), true)
-	for i in ITEMS.size():
+	for i in items.size():
 		var y := _item_y(i)
-		var label: String = ITEMS[i][1]
+		var label: String = items[i][1]
 		var tx := lx + 16
-		var on: bool = i == focus and (panel == "" or ITEMS[i][0] == panel)
+		var on: bool = i == focus and (panel == "" or items[i][0] == panel)
 		if on:
 			var w := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, MENU_SIZE).x
 			var grow := clampf(focus_time / BRUSH_SECONDS, 0.0, 1.0) if panel == "" else 1.0
@@ -754,17 +795,20 @@ func _draw_slots(font: Font, alpha: float) -> void:
 		var row := _panel_row_rect(i)
 		var entry: Dictionary = slots[i]
 		var empty: bool = entry["empty"]
+		var status := str(entry.get("status", SaveGame.EMPTY if empty else SaveGame.OK_STATUS))
 		var on := i == panel_focus and not empty
 		var a := alpha * (0.5 if empty else 1.0)
 		draw_rect(row, Color(0.35, 0.05, 0.05, 0.35 * alpha) if on else Color(0, 0, 0, 0.35 * alpha))
 		draw_rect(row, Color(BLOOD_LIGHT if on else LINE, a), false, 1.0)
-		draw_string(font, Vector2(row.position.x + 14, row.get_center().y + 9), ROMAN[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(GOLD, a))
+		draw_string(font, Vector2(row.position.x + 14, row.get_center().y + 9), SLOT_MARK.get(entry["slot"], "?"), HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(GOLD, a))
 		var tx := row.position.x + 64
-		if empty:
+		if status == SaveGame.EMPTY:
 			draw_string(font, Vector2(tx, row.get_center().y + 5), "Vazio", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(MENU_INK, a))
+		elif empty:  # existe, mas não carrega: avisa em vez de fingir que está vazio
+			draw_string(font, Vector2(tx, row.get_center().y + 5), slot_detail(entry), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(BLOOD_LIGHT, alpha * 0.8))
 		else:
-			draw_string(font, Vector2(tx, row.position.y + 21), area_label(entry["area"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(MENU_INK_ON, a))
-			draw_string(font, Vector2(tx, row.position.y + 39), date_label(entry["saved_at"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(MUTED, a))
+			draw_string(font, Vector2(tx, row.position.y + 21), slot_label(entry), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(MENU_INK_ON, a))
+			draw_string(font, Vector2(tx, row.position.y + 39), slot_detail(entry), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(MUTED, a))
 
 
 func _draw_options(font: Font, alpha: float) -> void:

@@ -15,6 +15,7 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	Progresso.autosave_ativo = false  # não mexe nos saves de quem roda os testes
 	_pathfinder_grade()
 	for id in LOCAIS:
 		var s := Scenario.load_id(id)

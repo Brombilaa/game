@@ -4,8 +4,7 @@ extends RefCounted
 #   { "version": 1, "saved_at": <unix>, "data": { ... } }
 # "data" só aceita tipos JSON (Dictionary, Array, String, número, bool, null).
 # JSON não distingue int de float: ao ler, todo número volta como float.
-# A política (automático/manual, slots, checkpoints) ainda está PENDENTE no GDD;
-# este módulo só grava e lê um arquivo, sem decidir quando nem quantos.
+# Este módulo só grava e lê um arquivo; slots ficam em SaveSlots e o conteúdo em Progresso.
 
 const FORMAT_VERSION := 1
 
@@ -40,6 +39,34 @@ static func _parse(text: String) -> Dictionary:
 		return {}
 	parsed["data"] = _migrate(parsed["data"], version)
 	return parsed
+
+
+# Estado de um save, para o menu avisar em vez de só mostrar "Vazio":
+#   OK (o principal ou o .bak lê), EMPTY (nenhum arquivo), NEWER (feito por uma versão mais nova do jogo),
+#   CORRUPT (existe, mas nem o principal nem o .bak leem).
+const OK_STATUS := "ok"
+const EMPTY := "vazio"
+const NEWER := "versao_nova"
+const CORRUPT := "corrompido"
+
+
+static func status(path: String) -> String:
+	var found := false
+	var newer := false
+	for candidate in [path, path + ".bak"]:
+		if not FileAccess.file_exists(candidate):
+			continue
+		found = true
+		var text := FileAccess.get_file_as_string(candidate)
+		if not _parse(text).is_empty():
+			return OK_STATUS
+		var json := JSON.new()  # JSON.new().parse não suja o console como JSON.parse_string
+		var parsed = json.data if json.parse(text) == OK else null
+		if parsed is Dictionary and parsed.get("version") is float and int(parsed["version"]) > FORMAT_VERSION:
+			newer = true
+	if not found:
+		return EMPTY
+	return NEWER if newer else CORRUPT
 
 
 # Gravação atômica: escreve em .tmp e só então substitui o arquivo. O save

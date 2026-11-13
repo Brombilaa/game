@@ -3,7 +3,7 @@ extends RefCounted
 # Caminho da missão 1 entre os lugares (história #8): parque 16h, delegacia 17h, biblioteca 19h, volta à
 # delegacia 21h (subsolo e invasão), Fazenda Ghular 23h; depois viriam a cripta e as ruínas (ainda não construídas).
 # Guarda, entre uma cena e outra, para onde o grupo vai, por onde chega e o que já aconteceu (marcas).
-# Ainda não vai para o save: recarregar o jogo volta ao parque.
+# Vai para o save pelo Progresso (local, chegada e marcas); carregar abre o lugar pela mesma chegada.
 
 const CENA_PARQUE := "res://scenes/exploration/parque.tscn"
 const CENA_LOCAL := "res://scenes/exploration/local3d.tscn"

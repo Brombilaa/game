@@ -31,6 +31,10 @@ func _novo_pathfinder() -> Pathfinder:
 	return PathfinderGrade.new()
 
 
+func _area_id() -> String:
+	return local_id
+
+
 func _criar_mundo3d() -> Node3D:
 	var c: Dictionary = dados["cena3d"]
 	var w: Node3D = CENARIO3D.new()

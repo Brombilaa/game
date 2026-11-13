@@ -11,6 +11,7 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	Progresso.autosave_ativo = false  # não mexe nos saves de quem roda os testes
 	var room = load("res://scenes/exploration/parque.tscn").instantiate()
 	root.add_child(room)
 	await process_frame

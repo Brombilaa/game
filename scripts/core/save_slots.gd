@@ -59,7 +59,20 @@ static func list(dir := DIR) -> Array[Dictionary]:
 		result.append({
 			"slot": slot,
 			"empty": envelope.is_empty(),
+			"status": SaveGame.status(path_for(slot, dir)),
 			"saved_at": int(envelope.get("saved_at", 0)),
 			"area": data.get("current_area", ""),
+			"rotulo": str(data.get("rotulo", "")),
 		})
 	return result
+
+
+# Slot mais recente que carrega (para o Continuar do menu), ou "" se nenhum.
+static func latest(dir := DIR) -> String:
+	var best := ""
+	var best_at := -1
+	for entry in list(dir):
+		if not entry["empty"] and int(entry["saved_at"]) > best_at:
+			best = entry["slot"]
+			best_at = int(entry["saved_at"])
+	return best

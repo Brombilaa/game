@@ -1,4 +1,6 @@
-# game
+# Pacto Carmesim
+
+RPG tático de investigação paranormal em turnos, feito na Godot 4. Protótipo: missão 1 em Aurora (RS).
 
 ## Estrutura
 
@@ -17,8 +19,8 @@
 ## Engine
 
 Godot 4 com GDScript. Renderer de compatibilidade, pixel art com filtro nearest.
-Resolução interna 960×540 (janela padrão 1280×720). Direção visual em `docs/direcao-visual.md`.
+Resolução interna 960×540, janela de 1920×1080. Direção visual em `docs/direcao-visual.md`.
 
 ## Build
 
-Tag `v*` gera o build de Windows e publica o `.zip` no GitHub Releases. Detalhes em `docs/save-e-build.md`.
+Cada merge na main gera o build de Windows e substitui o `.zip` do release "latest"; tag `v*` publica um release próprio. Detalhes em `docs/save-e-build.md`.
