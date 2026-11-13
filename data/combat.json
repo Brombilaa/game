@@ -21,6 +21,8 @@
 	"pixels_per_meter": 32,
 	"attack_pa_cost": 2,
 	"enemy_defense": 0.0,
+	"enemy_step_seconds": 0.25,
+	"_ritmo": "Léo (13/11/2026): ajuste do ritmo do combate. Pausa antes de cada ação do inimigo (antes 0,4 s, provisório do Claude). O inimigo também deixou de esperar o rastro da barra de vida (0,6 s) para agir.",
 	"enemy_perception_px": 300,
 	"game_over_fade_seconds": 3.0,
 	"_game_over": "Léo: sem tela própria; a tela escurece bem devagar e volta ao último save. 3 s é provisório do Claude.",

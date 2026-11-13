@@ -14,6 +14,7 @@ func _run() -> void:
 	await _test_stealth()
 	await _test_game_over()
 	await _test_party()
+	await _test_crouch_and_reload()
 	await _test_gear()
 	await _test_small_upgrades()
 	await _test_enemy_roles()
@@ -218,6 +219,40 @@ func _test_party() -> void:
 	room._use_kit_button()
 	_check(seguidor.is_alive() and room.inventory.count(room.KIT_ID) == 0 and lider.pa == 1, "ícone do kit reanima o caído encostado")
 	_check(room.action_bar._action_slots()[room.action_bar.kit_index()][0] == "kit", "kit_index aponta para a casa do kit")
+	room.queue_free()
+	await process_frame
+
+
+# Léo, 13/11: agachar em grupo e não atirar durante a recarga.
+func _test_crouch_and_reload() -> void:
+	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
+	root.add_child(room)
+	await process_frame
+	var lider: Combatant = room.party[0]
+	var seguidor: Combatant = room.party[1]
+	room._toggle_crouch()
+	_check(lider.crouched and seguidor.crouched, "agachar: o grupo junto agacha todo")
+	room._toggle_link(seguidor)  # solto da corrente
+	room._toggle_crouch()
+	_check(not lider.crouched and seguidor.crouched, "agachar: quem está solto da corrente não acompanha")
+	room._toggle_link(seguidor)
+	room._toggle_crouch()
+	_check(lider.crouched and seguidor.crouched, "agachar: preso de volta, agacha junto")
+	room.enemies[1].pv = 0
+	lider.pos = Vector2(650, 360)
+	seguidor.pos = Vector2(650, 384)
+	await process_frame
+	_check(room.mode == room.Mode.COMBAT and lider.crouched and seguidor.crouched, "o combate não levanta ninguém")
+	room.player = lider
+	room._toggle_crouch()
+	_check(not lider.crouched and seguidor.crouched, "em combate a tecla C troca só a postura de quem está na vez")
+	room.nikolai_clock[lider] = {"anim": "reload", "start": Time.get_ticks_msec()}
+	_check(room._reloading(lider) and room._attack_blocker(lider, room.enemies[0]) == "reloading", "recarregando: ataque bloqueado")
+	lider.pa = 3
+	room._combat_click(room.enemies[0].pos)
+	_check(lider.pa == 3 and room.fx.jobs.is_empty(), "recarregando: clicar no inimigo não atira nem gasta PA")
+	room.nikolai_clock[lider] = {"anim": "reload", "start": Time.get_ticks_msec() - 3000}
+	_check(not room._reloading(lider), "terminada a recarga, o ataque volta")
 	room.queue_free()
 	await process_frame
 

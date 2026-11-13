@@ -41,8 +41,7 @@ func show_exploration() -> void:
 
 
 func on_combat_started() -> void:
-	mode_label.text = HudText.mode_label(true)
-	show_notice("Combate!")
+	mode_label.text = HudText.mode_label(true)  # Léo, 13/11: o combate começa direto, sem aviso nem abertura
 
 
 func on_turn_started(unit_name: String, pa: int, max_pa: int) -> void:
@@ -76,8 +75,7 @@ func on_action_rejected(reason: String) -> void:
 
 
 func on_combat_ended() -> void:
-	show_exploration()
-	show_notice("Combate encerrado")
+	show_exploration()  # Léo, 13/11: sem aviso nem tela de fim; a exploração volta na hora
 
 
 func show_notice(text: String) -> void:

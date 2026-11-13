@@ -22,7 +22,7 @@ func _init() -> void:
 	# Combate começa: aviso aparece, mas o painel só abre quando um turno começa.
 	hud.on_combat_started()
 	_check(hud.mode_label.text == "COMBATE", "modo muda para combate")
-	_check(hud.notice_label.visible and hud.notice_label.text == "Combate!", "aviso de combate")
+	_check(not hud.notice_label.visible, "o combate começa direto, sem aviso")
 	_check(not hud.turn_panel.visible, "sem turno confirmado, sem painel")
 
 	hud.on_turn_started("Rafael", 3, 3)

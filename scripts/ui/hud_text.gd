@@ -8,6 +8,7 @@ const REJECTION_MESSAGES := {
 	"no_pa": "PA insuficientes",
 	"out_of_range": "Fora de alcance",
 	"no_line_of_sight": "Sem linha de visão",
+	"reloading": "Recarregando",
 	"requirement": "Requisito não atendido",
 }
 const UNKNOWN_REJECTION := "Ação inválida"

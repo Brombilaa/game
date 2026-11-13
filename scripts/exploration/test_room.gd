@@ -37,6 +37,7 @@ const REVIVE_REACH := 16.0  # borda a borda: "adjacente" para reanimar
 
 const KIT_ID := "kit_primeiros_socorros"
 
+const RELOAD_SECONDS := 2.0  # recarga: 12 quadros a 6/s (AnimSheet.FPS["reload"])
 const SWAP_PA := 1  # trocar de arma em combate (GDD #18)
 
 const POPUP_SECONDS := 1.2
@@ -46,8 +47,8 @@ const HIT_SHAKE_SECONDS := 0.2
 const CRIT_SHAKE_SECONDS := 0.35
 
 const POPUP_STYLES := {
-	"damage": {"size": 26, "color": Color(1.0, 0.92, 0.85)},
-	"crit": {"size": 36, "color": Color(1.0, 0.8, 0.25)},
+	"damage": {"size": 28, "color": Color(1.0, 0.92, 0.85)},
+	"crit": {"size": 40, "color": Color(1.0, 0.8, 0.25)},
 	"miss": {"size": 15, "color": Color(0.68, 0.66, 0.62)},
 	"blocked": {"size": 14, "color": Color(0.6, 0.7, 0.85)},
 	"down": {"size": 14, "color": Color(0.95, 0.3, 0.25)},
@@ -378,7 +379,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_player_delay()
 		elif event.pressed and event.keycode == KEY_Q:
 			_swap_weapon()
-		elif event.pressed and event.keycode == KEY_G and use_3d and _sheet3d(player) != null:
+		elif event.pressed and event.keycode == KEY_G and use_3d and _sheet3d(player) != null and not fx.animating() and not _reloading(player):
 			nikolai_clock[player] = {"anim": "reload", "start": Time.get_ticks_msec()}  # teste da recarga (ainda não há munição no jogo)
 			queue_redraw()
 		elif event.pressed and event.keycode == KEY_V:
@@ -389,9 +390,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			anim3d_pick = (anim3d_pick + 2) % (AnimSheet.NAMES.size() + 1) - 1
 			_popup(player.pos, "anim: automático" if anim3d_pick < 0 else "anim: " + AnimSheet.NAMES[anim3d_pick])
 			queue_redraw()
-		elif event.pressed and event.keycode == KEY_C and mode == Mode.EXPLORATION:
-			player.crouched = not player.crouched
-			queue_redraw()
+		elif event.pressed and event.keycode == KEY_C and (mode == Mode.EXPLORATION or _player_ready()):
+			_toggle_crouch()
 		return
 	if event is InputEventMouseMotion:
 		_update_cursor()
@@ -425,6 +425,34 @@ func _unhandled_input(event: InputEvent) -> void:
 				_order_move(click)
 		elif mode == Mode.COMBAT:
 			_combat_click(click)
+
+
+# Agachar (tecla C). Léo, 13/11: se o time está junto, todos agacham e levantam juntos. "Junto" = o líder e os
+# seguidores presos na corrente; quem foi solto da corrente (`unlinked`) mantém a postura própria. Em combate
+# a postura continua valendo e a tecla C troca a de quem está na vez (grátis, sem PA; provisório).
+func _toggle_crouch() -> void:
+	var stance := not player.crouched
+	player.crouched = stance
+	if mode == Mode.EXPLORATION:
+		for m in party:
+			if m != player and m.is_alive() and not unlinked.has(m):
+				m.crouched = stance
+	queue_redraw()
+
+
+# Recarga (tecla G, por enquanto só a animação): enquanto dura, o personagem não ataca (Léo, 13/11: "atira enquanto recarrega").
+func _reloading(u: Combatant) -> bool:
+	var c: Dictionary = nikolai_clock.get(u, {})
+	if c.get("anim", "") != "reload":
+		return false
+	return (Time.get_ticks_msec() - int(c["start"])) / 1000.0 < RELOAD_SECONDS
+
+
+# Bloqueio do ataque: a recarga em curso vem antes das regras (alcance, linha de visão).
+func _attack_blocker(attacker: Combatant, target: Combatant) -> String:
+	if _reloading(attacker):
+		return "reloading"
+	return rules.attack_blocker(attacker, target, _sight_blockers(), covers)
 
 
 # --- Visibilidade --------------------------------------------------------------
@@ -634,7 +662,7 @@ func _check_detection() -> void:
 # Fora do alcance da arma, o personagem só anda até o alvo.
 func _stealth_attack(target: Combatant) -> void:
 	player.pa = int(player.weapon["pa_cost"])  # fora do combate não há PA; o custo é só formal
-	var blocker := rules.attack_blocker(player, target, _sight_blockers(), covers)
+	var blocker := _attack_blocker(player, target)
 	if blocker == "out_of_range":
 		player.pa = 0
 		var stand := target.pos.move_toward(player.pos, player.radius + target.radius + 2.0 + float(player.weapon["max_range"]) * 0.5)
@@ -755,6 +783,9 @@ func _combat_click(click: Vector2) -> void:
 		return
 	var target := _enemy_at(click)
 	if target:
+		if _reloading(player):
+			_reject("reloading")
+			return
 		_show_attack(player, target, rules.attack(player, target, _sight_blockers(), covers))
 		_after_player_action()
 		return
@@ -1280,24 +1311,27 @@ func _draw_perf(font: Font) -> void:
 
 # Feedback de combate (provisório do Claude, 29/10/2026): dano em número que sobe e some,
 # "ERROU" em cinza, crítico maior em dourado com "CRÍTICO!" e um tremor na tela.
-func _draw_popup(font: Font, p: Dictionary) -> void:
+# Pop-ups só com o número (Léo, 13/11): sem placa nem etiqueta, fonte do título, contorno escuro e uma sombra suave.
+# Palavras (ERROU, CAÍDO...) ficam menores, na mesma fonte.
+const POPUP_FONT := preload("res://assets/fonts/SpecialElite-Regular.ttf")
+
+
+# Pop-ups só com o número, na máquina de escrever (Léo, 13/11: "essa é a fonte que usaremos para a maioria das coisas
+# in game"): levemente tortos, contorno escuro fino, sem placa nem etiqueta; o crítico é maior, dourado e torto para o outro lado.
+func _draw_popup(_font: Font, p: Dictionary) -> void:
 	var style: Dictionary = POPUP_STYLES.get(p.kind, POPUP_STYLES.info)
 	var age: float = 1.0 - p.time / POPUP_SECONDS
 	var alpha: float = clampf(p.time / POPUP_SECONDS * 2.5, 0.0, 1.0)
 	var size: int = style.size
 	if p.kind == "crit" and age < 0.15:
-		size = int(size * (1.6 - age * 4.0))  # cresce e assenta no primeiro instante
-	var width := font.get_string_size(p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-	var at: Vector2 = p.pos + Vector2(-width * 0.5, -28.0 * age)
+		size = int(size * (1.5 - age * 3.3))  # o crítico cresce e assenta no primeiro instante
+	var width := POPUP_FONT.get_string_size(p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	var at: Vector2 = p.pos + Vector2(0, -28.0 * age)
 	var color: Color = style.color
-	draw_string_outline(font, at, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 7, Color(0.05, 0.03, 0.02, alpha))
-	draw_string(font, at, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(color, alpha))
-	if p.kind == "crit":
-		var tag := "CRÍTICO!"
-		var tw := font.get_string_size(tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
-		var tag_at: Vector2 = p.pos + Vector2(-tw * 0.5, -28.0 * age - size - 2)
-		draw_string_outline(font, tag_at, tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, 3, Color(0.05, 0.03, 0.02, alpha))
-		draw_string(font, tag_at, tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(0.95, 0.35, 0.25, alpha))
+	draw_set_transform(at, -0.06 if p.kind != "crit" else 0.05, Vector2.ONE)
+	draw_string_outline(POPUP_FONT, Vector2(-width * 0.5, 0), p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 4, Color(0.05, 0.03, 0.02, alpha))
+	draw_string(POPUP_FONT, Vector2(-width * 0.5, 0), p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(color.lerp(Color(0.93, 0.89, 0.78), 0.45), alpha))
+	draw_set_transform(Vector2.ZERO)
 
 
 # Chão liso e cinza. A sala é dividida pela parede do meio; cada metade só aparece quando está visível
@@ -1577,39 +1611,14 @@ func _chest_px(_u: Combatant) -> float:
 	return 60.0
 
 
-# Mira do ataque (Léo, 08/11): só um traço de luz da arma até o peito do alvo, parado, sem anel nem ponto
-# de mira e sem animação de crescer ou fechar (ele gostou da linha e pediu para tirar o resto).
-func _draw_aim(a: Combatant, t: Combatant, _p: float) -> void:
-	var to := _iso(t.pos) + fx.offset_of(t) + Vector2(0, -_chest_px(t))
-	var from := _iso(a.pos) + Vector2(0, -_chest_px(a))
-	var hand: Vector2 = fx.muzzle_at.call(a) if fx.muzzle_at.is_valid() else Vector2.INF
-	if hand != Vector2.INF:
-		from = hand
-	var core := Color(1.0, 0.3, 0.24)
-	var pts := PackedVector2Array()
-	var cols := PackedColorArray()
-	var glow := PackedColorArray()
-	for i in 17:
-		var k := i / 16.0
-		pts.append(from.lerp(to, k))
-		cols.append(Color(core.r, core.g, core.b, 0.06 + 0.62 * k))
-		glow.append(Color(core.r, core.g, core.b, 0.03 + 0.14 * k))
-	draw_polyline_colors(pts, glow, 5.0, true)
-	draw_polyline_colors(pts, cols, 1.3, true)
-
-
 # Mira, clarão, partículas e flash vermelho do modelo B, por cima da cena e por baixo do HUD.
 func _draw_fx() -> void:
-	for job in fx.jobs:
-		var a: Combatant = job["attacker"]
-		var t: Combatant = job["target"]
-		_draw_aim(a, t, CombatFx.aim_progress(job))
+	# Sem linha durante a animação do ataque (Léo, 13/11): a única linha é a da prévia, ao apontar/clicar no alvo.
 	for m in fx.muzzles:  # clarão de 2 quadros
 		var big: bool = m["time"] > CombatFx.MUZZLE_SECONDS * 0.5
 		var r := 9.0 if big else 5.0
 		draw_circle(m["pos"], r, Color(1.0, 0.85, 0.45, 0.95))
 		draw_circle(m["pos"], r * 0.5, Color(1, 1, 0.9))
-		draw_line(m["pos"], m["pos"] + m["dir"] * (r * 2.2), Color(1.0, 0.9, 0.6), 2.0)
 	for pt in fx.particles:
 		var k: float = clampf(pt["life"] / pt["max"], 0.0, 1.0)
 		match pt["kind"]:
@@ -1648,7 +1657,7 @@ func _draw_preview(font: Font) -> void:
 	var target := _enemy_at(mouse)
 	var text := ""
 	if target:
-		var blocker := rules.attack_blocker(player, target, _sight_blockers(), covers)
+		var blocker := _attack_blocker(player, target)
 		if blocker != "":
 			text = HudText.rejection_message(blocker)
 		else:
