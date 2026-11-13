@@ -47,10 +47,10 @@ jobs:
       - name: Exportar Windows
         run: |
           mkdir -p build/windows
-          ./godot --headless --path . --export-release "Windows Desktop" build/windows/OrdemParanormal.exe
-          test -f build/windows/OrdemParanormal.exe
-          name="OrdemParanormal-${GITHUB_REF_NAME//\//-}-windows"
-          (cd build/windows && zip -q "../../$name.zip" OrdemParanormal.exe)
+          ./godot --headless --path . --export-release "Windows Desktop" build/windows/PactoCarmesim.exe
+          test -f build/windows/PactoCarmesim.exe
+          name="PactoCarmesim-${GITHUB_REF_NAME//\//-}-windows"
+          (cd build/windows && zip -q "../../$name.zip" PactoCarmesim.exe)
           echo "ZIP=$name.zip" >> "$GITHUB_ENV"
 
       - uses: actions/upload-artifact@v4
