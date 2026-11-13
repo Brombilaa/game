@@ -16,6 +16,7 @@ func _run() -> void:
 	_cleanup()
 	_test_intro()
 	_test_options()
+	await _test_sem_save()
 	await _test_scene()
 	_cleanup()
 	print("Falhas: %d" % failures)
@@ -48,6 +49,10 @@ func _test_intro() -> void:
 
 	_check(MainMenu.area_label("test_room") == "Sala de teste", "nome amigável da área")
 	_check(MainMenu.area_label("") != "", "área vazia ainda tem texto")
+	_check(MainMenu.slot_label({"rotulo": "FAZENDA GHULAR · 23h"}) == "Fazenda Ghular · 23h", "rótulo do lugar fica legível")
+	_check(MainMenu.slot_label({"area": "parque"}) == "Parque", "sem rótulo, usa o nome da área")
+	_check(MainMenu.slot_detail({"slot": "auto", "status": "ok", "saved_at": 0}).begins_with("Automático"), "o automático diz que é automático")
+	_check(MainMenu.slot_detail({"slot": "manual_1", "status": SaveGame.NEWER}).contains("mais nova"), "save de versão mais nova avisa")
 	_check(MainMenu.date_label(0) == "", "sem data quando o slot não tem horário")
 	_check(MainMenu.date_label(1_800_000_000).begins_with("Salvo em "), "data do save formatada")
 
@@ -80,11 +85,22 @@ func _test_scene() -> void:
 	menu.skip_intro()
 	_check(menu.intro_done(), "clique ou tecla pula a abertura")
 
+	_check(menu.items[0][0] == "continue", "com save, Continuar é o primeiro item")
+	_check(menu.continue_slot != "", "Continuar aponta para um slot")
 	menu.activate("load")
 	_check(menu.panel == "load", "Carregar abre o painel")
-	_check(menu.slots.size() == 3, "mostra exatamente os 3 slots manuais")
-	_check(menu.slots[0]["empty"] and not menu.slots[1]["empty"] and menu.slots[2]["empty"], "só o slot 2 está ocupado")
-	_check(not menu.load_slot(0), "slot vazio não carrega")
+	_check(menu.slots.size() == 4, "mostra o automático e os 3 manuais")
+	_check(menu.slots[0]["slot"] == "auto" and not menu.slots[0]["empty"], "o automático aparece primeiro")
+	_check(menu.slots[1]["empty"] and not menu.slots[2]["empty"] and menu.slots[3]["empty"], "dos manuais, só o 2 está ocupado")
+	_check(not menu.load_slot(1), "slot vazio não carrega")
+	_check(not menu.load_slot(2) and not menu.starting, "save sem a missão não abre o jogo e o menu continua usável")
+	var corrupt := FileAccess.open(SaveSlots.path_for(SaveSlots.manual(3), DIR), FileAccess.WRITE)
+	corrupt.store_string("{ quebrado")
+	corrupt.close()
+	menu.refresh_slots()
+	_check(menu.slots[3]["empty"] and menu.slots[3]["status"] == SaveGame.CORRUPT, "save corrompido é marcado como corrompido")
+	_check(MainMenu.slot_detail(menu.slots[3]).contains("corrompido"), "o slot corrompido avisa em vez de dizer Vazio")
+	await process_frame
 	await process_frame
 	menu.close_panel()
 	_check(menu.panel == "", "Fechar volta ao menu")
@@ -99,6 +115,17 @@ func _test_scene() -> void:
 	await process_frame
 	menu.close_panel()
 	await process_frame
+	menu.queue_free()
+	await process_frame
+
+
+func _test_sem_save() -> void:
+	var menu: MainMenu = load("res://scenes/menu/main_menu.tscn").instantiate()
+	menu.save_dir = DIR
+	menu.options_path = OPTIONS_PATH
+	root.add_child(menu)
+	await process_frame
+	_check(menu.items[0][0] == "new" and menu.continue_slot == "", "sem save, não há Continuar")
 	menu.queue_free()
 	await process_frame
 

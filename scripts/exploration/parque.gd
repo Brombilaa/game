@@ -91,6 +91,32 @@ func _ready() -> void:
 	if world3d:
 		fx.muzzle_at = _arma3d
 	fx.chest_px = _chest_px
+	var salvo := Progresso.tomar_pendente()
+	if not salvo.is_empty():  # veio de Continuar, Carregar ou do Game Over
+		Progresso.aplicar(self, salvo)
+		_reset_follow_offsets(Vector2.RIGHT)
+		camera.position = _iso(player.pos)
+	Progresso.autosalvar(self, _area_id(), _place_label())
+
+
+# Id do lugar no save (o mesmo dos dados em data/cenarios).
+func _area_id() -> String:
+	return SCENARIO_ID
+
+
+var pista_gatilho := ""  # pista cujo gatilho está rodando agora (o combate que ela dispara a tira do autosave)
+
+
+# Autosave no início do combate, com o grupo como estava antes dele.
+func _start_combat(surprise_side: int = -1) -> void:
+	Progresso.autosalvar(self, _area_id(), _place_label(), pista_gatilho)
+	super(surprise_side)
+
+
+# Game Over volta ao último autosave; sem save utilizável, recomeça o lugar.
+func _voltar_ao_save() -> void:
+	if not Progresso.carregar(get_tree(), SaveSlots.AUTO):
+		super()
 
 
 # Pontos de extensão para os outros lugares da missão (local3d.gd herda o parque inteiro).
@@ -755,8 +781,10 @@ func _close_dialog() -> void:
 	if cid == "" or seen_clues.has(cid):
 		return
 	seen_clues.append(cid)
+	pista_gatilho = cid
 	for trigger in scenario.triggers_after(cid):
 		_run_trigger(trigger)
+	pista_gatilho = ""
 	queue_redraw()
 
 
