@@ -3,6 +3,8 @@ extends RefCounted
 # Brilho dourado e borda branca nas malhas de um objeto examinável (modelo B do Léo, 13/11). Usado pelo Cenario3D
 # (lugares da missão 1) e pelo Parque3D.
 
+const BORDA_ALFA := 0.6  # opacidade máxima da borda branca (com o mouse em cima)
+
 var _decalques := {}  # "png|caixa" -> MeshInstance3D do contorno pintado
 var _destaques := {}  # chave -> {"nos": Array[MeshInstance3D], "contorno": Array, "brilho": Material}
 
@@ -120,6 +122,9 @@ func aplicar(pai: Node, chave: String, malhas: Array, contorno: float, brilho: f
 		var cm := StandardMaterial3D.new()
 		cm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		cm.cull_mode = BaseMaterial3D.CULL_FRONT
+		cm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA  # borda translúcida (Léo, 13/11: fina e suave, só para indicar o clique)
+		cm.render_priority = 12
+		cm.disable_fog = true
 		var cp := cm.duplicate() as StandardMaterial3D
 		cp.cull_mode = BaseMaterial3D.CULL_DISABLED
 		var bm := StandardMaterial3D.new()
@@ -139,7 +144,7 @@ func aplicar(pai: Node, chave: String, malhas: Array, contorno: float, brilho: f
 			var bb: AABB = mi.global_transform * mi.get_aabb()
 			var plano := bb.size.y < 0.05
 			var c := bb.get_center()
-			var borda := 0.05
+			var borda := 0.022  # 2,2 cm para cada lado (era 5 cm)
 			var s := Vector3(1.0 + 2.0 * borda / maxf(bb.size.x, 0.05), 1.0 if plano else 1.0 + 2.0 * borda / maxf(bb.size.y, 0.05), 1.0 + 2.0 * borda / maxf(bb.size.z, 0.05))
 			var xf := Transform3D(Basis.from_scale(s), c) * Transform3D(Basis.IDENTITY, -c) * mi.global_transform
 			var o := MeshInstance3D.new()
@@ -164,12 +169,12 @@ func aplicar(pai: Node, chave: String, malhas: Array, contorno: float, brilho: f
 		_destaques[chave] = {"nos": nos, "contorno": [cm, cp], "brilho": bm}
 	var d: Dictionary = _destaques[chave]
 	for mat in d["contorno"]:
-		(mat as StandardMaterial3D).albedo_color = Color(1.0, 1.0, 1.0, contorno)
-	(d["brilho"] as StandardMaterial3D).albedo_color = Color(0.95, 0.72, 0.36, brilho * 0.6)
+		(mat as StandardMaterial3D).albedo_color = Color(1.0, 1.0, 1.0, contorno * BORDA_ALFA)
+	(d["brilho"] as StandardMaterial3D).albedo_color = Color(0.95, 0.72, 0.36, brilho * 0.35)
 	for n in d["nos"]:
 		var t := str(n.get_meta("tipo"))
 		if t == "decalque":  # contorno pintado: suave parado, mais firme com o mouse em cima
-			var a := clampf(contorno * 0.8 + brilho * 0.6, 0.0, 0.8)
+			var a := clampf(contorno * BORDA_ALFA + brilho * 0.5, 0.0, BORDA_ALFA)
 			((n as MeshInstance3D).material_override as StandardMaterial3D).albedo_color = Color(1.0, 1.0, 1.0, a)
 			(n as Node3D).visible = a > 0.01
 			continue

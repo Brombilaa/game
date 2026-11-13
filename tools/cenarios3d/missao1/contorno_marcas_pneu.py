@@ -30,13 +30,13 @@ def main() -> None:
         d2.line(pts, fill=255, width=2 * w)
     marca = marca.filter(ImageFilter.MaxFilter(9)).filter(ImageFilter.MinFilter(9))  # fecha os furos da cor
     marca = marca.filter(ImageFilter.GaussianBlur(4)).point(lambda v: 255 if v > 110 else 0)
-    fora = marca.filter(ImageFilter.MaxFilter(15))  # +7 px
+    fora = marca.filter(ImageFilter.MaxFilter(9))  # +4 px (6 cm): fino, só para indicar o clique
     anel = np.clip(np.asarray(fora).astype(int) - np.asarray(marca.filter(ImageFilter.MaxFilter(5))).astype(int), 0, 255)
-    anel_img = Image.fromarray(anel.astype("uint8")).filter(ImageFilter.GaussianBlur(2.2))
+    anel_img = Image.fromarray(anel.astype("uint8")).filter(ImageFilter.GaussianBlur(1.4))
     alfa = np.asarray(anel_img).astype(float) / 255.0
     out = np.zeros((c.size[1], c.size[0], 4), dtype="uint8")
     out[..., :3] = 255
-    out[..., 3] = np.clip(alfa * 1.6, 0, 1) * 255
+    out[..., 3] = np.clip(alfa * 1.3, 0, 1) * 255
     anel_rgba = Image.fromarray(out, "RGBA")
     # A textura do chão tem o topo em z = 12 m; o plano do contorno começa em z = 3 m: vira de cabeça para baixo.
     anel_rgba.transpose(Image.FLIP_TOP_BOTTOM).save(SAIDA)
