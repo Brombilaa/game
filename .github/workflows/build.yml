@@ -1,13 +1,14 @@
-# Testes e build de Windows. Cada push na main substitui o único release "latest" (sem acumular
-# versões antigas); tag v* publica um release próprio; PRs e execução manual só geram o artifact.
+# Build de Windows. Só roda quando alguém pedir (Actions > build > Run workflow); não roda em PR nem em push.
+# Por padrão gera só o artifact; marque "publicar" para atualizar o release "latest".
 name: build
 
 on:
-  push:
-    branches: [main]
-    tags: ["v*"]
-  pull_request:
   workflow_dispatch:
+    inputs:
+      publicar:
+        description: 'Publicar o zip no release "latest" (substitui o anterior)'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -52,28 +53,18 @@ jobs:
           (cd build/windows && zip -q "../../$name.zip" OrdemParanormal.exe)
           echo "ZIP=$name.zip" >> "$GITHUB_ENV"
 
-      # Na main o zip já vai para o release "latest"; guardar também como artifact só estoura a cota.
       - uses: actions/upload-artifact@v4
-        if: github.ref != 'refs/heads/main'
-        # a cota de armazenamento de artifacts esgota e não deve impedir o release "latest"
         continue-on-error: true
         with:
           name: windows
           path: ${{ env.ZIP }}
-          retention-days: 1
-
-      - name: Publicar no GitHub Releases
-        if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" "$ZIP" --generate-notes --title "$GITHUB_REF_NAME"
-
+          retention-days: 7
 
       - name: Atualizar o release "latest" (substitui o anterior)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: inputs.publicar
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete latest --cleanup-tag --yes || true
-          gh release create latest "$ZIP" --target "$GITHUB_SHA" --prerelease --title "Build mais recente da main" \
-            --notes "Build automático do commit $GITHUB_SHA. Cada novo merge na main substitui este release."
+          gh release create latest "$ZIP" --target "$GITHUB_SHA" --prerelease --title "Build mais recente" \
+            --notes "Build manual do commit $GITHUB_SHA. Cada nova publicação substitui este release."
