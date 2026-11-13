@@ -9,7 +9,7 @@ const BIBLIOTECA := "res://assets/3d/animacoes/mixamo.res"
 const SHADER := "res://assets/3d/shaders/personagem_facetado.gdshader"
 const P3D := preload("res://scripts/exploration/parque3d.gd")
 const ALTURA := 2.2  # unidades 3D (herói de 128 px)
-# Modelo de cada folha (pasta do AnimSheet/IdleSheet, "criatura" para a CreatureSheet). Opcionais: boina (correção de
+# Modelo de cada folha (pasta do AnimSheet/IdleSheet). Opcionais: boina (correção de
 # tom da boina do Nikolai), biblioteca (animações próprias), textura (quando o FBX não traz embutida), altura e giro
 # (modelo exportado olhando para trás).
 const MODELOS := {
@@ -19,9 +19,6 @@ const MODELOS := {
 	"miguel3d": {"modelo": "res://assets/3d/personagens/miguel.fbx", "biblioteca": "res://assets/3d/animacoes/miguel.res", "armas": true},
 	# Caio: remodelado pelo Léo (08/11, versão corrigida v2, só com o idle do Mixamo; as outras animações vêm da biblioteca).
 	"caio3d": {"modelo": "res://assets/3d/personagens/caio.fbx", "biblioteca": "res://assets/3d/animacoes/caio.res"},  # versão corrigida v2 (08/11): já de frente, posições na escala dele (caio.res)
-	# Léo, 08/11: Criatura e Caio no mesmo nível do Nikolai e do Fernando. Textura A (aprovada em 05/11); 2,0 m contra 1,8 m dos agentes.
-	"criatura": {"modelo": "res://assets/3d/personagens/criatura.fbx", "biblioteca": "res://assets/3d/animacoes/criatura.res",
-		"textura": "res://assets/3d/personagens/criatura_textura.png", "altura": 2.45},
 }
 # Distância (unidades 3D) de um ciclo completo de cada caminhada, medida pelo pé de cada modelo (Léo, 08/11: "algumas
 # animações estão rápidas ao caminhar e outras lentas"). O ciclo anda pela distância percorrida no chão, então o pé não
@@ -79,8 +76,6 @@ func _init(pasta: String) -> void:
 	for a in modelo.find_children("*", "AnimationPlayer", true, false):
 		a.free()
 	esqueleto = modelo.find_children("*", "Skeleton3D", true, false)[0]
-	if pasta == "criatura":
-		_soltar_pescoco()
 	_mao = esqueleto.find_bone("mixamorig_RightHand")
 	var caminho: String = info.get("biblioteca", BIBLIOTECA)
 	if not _libs.has(caminho):
@@ -106,46 +101,6 @@ func _init(pasta: String) -> void:
 	_facetar(info.get("boina", false), load(info["textura"]) if info.has("textura") else null)
 	if info.get("armas", false):
 		_armar(caixa.size.y / 1.8)
-
-
-# Pescoço da Criatura de Sangue (Léo, 13/11: "pescoço colado no busto"). Na malha original a cabeça nasce direto
-# em cima dos ombros, sem pescoço. Aqui a coluna do pescoço é esticada para cima: tudo acima de PESCOCO_Y0 sobe
-# PESCOCO_ALONGA (em escala do modelo, 0,0001 = 1 cm de um modelo de 2 m) em degradê até PESCOCO_Y1, e a cabeça
-# inteira acompanha. Fora da coluna (|x| > PESCOCO_X) os ombros e braços ficam onde estavam, com queda suave.
-# Feito uma vez por execução; a malha corrigida é compartilhada entre as criaturas.
-const PESCOCO_Y0 := 0.0150
-const PESCOCO_Y1 := 0.0166
-const PESCOCO_ALONGA := 0.0011
-const PESCOCO_X0 := 0.0007
-const PESCOCO_X1 := 0.0014
-static var _malha_criatura: ArrayMesh
-
-
-func _soltar_pescoco() -> void:
-	var mi: MeshInstance3D = modelo.find_children("*", "MeshInstance3D", true, false)[0]
-	if _malha_criatura == null:
-		_malha_criatura = _malha_com_pescoco(mi.mesh as ArrayMesh)
-	mi.mesh = _malha_criatura
-
-
-static func _malha_com_pescoco(origem: ArrayMesh) -> ArrayMesh:
-	var arr := origem.surface_get_arrays(0)
-	var v: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
-	for i in v.size():
-		var p := v[i]
-		if p.y <= PESCOCO_Y0:
-			continue
-		var lado := 1.0 - smoothstep(PESCOCO_X0, PESCOCO_X1, absf(p.x))
-		if lado <= 0.0:
-			continue
-		p.y += PESCOCO_ALONGA * smoothstep(PESCOCO_Y0, PESCOCO_Y1, p.y) * lado
-		v[i] = p
-	arr[Mesh.ARRAY_VERTEX] = v
-	var nova := ArrayMesh.new()
-	nova.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr, [], {}, Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS)
-	nova.surface_set_material(0, origem.surface_get_material(0))
-	nova.custom_aabb = origem.get_aabb().grow(PESCOCO_ALONGA)
-	return nova
 
 
 # Mesmo material do Nikolai do parque3d (shader facetado, tons medidos contra o JS); sem boina, os tons da boina ficam neutros.
