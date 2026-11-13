@@ -339,15 +339,18 @@ func _hurt(m: Combatant) -> bool:
 	return m.pv > 0 and float(m.pv) / maxf(1.0, float(m.max_pv)) <= CharacterSheet.HURT_BELOW
 
 
-var _creature_portrait: Texture2D
+# Retrato próprio por variante de inimigo (arquivo em assets/sprites/retratos/<nome>_64.png).
+const ENEMY_PORTRAITS := {"criatura_sangue": "criatura", "atirador": "atirador", "dama_de_sangue": "dama"}
+var _enemy_faces := {}
 
 
-func _creature_face() -> Texture2D:
-	var path := "res://assets/sprites/retratos/criatura_64.png"
-	if _creature_portrait == null and ResourceLoader.exists(path):
-		_creature_portrait = load(path)
-	return _creature_portrait
-
+func _enemy_face(variant: String) -> Texture2D:
+	if not ENEMY_PORTRAITS.has(variant):
+		return null
+	if not _enemy_faces.has(variant):
+		var path := "res://assets/sprites/retratos/%s_64.png" % ENEMY_PORTRAITS[variant]
+		_enemy_faces[variant] = load(path) if ResourceLoader.exists(path) else null
+	return _enemy_faces[variant]
 
 
 func _draw_face(u: Combatant, rect: Rect2) -> void:
@@ -356,11 +359,10 @@ func _draw_face(u: Combatant, rect: Rect2) -> void:
 		room.agent_sheets[room.looks.get(u, 0)].draw_portrait(room, rect, _hurt(u))
 		return
 	var variant := room._enemy_variant(i)
-	if variant == room.CREATURE_VARIANT:  # retrato próprio da Criatura de Sangue
-		var face := _creature_face()
-		if face:
-			room.draw_texture_rect(face, rect, false)
-			return
+	var face := _enemy_face(variant)
+	if face:  # retrato próprio (Criatura de Sangue, Atirador)
+		room.draw_texture_rect(face, rect, false)
+		return
 	if room.enemy_sheets.has(variant):
 		room.enemy_sheets[variant].draw_portrait(room, rect)
 	else:
