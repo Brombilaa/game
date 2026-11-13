@@ -51,6 +51,7 @@ const GRUPO := [Vector2(450, 690), Vector2(510, 660), Vector2(545, 610)]  # Migu
 var camada_mundo: CanvasLayer
 var camera: Camera3D
 var cena_raiz: Node
+var recortes: Array = []  # caixas de onde se tiram triângulos da cena (data/cenarios/parque.json)
 var destaque := Destaque3D.new()  # brilho e borda das pistas
 var mundo: SubViewport  # o 3D é desenhado a ~1000 px de altura com MSAA 4x e ampliado, como o protótipo
 var agentes: Array[Node3D] = []
@@ -161,6 +162,7 @@ func _cenario() -> void:
 	var cena: Node = (load(CENARIO) as PackedScene).instantiate()
 	cena_raiz = cena
 	mundo.add_child(cena)
+	Destaque3D.recortar(cena, recortes)
 	# Postes: PointLight(0xffd694, 14, 14, decay 1,6) do protótipo. Energia, queda e um tom mais alaranjado
 	# medidos contra a poça de luz da referência (a queda do Godot com 1,6 espalhava a luz demais).
 	for l in cena.find_children("*", "OmniLight3D", true, false):

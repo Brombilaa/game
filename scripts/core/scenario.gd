@@ -17,6 +17,7 @@ var npcs := {}  # id -> posição
 var colliders := {}  # id -> Rect2
 var clues := {}  # id -> {"pos", "raio", "ordem", "texto", ...}
 var triggers := {}  # id -> gatilho
+var recortes: Array = []  # caixas do mundo 3D de onde se tiram triângulos (folhagem na frente de uma pista)
 var occluders: Array[Dictionary] = []  # {"id", "arquivo", "pos" (na imagem do fundo), "rect" (colisão de mesmo id)}
 var errors: PackedStringArray = []
 
@@ -133,6 +134,7 @@ func _parse(data: Dictionary) -> void:
 		colliders[c["id"]] = rect
 	for c in data.get("pistas", []):
 		clues[c["id"]] = {"pos": _vec(c["pos"]), "raio": float(c["raio"]), "ordem": int(c["ordem"]), "texto": str(c["texto"]), "inspecao": str(c.get("inspecao", "")), "bolinha": _vec(c.get("bolinha", [0, -60])), "areas": c.get("areas", []), "destaque": c.get("destaque", {})}
+	recortes = data.get("recortes", [])
 	for o in data.get("oclusores", []):
 		if not colliders.has(o["id"]):
 			errors.append("oclusor sem colisão de mesmo id: " + str(o["id"]))

@@ -92,3 +92,45 @@ func aplicar(pai: Node, chave: String, malhas: Array, contorno: float, brilho: f
 	for n in d["nos"]:
 		var t := str(n.get_meta("tipo"))
 		(n as Node3D).visible = (t == "contorno" and contorno > 0.01) or (t == "brilho" and brilho > 0.01)
+
+
+# Tira da cena os triângulos cujo centro cai numa caixa (coordenadas do mundo 3D), sem mexer no glb: serve para
+# limpar a folhagem que tapa um objeto (o arbusto na frente do tronco). `excluir` poupa malhas pelo nome.
+# Caixa: {"min": [x, y, z], "max": [x, y, z], "excluir": ["Mesh3", ...]}.
+static func recortar(raiz: Node, caixas: Array) -> void:
+	for caixa in caixas:
+		var lo: Array = caixa["min"]
+		var hi: Array = caixa["max"]
+		var box := AABB(Vector3(lo[0], lo[1], lo[2]), Vector3(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]))
+		var poupar: Array = caixa.get("excluir", [])
+		for n in raiz.find_children("*", "MeshInstance3D", true, false):
+			var mi := n as MeshInstance3D
+			if mi.mesh == null or poupar.has(String(mi.name)) or mi.get_parent() is Skeleton3D:
+				continue
+			if not (mi.global_transform * mi.get_aabb()).intersects(box):
+				continue
+			var novo := ArrayMesh.new()
+			var tirou := false
+			for s in mi.mesh.get_surface_count():
+				var arr: Array = mi.mesh.surface_get_arrays(s)
+				var vs: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+				var idx: PackedInt32Array
+				if arr[Mesh.ARRAY_INDEX] != null:
+					idx = arr[Mesh.ARRAY_INDEX]
+				else:
+					idx = PackedInt32Array()
+					idx.resize(vs.size())
+					for i in vs.size():
+						idx[i] = i
+				var fica := PackedInt32Array()
+				for t in range(0, idx.size() - 2, 3):
+					var c := (vs[idx[t]] + vs[idx[t + 1]] + vs[idx[t + 2]]) / 3.0
+					if box.has_point(mi.global_transform * c):
+						tirou = true
+					else:
+						fica.append_array(PackedInt32Array([idx[t], idx[t + 1], idx[t + 2]]))
+				arr[Mesh.ARRAY_INDEX] = fica
+				novo.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+				novo.surface_set_material(s, mi.mesh.surface_get_material(s))
+			if tirou:
+				mi.mesh = novo

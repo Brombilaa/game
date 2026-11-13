@@ -107,6 +107,7 @@ func _criar_mundo3d() -> Node3D:
 	w.embutido = true
 	w.nevoa_forca = NEVOA_FORCA
 	w.nevoa_baixa = NEVOA_BAIXA
+	w.recortes = scenario.recortes
 	if OS.get_environment("NEVOA") != "":  # comparação de modelos de névoa: "forca,baixa"
 		var v := OS.get_environment("NEVOA").split(",")
 		w.nevoa_forca = float(v[0])
