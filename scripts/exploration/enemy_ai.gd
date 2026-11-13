@@ -8,6 +8,9 @@ extends RefCounted
 
 var room  # a sala de combate (test_room.gd); sem tipo para não criar dependência circular
 var _gap_jumped := false  # o inimigo da vez já saltou por falta de rota neste turno
+var _attackers := {}  # alvo -> inimigos que já o atacaram nesta rodada (limite de foco)
+var _attackers_round := -1
+var _attackers_turns = null
 
 
 func _init(owner_room) -> void:
@@ -26,6 +29,7 @@ func run_turn(unit: Combatant) -> void:
 			room.turns.end_turn()
 			break
 		if room.rules.attack_blocker(unit, target, room._sight_blockers(), room.covers) == "":
+			_note_attack(unit, target)
 			room._show_attack(unit, target, room.rules.attack(unit, target, room._sight_blockers(), room.covers))
 			while room.fx.blocking() and room.mode == room.Mode.COMBAT:
 				await room.get_tree().process_frame  # a vez só passa depois do golpe e da queda; o rastro da barra de vida segue sozinho
@@ -39,11 +43,14 @@ func run_turn(unit: Combatant) -> void:
 
 # Alvo do inimigo (P8, provisório): o membro de pé com menor "distância ajustada" pela ameaça. Quem está
 # com metade do PV ou menos, ou sem SAN, pesa como se estivesse a 60% da distância. Empate: o mais perto.
+# Foco (Léo, 13/11): com 2 ou mais do grupo de pé no raio de foco, o alvo que já levou ataque de 2 outros
+# inimigos nesta rodada fica de fora; assim nunca são 3 no mesmo personagem.
 func pick_target(unit: Combatant) -> Combatant:
 	var best: Combatant = null
 	var best_score := INF
+	var crowded := _crowded_targets(unit)
 	for m in room.party:
-		if not m.is_alive():
+		if not m.is_alive() or crowded.has(m):
 			continue
 		var score := unit.pos.distance_to(m.pos)
 		if m.pv * 2 <= m.max_pv or (m.max_san > 0 and m.san <= 0):
@@ -52,6 +59,43 @@ func pick_target(unit: Combatant) -> Combatant:
 			best_score = score
 			best = m
 	return best
+
+
+# Alvos que já têm o máximo de atacantes nesta rodada (sem contar este inimigo). Vazio quando há menos de
+# 2 membros de pé no raio de foco: aí a regra não vale e todos podem mirar o mesmo.
+func _crowded_targets(unit: Combatant) -> Array:
+	_sync_round()
+	var radius: float = room.cfg.value("focus_radius_m") * room.cfg.value("pixels_per_meter")
+	var near := 0
+	for m in room.party:
+		if m.is_alive() and unit.pos.distance_to(m.pos) <= radius:
+			near += 1
+	if near < 2:
+		return []
+	var cap := int(room.cfg.value("focus_max_attackers"))
+	var out := []
+	for t in _attackers:
+		var others: Array = (_attackers[t] as Array).filter(func(a): return a != unit)
+		if others.size() >= cap:
+			out.append(t)
+	return out
+
+
+func _note_attack(unit: Combatant, target: Combatant) -> void:
+	_sync_round()
+	if not _attackers.has(target):
+		_attackers[target] = []
+	if not (_attackers[target] as Array).has(unit):
+		(_attackers[target] as Array).append(unit)
+
+
+# Zera o registro a cada rodada nova e a cada combate novo (cada combate tem o seu TurnManager).
+func _sync_round() -> void:
+	var r: int = room.turns.round_number if room.turns else -1
+	if r != _attackers_round or room.turns != _attackers_turns:
+		_attackers.clear()
+		_attackers_round = r
+		_attackers_turns = room.turns
 
 
 # Retorna false se não houver como se aproximar.
