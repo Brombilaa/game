@@ -18,6 +18,7 @@ func _run() -> void:
 	await _test_gear()
 	await _test_small_upgrades()
 	await _test_enemy_roles()
+	await _test_focus_limit()
 	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
 	room.rules.rng.seed = 3
 	root.add_child(room)
@@ -297,6 +298,31 @@ func _test_enemy_roles() -> void:
 		_check(c != null and c.kind == "partial", "atirador que sai do ponto distante vai para uma cobertura parcial")
 	else:
 		_check(true, "atirador para a 85% do alcance")
+	room.queue_free()
+	await process_frame
+
+
+# Léo, 13/11: nunca 3 inimigos no mesmo personagem enquanto houver 2 ou mais do grupo de pé por perto.
+func _test_focus_limit() -> void:
+	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
+	root.add_child(room)
+	await process_frame
+	var a: Combatant = room.party[0]
+	var b: Combatant = room.party[1]
+	for m in room.party:
+		m.pos = Vector2(900, 900) if m != a and m != b else m.pos
+	a.pos = Vector2(200, 300)
+	b.pos = Vector2(200, 400)
+	var e1: Combatant = room.cfg.make_enemy("atirador", Vector2(300, 300))
+	var e2: Combatant = room.cfg.make_enemy("atirador", Vector2(300, 310))
+	var e3: Combatant = room.cfg.make_enemy("atirador", Vector2(300, 320))
+	_check(room.ai.pick_target(e3) == a, "sem ataques na rodada, o terceiro também prefere o mais perto")
+	room.ai._note_attack(e1, a)
+	room.ai._note_attack(e2, a)
+	_check(room.ai.pick_target(e1) == a, "quem já atacou o alvo pode seguir nele")
+	_check(room.ai.pick_target(e3) == b, "o terceiro inimigo procura outro alvo")
+	b.take_damage(999)
+	_check(room.ai.pick_target(e3) == a, "com só 1 de pé por perto, a regra não vale")
 	room.queue_free()
 	await process_frame
 
