@@ -22,7 +22,9 @@ func selecionar(raizes: Array, p: Vector3, spec: Dictionary) -> Array:
 				continue
 			if not nomes.is_empty():
 				if nomes.has(str(mi.name)):
-					r.append(mi)
+					var parte := _parte_na_caixa(mi, spec["caixa"]) if spec.has("caixa") else mi
+					if parte != null:
+						r.append(parte)
 				continue
 			var bb: AABB = mi.global_transform * mi.get_aabb()
 			var d := Vector2(maxf(maxf(bb.position.x - p.x, 0.0), p.x - bb.end.x), maxf(maxf(bb.position.z - p.z, 0.0), p.z - bb.end.z)).length()
@@ -39,6 +41,42 @@ func selecionar(raizes: Array, p: Vector3, spec: Dictionary) -> Array:
 				continue
 			r.append(mi)
 	return r
+
+
+# Malha fundida com vários objetos (os bancos do parque): copia só os triângulos cujo centro cai na caixa do mundo
+# {"min": [x, y, z], "max": [x, y, z]}, numa malha escondida ao lado da original. null se a caixa não pegar nada.
+func _parte_na_caixa(mi: MeshInstance3D, caixa: Dictionary) -> MeshInstance3D:
+	var lo: Array = caixa["min"]
+	var hi: Array = caixa["max"]
+	var box := AABB(Vector3(lo[0], lo[1], lo[2]), Vector3(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]))
+	var novo := ArrayMesh.new()
+	for s in mi.mesh.get_surface_count():
+		var arr: Array = mi.mesh.surface_get_arrays(s)
+		var vs: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+		var idx := PackedInt32Array()
+		if arr[Mesh.ARRAY_INDEX] != null:
+			idx = arr[Mesh.ARRAY_INDEX]
+		else:
+			idx.resize(vs.size())
+			for i in vs.size():
+				idx[i] = i
+		var fica := PackedInt32Array()
+		for t in range(0, idx.size() - 2, 3):
+			var c := (vs[idx[t]] + vs[idx[t + 1]] + vs[idx[t + 2]]) / 3.0
+			if box.has_point(mi.global_transform * c):
+				fica.append_array(PackedInt32Array([idx[t], idx[t + 1], idx[t + 2]]))
+		if fica.is_empty():
+			continue
+		arr[Mesh.ARRAY_INDEX] = fica
+		novo.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+	if novo.get_surface_count() == 0:
+		return null
+	var parte := MeshInstance3D.new()
+	parte.mesh = novo
+	parte.visible = false
+	mi.get_parent().add_child(parte)
+	parte.transform = mi.transform
+	return parte
 
 
 # `contorno` e `brilho` vão de 0 a 1. Cria as cópias na primeira vez e depois só muda a opacidade.
