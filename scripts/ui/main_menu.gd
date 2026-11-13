@@ -65,7 +65,7 @@ var continue_slot := ""  # slot que o Continuar abre
 var options_path := GameOptions.PATH
 var options := GameOptions.shared()
 
-var background: MenuFundoArvore
+var background: Control  # MenuFundoArvore no menu inicial; o jogo desfocado na pausa
 var curtain: ColorRect  # preto da abertura
 var title_label: Label
 var title_rule: ColorRect
@@ -86,17 +86,18 @@ var _last_focus: Control = null
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	RenderingServer.set_default_clear_color(BG)
+	if not _is_pause():
+		RenderingServer.set_default_clear_color(BG)
 	theme = menu_theme()
 	options.apply()
 	GameCursor.apply(GameCursor.Kind.ARROW)
-	background = MenuFundoArvore.new()
+	background = _make_background()
 	add_child(background)
 	_build_title()
 	menu_box = VBoxContainer.new()
 	menu_box.add_theme_constant_override("separation", 2)
 	add_child(menu_box)
-	version_label = _label(VERSION, 10, Color(INK, 0.4))
+	version_label = _label(_footer_text(), 10, Color(INK, 0.4))
 	add_child(version_label)
 	_build_panel()
 	_build_dialog()
@@ -151,7 +152,7 @@ func _label(text: String, font_size: int, color: Color, spacing := 0) -> Label:
 
 
 func _build_title() -> void:
-	title_label = _label(TITLE, TITLE_SIZE, Color("efdcc6"), 8)
+	title_label = _label(_title_text(), TITLE_SIZE, Color("efdcc6"), 8)
 	title_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
 	title_label.add_theme_constant_override("shadow_offset_y", 2)
 	title_label.add_theme_constant_override("shadow_outline_size", 6)
@@ -233,13 +234,59 @@ func _layout() -> void:
 	box.position = (size - box.size) / 2.0
 
 
+# --- Pontos que o menu de pausa (PauseMenu) troca ------------------------------------
+
+func _is_pause() -> bool:
+	return false
+
+
+func _make_background() -> Control:
+	return MenuFundoArvore.new()
+
+
+func _title_text() -> String:
+	return TITLE
+
+
+func _footer_text() -> String:
+	return VERSION
+
+
+# Continuar só existe quando algum slot carrega.
+func _menu_items() -> Array:
+	continue_slot = SaveSlots.latest(save_dir)
+	var list: Array = ITEMS.duplicate()
+	if continue_slot != "":
+		list.push_front(CONTINUE_ITEM)
+	return list
+
+
+func _ask_text(action: String) -> String:
+	return "Começar um novo jogo? O save automático será substituído ao chegar no parque." if action == "new" else "Sair do jogo?"
+
+
+func _confirmed(action: String) -> void:
+	if action == "new":
+		_start_game("")
+	elif action == "quit":
+		get_tree().quit()
+
+
+func _panel_title(which: String) -> String:
+	return PANEL_TITLES.get(which, which.to_upper())
+
+
+func _fill_panel(_which: String) -> void:
+	pass
+
+
 # --- Abertura -------------------------------------------------------------------------
 
 func _process(delta: float) -> void:
 	t += delta
 	_apply_intro()
 	var mouse := get_local_mouse_position()
-	if size.x > 0:
+	if size.x > 0 and background is MenuFundoArvore:
 		background.parallax = Vector2(mouse.x / size.x - 0.5, mouse.y / size.y - 0.5)
 
 
@@ -277,10 +324,7 @@ func _apply_intro() -> void:
 
 # Continuar só existe quando algum slot carrega; o foco começa no primeiro item.
 func refresh_items() -> void:
-	continue_slot = SaveSlots.latest(save_dir)
-	items = ITEMS.duplicate()
-	if continue_slot != "":
-		items.push_front(CONTINUE_ITEM)
+	items = _menu_items()
 	for r in menu_rows:
 		menu_box.remove_child(r)
 		r.queue_free()
@@ -323,7 +367,7 @@ func activate(item: String) -> void:
 func _ask(action: String) -> void:
 	_last_focus = get_viewport().gui_get_focus_owner()
 	confirming = action
-	dialog_text.text = "Começar um novo jogo? O save automático será substituído ao chegar no parque." if action == "new" else "Sair do jogo?"
+	dialog_text.text = _ask_text(action)
 	dialog.visible = true
 	_layout()
 	dialog_rows[1].grab_focus()  # o foco começa no "Não"
@@ -335,19 +379,15 @@ func confirm(yes: bool) -> void:
 	dialog.visible = false
 	if _last_focus and is_instance_valid(_last_focus):
 		_last_focus.grab_focus()
-	if not yes:
-		return
-	if action == "new":
-		_start_game("")
-	elif action == "quit":
-		get_tree().quit()
+	if yes:
+		_confirmed(action)
 
 
 # --- Painéis --------------------------------------------------------------------------
 
 func _open(which: String) -> void:
 	panel = which
-	panel_title.text = PANEL_TITLES[which]
+	panel_title.text = _panel_title(which)
 	panel_rows.clear()
 	for c in panel_body.get_children():
 		panel_body.remove_child(c)  # sai já, para o painel encolher na altura do conteúdo novo
@@ -375,6 +415,8 @@ func _open(which: String) -> void:
 				block.add_child(head)
 				block.add_child(body)
 				panel_body.add_child(block)
+		_:
+			_fill_panel(which)
 	var close := MenuRow.new(self, MenuRow.Kind.ITEM, "close", "Fechar")
 	close.font_size = 15
 	close.centered = true

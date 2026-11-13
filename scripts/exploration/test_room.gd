@@ -344,6 +344,11 @@ func _zoom_by(factor: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Esc pausa e abre o menu de pausa (o inventário aberto pega o Esc antes, em _input).
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE and can_pause():
+		PauseMenu.open_on(self)
+		get_viewport().set_input_as_handled()
+		return
 	# P6: câmera livre em combate. Arrastar com o botão do meio move; clicar nele (ou Home) volta.
 	if mode == Mode.COMBAT:
 		if event is InputEventMouseMotion and (event.button_mask & MOUSE_BUTTON_MASK_MIDDLE) != 0:
@@ -773,6 +778,10 @@ func _game_over_fade() -> void:
 
 
 # A sala de teste não tem save: recomeça. O parque e os outros lugares voltam ao autosave.
+func can_pause() -> bool:
+	return mode != Mode.GAME_OVER and not get_tree().paused and not Scenes.busy(get_tree())
+
+
 func _voltar_ao_save() -> void:
 	get_tree().reload_current_scene()
 
