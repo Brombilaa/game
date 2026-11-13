@@ -79,8 +79,6 @@ func _init(pasta: String) -> void:
 	for a in modelo.find_children("*", "AnimationPlayer", true, false):
 		a.free()
 	esqueleto = modelo.find_children("*", "Skeleton3D", true, false)[0]
-	if pasta == "criatura":
-		_soltar_pescoco()
 	_mao = esqueleto.find_bone("mixamorig_RightHand")
 	var caminho: String = info.get("biblioteca", BIBLIOTECA)
 	if not _libs.has(caminho):
@@ -106,46 +104,6 @@ func _init(pasta: String) -> void:
 	_facetar(info.get("boina", false), load(info["textura"]) if info.has("textura") else null)
 	if info.get("armas", false):
 		_armar(caixa.size.y / 1.8)
-
-
-# Pescoço da Criatura de Sangue (Léo, 13/11: "pescoço colado no busto"). Na malha original a cabeça nasce direto
-# em cima dos ombros, sem pescoço. Aqui a coluna do pescoço é esticada para cima: tudo acima de PESCOCO_Y0 sobe
-# PESCOCO_ALONGA (em escala do modelo, 0,0001 = 1 cm de um modelo de 2 m) em degradê até PESCOCO_Y1, e a cabeça
-# inteira acompanha. Fora da coluna (|x| > PESCOCO_X) os ombros e braços ficam onde estavam, com queda suave.
-# Feito uma vez por execução; a malha corrigida é compartilhada entre as criaturas.
-const PESCOCO_Y0 := 0.0150
-const PESCOCO_Y1 := 0.0166
-const PESCOCO_ALONGA := 0.0011
-const PESCOCO_X0 := 0.0007
-const PESCOCO_X1 := 0.0014
-static var _malha_criatura: ArrayMesh
-
-
-func _soltar_pescoco() -> void:
-	var mi: MeshInstance3D = modelo.find_children("*", "MeshInstance3D", true, false)[0]
-	if _malha_criatura == null:
-		_malha_criatura = _malha_com_pescoco(mi.mesh as ArrayMesh)
-	mi.mesh = _malha_criatura
-
-
-static func _malha_com_pescoco(origem: ArrayMesh) -> ArrayMesh:
-	var arr := origem.surface_get_arrays(0)
-	var v: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
-	for i in v.size():
-		var p := v[i]
-		if p.y <= PESCOCO_Y0:
-			continue
-		var lado := 1.0 - smoothstep(PESCOCO_X0, PESCOCO_X1, absf(p.x))
-		if lado <= 0.0:
-			continue
-		p.y += PESCOCO_ALONGA * smoothstep(PESCOCO_Y0, PESCOCO_Y1, p.y) * lado
-		v[i] = p
-	arr[Mesh.ARRAY_VERTEX] = v
-	var nova := ArrayMesh.new()
-	nova.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr, [], {}, Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS)
-	nova.surface_set_material(0, origem.surface_get_material(0))
-	nova.custom_aabb = origem.get_aabb().grow(PESCOCO_ALONGA)
-	return nova
 
 
 # Mesmo material do Nikolai do parque3d (shader facetado, tons medidos contra o JS); sem boina, os tons da boina ficam neutros.
