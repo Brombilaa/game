@@ -29,6 +29,16 @@ portas ficam livres). `gerar_dados.py` converte para unidades da sala (64 por me
 acrescenta início, saídas, pistas, zonas, invasão e inimigos. Os textos e posições marcados `provisorio` são
 escolhas do Claude.
 
+### Delegacia ampliada (13/11/2026)
+
+O Léo achou a delegacia apertada no jogo (salas de 4,4 a 5,2 m, portas de 1,2 m) e escolheu o modelo B entre três:
+a mesma planta do modelo C com tudo 35% maior, portas internas de 1,8 m e os móveis altos só nas paredes do fundo.
+Em `delegacia.js` as paredes e os pisos escalam e os móveis são agrupados por sala e mantêm a distância até a parede
+(até 1 m); `?am=A|B|C|O` troca o modelo (O = planta de 12/11, guardada também em `delegacia_v1.js`). As grades das
+celas ganharam uma travessa a 1 m, senão o mapa de colisão não as via e o grupo atravessava. Os pontos de jogo
+(pistas, alçapão, chegadas, invasão, saída) saem já convertidos em `PONTOS`, que `col.js` grava no json da colisão e
+`gerar_dados.py` usa.
+
 ## 3. No jogo
 
 - `scripts/exploration/cenario3d.gd`: carrega o glb e o json, monta luzes, névoa e o filtro PC antigo.
