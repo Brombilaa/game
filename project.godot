@@ -5,10 +5,17 @@ config_version=5
 
 [application]
 
-config/name="Ordem Paranormal"
+config/name="Pacto Carmesim"
+config/use_custom_user_dir=true
+config/custom_user_dir_name="PactoCarmesim"
 config/description="RPG tático com exploração em tempo real e combate por turnos."
 run/main_scene="res://scenes/menu/main_menu.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
+
+[autoload]
+
+Game="*res://scripts/core/game.gd"
+SceneLoader="*res://scripts/core/scene_loader.gd"
 
 [display]
 

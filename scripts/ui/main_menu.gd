@@ -4,8 +4,9 @@ extends Control
 # Abertura de ~4,7 s: o símbolo é pintado traço por traço, as letras do nome surgem uma a uma
 # e o menu aparece; clique ou tecla pula a abertura. Depois o nome pulsa em vermelho e a luz de
 # vela treme atrás do símbolo. Tudo é desenhado por código (sem imagens), na tela de 960×540.
-# Carregar lista os 3 slots manuais do SaveSlots. A sala de teste ainda não lê saves, então
-# carregar um slot só guarda qual foi escolhido (`pending_slot`) e abre a sala.
+# Carregar lista os 3 slots manuais do SaveSlots. O jogo ainda não lê saves, então carregar um slot
+# só guarda qual foi escolhido (`pending_slot`, também em Game.pending_slot) e abre o jogo.
+# Opções vêm do autoload Game (GameOptions.shared()) e são gravadas a cada mudança.
 # Cenário da referência do Léo (30/10): mesa de investigação no escuro, vela acesa à esquerda,
 # símbolo pintado na parede e o nome em vermelho. Se existir BG_IMAGE (arte do ChatGPT), ela é
 # o fundo; sem ela, uma mesa simples é desenhada por código. O símbolo é chapado, em 2D.
@@ -73,6 +74,8 @@ const MENU_GAP := 40.0
 
 static var pending_slot := ""
 
+var starting := false  # já pediu a troca para o jogo
+
 var t := 0.0
 var focus := 0  # opção do menu em foco
 var focus_time := 0.0
@@ -82,7 +85,7 @@ var panel_fade := 0.0
 var save_dir := SaveSlots.DIR
 var slots: Array[Dictionary] = []
 var options_path := GameOptions.PATH
-var options := GameOptions.load_from()
+var options := GameOptions.shared()
 var strokes := sigil_strokes()
 var blots := sigil_blots()
 var light_tex := _radial([Color(0.6, 0.24, 0.12, 0.34), Color(0.6, 0.24, 0.12, 0.0)], [0.0, 1.0])
@@ -238,8 +241,7 @@ static func date_label(unix: int) -> String:
 func activate(item: String) -> void:
 	match item:
 		"new":
-			pending_slot = ""
-			get_tree().change_scene_to_file(GAME_SCENE)
+			_start_game("")
 		"load":
 			refresh_slots()
 			_open("load")
@@ -258,9 +260,19 @@ func close_panel() -> void:
 func load_slot(index: int) -> bool:
 	if index < 0 or index >= slots.size() or slots[index]["empty"]:
 		return false
-	pending_slot = slots[index]["slot"]
-	get_tree().change_scene_to_file(GAME_SCENE)
-	return true
+	return _start_game(slots[index]["slot"])
+
+
+# Troca para o jogo com fade; um segundo clique durante a troca é ignorado.
+func _start_game(slot: String) -> bool:
+	if starting:
+		return false
+	starting = true
+	pending_slot = slot
+	var game := get_node_or_null("/root/Game")
+	if game:
+		game.pending_slot = slot
+	return Scenes.go(get_tree(), GAME_SCENE)
 
 
 func _open(which: String) -> void:
@@ -279,6 +291,7 @@ func _change_option(row: int, step: float) -> void:
 	else:
 		options.set_volume(key, options.volume(key) + step)
 	options.apply()
+	options.save(options_path)  # grava a cada mudança
 
 
 func _accept_panel_row(row: int) -> void:
@@ -307,6 +320,8 @@ func _gui_input(event: InputEvent) -> void:
 			panel_focus = hit.y
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		accept_event()
+		if starting:
+			return
 		if not intro_done():
 			skip_intro()
 			return
@@ -320,11 +335,14 @@ func _gui_input(event: InputEvent) -> void:
 				var key: String = OPTION_ROWS[hit.y][0]
 				options.set_volume(key, (event.position.x - bar.position.x) / bar.size.x)
 				options.apply()
+				options.save(options_path)
 			else:
 				_accept_panel_row(hit.y)
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if starting:
+		return
 	if not event.is_pressed() or event.is_echo() and not (event.is_action("ui_left") or event.is_action("ui_right")):
 		return
 	if not intro_done():

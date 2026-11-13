@@ -6,6 +6,8 @@ extends Node
 
 const CUES_PATH := "res://data/audio_cues.json"
 const SFX_VOICES := 4
+const MUSIC_BUS := &"Music"  # default_bus_layout.tres; o volume vem das Opções
+const SFX_BUS := &"SFX"
 
 var sfx_cues := {}
 var music_cues := {}
@@ -18,9 +20,11 @@ var _next_voice := 0
 func _init() -> void:
 	load_cues(FileAccess.get_file_as_string(CUES_PATH))
 	music_player = AudioStreamPlayer.new()
+	music_player.bus = MUSIC_BUS
 	add_child(music_player)
 	for i in SFX_VOICES:
 		var p := AudioStreamPlayer.new()
+		p.bus = SFX_BUS
 		add_child(p)
 		sfx_players.append(p)
 

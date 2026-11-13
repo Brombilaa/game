@@ -2,7 +2,8 @@ class_name GameOptions
 extends RefCounted
 # Opções do menu inicial: volumes (0 a 1) e tela cheia, gravados em user://opcoes.cfg.
 # O volume geral vai no bus Master. Música e efeitos usam os buses "Music" e "SFX" quando
-# existirem; hoje o projeto só tem o Master, então esses dois ficam guardados para depois.
+# existirem (default_bus_layout.tres). A cópia usada pelo jogo fica no autoload Game:
+# peça com GameOptions.shared().
 
 const PATH := "user://opcoes.cfg"
 const SECTION := "opcoes"
@@ -10,6 +11,16 @@ const DEFAULTS := {"master": 0.8, "music": 0.6, "sfx": 0.7, "fullscreen": false,
 const BUSES := {"master": "Master", "music": "Music", "sfx": "SFX"}
 
 var values: Dictionary = DEFAULTS.duplicate()
+
+
+# A cópia única das opções, guardada no autoload Game. Sem o autoload (testes), lê do disco.
+static func shared() -> GameOptions:
+	var loop := Engine.get_main_loop()
+	if loop is SceneTree:
+		var game := (loop as SceneTree).root.get_node_or_null("Game")
+		if game and game.options:
+			return game.options
+	return load_from()
 
 
 static func load_from(path := PATH) -> GameOptions:
