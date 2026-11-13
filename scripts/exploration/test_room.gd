@@ -47,8 +47,8 @@ const HIT_SHAKE_SECONDS := 0.2
 const CRIT_SHAKE_SECONDS := 0.35
 
 const POPUP_STYLES := {
-	"damage": {"size": 26, "color": Color(1.0, 0.92, 0.85)},
-	"crit": {"size": 36, "color": Color(1.0, 0.8, 0.25)},
+	"damage": {"size": 28, "color": Color(1.0, 0.92, 0.85)},
+	"crit": {"size": 40, "color": Color(1.0, 0.8, 0.25)},
 	"miss": {"size": 15, "color": Color(0.68, 0.66, 0.62)},
 	"blocked": {"size": 14, "color": Color(0.6, 0.7, 0.85)},
 	"down": {"size": 14, "color": Color(0.95, 0.3, 0.25)},
@@ -1311,24 +1311,24 @@ func _draw_perf(font: Font) -> void:
 
 # Feedback de combate (provisório do Claude, 29/10/2026): dano em número que sobe e some,
 # "ERROU" em cinza, crítico maior em dourado com "CRÍTICO!" e um tremor na tela.
-func _draw_popup(font: Font, p: Dictionary) -> void:
+# Pop-ups só com o número (Léo, 13/11): sem placa nem etiqueta, fonte do título, contorno escuro e uma sombra suave.
+# Palavras (ERROU, CAÍDO...) ficam menores, na mesma fonte.
+const POPUP_FONT := preload("res://assets/fonts/CinzelDecorative-Bold.ttf")
+
+
+func _draw_popup(_font: Font, p: Dictionary) -> void:
 	var style: Dictionary = POPUP_STYLES.get(p.kind, POPUP_STYLES.info)
 	var age: float = 1.0 - p.time / POPUP_SECONDS
 	var alpha: float = clampf(p.time / POPUP_SECONDS * 2.5, 0.0, 1.0)
 	var size: int = style.size
 	if p.kind == "crit" and age < 0.15:
-		size = int(size * (1.6 - age * 4.0))  # cresce e assenta no primeiro instante
-	var width := font.get_string_size(p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+		size = int(size * (1.5 - age * 3.3))  # o crítico cresce e assenta no primeiro instante
+	var width := POPUP_FONT.get_string_size(p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 	var at: Vector2 = p.pos + Vector2(-width * 0.5, -28.0 * age)
 	var color: Color = style.color
-	draw_string_outline(font, at, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 7, Color(0.05, 0.03, 0.02, alpha))
-	draw_string(font, at, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(color, alpha))
-	if p.kind == "crit":
-		var tag := "CRÍTICO!"
-		var tw := font.get_string_size(tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
-		var tag_at: Vector2 = p.pos + Vector2(-tw * 0.5, -28.0 * age - size - 2)
-		draw_string_outline(font, tag_at, tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, 3, Color(0.05, 0.03, 0.02, alpha))
-		draw_string(font, tag_at, tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(0.95, 0.35, 0.25, alpha))
+	draw_string(POPUP_FONT, at + Vector2(0, 2), p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(0, 0, 0, 0.35 * alpha))
+	draw_string_outline(POPUP_FONT, at, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 6, Color(0.05, 0.03, 0.02, alpha))
+	draw_string(POPUP_FONT, at, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(color, alpha))
 
 
 # Chão liso e cinza. A sala é dividida pela parede do meio; cada metade só aparece quando está visível
