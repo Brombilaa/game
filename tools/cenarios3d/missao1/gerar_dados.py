@@ -23,7 +23,7 @@ def carregar(nome):
         return json.load(f)
 
 
-def cenario(cid, glb, col, hora, rotulo, grupo, extras):
+def cenario(cid, glb, col, hora, rotulo, grupo, extras, limite=None):
     x0, z0, x1, z1 = col["area"]
     w, h = (x1 - x0) * U, (z1 - z0) * U
 
@@ -41,6 +41,15 @@ def cenario(cid, glb, col, hora, rotulo, grupo, extras):
         rr = ret(*r)
         if rr[2] > 0 and rr[3] > 0:
             colisoes.append({"id": "c%d" % i, "rect": rr})
+    # Limite do lugar (Léo, 13/11: "não tem um quadrado limitando as paredes de cada lugar"): fora dele é sólido,
+    # então o grupo não dá a volta no prédio pela rua. Só fica a calçada da frente, onde o grupo chega e sai.
+    if limite:
+        lx0, lz0, lx1, lz1 = limite
+        for i, r in enumerate([(x0, z0, x1 - x0, lz0 - z0), (x0, lz1, x1 - x0, z1 - lz1),
+                               (x0, lz0, lx0 - x0, lz1 - lz0), (lx1, lz0, x1 - lx1, lz1 - lz0)]):
+            rr = ret(*r)
+            if rr[2] > 0 and rr[3] > 0:
+                colisoes.append({"id": "limite%d" % i, "rect": rr})
     dados = {
         "_comentario": "Gerado por tools/cenarios3d/missao1/gerar_dados.py a partir do mapa de colisão da cena 3D (não editar à mão).",
         "id": cid,
@@ -98,9 +107,12 @@ def delegacia21(d, p, ret):
     d["zonas"].append({"id": "saida", "ret": _ret4(ret, P["saida"]), "acao": "ir", "para": "fazenda", "requer": "invasao_vencida",
                        "texto": "O grupo segue para a Fazenda Ghular.", "provisorio": True})
     d["chegadas"] = {"subsolo": [p(*c) for c in P["chegadas_subsolo"]]}
-    # Invasão (Léo, 12/11): na saída do subsolo os inimigos entram pela porta da frente (porta da frente = provisório).
-    d["invasao"] = {"quando": "chegada_subsolo", "marca": "invasao_vencida", "inimigos": [
-        {"tipo": "cultista", "pos": p(*c)} for c in P["invasao"]]}
+    # Invasão (Léo, 13/11): depois do subsolo, ao entrar na recepção vindo do corredor, uma flashbang estoura pela
+    # porta da frente e os inimigos entram; todos atiradores. Faixa da zona e posições = provisórios.
+    d["zonas"].append({"id": "invasao", "ret": _ret4(ret, [5.6, 13.3, 13.8, 15.0]), "acao": "invasao",
+                       "requer": "subsolo_visitado", "provisorio": True})
+    d["invasao"] = {"quando": "zona", "marca": "invasao_vencida", "flashbang": p(9.75, 18.2), "inimigos": [
+        {"tipo": "atirador", "pos": p(*c), "provisorio": True} for c in [(9.75, 17.4), (7.7, 17.7), (11.8, 17.6)]]}
 
 
 def subsolo(d, p, ret):
@@ -123,23 +135,25 @@ def fazenda(d, p, ret):
     d["objetivos"] = [{"texto": "Investigar o celeiro", "pista": "poco"}]
     d["pistas"].append({"id": "poco", "pos": p(6.2, 8.1), "raio": 90, "ordem": 1, "bolinha": [0, -30],
                         "texto": "O poço antigo desce para o escuro. Lá embaixo ficam as ruínas.", "provisorio": True})
-    # Grupo chega um pouco antes do portão, fora do alcance de quem está lá dentro.
+    # Grupo chega um pouco antes do portão, fora do alcance de quem está lá dentro (o atirador vê a 7 m: a chegada
+    # recuou 2 m em 13/11).
     # Inimigos no celeiro (Léo, 12/11). Posições = centro das zonas marcadas no protótipo; eles percebem o grupo
     # pelo alcance normal (furtividade do GDD) e o combate começa.
+    # Todos atiradores (Léo, 13/11).
     for (x, z) in [(2.0, 5.8), (10.4, 7.0), (8.2, 10.6)]:
-        d["inimigos"].append({"tipo": "cultista", "pos": p(x, z), "provisorio": True})
+        d["inimigos"].append({"tipo": "atirador", "pos": p(x, z), "provisorio": True})
 
 
 def main():
     lista = [
-        ("delegacia_17h", "delegacia_17h", "delegacia_17h", 17, "DELEGACIA", [(7.2, 15.5), (6.5, 16.0), (7.9, 16.1)], delegacia17),
-        ("delegacia_21h", "delegacia_21h", "delegacia_21h", 21, "DELEGACIA", [(7.2, 15.5), (6.5, 16.0), (7.9, 16.1)], delegacia21),
-        ("subsolo", "subsolo", "subsolo", 21, "SUBSOLO", [(3.4, 2.6), (2.7, 2.9), (3.9, 3.3)], subsolo),
-        ("biblioteca", "biblioteca", "biblioteca", 19, "BIBLIOTECA", [(12.7, 11.2), (12.0, 11.7), (13.4, 11.7)], biblioteca),
-        ("fazenda", "fazenda", "fazenda", 23, "FAZENDA GHULAR", [(6.2, 15.8), (5.5, 16.4), (6.9, 16.5)], fazenda),
+        ("delegacia_17h", "delegacia_17h", "delegacia_17h", 17, "DELEGACIA", [(7.2, 15.5), (6.5, 16.0), (7.9, 16.1)], delegacia17, (-0.15, -0.15, 19.45, 22.25)),
+        ("delegacia_21h", "delegacia_21h", "delegacia_21h", 21, "DELEGACIA", [(7.2, 15.5), (6.5, 16.0), (7.9, 16.1)], delegacia21, (-0.15, -0.15, 19.45, 22.25)),
+        ("subsolo", "subsolo", "subsolo", 21, "SUBSOLO", [(3.4, 2.6), (2.7, 2.9), (3.9, 3.3)], subsolo, None),
+        ("biblioteca", "biblioteca", "biblioteca", 19, "BIBLIOTECA", [(12.7, 11.2), (12.0, 11.7), (13.4, 11.7)], biblioteca, (-0.15, -0.15, 18.15, 13.2)),
+        ("fazenda", "fazenda", "fazenda", 23, "FAZENDA GHULAR", [(6.2, 17.8), (5.5, 18.3), (6.9, 18.4)], fazenda, (-3.5, -2.5, 16.0, 19.0)),
     ]
-    for cid, glb, col, hora, rotulo, grupo, extras in lista:
-        dados = cenario(cid, glb, carregar(col), hora, rotulo, grupo, extras)
+    for cid, glb, col, hora, rotulo, grupo, extras, limite in lista:
+        dados = cenario(cid, glb, carregar(col), hora, rotulo, grupo, extras, limite)
         with open(os.path.join(RAIZ, "data", "cenarios", cid + ".json"), "w") as f:
             json.dump(dados, f, ensure_ascii=False, indent=1)
         print(cid, len(dados["colisoes"]), "colisões")

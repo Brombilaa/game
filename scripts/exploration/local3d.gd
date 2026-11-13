@@ -14,6 +14,10 @@ const CENARIO3D := preload("res://scripts/exploration/cenario3d.gd")
 
 var dados := {}  # o JSON do cenário inteiro (zonas, cena3d, invasão...), além do que o Scenario lê
 var dentro_de := {}  # id da zona -> o líder já estava dentro dela (só dispara ao entrar)
+var invadindo := false  # a invasão (flashbang + inimigos) já começou
+const FLASH_SOBE := 0.06  # flashbang: segundos até a tela ficar branca (provisório)
+const FLASH_SEGURA := 0.45  # segundos de tela branca (provisório)
+const FLASH_DESCE := 1.8  # segundos até a vista voltar (provisório)
 
 
 func _scenario_id() -> String:
@@ -59,7 +63,7 @@ func _ready() -> void:
 	for z in dados.get("zonas", []):
 		dentro_de[z["id"]] = _ret(z).has_point(player.pos)
 	var inv: Dictionary = dados.get("invasao", {})
-	if not inv.is_empty() and Missao1.chegada == "subsolo" and not Missao1.tem(str(inv["marca"])):
+	if not inv.is_empty() and str(inv.get("quando", "")) == "chegada_subsolo" and Missao1.chegada == "subsolo" and not Missao1.tem(str(inv["marca"])):
 		_invasao.call_deferred(inv)
 
 
@@ -90,8 +94,9 @@ func _place_label() -> String:
 	return "%s · %dh" % [str(dados.get("rotulo", local_id.to_upper())), int(dados.get("hora", 0))]
 
 
-func _enemy_variant(_i: int) -> String:
-	return "cultista"
+# Variante pelo nome da ficha (Léo, 13/11: todos atiradores); o atirador usa a figura do cultista e o retrato próprio.
+func _enemy_variant(i: int) -> String:
+	return "atirador" if i < enemies.size() and enemies[i].name == "Atirador" else "cultista"
 
 
 func _proximo_apos_vitoria() -> String:
@@ -117,6 +122,11 @@ func _zonas() -> void:
 		if str(z.get("acao", "")) == "ir":
 			_ir_para(str(z["para"]), str(z.get("chegada", "")), str(z.get("texto", "")))
 			return
+		if str(z.get("acao", "")) == "invasao":
+			var inv: Dictionary = dados.get("invasao", {})
+			if not inv.is_empty() and not Missao1.tem(str(inv["marca"])):
+				_invasao(inv)
+				return
 
 
 static func _ret(z: Dictionary) -> Rect2:
@@ -141,13 +151,38 @@ func _run_trigger(trigger: Dictionary) -> void:
 	queue_redraw()
 
 
-# Saída do subsolo às 21h: os inimigos entram pela porta da frente e o combate começa na hora.
+# Invasão da delegacia às 21h (Léo, 13/11): depois do subsolo, ao entrar na recepção, uma flashbang estoura pela
+# porta da frente (tela branca e tremida), os atiradores entram e o combate começa quando a vista volta.
 func _invasao(inv: Dictionary) -> void:
+	if invadindo:
+		return
+	invadindo = true
+	busy = true
+	path = PackedVector2Array()
+	moving_unit = null
+	var camada := CanvasLayer.new()
+	camada.layer = 80
+	add_child(camada)
+	var branco := ColorRect.new()
+	branco.color = Color(1.0, 0.98, 0.92, 0.0)
+	branco.set_anchors_preset(Control.PRESET_FULL_RECT)
+	branco.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	camada.add_child(branco)
+	var t := create_tween()
+	t.tween_property(branco, "color:a", 1.0, FLASH_SOBE)
+	await t.finished
 	for spec in inv["inimigos"]:
 		var p: Array = spec["pos"]
 		enemies.append(cfg.make_enemy(str(spec["tipo"]), Vector2(p[0], p[1])))
-	_popup(player.pos, "Invasão!", "crit")
+	fx.shake_time = FLASH_SEGURA  # tremor da tela (o mesmo do crítico, mais longo)
+	fx.shake_px = 7.0
+	await get_tree().create_timer(FLASH_SEGURA).timeout
+	busy = false
 	_start_combat()
+	var volta := create_tween()
+	volta.tween_property(branco, "color:a", 0.0, FLASH_DESCE).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+	await volta.finished
+	camada.queue_free()
 
 
 func _on_combat_ended(result: TurnManager.Result) -> void:

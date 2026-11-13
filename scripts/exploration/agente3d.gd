@@ -9,12 +9,16 @@ const BIBLIOTECA := "res://assets/3d/animacoes/mixamo.res"
 const SHADER := "res://assets/3d/shaders/personagem_facetado.gdshader"
 const P3D := preload("res://scripts/exploration/parque3d.gd")
 const ALTURA := 2.2  # unidades 3D (herói de 128 px)
+# Pés no chão (Léo, 13/11: "pés afundados em todos os cenários"). Os pisos dos cenários ficam de 1 a 3,5 cm acima do
+# zero e o personagem pisava no zero; CHAO levanta todos. "pe" no modelo: quanto as animações da biblioteca baixam o
+# pé em relação à pose de repouso (Fernando: 7,5 cm, medido pelos ossos do pé em idle e walk).
+const CHAO := 0.035
 # Modelo de cada folha (pasta do AnimSheet/IdleSheet, "criatura" para a CreatureSheet). Opcionais: boina (correção de
 # tom da boina do Nikolai), biblioteca (animações próprias), textura (quando o FBX não traz embutida), altura e giro
 # (modelo exportado olhando para trás).
 const MODELOS := {
 	"nikolai3d": {"modelo": "res://assets/3d/personagens/nikolai.glb", "boina": true, "armas": true},
-	"fernando3d": {"modelo": "res://assets/3d/personagens/fernando.fbx", "armas": true},
+	"fernando3d": {"modelo": "res://assets/3d/personagens/fernando.fbx", "armas": true, "pe": 0.075},
 	# Miguel (Léo, 08/11): Breathing Idle do próprio FBX; as outras animações do Nikolai/Fernando transferidas para o esqueleto dele.
 	"miguel3d": {"modelo": "res://assets/3d/personagens/miguel.fbx", "biblioteca": "res://assets/3d/animacoes/miguel.res", "armas": true},
 	# Caio: remodelado pelo Léo (08/11, versão corrigida v2, só com o idle do Mixamo; as outras animações vêm da biblioteca).
@@ -101,7 +105,7 @@ func _init(pasta: String) -> void:
 		primeiro = false
 	var k: float = info.get("altura", ALTURA) / maxf(caixa.size.y, 0.000001)
 	modelo.scale = Vector3.ONE * k
-	modelo.position.y = -caixa.position.y * k
+	modelo.position.y = -caixa.position.y * k + CHAO + float(info.get("pe", 0.0))
 	modelo.rotation.y = info.get("giro", 0.0)
 	_facetar(info.get("boina", false), load(info["textura"]) if info.has("textura") else null)
 	if info.get("armas", false):
