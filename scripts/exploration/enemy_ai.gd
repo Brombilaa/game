@@ -5,7 +5,6 @@ extends RefCounted
 # anda em direção ao agente até ficar a meio alcance da arma e tenta de novo. A sala (`room`) fornece
 # o estado (grupo, turnos, regras, obstáculos) e a encenação (movimento e ataque animados).
 
-const STEP_SECONDS := 0.4
 
 var room  # a sala de combate (test_room.gd); sem tipo para não criar dependência circular
 var _gap_jumped := false  # o inimigo da vez já saltou por falta de rota neste turno
@@ -19,7 +18,7 @@ func run_turn(unit: Combatant) -> void:
 	room.busy = true
 	_gap_jumped = false
 	while room.mode == room.Mode.COMBAT and room.turns.is_turn_of(unit):
-		await room.get_tree().create_timer(STEP_SECONDS).timeout
+		await room.get_tree().create_timer(room.cfg.value("enemy_step_seconds")).timeout
 		if not room.turns.is_turn_of(unit):
 			break
 		var target := pick_target(unit)
@@ -28,8 +27,8 @@ func run_turn(unit: Combatant) -> void:
 			break
 		if room.rules.attack_blocker(unit, target, room._sight_blockers(), room.covers) == "":
 			room._show_attack(unit, target, room.rules.attack(unit, target, room._sight_blockers(), room.covers))
-			while room.fx.animating() and room.mode == room.Mode.COMBAT:
-				await room.get_tree().process_frame  # a vez só passa depois da animação inteira
+			while room.fx.blocking() and room.mode == room.Mode.COMBAT:
+				await room.get_tree().process_frame  # a vez só passa depois do golpe e da queda; o rastro da barra de vida segue sozinho
 			room.turns.action_done()
 			continue
 		if not await advance(unit, target):

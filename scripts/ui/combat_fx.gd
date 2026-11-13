@@ -62,6 +62,11 @@ func animating() -> bool:
 	return not jobs.is_empty() or not kicks.is_empty() or not trail.is_empty() or not linger.is_empty()
 
 
+# O que segura a vez do inimigo: mira, arremesso e queda. O rastro da barra de vida é só enfeite e não espera.
+func blocking() -> bool:
+	return not jobs.is_empty() or not kicks.is_empty() or not linger.is_empty()
+
+
 # Ponto da sala que a câmera deve acompanhar durante o ataque: o meio entre atacante e alvo, para
 # os dois ficarem na tela (Léo, 02/11/2026). Vector2.INF quando não há animação em curso.
 func camera_focus() -> Vector2:
