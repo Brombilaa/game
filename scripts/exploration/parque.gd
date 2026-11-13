@@ -162,7 +162,7 @@ func _ir_para(local: String, chegada: String, texto: String, espera := 0.0) -> v
 	Missao1.local = local
 	Missao1.chegada = chegada
 	if is_inside_tree() and get_tree().current_scene == self:
-		get_tree().change_scene_to_file(Missao1.CENA_LOCAL)
+		Scenes.go(get_tree(), Missao1.CENA_LOCAL)
 
 
 # Paredes e coberturas a partir das colisões do cenário; o grupo começa na entrada.

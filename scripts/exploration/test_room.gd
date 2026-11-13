@@ -199,7 +199,7 @@ var cam_pan := Vector2.ZERO  # P6: deslocamento da câmera livre em combate (bot
 
 var _pan_unit: Combatant = null
 
-var options := GameOptions.load_from()
+var options := GameOptions.shared()
 
 var perf_on := false  # P11: medidor F3
 
