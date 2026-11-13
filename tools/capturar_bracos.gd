@@ -1,6 +1,13 @@
 extends SceneTree
-# Captura o personagem 3D de frente (Léo, 13/11: braços do Miguel muito afastados do corpo) e mede a distância
-# das mãos ao tronco. xvfb-run -a godot --path . --rendering-driver opengl3 --resolution 900x700 -s tools/capturar_bracos.gd -- pasta prefixo [personagem]
+# Captura um personagem 3D em três vistas (frente, lado e a câmera do jogo) em várias fases de cada animação, e mede
+# onde ficam as mãos em relação ao tronco (Léo, 13/11: braços do Miguel afastados, depois "muito na frente").
+#   xvfb-run -a godot --path . --rendering-driver opengl3 --resolution 1280x720 -s tools/capturar_bracos.gd -- pasta prefixo [personagem] [animação]
+# Com uma animação no fim, só ela, em 16 fases (para montar um GIF).
+# Saída: pasta/prefixo_<anim>_<vista>_<fase>.png. Medidas: x = para o lado (+ esquerda do personagem), z = para a frente.
+const ANIMS := ["idle", "walk", "run", "crouch_walk", "pistol_idle", "pistol_walk"]
+const FASES := [0.0, 0.25, 0.5, 0.75]
+
+
 func _initialize() -> void:
 	_run()
 
@@ -23,26 +30,50 @@ func _run() -> void:
 	root.add_child(env)
 	var ag := Agente3D.new(quem)
 	root.add_child(ag)
-	ag.virar(0.0)
+	ag.rotation.y = 0.0  # olhando para +Z
 	var cam := Camera3D.new()
-	cam.position = Vector3(0, 1.2, 4.2)
 	root.add_child(cam)
-	cam.look_at_from_position(cam.position, Vector3(0, 1.1, 0))
-	cam.fov = 30
+	cam.make_current()
+	var az := PI / 4.0
+	var el: float = Agente3D.P3D.ELEV
+	var vistas := {
+		"frente": [Vector3(0, 1.1, 6.0), false],
+		"lado": [Vector3(6.0, 1.1, 0), false],
+		"jogo": [Vector3(cos(el) * sin(az), sin(el), cos(el) * cos(az)) * 20.0 + Vector3(0, 1.1, 0), true],
+	}
 	Agente3D.relogio_teste = 0
-	for anim in ["idle", "walk", "pistol_idle", "pistol_walk", "crouch_walk", "run"]:
-		for f in [0.0, 0.25, 0.5, 0.75]:
+	var anims: Array = [args[3]] if args.size() > 3 else ANIMS
+	var fases: Array = FASES
+	if args.size() > 3:
+		fases = []
+		for i in 16:
+			fases.append(i / 16.0)
+	for anim in anims:
+		for f in fases:
 			for i in 3:
 				ag.pose(anim, f, true)
 				Agente3D.relogio_teste += 100
 				await process_frame
-			var sk := ag.esqueleto
-			var m := sk.global_transform
-			var q := m * sk.get_bone_global_pose(sk.find_bone("mixamorig_Spine1"))
-			var e := m * sk.get_bone_global_pose(sk.find_bone("mixamorig_LeftHand"))
-			var d := m * sk.get_bone_global_pose(sk.find_bone("mixamorig_RightHand"))
-			var ec := m * sk.get_bone_global_pose(sk.find_bone("mixamorig_LeftForeArm"))
-			var dc := m * sk.get_bone_global_pose(sk.find_bone("mixamorig_RightForeArm"))
-			print("%s %.2f  z mao E %.2f D %.2f  mao E %.2f D %.2f | cotovelo E %.2f D %.2f (x do tronco %.2f)" % [anim, f, e.origin.z - q.origin.z, d.origin.z - q.origin.z, e.origin.x - q.origin.x, d.origin.x - q.origin.x, ec.origin.x - q.origin.x, dc.origin.x - q.origin.x, q.origin.x])
-			root.get_texture().get_image().save_png("%s/%s_%s_%d.png" % [pasta, pre, anim, int(f * 100)])
+			_medir(ag, anim, f)
+			for v in vistas:
+				var pos: Vector3 = vistas[v][0]
+				cam.projection = Camera3D.PROJECTION_ORTHOGONAL if vistas[v][1] else Camera3D.PROJECTION_PERSPECTIVE
+				cam.size = 2.6
+				cam.fov = 24
+				cam.look_at_from_position(pos, Vector3(0, 1.1, 0))
+				await process_frame
+				await process_frame
+				root.get_texture().get_image().save_png("%s/%s_%s_%s_%d.png" % [pasta, pre, anim, v, roundi(f * 100)])
 	quit()
+
+
+func _medir(ag: Agente3D, anim: String, f: float) -> void:
+	var sk := ag.esqueleto
+	var m := sk.global_transform
+	var q := (m * sk.get_bone_global_pose(sk.find_bone("mixamorig_Spine1"))).origin
+	var txt := "%-12s %.2f" % [anim, f]
+	for lado in ["Left", "Right"]:
+		var mao := (m * sk.get_bone_global_pose(sk.find_bone("mixamorig_%sHand" % lado))).origin - q
+		var cot := (m * sk.get_bone_global_pose(sk.find_bone("mixamorig_%sForeArm" % lado))).origin - q
+		txt += "  %s mão x %+.2f z %+.2f, cotovelo x %+.2f z %+.2f" % ["E" if lado == "Left" else "D", mao.x, mao.z, cot.x, cot.z]
+	print(txt)

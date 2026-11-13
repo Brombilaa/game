@@ -21,7 +21,8 @@ const MODELOS := {
 	"fernando3d": {"modelo": "res://assets/3d/personagens/fernando.fbx", "armas": true, "pe": 0.075},
 	# Miguel (Léo, 08/11): Breathing Idle do próprio FBX; as outras animações do Nikolai/Fernando transferidas para o esqueleto dele.
 	"miguel3d": {"modelo": "res://assets/3d/personagens/miguel.fbx", "biblioteca": "res://assets/3d/animacoes/miguel.res", "armas": true,
-		"aduzir": {"idle": 30.0, "walk": 30.0, "run": 20.0, "crouch_walk": 20.0, "crouch_idle": 20.0}},
+		"bracos": {"origem": BIBLIOTECA, "ossos": ["LeftArm", "RightArm"],
+			"anims": ["walk", "run", "crouch_walk", "crouch_idle"], "junto": {"idle": 8.0, "walk": 8.0, "run": 6.0, "crouch_walk": 6.0}}},
 	# Caio: remodelado pelo Léo (08/11, versão corrigida v2, só com o idle do Mixamo; as outras animações vêm da biblioteca).
 	"caio3d": {"modelo": "res://assets/3d/personagens/caio.fbx", "biblioteca": "res://assets/3d/animacoes/caio.res"},  # versão corrigida v2 (08/11): já de frente, posições na escala dele (caio.res)
 	# Léo, 08/11: Criatura e Caio no mesmo nível do Nikolai e do Fernando. Textura A (aprovada em 05/11); 2,0 m contra 1,8 m dos agentes.
@@ -90,8 +91,8 @@ func _init(pasta: String) -> void:
 	var caminho: String = info.get("biblioteca", BIBLIOTECA)
 	if not _libs.has(caminho):
 		_libs[caminho] = load(caminho)
-		if info.has("aduzir"):
-			_aduzir(_libs[caminho], info["aduzir"])
+		if info.has("bracos"):
+			_corrigir_bracos(_libs[caminho], info["bracos"], esqueleto)
 	player = AnimationPlayer.new()
 	esqueleto.get_parent().add_child(player)
 	player.root_node = player.get_path_to(esqueleto.get_parent())
@@ -115,30 +116,45 @@ func _init(pasta: String) -> void:
 		_armar(caixa.size.y / 1.8)
 
 
-# Braços do Miguel (Léo, 13/11: "braços muito separados, quero mais junto mas sem entrar no corpo"). As animações vêm
-# do Nikolai/Fernando e o esqueleto do Miguel tem ombros mais abertos, então os braços saem afastados do tronco. Aqui
-# cada braço gira em direção ao corpo, em todas as chaves de cada clipe de `cfg` (clipe -> graus). Eixo Z do osso-pai
-# (medido: no Miguel de frente, +Z leva o braço esquerdo para dentro e o direito, com o sinal trocado, também).
-# Idle e andar: 30° (mão de 0,42 para 0,25 do centro); corrida e agachado: 20°, para o braço não entrar no corpo.
-# Feito uma vez, na biblioteca carregada (o arquivo .res não muda).
-const BRACOS_TRAS := 15.0  # graus
-
-
-static func _aduzir(lib: AnimationLibrary, cfg: Dictionary) -> void:
-	for nome in cfg:
-		var g := deg_to_rad(float(cfg[nome]))
+# Braços do Miguel (Léo, 13/11: "braços muito separados", depois "muito duro, com os braços muito na frente; têm que
+# estar ao lado do corpo"). As animações vêm do Nikolai/Fernando (mixamo.res) e a pose de repouso do esqueleto do
+# Miguel é outra, então as mesmas rotações locais deixavam os braços abertos e à frente do tronco. Aqui cada osso de
+# `ossos` ganha, nos clipes de `anims` (caminhadas), a diferença entre o idle do próprio Miguel e o idle da biblioteca de
+# origem: o braço parte da postura do Miguel e mantém o balanço da animação (vai para a frente e para trás, como no
+# Fernando). Pistola, fuzil e golpes ficam como vieram, para as duas mãos continuarem juntas na arma. Feito uma vez, na biblioteca carregada (o arquivo .res não muda).
+static func _corrigir_bracos(lib: AnimationLibrary, cfg: Dictionary, sk: Skeleton3D) -> void:
+	var ref: Animation = (load(cfg["origem"]) as AnimationLibrary).get_animation("idle")
+	var proprio := lib.get_animation("idle")
+	var delta := {}
+	for o in cfg["ossos"]:
+		var caminho := NodePath("Skeleton3D:mixamorig_" + o)
+		var tr := ref.find_track(caminho, Animation.TYPE_ROTATION_3D)
+		var tp := proprio.find_track(caminho, Animation.TYPE_ROTATION_3D)
+		if tr < 0 or tp < 0:
+			continue
+		delta[String(caminho)] = (proprio.track_get_key_value(tp, 0) as Quaternion) * (ref.track_get_key_value(tr, 0) as Quaternion).inverse()
+	# Eixo da frente do corpo visto de cada ombro (osso-pai do braço): girar em torno dele fecha o braço sem levar a mão
+	# para a frente nem para trás.
+	var eixo := {}
+	for lado in ["Left", "Right"]:
+		var ombro := sk.get_bone_parent(sk.find_bone("mixamorig_%sArm" % lado))
+		eixo[lado] = (sk.get_bone_global_rest(ombro).basis.inverse() * Vector3.FORWARD).normalized()
+	var junto: Dictionary = cfg.get("junto", {})
+	for nome in lib.get_animation_list():
 		var a := lib.get_animation(nome)
 		for t in a.get_track_count():
 			if a.track_get_type(t) != Animation.TYPE_ROTATION_3D:
 				continue
 			var p := String(a.track_get_path(t))
+			var d: Quaternion = delta.get(p, Quaternion.IDENTITY) if nome in cfg["anims"] else Quaternion.IDENTITY
+			# Mais junto ao corpo (sem entrar nele): `junto` = graus em torno da frente do corpo, com o sinal de cada lado.
 			var lado := 1.0 if p.ends_with(":mixamorig_LeftArm") else (-1.0 if p.ends_with(":mixamorig_RightArm") else 0.0)
-			if lado == 0.0:
+			if lado != 0.0 and junto.has(nome):
+				d = Quaternion(eixo["Left" if lado > 0.0 else "Right"], deg_to_rad(float(junto[nome])) * lado) * d
+			if d.is_equal_approx(Quaternion.IDENTITY):
 				continue
-			# Depois (Léo, 13/11: "um pouco mais para trás"): mais 15° em torno do eixo Y do osso-pai, que leva a mão para trás.
-			var r := Quaternion(Vector3.UP, deg_to_rad(BRACOS_TRAS) * lado) * Quaternion(Vector3.BACK, g * lado)
 			for k in a.track_get_key_count(t):
-				a.track_set_key_value(t, k, r * (a.track_get_key_value(t, k) as Quaternion))
+				a.track_set_key_value(t, k, d * (a.track_get_key_value(t, k) as Quaternion))
 
 
 # Pescoço da Criatura de Sangue (Léo, 13/11: "pescoço colado no busto"). Na malha original a cabeça nasce direto
