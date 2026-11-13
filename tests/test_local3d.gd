@@ -112,7 +112,23 @@ func _invasao() -> void:
 	_check(_visivel(room.world3d, "alcapao"), "na volta do subsolo o alçapão continua aberto")
 	for m in room.party:
 		_check(Pathfinder.is_free(m.pos, room._obstacles(m), m.radius), "volta do subsolo: %s chega em ponto livre" % m.name)
-	_check(room.mode == room.Mode.COMBAT and room.enemies.size() == 3, "na saída do subsolo os inimigos invadem e o combate começa")
+	_check(room.mode == room.Mode.EXPLORATION and room.enemies.is_empty(), "na saída do subsolo ainda não há invasão")
+	# Invasão (Léo, 13/11): ao entrar na recepção vindo do corredor, flashbang e atiradores pela porta da frente.
+	var zona: Dictionary = {}
+	for z in room.dados["zonas"]:
+		if z["id"] == "invasao":
+			zona = z
+	_check(not zona.is_empty(), "há a zona da invasão perto da recepção")
+	Missao1.marcar("subsolo_visitado")  # o subsolo marca ao chegar
+	room.player.pos = room._ret(zona).get_center() - Vector2(0, room._ret(zona).size.y)
+	room._zonas()
+	room.player.pos = room._ret(zona).get_center()
+	room._zonas()
+	_check(room.invadindo, "entrar na recepção dispara a flashbang")
+	await create_timer(room.FLASH_SOBE + room.FLASH_SEGURA + 0.3).timeout
+	_check(room.mode == room.Mode.COMBAT and room.enemies.size() == 3, "depois da flashbang os inimigos invadem e o combate começa")
+	for e in room.enemies:
+		_check(e.name == "Atirador", "o invasor é atirador")
 	for e in room.enemies:
 		var rota: PackedVector2Array = room.pathfinder.find_path(e.pos, room.player.pos, room._obstacles(e, false), e.radius)
 		_check(rota.size() > 1, "o invasor alcança o grupo")
