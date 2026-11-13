@@ -107,6 +107,7 @@ func _criar_mundo3d() -> Node3D:
 	w.embutido = true
 	w.nevoa_forca = NEVOA_FORCA
 	w.nevoa_baixa = NEVOA_BAIXA
+	w.recortes = scenario.recortes
 	if OS.get_environment("NEVOA") != "":  # comparação de modelos de névoa: "forca,baixa"
 		var v := OS.get_environment("NEVOA").split(",")
 		w.nevoa_forca = float(v[0])
@@ -613,12 +614,12 @@ func _pista_bolinha(at: Vector2, ativa: bool, locked: bool, perto: bool, pulse: 
 		draw_arc(at, radius + 5.0, 0.0, TAU, 24, Color(0.84, 0.68, 0.36, 0.5 * pulse), 1.0)
 
 
-# Malhas 3D do objeto da pista (dados: "destaque": {"estado": "tapete"}). Vazio quando o cenário não é 3D ou a pista não declara.
+# Malhas 3D do objeto da pista (dados: "destaque": {"estado": "tapete"}, ou "nomes"/"raio"/"mat"/"max", ver Destaque3D). Vazio quando o cenário não é 3D ou a pista não declara.
 func _malhas_pista(cid: String) -> Array:
 	if not pista_malhas.has(cid):
 		var c: Dictionary = scenario.clues[cid]
 		var d: Dictionary = c.get("destaque", {})
-		pista_malhas[cid] = world3d.malhas_em(Vector3(c.pos.x / 64.0, 0.0, c.pos.y / 64.0), str(d.get("estado", ""))) if world3d != null and world3d.has_method("malhas_em") and not d.is_empty() else []
+		pista_malhas[cid] = world3d.malhas_em(Vector3(c.pos.x / 64.0, 0.0, c.pos.y / 64.0), d) if world3d != null and world3d.has_method("malhas_em") and not d.is_empty() else []
 	return pista_malhas[cid]
 
 
