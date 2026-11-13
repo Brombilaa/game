@@ -1314,6 +1314,10 @@ func _draw_perf(font: Font) -> void:
 # Pop-ups só com o número (Léo, 13/11): sem placa nem etiqueta, fonte do título, contorno escuro e uma sombra suave.
 # Palavras (ERROU, CAÍDO...) ficam menores, na mesma fonte.
 const POPUP_FONT := preload("res://assets/fonts/CinzelDecorative-Bold.ttf")
+const POPUP_FONT_TYPE := preload("res://assets/fonts/SpecialElite-Regular.ttf")
+# Estilo do número: 0 gravado (título, contorno escuro), 1 máquina de escrever (a fonte do jogo, levemente torta),
+# 2 brasa (título com halo vermelho). Léo escolhe entre eles (13/11).
+var popup_style := 0
 
 
 func _draw_popup(_font: Font, p: Dictionary) -> void:
@@ -1323,12 +1327,27 @@ func _draw_popup(_font: Font, p: Dictionary) -> void:
 	var size: int = style.size
 	if p.kind == "crit" and age < 0.15:
 		size = int(size * (1.5 - age * 3.3))  # o crítico cresce e assenta no primeiro instante
-	var width := POPUP_FONT.get_string_size(p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	var f: Font = POPUP_FONT_TYPE if popup_style == 1 else POPUP_FONT
+	var width := f.get_string_size(p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 	var at: Vector2 = p.pos + Vector2(-width * 0.5, -28.0 * age)
 	var color: Color = style.color
-	draw_string(POPUP_FONT, at + Vector2(0, 2), p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(0, 0, 0, 0.35 * alpha))
-	draw_string_outline(POPUP_FONT, at, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 6, Color(0.05, 0.03, 0.02, alpha))
-	draw_string(POPUP_FONT, at, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(color, alpha))
+	var dark := Color(0.05, 0.03, 0.02, alpha)
+	match popup_style:
+		1:
+			draw_set_transform(at + Vector2(width * 0.5, 0), -0.06 if p.kind != "crit" else 0.05, Vector2.ONE)
+			draw_string_outline(f, Vector2(-width * 0.5, 0), p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 4, dark)
+			draw_string(f, Vector2(-width * 0.5, 0), p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(color.lerp(Color(0.93, 0.89, 0.78), 0.45), alpha))
+			draw_set_transform(Vector2.ZERO)
+		2:
+			var glow := Color(0.78, 0.15, 0.1, 0.22 * alpha) if p.kind != "crit" else Color(1.0, 0.55, 0.1, 0.3 * alpha)
+			draw_string_outline(f, at, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 16, glow)
+			draw_string_outline(f, at, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 9, Color(0.35, 0.04, 0.03, 0.55 * alpha))
+			draw_string_outline(f, at, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 4, dark)
+			draw_string(f, at, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(color, alpha))
+		_:
+			draw_string(f, at + Vector2(0, 2), p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(0, 0, 0, 0.35 * alpha))
+			draw_string_outline(f, at, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 6, dark)
+			draw_string(f, at, p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(color, alpha))
 
 
 # Chão liso e cinza. A sala é dividida pela parede do meio; cada metade só aparece quando está visível
