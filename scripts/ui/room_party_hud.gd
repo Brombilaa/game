@@ -340,7 +340,7 @@ func _hurt(m: Combatant) -> bool:
 
 
 # Retrato próprio por variante de inimigo (arquivo em assets/sprites/retratos/<nome>_64.png).
-const ENEMY_PORTRAITS := {"criatura_sangue": "criatura", "atirador": "atirador"}
+const ENEMY_PORTRAITS := {"criatura_sangue": "criatura", "atirador": "atirador", "dama_de_sangue": "dama"}
 var _enemy_faces := {}
 
 

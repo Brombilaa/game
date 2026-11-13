@@ -41,6 +41,9 @@ func _init() -> void:
 	var ati := load("res://assets/sprites/retratos/atirador_64.png") as Texture2D
 	_check(ati != null and ati.get_width() == 64, "atirador: retrato de 64 px")
 
+	var dama := load("res://assets/sprites/retratos/dama_64.png") as Texture2D
+	_check(dama != null and dama.get_width() == 64, "dama de sangue: retrato de 64 px")
+
 	print("Falhas: %d" % failures)
 	quit(1 if failures > 0 else 0)
 
