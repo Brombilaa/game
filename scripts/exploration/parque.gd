@@ -719,7 +719,7 @@ func _run_trigger(trigger: Dictionary) -> void:
 	for spec in trigger["inimigos"]:
 		var p: Array = spec["pos"]
 		enemies.append(cfg.make_enemy(spec["tipo"], Vector2(p[0], p[1])))
-	_start_combat()
+	_start_combat(Combatant.Side.ENEMY)  # emboscada: os inimigos agem todos primeiro
 
 
 func _on_dialog_input(event: InputEvent) -> void:

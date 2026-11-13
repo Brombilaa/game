@@ -654,7 +654,7 @@ func _check_detection() -> void:
 			if not m.is_alive() or e.pos.distance_to(m.pos) > rules.perception_range(e, m):
 				continue
 			if Pathfinder.has_line_of_sight(e.pos, m.pos, _sight_blockers()):
-				_start_combat()
+				_start_combat(Combatant.Side.ENEMY)  # quem percebe pega o grupo desprevenido
 				return
 
 
@@ -683,7 +683,8 @@ func _stealth_attack(target: Combatant) -> void:
 
 
 # Monta os participantes (todos os inimigos vivos da sala) e ordena a iniciativa.
-func _start_combat() -> void:
+# surprise_side: lado que pegou o outro desprevenido e age todo na rodada 1 (-1 = ninguém).
+func _start_combat(surprise_side: int = -1) -> void:
 	mode = Mode.COMBAT
 	combat_started_ms = Time.get_ticks_msec()
 	combat_log.clear()
@@ -713,7 +714,7 @@ func _start_combat() -> void:
 	for e in enemies:
 		if e.is_alive():
 			units.append(e)
-	turns.start(units)
+	turns.start(units, surprise_side)
 	queue_redraw()
 
 
