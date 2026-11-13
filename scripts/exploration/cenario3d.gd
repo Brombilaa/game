@@ -434,3 +434,75 @@ func _efeito_pc_antigo() -> void:
 	camada.layer = 100
 	camada.add_child(r)
 	add_child(camada)
+
+
+# --- Destaque de pistas (Léo, 13/11): contorno branco e brilho ao redor do objeto -------------------------------
+
+var _destaques := {}  # chave -> {"nos": Array[MeshInstance3D], "contorno": Material, "brilho": Material}
+
+
+# Malhas visíveis do estado `estado` (ex.: "tapete") cujo retângulo no chão contém o ponto `p` (px / 64, como o mundo).
+func malhas_em(p: Vector3, estado: String) -> Array:
+	var r: Array = []
+	for no in estados.get(estado, []):
+		for m in (no as Node3D).find_children("*", "MeshInstance3D", true, false):
+			var mi := m as MeshInstance3D
+			if mi.mesh == null or not mi.is_visible_in_tree():
+				continue
+			var bb: AABB = mi.global_transform * mi.get_aabb()
+			if p.x >= bb.position.x and p.x <= bb.end.x and p.z >= bb.position.z and p.z <= bb.end.z and bb.size.x < 6.0 and bb.size.z < 6.0:
+				r.append(mi)
+	return r
+
+
+# `contorno` e `brilho` vão de 0 a 1. Cria as cópias na primeira vez e depois só muda a opacidade.
+func destacar(chave: String, malhas: Array, contorno: float, brilho: float) -> void:
+	if not _destaques.has(chave):
+		var cm := StandardMaterial3D.new()
+		cm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		cm.cull_mode = BaseMaterial3D.CULL_FRONT
+		var cp := cm.duplicate() as StandardMaterial3D
+		cp.cull_mode = BaseMaterial3D.CULL_DISABLED
+		var bm := StandardMaterial3D.new()
+		bm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		bm.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		bm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		bm.render_priority = 12  # depois do quadro da névoa, como os outros materiais com alfa
+		bm.disable_fog = true
+		bm.disable_receive_shadows = true
+		var nos: Array = []
+		for m in malhas:
+			var mi := m as MeshInstance3D
+			var bb: AABB = mi.global_transform * mi.get_aabb()
+			var plano := bb.size.y < 0.05
+			var c := bb.get_center()
+			var borda := 0.05
+			var s := Vector3(1.0 + 2.0 * borda / maxf(bb.size.x, 0.05), 1.0 if plano else 1.0 + 2.0 * borda / maxf(bb.size.y, 0.05), 1.0 + 2.0 * borda / maxf(bb.size.z, 0.05))
+			var xf := Transform3D(Basis.from_scale(s), c) * Transform3D(Basis.IDENTITY, -c) * mi.global_transform
+			var o := MeshInstance3D.new()
+			o.mesh = mi.mesh
+			o.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			o.material_override = cp if plano else cm
+			raiz.add_child(o)
+			o.global_transform = xf
+			if plano:
+				o.global_position.y -= 0.004
+			o.set_meta("tipo", "contorno")
+			var g := MeshInstance3D.new()
+			g.mesh = mi.mesh
+			g.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			g.material_override = bm
+			raiz.add_child(g)
+			g.global_transform = mi.global_transform
+			g.global_position.y += 0.006 if plano else 0.0
+			g.set_meta("tipo", "brilho")
+			nos.append(o)
+			nos.append(g)
+		_destaques[chave] = {"nos": nos, "contorno": [cm, cp], "brilho": bm}
+	var d: Dictionary = _destaques[chave]
+	for mat in d["contorno"]:
+		(mat as StandardMaterial3D).albedo_color = Color(1.0, 1.0, 1.0, contorno)
+	(d["brilho"] as StandardMaterial3D).albedo_color = Color(0.95, 0.72, 0.36, brilho * 0.6)
+	for n in d["nos"]:
+		var t := str(n.get_meta("tipo"))
+		(n as Node3D).visible = (t == "contorno" and contorno > 0.01) or (t == "brilho" and brilho > 0.01)

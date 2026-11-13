@@ -98,6 +98,7 @@ def delegacia21(d, p, ret):
                       {"texto": "Seguir para a Fazenda Ghular", "requer": "invasao_vencida"}]
     d["cena3d"]["estados"] = {"tapete": True, "alcapao": False}
     d["pistas"].append({"id": "tapete", "pos": p(*P["tapete"]), "raio": 80, "ordem": 1, "bolinha": [0, -20],
+                        "destaque": {"estado": "tapete"},
                         "texto": "O tapete do canto está torto, como se alguém o tivesse puxado às pressas. Embaixo dele há um alçapão.",
                         "provisorio": True})
     d["gatilhos"].append({"id": "revelar_alcapao", "apos": "tapete", "tipo": "estado", "estados": {"tapete": False, "alcapao": True},

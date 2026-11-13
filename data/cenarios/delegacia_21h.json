@@ -1317,7 +1317,10 @@
     -20
    ],
    "texto": "O tapete do canto está torto, como se alguém o tivesse puxado às pressas. Embaixo dele há um alçapão.",
-   "provisorio": true
+   "provisorio": true,
+   "destaque": {
+    "estado": "tapete"
+   }
   }
  ],
  "gatilhos": [
