@@ -29,7 +29,15 @@ func _run() -> void:
 	await process_frame
 	_check(room.mode == room.Mode.COMBAT, "detecção inicia o combate")
 	_check(room.turns.order.size() == room.party.size() + 2, "o grupo e todos os inimigos vivos entram no combate")
-	_check(room.turns.current == room.player and room.player.pa == 3, "agente age primeiro (empate de AGI favorece o grupo) com 3 PA")
+	_check(room.turns.current.side == Combatant.Side.ENEMY, "quem percebe pega o grupo desprevenido: inimigo age primeiro")
+	for m in room.party:
+		m.pv = 999
+		m.max_pv = 999
+	await _wait(func() -> bool: return room.turns.current != null and room.turns.current.side == Combatant.Side.PLAYER and not room.busy, 20.0)
+	var enemies_first: bool = room.turns.order.slice(0, room.enemies.size()).all(func(u: Combatant) -> bool: return u.side == Combatant.Side.ENEMY)
+	_check(enemies_first and room.turns.round_number == 1, "surpresa: todos os inimigos agem antes do grupo na rodada 1")
+	room.player.pos = Vector2(650, 360)
+	_check(room.turns.current == room.player and room.player.pa == 3, "depois da surpresa, o agente age com 3 PA")
 
 	# Ataque fora do turno do inimigo: clique em lugar nenhum não gasta PA.
 	room._combat_click(Vector2(-50, -50))
@@ -200,6 +208,9 @@ func _test_party() -> void:
 	seguidor.pos = Vector2(650, 384)
 	await process_frame
 	_check(room.mode == room.Mode.COMBAT, "combate começa com o grupo")
+	lider.pv = 999
+	lider.max_pv = 999
+	await _wait(func() -> bool: return room.turns.current == lider and not room.busy, 20.0)
 	seguidor.take_damage(999)
 	room.player = lider
 	lider.pa = 3

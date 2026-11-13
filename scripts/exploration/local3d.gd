@@ -178,7 +178,7 @@ func _invasao(inv: Dictionary) -> void:
 	fx.shake_px = 7.0
 	await get_tree().create_timer(FLASH_SEGURA).timeout
 	busy = false
-	_start_combat()
+	_start_combat(Combatant.Side.ENEMY)  # emboscada: os inimigos agem todos primeiro
 	var volta := create_tween()
 	volta.tween_property(branco, "color:a", 0.0, FLASH_DESCE).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
 	await volta.finished
