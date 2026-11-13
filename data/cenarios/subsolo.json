@@ -78,9 +78,9 @@
    "id": "c4",
    "rect": [
     19.2,
-    160.0,
-    64.0,
-    128.0
+    147.2,
+    83.2,
+    147.2
    ]
   },
   {
@@ -106,13 +106,13 @@
     0,
     -40
    ],
-   "texto": "Pó em toda a mesa, menos num retângulo limpo: um livro grosso ficava aqui até pouco tempo.",
-   "provisorio": true,
    "destaque": {
     "nomes": [
      "Mesh33"
     ]
-   }
+   },
+   "texto": "Pó em toda a mesa, menos num retângulo limpo: um livro grosso ficava aqui até pouco tempo.",
+   "provisorio": true
   }
  ],
  "gatilhos": [],
