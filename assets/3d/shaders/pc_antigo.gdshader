@@ -10,6 +10,8 @@ uniform float nevoa : hint_range(0.0, 1.0) = 0.0;  // a névoa agora é do próp
 // Correção de cor medida contra a referência (regressão em linear): o Godot sai um pouco menos saturado e mais verde.
 uniform float corr_saturacao = 1.17;
 uniform vec3 corr_ganho = vec3(0.93, 0.85, 0.91);
+// Cenários novos (cenario3d.gd): a imagem do SubViewport chega em sRGB e é linearizada aqui. O parque foi calibrado sem isso.
+uniform bool entrada_srgb = false;
 uniform vec3 cor_nevoa : source_color = vec3(0.549, 0.561, 0.525);
 
 float bayer(vec2 p) {
@@ -31,7 +33,10 @@ float ruido(vec2 uv) {
 
 void fragment() {
 	vec3 s = texture(tela, SCREEN_UV).rgb;
-	vec3 c = s;  // a textura do SubViewport já vem em linear, como o render target do three.js
+	vec3 c = s;
+	if (entrada_srgb) {
+		c = mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c));
+	}
 	float lz = dot(c, vec3(0.2126, 0.7152, 0.0722));
 	c = max(mix(vec3(lz), c, corr_saturacao), 0.0) * corr_ganho;
 	float l = dot(c, vec3(0.299, 0.587, 0.114));

@@ -57,23 +57,18 @@ var drawing_key: Variant = null  # personagem (ou id do NPC) sendo desenhado, pa
 
 
 func _ready() -> void:
-	scenario = Scenario.load_id(SCENARIO_ID)
+	pathfinder = _novo_pathfinder()
+	scenario = Scenario.load_id(_scenario_id())
 	assert(scenario.ok(), "\n".join(scenario.errors))
-	backdrop = load(scenario.backdrop_path)
+	if scenario.backdrop_path != "":
+		backdrop = load(scenario.backdrop_path)
 	if scenario.extended_path != "":
 		extended = load(scenario.extended_path)
 	for o in scenario.occluders:
 		occluder_textures[o["id"]] = load(o["arquivo"])
 	_load_layout()
 	if USE_WORLD3D:
-		world3d = PARQUE3D.instantiate()
-		world3d.embutido = true
-		world3d.nevoa_forca = NEVOA_FORCA
-		world3d.nevoa_baixa = NEVOA_BAIXA
-		if OS.get_environment("NEVOA") != "":  # comparação de modelos de névoa: "forca,baixa"
-			var v := OS.get_environment("NEVOA").split(",")
-			world3d.nevoa_forca = float(v[0])
-			world3d.nevoa_baixa = float(v[1])
+		world3d = _criar_mundo3d()
 		add_child(world3d)
 	super()
 	var corners := [_iso(Vector2.ZERO), _iso(Vector2(scenario.size.x, 0)), _iso(Vector2(0, scenario.size.y)), _iso(scenario.size)]
@@ -94,6 +89,77 @@ func _ready() -> void:
 	if world3d:
 		fx.muzzle_at = _arma3d
 	fx.chest_px = _chest_px
+
+
+# Pontos de extensão para os outros lugares da missão (local3d.gd herda o parque inteiro).
+func _scenario_id() -> String:
+	return SCENARIO_ID
+
+
+func _novo_pathfinder() -> Pathfinder:
+	return Pathfinder.new()
+
+
+func _criar_mundo3d() -> Node3D:
+	var w := PARQUE3D.instantiate()
+	w.embutido = true
+	w.nevoa_forca = NEVOA_FORCA
+	w.nevoa_baixa = NEVOA_BAIXA
+	if OS.get_environment("NEVOA") != "":  # comparação de modelos de névoa: "forca,baixa"
+		var v := OS.get_environment("NEVOA").split(",")
+		w.nevoa_forca = float(v[0])
+		w.nevoa_baixa = float(v[1])
+	return w
+
+
+# Depois do combate da árvore o grupo segue para a delegacia (história #8). A cutscene da morte do Caio ainda não existe.
+func _on_combat_ended(result: TurnManager.Result) -> void:
+	super(result)
+	if result == TurnManager.Result.VICTORY and _proximo_apos_vitoria() != "":
+		_ir_para(_proximo_apos_vitoria(), "", "O grupo segue para a delegacia.", 2.5)
+
+
+func _proximo_apos_vitoria() -> String:
+	return Missao1.DEPOIS_DO_PARQUE
+
+
+var indo_para := ""  # lugar para onde a transição está levando o grupo ("" = nenhuma em andamento)
+
+
+# Escurece a tela com uma linha de texto e abre o próximo lugar (cena local3d).
+func _ir_para(local: String, chegada: String, texto: String, espera := 0.0) -> void:
+	if indo_para != "":
+		return
+	indo_para = local
+	busy = true
+	path = PackedVector2Array()
+	var camada := CanvasLayer.new()
+	camada.layer = 90
+	add_child(camada)
+	var preto := ColorRect.new()
+	preto.color = Color(0, 0, 0, 0)
+	preto.set_anchors_preset(Control.PRESET_FULL_RECT)
+	preto.mouse_filter = Control.MOUSE_FILTER_STOP
+	camada.add_child(preto)
+	var rotulo := Label.new()
+	rotulo.text = texto
+	rotulo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rotulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rotulo.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	rotulo.add_theme_font_size_override("font_size", 18)
+	rotulo.add_theme_color_override("font_color", Color(0.93, 0.89, 0.8, 0.0))
+	preto.add_child(rotulo)
+	var t := create_tween()
+	if espera > 0.0:
+		t.tween_interval(espera)
+	t.tween_property(preto, "color:a", 1.0, 0.9)
+	t.tween_property(rotulo, "theme_override_colors/font_color:a", 1.0, 0.4)
+	t.tween_interval(1.1)
+	await t.finished
+	Missao1.local = local
+	Missao1.chegada = chegada
+	if is_inside_tree() and get_tree().current_scene == self:
+		get_tree().change_scene_to_file(Missao1.CENA_LOCAL)
 
 
 # Paredes e coberturas a partir das colisões do cenário; o grupo começa na entrada.
