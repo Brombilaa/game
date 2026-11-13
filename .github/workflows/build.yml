@@ -1,8 +1,13 @@
-# Build de Windows. Só roda quando alguém pedir (Actions > build > Run workflow); não roda em PR nem em push.
-# Por padrão gera só o artifact; marque "publicar" para atualizar o release "latest".
+# Build de Windows, automático de novo desde que o repositório ficou público (Léo, 13/11; Actions sem custo).
+# Cada merge na main substitui o único release "latest"; tag v* publica um release próprio; PR só gera o artifact.
+# Manual (Actions > build > Run workflow) continua valendo: marque "publicar" para atualizar o "latest".
 name: build
 
 on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
   workflow_dispatch:
     inputs:
       publicar:
@@ -53,18 +58,26 @@ jobs:
           (cd build/windows && zip -q "../../$name.zip" PactoCarmesim.exe)
           echo "ZIP=$name.zip" >> "$GITHUB_ENV"
 
+      # Na main o zip vai para o release "latest"; o artifact fica só para PR e execução manual.
       - uses: actions/upload-artifact@v4
+        if: github.ref != 'refs/heads/main'
         continue-on-error: true
         with:
           name: windows
           path: ${{ env.ZIP }}
-          retention-days: 7
+          retention-days: 3
+
+      - name: Publicar no GitHub Releases
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "$ZIP" --generate-notes --title "$GITHUB_REF_NAME"
 
       - name: Atualizar o release "latest" (substitui o anterior)
-        if: inputs.publicar
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || inputs.publicar
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete latest --cleanup-tag --yes || true
-          gh release create latest "$ZIP" --target "$GITHUB_SHA" --prerelease --title "Build mais recente" \
-            --notes "Build manual do commit $GITHUB_SHA. Cada nova publicação substitui este release."
+          gh release create latest "$ZIP" --target "$GITHUB_SHA" --prerelease --title "Build mais recente da main" \
+            --notes "Build do commit $GITHUB_SHA. Cada novo merge na main substitui este release."

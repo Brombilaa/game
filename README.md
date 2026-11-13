@@ -23,4 +23,4 @@ Resolução interna 960×540, janela de 1920×1080. Direção visual em `docs/di
 
 ## Build
 
-O build de Windows roda sob demanda (Actions > build > Run workflow) e pode publicar o `.zip` no release "latest". Detalhes em `docs/save-e-build.md`.
+Cada merge na main gera o build de Windows e substitui o `.zip` do release "latest"; tag `v*` publica um release próprio. Detalhes em `docs/save-e-build.md`.
