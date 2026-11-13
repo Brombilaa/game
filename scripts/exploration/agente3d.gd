@@ -20,7 +20,8 @@ const MODELOS := {
 	"nikolai3d": {"modelo": "res://assets/3d/personagens/nikolai.glb", "boina": true, "armas": true},
 	"fernando3d": {"modelo": "res://assets/3d/personagens/fernando.fbx", "armas": true, "pe": 0.075},
 	# Miguel (Léo, 08/11): Breathing Idle do próprio FBX; as outras animações do Nikolai/Fernando transferidas para o esqueleto dele.
-	"miguel3d": {"modelo": "res://assets/3d/personagens/miguel.fbx", "biblioteca": "res://assets/3d/animacoes/miguel.res", "armas": true},
+	"miguel3d": {"modelo": "res://assets/3d/personagens/miguel.fbx", "biblioteca": "res://assets/3d/animacoes/miguel.res", "armas": true,
+		"aduzir": {"idle": 30.0, "walk": 30.0, "run": 20.0, "crouch_walk": 20.0, "crouch_idle": 20.0}},
 	# Caio: remodelado pelo Léo (08/11, versão corrigida v2, só com o idle do Mixamo; as outras animações vêm da biblioteca).
 	"caio3d": {"modelo": "res://assets/3d/personagens/caio.fbx", "biblioteca": "res://assets/3d/animacoes/caio.res"},  # versão corrigida v2 (08/11): já de frente, posições na escala dele (caio.res)
 	# Léo, 08/11: Criatura e Caio no mesmo nível do Nikolai e do Fernando. Textura A (aprovada em 05/11); 2,0 m contra 1,8 m dos agentes.
@@ -89,6 +90,8 @@ func _init(pasta: String) -> void:
 	var caminho: String = info.get("biblioteca", BIBLIOTECA)
 	if not _libs.has(caminho):
 		_libs[caminho] = load(caminho)
+		if info.has("aduzir"):
+			_aduzir(_libs[caminho], info["aduzir"])
 	player = AnimationPlayer.new()
 	esqueleto.get_parent().add_child(player)
 	player.root_node = player.get_path_to(esqueleto.get_parent())
@@ -110,6 +113,28 @@ func _init(pasta: String) -> void:
 	_facetar(info.get("boina", false), load(info["textura"]) if info.has("textura") else null)
 	if info.get("armas", false):
 		_armar(caixa.size.y / 1.8)
+
+
+# Braços do Miguel (Léo, 13/11: "braços muito separados, quero mais junto mas sem entrar no corpo"). As animações vêm
+# do Nikolai/Fernando e o esqueleto do Miguel tem ombros mais abertos, então os braços saem afastados do tronco. Aqui
+# cada braço gira em direção ao corpo, em todas as chaves de cada clipe de `cfg` (clipe -> graus). Eixo Z do osso-pai
+# (medido: no Miguel de frente, +Z leva o braço esquerdo para dentro e o direito, com o sinal trocado, também).
+# Idle e andar: 30° (mão de 0,42 para 0,25 do centro); corrida e agachado: 20°, para o braço não entrar no corpo.
+# Feito uma vez, na biblioteca carregada (o arquivo .res não muda).
+static func _aduzir(lib: AnimationLibrary, cfg: Dictionary) -> void:
+	for nome in cfg:
+		var g := deg_to_rad(float(cfg[nome]))
+		var a := lib.get_animation(nome)
+		for t in a.get_track_count():
+			if a.track_get_type(t) != Animation.TYPE_ROTATION_3D:
+				continue
+			var p := String(a.track_get_path(t))
+			var lado := 1.0 if p.ends_with(":mixamorig_LeftArm") else (-1.0 if p.ends_with(":mixamorig_RightArm") else 0.0)
+			if lado == 0.0:
+				continue
+			var r := Quaternion(Vector3.BACK, g * lado)
+			for k in a.track_get_key_count(t):
+				a.track_set_key_value(t, k, r * (a.track_get_key_value(t, k) as Quaternion))
 
 
 # Pescoço da Criatura de Sangue (Léo, 13/11: "pescoço colado no busto"). Na malha original a cabeça nasce direto
