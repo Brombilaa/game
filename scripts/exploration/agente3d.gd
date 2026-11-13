@@ -121,6 +121,9 @@ func _init(pasta: String) -> void:
 # (medido: no Miguel de frente, +Z leva o braço esquerdo para dentro e o direito, com o sinal trocado, também).
 # Idle e andar: 30° (mão de 0,42 para 0,25 do centro); corrida e agachado: 20°, para o braço não entrar no corpo.
 # Feito uma vez, na biblioteca carregada (o arquivo .res não muda).
+const BRACOS_TRAS := 15.0  # graus
+
+
 static func _aduzir(lib: AnimationLibrary, cfg: Dictionary) -> void:
 	for nome in cfg:
 		var g := deg_to_rad(float(cfg[nome]))
@@ -132,7 +135,8 @@ static func _aduzir(lib: AnimationLibrary, cfg: Dictionary) -> void:
 			var lado := 1.0 if p.ends_with(":mixamorig_LeftArm") else (-1.0 if p.ends_with(":mixamorig_RightArm") else 0.0)
 			if lado == 0.0:
 				continue
-			var r := Quaternion(Vector3.BACK, g * lado)
+			# Depois (Léo, 13/11: "um pouco mais para trás"): mais 15° em torno do eixo Y do osso-pai, que leva a mão para trás.
+			var r := Quaternion(Vector3.UP, deg_to_rad(BRACOS_TRAS) * lado) * Quaternion(Vector3.BACK, g * lado)
 			for k in a.track_get_key_count(t):
 				a.track_set_key_value(t, k, r * (a.track_get_key_value(t, k) as Quaternion))
 

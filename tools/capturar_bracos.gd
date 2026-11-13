@@ -43,6 +43,6 @@ func _run() -> void:
 			var d := m * sk.get_bone_global_pose(sk.find_bone("mixamorig_RightHand"))
 			var ec := m * sk.get_bone_global_pose(sk.find_bone("mixamorig_LeftForeArm"))
 			var dc := m * sk.get_bone_global_pose(sk.find_bone("mixamorig_RightForeArm"))
-			print("%s %.2f  mao E %.2f D %.2f | cotovelo E %.2f D %.2f (x do tronco %.2f)" % [anim, f, e.origin.x - q.origin.x, d.origin.x - q.origin.x, ec.origin.x - q.origin.x, dc.origin.x - q.origin.x, q.origin.x])
+			print("%s %.2f  z mao E %.2f D %.2f  mao E %.2f D %.2f | cotovelo E %.2f D %.2f (x do tronco %.2f)" % [anim, f, e.origin.z - q.origin.z, d.origin.z - q.origin.z, e.origin.x - q.origin.x, d.origin.x - q.origin.x, ec.origin.x - q.origin.x, dc.origin.x - q.origin.x, q.origin.x])
 			root.get_texture().get_image().save_png("%s/%s_%s_%d.png" % [pasta, pre, anim, int(f * 100)])
 	quit()
