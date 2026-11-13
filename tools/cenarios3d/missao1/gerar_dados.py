@@ -57,35 +57,50 @@ def cenario(cid, glb, col, hora, rotulo, grupo, extras):
         "inimigos": [],
         "objetivos": [],
     }
+    if col.get("pontos"):
+        dados["_pontos"] = col["pontos"]
+        dados["inicio"]["grupo"] = [p(*g) for g in col["pontos"]["grupo"]]
     extras(dados, p, ret)
+    dados.pop("_pontos", None)
     return dados
 
 
+def _pt(d):
+    """Pontos de jogo da delegacia já na planta ampliada (13/11), exportados por delegacia.js (PONTOS) via col.js."""
+    return d["_pontos"]
+
+
+def _ret4(ret, r):  # [x0, z0, x1, z1] em metros -> retângulo da sala
+    return ret(r[0], r[1], r[2] - r[0], r[3] - r[1])
+
+
 def delegacia17(d, p, ret):
+    P = _pt(d)
     d["objetivos"] = [{"texto": "Seguir para a biblioteca", "provisorio": True}]
     d["cena3d"]["estados"] = {"tapete": True, "alcapao": False}
-    d["zonas"].append({"id": "saida", "ret": ret(-1.5, 16.6, 19.0, 2.4), "acao": "ir", "para": "biblioteca",
+    d["zonas"].append({"id": "saida", "ret": _ret4(ret, P["saida"]), "acao": "ir", "para": "biblioteca",
                        "texto": "O grupo segue para a biblioteca.", "provisorio": True})
 
 
 def delegacia21(d, p, ret):
+    P = _pt(d)
     d["objetivos"] = [{"texto": "Examinar o escritório do Ghular", "pista": "tapete"},
                       {"texto": "Descer pelo alçapão", "marca": "subsolo_visitado", "requer": "alcapao"},
                       {"texto": "Seguir para a Fazenda Ghular", "requer": "invasao_vencida"}]
     d["cena3d"]["estados"] = {"tapete": True, "alcapao": False}
-    d["pistas"].append({"id": "tapete", "pos": p(8.95, 0.95), "raio": 80, "ordem": 1, "bolinha": [0, -20],
+    d["pistas"].append({"id": "tapete", "pos": p(*P["tapete"]), "raio": 80, "ordem": 1, "bolinha": [0, -20],
                         "texto": "O tapete do canto está torto, como se alguém o tivesse puxado às pressas. Embaixo dele há um alçapão.",
                         "provisorio": True})
     d["gatilhos"].append({"id": "revelar_alcapao", "apos": "tapete", "tipo": "estado", "estados": {"tapete": False, "alcapao": True},
                           "marca": "alcapao"})
-    d["zonas"].append({"id": "alcapao", "ret": ret(7.95, 0.3, 2.0, 1.25), "acao": "ir", "para": "subsolo", "requer": "alcapao",
+    d["zonas"].append({"id": "alcapao", "ret": _ret4(ret, P["alcapao"]), "acao": "ir", "para": "subsolo", "requer": "alcapao",
                        "texto": "O grupo desce pelo alçapão."})
-    d["zonas"].append({"id": "saida", "ret": ret(-1.5, 16.6, 19.0, 2.4), "acao": "ir", "para": "fazenda", "requer": "invasao_vencida",
+    d["zonas"].append({"id": "saida", "ret": _ret4(ret, P["saida"]), "acao": "ir", "para": "fazenda", "requer": "invasao_vencida",
                        "texto": "O grupo segue para a Fazenda Ghular.", "provisorio": True})
-    d["chegadas"] = {"subsolo": [p(8.9, 2.2), p(9.7, 2.5), p(8.2, 2.6)]}
+    d["chegadas"] = {"subsolo": [p(*c) for c in P["chegadas_subsolo"]]}
     # Invasão (Léo, 12/11): na saída do subsolo os inimigos entram pela porta da frente (porta da frente = provisório).
     d["invasao"] = {"quando": "chegada_subsolo", "marca": "invasao_vencida", "inimigos": [
-        {"tipo": "cultista", "pos": p(7.2, 13.0)}, {"tipo": "cultista", "pos": p(6.3, 15.0)}, {"tipo": "cultista", "pos": p(8.2, 15.2)}]}
+        {"tipo": "cultista", "pos": p(*c)} for c in P["invasao"]]}
 
 
 def subsolo(d, p, ret):
