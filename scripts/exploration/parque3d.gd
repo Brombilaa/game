@@ -375,6 +375,7 @@ func _efeito_pc_antigo() -> void:
 	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var m := ShaderMaterial.new()
 	m.shader = load("res://assets/3d/shaders/pc_antigo.gdshader")
+	m.set_shader_parameter("bloom_forca", 0.0)  # o parque de dia é calibrado igual ao protótipo JS; sem halo
 	r.material = m
 	if embutido:  # logo depois do mundo, na mesma camada: filtra só o 3D
 		camada_mundo.add_child(r)
