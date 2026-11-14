@@ -444,6 +444,9 @@ func _model3d(pasta: String, pos: Vector2, anim: String, fase: float, dir: Chara
 			if alvo.pos != (drawing_key as Combatant).pos:
 				frente = alvo.pos - (drawing_key as Combatant).pos  # mira exata no alvo, não nas 8 direções
 	ag.virar(atan2(frente.x, frente.y))
+	# Postura de combate (Léo, 14/11, nível B): em combate, quem está de pistola fica parado e anda com ela em punho.
+	# Escopeta e fuzil ainda não têm clipe de parado/andar armado no Mixamo, então seguem como antes.
+	ag.postura_combate = mode == Mode.COMBAT and drawing_key is Combatant and str((drawing_key as Combatant).weapon.get("id", "")) == "pistola"
 	ag.pose(anim, fase, continua)
 	if drawing_key is Combatant:
 		ag.clarao(fx.white_alpha(drawing_key))
