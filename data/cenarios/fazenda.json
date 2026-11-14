@@ -8026,8 +8026,6 @@
     0,
     -30
    ],
-   "texto": "O poço antigo desce para o escuro. Lá embaixo ficam as ruínas.",
-   "provisorio": true,
    "destaque": {
     "raio": 1.6,
     "max": 3.2,
@@ -8035,10 +8033,20 @@
      "unlit",
      "add"
     ]
-   }
+   },
+   "texto": "O poço antigo desce para o escuro. Uma corda presa na borda some lá embaixo.",
+   "provisorio": true
   }
  ],
- "gatilhos": [],
+ "gatilhos": [
+  {
+   "id": "descer_poco",
+   "apos": "poco",
+   "tipo": "ir",
+   "para": "cripta",
+   "texto": "O grupo desce pela corda do poço."
+  }
+ ],
  "zonas": [],
  "inimigos": [
   {

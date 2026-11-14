@@ -93,5 +93,43 @@
     "fraquezas": [],
     "chefe": false,
     "fases": []
+  },
+  {
+    "id": "roberto_ghular",
+    "nome": "Roberto Ghular",
+    "provisorio": true,
+    "pv": 40,
+    "pa": 3,
+    "agi": 2,
+    "percepcao_px": 450,
+    "precisao": 0,
+    "defesa": 0.1,
+    "ataques": [
+      "tiro_atirador"
+    ],
+    "comportamento": "atirador",
+    "resistencias": [],
+    "fraquezas": [],
+    "chefe": true,
+    "fases": []
+  },
+  {
+    "id": "dama_sangue",
+    "nome": "Dama de Sangue",
+    "provisorio": true,
+    "pv": 120,
+    "pa": 3,
+    "agi": 2,
+    "percepcao_px": 450,
+    "precisao": 0,
+    "defesa": 0.1,
+    "ataques": [
+      "garra_dama"
+    ],
+    "comportamento": "cerca",
+    "resistencias": [],
+    "fraquezas": [],
+    "chefe": true,
+    "fases": []
   }
 ]

@@ -65,7 +65,7 @@ func _ready() -> void:
 		var original: Callable = host.fx.muzzle_at
 		host.fx.muzzle_at = func(a: Combatant) -> Vector2:
 			if not a.weapon.get("melee", false):
-				clarao(Vector3(a.pos.x / 64.0, 1.3, a.pos.y / 64.0))
+				clarao(Vector3(a.pos.x / 64.0, 1.3 + (host._altura(a.pos) if host.has_method("_altura") else 0.0), a.pos.y / 64.0))
 			return original.call(a) if original.is_valid() else Vector2.INF
 
 
@@ -146,7 +146,7 @@ func _process(delta: float) -> void:
 	if not _spot.visible:
 		return
 	var lider: Combatant = host.player
-	var chao := Vector3(lider.pos.x / 64.0, 0.0, lider.pos.y / 64.0)
+	var chao := Vector3(lider.pos.x / 64.0, host._altura(lider.pos) if host.has_method("_altura") else 0.0, lider.pos.y / 64.0)
 	_alvo_dir = _direcao(lider)
 	_dir = _dir.slerp(_alvo_dir, clampf(delta * 8.0, 0.0, 1.0)).normalized()
 	_spot.light_energy = SPOT_ENERGIA * _escuro

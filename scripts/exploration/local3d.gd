@@ -6,6 +6,12 @@ extends "res://scripts/exploration/parque.gd"
 #   - zonas: áreas no chão que levam a outro lugar ao entrar (com "requer", só depois de uma marca);
 #   - gatilhos do tipo "estado": depois de uma pista, liga e desliga partes do cenário (tapete -> alçapão);
 #   - inimigos: já no lugar ao chegar (celeiro); invasao: entram ao chegar por um lado (saída do subsolo).
+# Cripta (Léo, 14/11), tudo vindo dos dados:
+#   - zonas com acao "estado": revelam um trecho do cenário (glb à parte) e acordam os inimigos dele;
+#   - visao: o que barra a visão quando é menos do que o que barra o passo (parapeito, fosso, altar);
+#   - niveis: áreas elevadas; só mudam a altura em que cada um é desenhado (e o clique acha o piso certo);
+#   - chefe: Roberto Ghular se mata com pouca vida e a Dama de Sangue surge dele, no mesmo combate;
+#   - grupos: marca gravada quando todos os inimigos de um grupo caem (não voltam ao carregar o save).
 # O lugar aberto vem de Missao1.local (ou de `local_id`, para abrir a cena direto no editor).
 
 const CENARIO3D := preload("res://scripts/exploration/cenario3d.gd")
@@ -15,6 +21,12 @@ const CENARIO3D := preload("res://scripts/exploration/cenario3d.gd")
 var dados := {}  # o JSON do cenário inteiro (zonas, cena3d, invasão...), além do que o Scenario lê
 var dentro_de := {}  # id da zona -> o líder já estava dentro dela (só dispara ao entrar)
 var invadindo := false  # a invasão (flashbang + inimigos) já começou
+var visao: Array[Rect2] = []  # o que barra a visão, quando os dados trazem (vazio = as paredes)
+var niveis: Array = []  # áreas elevadas: {"h", "rampa", "ret": Rect2 + "dir"} ou {"arco": [...], "de", "ate"}
+var adormecidos := {}  # trecho -> fichas dos inimigos que esperam o trecho ser revelado
+var ficha_de := {}  # inimigo -> a ficha dele nos dados (grupo, trecho)
+var chefe_virou := false  # a Dama de Sangue já surgiu
+const PX_ALTURA := 62.855  # px do desenho por unidade de altura (PX_UNIT * cos(elevação da câmera))
 const FLASH_SOBE := 0.06  # flashbang: segundos até a tela ficar branca (provisório)
 const FLASH_SEGURA := 0.45  # segundos de tela branca (provisório)
 const FLASH_DESCE := 1.8  # segundos até a vista voltar (provisório)
@@ -48,7 +60,11 @@ func _criar_mundo3d() -> Node3D:
 			w.estado(e, estados[e])
 		if Missao1.tem("alcapao"):
 			w.estado("tapete", false)
-			w.estado("alcapao", true))
+			w.estado("alcapao", true)
+		for z in dados.get("zonas", []):  # trechos já revelados antes de salvar
+			if str(z.get("acao", "")) == "estado" and z.has("marca") and Missao1.tem(str(z["marca"])):
+				for e in z["estados"]:
+					w.estado(e, z["estados"][e]))
 	return w
 
 
@@ -85,13 +101,139 @@ func _load_layout() -> void:
 	door = Rect2(-1000, -1000, 1, 1)
 	door_open = true
 	(pathfinder as PathfinderGrade).configurar(walls, size)
+	visao.clear()
+	for r in dados.get("visao", []):
+		visao.append(Rect2(r[0], r[1], r[2], r[3]))
+	niveis.clear()
+	for n in dados.get("niveis", []):
+		var e: Dictionary = (n as Dictionary).duplicate()
+		if e.has("ret"):
+			e["ret"] = Rect2(e["ret"][0], e["ret"][1], e["ret"][2], e["ret"][3])
+		niveis.append(e)
 	enemies.clear()
+	adormecidos.clear()
+	ficha_de.clear()
+	var grupos: Dictionary = dados.get("grupos", {})
 	for spec in dados.get("inimigos", []):
-		var p: Array = spec["pos"]
-		enemies.append(cfg.make_enemy(str(spec["tipo"]), Vector2(p[0], p[1])))
+		var grupo := str(spec.get("grupo", ""))
+		if grupos.has(grupo) and Missao1.tem(str(grupos[grupo]["marca"])):
+			continue  # esse grupo já foi vencido antes do save
+		var trecho := int(spec.get("trecho", 1))
+		if trecho > 1 and not Missao1.tem("%s_trecho%d" % [local_id, trecho]):
+			if not adormecidos.has(trecho):
+				adormecidos[trecho] = []
+			adormecidos[trecho].append(spec)
+			continue
+		_por_inimigo(spec)
 	var inicio: Array = dados.get("chegadas", {}).get(Missao1.chegada, [])
 	for i in party.size():
 		party[i].pos = Vector2(inicio[i][0], inicio[i][1]) if i < inicio.size() else scenario.party_start[i]
+
+
+# Põe em cena o inimigo de uma ficha dos dados ("percepcao_fator": de costas, percebe menos; "olha": para onde está virado).
+func _por_inimigo(spec: Dictionary) -> Combatant:
+	var p: Array = spec["pos"]
+	var tipo := str(spec["tipo"])
+	var chefe: Dictionary = dados.get("chefe", {})
+	if not chefe.is_empty() and tipo == str(chefe["tipo"]) and Missao1.tem(str(chefe["marca"])):
+		tipo = str(chefe["vira"])  # save feito depois de a Dama surgir: ela já está no lugar dele
+		chefe_virou = true
+	var u := cfg.make_enemy(tipo, Vector2(p[0], p[1]))
+	u.perception *= float(spec.get("percepcao_fator", 1.0))
+	if spec.has("olha"):
+		var o: Array = spec["olha"]
+		facing8[u] = CharacterSheet.dir_from_vector(_iso(u.pos + Vector2(o[0], o[1]) * 32.0) - _iso(u.pos))
+	enemies.append(u)
+	ficha_de[u] = spec
+	return u
+
+
+# Revela um trecho: os inimigos que esperavam nele entram em cena.
+func _acordar(trecho: int) -> void:
+	for spec in adormecidos.get(trecho, []):
+		_por_inimigo(spec)
+	adormecidos.erase(trecho)
+
+
+# Visão e passo separados (cripta): atira-se por cima do parapeito, do fosso e do altar, mas não se atravessa.
+func _sight_blockers() -> Array[Rect2]:
+	if visao.is_empty():
+		return super()
+	return visao
+
+
+func _obstacles(mover: Combatant = null, with_units := true) -> Array[Rect2]:
+	if visao.is_empty():
+		return super(mover, with_units)
+	var out: Array[Rect2] = []
+	out.append_array(walls)
+	for u in _living_units() if with_units else []:
+		if u != mover:
+			out.append(Rect2(u.pos - Vector2(u.radius, u.radius), Vector2(u.radius, u.radius) * 2))
+	return out
+
+
+# --- Área elevada (cripta) --------------------------------------------------------------------
+# O plano do jogo continua um só; quem está no terraço é desenhado 1,5 m acima e, nas escadas, a meio caminho.
+
+func _altura(p: Vector2) -> float:
+	var alt := 0.0
+	for n in niveis:
+		var t := -1.0  # posição ao longo da rampa: 0 no alto, 1 no chão
+		if n.has("ret"):
+			var r: Rect2 = n["ret"]
+			if not r.has_point(p):
+				continue
+			match str(n.get("dir", "")):
+				"z-": t = (p.y - r.position.y) / r.size.y
+				"z+": t = (r.end.y - p.y) / r.size.y
+				"x-": t = (p.x - r.position.x) / r.size.x
+				"x+": t = (r.end.x - p.x) / r.size.x
+		else:
+			var a: Array = n["arco"]  # [cx, cz, a, b, t0, t1, largura]: faixa junto à parede de uma elipse
+			var u := (p.x - float(a[0])) / float(a[2])
+			var v := (p.y - float(a[1])) / float(a[3])
+			var ui := (p.x - float(a[0])) / (float(a[2]) - float(a[6]))
+			var vi := (p.y - float(a[1])) / (float(a[3]) - float(a[6]))
+			if u * u + v * v > 1.0 or ui * ui + vi * vi < 1.0:
+				continue
+			var ang := atan2(v, u)
+			while ang < float(a[4]):
+				ang += TAU
+			if ang > float(a[5]):
+				continue
+			if n["rampa"]:
+				t = (ang - float(n["de"])) / (float(n["ate"]) - float(n["de"]))
+		if n["rampa"]:
+			return float(n["h"]) * (1.0 - clampf(t, 0.0, 1.0))
+		alt = float(n["h"])
+	return alt
+
+
+func _iso(p: Vector2) -> Vector2:
+	var s := super(p)
+	return s if niveis.is_empty() else s - Vector2(0.0, _altura(p) * PX_ALTURA)
+
+
+# Ponto da tela -> ponto da sala. O piso alto fica na frente do chão que está atrás dele, então vale primeiro o
+# ponto do alto (ou da escada) que cai nesse lugar da tela; se não houver, o do chão.
+func _uniso(s: Vector2) -> Vector2:
+	var chao := super(s)
+	if niveis.is_empty():
+		return chao
+	var topo := 0.0
+	for n in niveis:
+		topo = maxf(topo, float(n["h"]))
+	var p := super(s + Vector2(0.0, topo * PX_ALTURA))
+	for i in 5:
+		var h := _altura(p)
+		if h <= 0.0:
+			return chao
+		var q := super(s + Vector2(0.0, h * PX_ALTURA))
+		if q.distance_to(p) < 0.5:
+			return q
+		p = q
+	return p if _altura(p) > 0.0 else chao
 
 
 func _place_label() -> String:
@@ -99,8 +241,13 @@ func _place_label() -> String:
 
 
 # Variante pelo nome da ficha (Léo, 13/11: todos atiradores); o atirador usa a figura do cultista e o retrato próprio.
+# A Dama de Sangue usa a figura da Criatura de Sangue e Roberto Ghular a do atirador, até os modelos deles existirem.
 func _enemy_variant(i: int) -> String:
-	return "atirador" if i < enemies.size() and enemies[i].name == "Atirador" else "cultista"
+	if i >= enemies.size():
+		return "cultista"
+	if enemies[i].name == "Dama de Sangue":
+		return CREATURE_VARIANT
+	return "atirador" if enemies[i].name == "Atirador" or enemies[i].name == "Roberto Ghular" else "cultista"
 
 
 func _proximo_apos_vitoria() -> String:
@@ -126,6 +273,16 @@ func _zonas() -> void:
 		if str(z.get("acao", "")) == "ir":
 			_ir_para(str(z["para"]), str(z.get("chegada", "")), str(z.get("texto", "")))
 			return
+		if str(z.get("acao", "")) == "estado":  # revela um trecho do cenário (cripta)
+			if z.has("marca") and Missao1.tem(str(z["marca"])):
+				continue
+			for e in z["estados"]:
+				world3d.estado(e, z["estados"][e])
+			if z.has("marca"):
+				Missao1.marcar(str(z["marca"]))
+			_acordar(int(z.get("trecho", 0)))
+			queue_redraw()
+			continue
 		if str(z.get("acao", "")) == "invasao":
 			var inv: Dictionary = dados.get("invasao", {})
 			if not inv.is_empty() and not Missao1.tem(str(inv["marca"])):
@@ -140,10 +297,17 @@ static func _ret(z: Dictionary) -> Rect2:
 
 func _inspect(cid: String) -> void:
 	var c: Dictionary = scenario.clues[cid]
+	for bruto in dados.get("pistas", []):  # "requer": só depois de uma marca (a Letícia só acorda depois da Dama)
+		if str(bruto["id"]) == cid and bruto.has("requer") and not Missao1.tem(str(bruto["requer"])):
+			_show_dialog("", str(bruto.get("texto_antes", "Ainda não.")), "")
+			return
 	_show_dialog(c.inspecao, c.texto, cid)
 
 
 func _run_trigger(trigger: Dictionary) -> void:
+	if str(trigger["tipo"]) == "ir":  # depois da pista, o grupo segue para outro lugar (o poço leva à cripta)
+		_ir_para(str(trigger["para"]), str(trigger.get("chegada", "")), str(trigger.get("texto", "")))
+		return
 	if str(trigger["tipo"]) != "estado":
 		super(trigger)
 		return
@@ -194,6 +358,57 @@ func _on_combat_ended(result: TurnManager.Result) -> void:
 	var inv: Dictionary = dados.get("invasao", {})
 	if result == TurnManager.Result.VICTORY and not inv.is_empty():
 		Missao1.marcar(str(inv["marca"]))
+	if result == TurnManager.Result.VICTORY:
+		_marcar_grupos()
+
+
+# Grupo vencido: todos os inimigos dele em cena caíram e nenhum espera num trecho escondido.
+func _marcar_grupos() -> void:
+	var grupos: Dictionary = dados.get("grupos", {})
+	for g in grupos:
+		var gd: Dictionary = grupos[g]
+		if Missao1.tem(str(gd["marca"])) or (gd.has("requer") and not Missao1.tem(str(gd["requer"]))):
+			continue
+		var vivo := false
+		var algum := false
+		for e in enemies:
+			if str((ficha_de.get(e, {}) as Dictionary).get("grupo", "")) == g:
+				algum = true
+				vivo = vivo or e.is_alive()
+		for t in adormecidos:
+			for spec in adormecidos[t]:
+				vivo = vivo or str(spec.get("grupo", "")) == g
+		if algum and not vivo:
+			Missao1.marcar(str(gd["marca"]))
+	Progresso.autosalvar(self, _area_id(), _place_label())
+	queue_redraw()
+
+
+# Chefe da cripta (Léo, 14/11): com pouca vida, Roberto Ghular se mata e a Dama de Sangue surge dele. O ataque já
+# foi resolvido pelas regras quando chega aqui, então a troca acontece antes de o combate conferir se acabou.
+func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void:
+	super(attacker, target, r)
+	var chefe: Dictionary = dados.get("chefe", {})
+	if chefe.is_empty() or chefe_virou or not enemies.has(target):
+		return
+	if str((ficha_de.get(target, {}) as Dictionary).get("tipo", "")) != str(chefe["tipo"]):
+		return
+	if float(target.pv) > float(chefe["limite"]) * float(target.max_pv):
+		return
+	chefe_virou = true
+	target.pv = 0
+	var dama := cfg.make_enemy(str(chefe["vira"]), target.pos)
+	facing8[dama] = facing8.get(target, CharacterSheet.Dir.SW)
+	enemies.append(dama)
+	ficha_de[dama] = {"tipo": str(chefe["vira"]), "grupo": str((ficha_de[target] as Dictionary).get("grupo", ""))}
+	Missao1.marcar(str(chefe["marca"]))
+	if mode == Mode.COMBAT and turns != null:
+		turns.add_unit(dama)
+	_log(str(chefe["texto"]))
+	_popup(target.pos, "A DAMA DE SANGUE SURGE", "down")
+	fx.shake_time = 0.5
+	fx.shake_px = 6.0
+	queue_redraw()
 
 
 # Objetivos do HUD vêm dos dados: cada um feito ao ver a pista ou ao ganhar a marca; "requer" só mostra depois de outra marca.
@@ -214,8 +429,16 @@ func _objectives() -> Array[Dictionary]:
 	return out
 
 
-# Minimapa: o lugar inteiro conta como visto (como no parque).
+# Minimapa: o lugar inteiro conta como visto (como no parque); na cripta, só os trechos já revelados.
 func _known_rects() -> Array[Rect2]:
 	var out: Array[Rect2] = []
-	out.append(Rect2(Vector2.ZERO, scenario.size))
+	var trechos: Dictionary = dados.get("trechos", {})
+	if trechos.is_empty():
+		out.append(Rect2(Vector2.ZERO, scenario.size))
+		return out
+	for t in trechos:
+		if int(t) > 1 and not Missao1.tem("%s_trecho%d" % [local_id, int(t)]):
+			continue
+		for r in trechos[t]:
+			out.append(Rect2(r[0], r[1], r[2], r[3]))
 	return out

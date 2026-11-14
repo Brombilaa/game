@@ -63,7 +63,8 @@ func _draw_minimap(font: Font, to_world: Transform2D) -> void:
 			var part := r.intersection(k)
 			if part.has_area():
 				for piece in Geometry2D.intersect_polygons(_map_poly(to_map, part), disc):
-					room.draw_colored_polygon(piece, color)
+					if not Geometry2D.triangulate_polygon(piece).is_empty():  # lasca na borda do radar não vira polígono válido (cripta: centenas de paredes)
+						room.draw_colored_polygon(piece, color)
 	var line := func(a: Vector2, b: Vector2, color: Color, width: float) -> void:
 		for seg in Geometry2D.intersect_polyline_with_polygon(PackedVector2Array([to_map.call(a), to_map.call(b)]), disc):
 			room.draw_polyline(seg, color, width)
