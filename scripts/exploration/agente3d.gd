@@ -42,6 +42,14 @@ const PASSADA := {
 const TROCA := {"rifle_walk": "pistol_walk", "pickup": "pickup_object", "opening": "pickup_object", "pistol_aim_prov": "pistol_idle", "reload": "pistol_idle"}
 
 static var relogio_teste := -1  # ms fixos para testes e capturas (-1 = relógio do jogo)
+# Nível de refinamento (Léo, 14/11: "refinar animações"; protótipo para escolher). 0 = como estava; 1 = A, transições
+# limpas (fase do passo continua, saída viva, giro com a cabeça na frente); 2 = B, A + postura de combate e peso do
+# corpo; 3 = C, B + impacto (coice do tiro, reação ao dano, recarga com o corpo todo). Léo, 14/11: "B em tudo".
+static var refino := 2
+# Fase do ciclo em que o pé esquerdo está o mais à frente (contato), medida nos clipes do Mixamo (Fernando).
+const CONTATO := {"walk": 0.271, "run": 0.208, "crouch_walk": 0.25, "pistol_walk": 0.208}
+# Fase do disparo/golpe de cada animação (as mesmas do GOLPE_3D do parque) e o tranco de cada uma (graus).
+const DISPARO := {"pistol_shoot": [0.6, 5.0], "rifle_fire": [0.12, 9.0], "punch": [0.27, 3.0], "kick": [0.375, 3.0]}
 static var _libs := {}  # caminho -> AnimationLibrary, carregada uma vez
 var modelo: Node3D
 var player: AnimationPlayer  # guarda a biblioteca (duração e laço de cada animação); quem move o esqueleto é a árvore
@@ -71,6 +79,20 @@ var pistola: Node3D  # arma na mão direita (só os agentes; aparece nas animaç
 var espingarda: Node3D  # escopeta/fuzil (animações de rifle)
 var _mao := -1
 var _ultimo_giro := -1
+var postura_combate := false  # armado e em combate: parado e andando com a arma em punho (refino >= 2)
+var _vel := 0.0  # velocidade no chão (u/s) deste quadro
+var _vel_s := 0.0  # a mesma, suavizada (para medir aceleração)
+var _vel_saida := 0.0  # velocidade com que a caminhada que sai ainda avança durante a mistura
+var _resta_giro := 0.0  # quanto falta para o corpo chegar ao giro pedido (rad)
+var _w_giro := 0.0  # velocidade angular do giro (rad/s)
+var _lead := 0.0  # a cabeça e o peito saem na frente do giro (rad)
+var _inclina := 0.0  # inclinação do tronco pela aceleração (rad, + = para a frente)
+var _recuo := 0.0  # tranco do tiro, 1 -> 0
+var _recuo_forca := 5.0
+var _dano_t := 99.0  # tempo desde a pancada (s)
+var _dano_dir := Vector3.ZERO  # empurrão, no espaço do personagem
+var _ultima_fase_golpe := -1.0
+var _alterna := false  # o primeiro passo alterna de perna a cada partida
 
 
 static func tem_modelo(pasta: String) -> bool:
@@ -253,9 +275,10 @@ func _montar_arvore(lib: AnimationLibrary) -> void:
 # Põe o corpo na animação `anim`, na fase `fase` (0 a 1) do ciclo. `continua`: a fase já vem contínua (golpes do
 # combate, calculados pelo relógio); senão ela chega em degraus de quadro e aqui anda suave entre eles.
 func pose(anim: String, fase: float, continua := false) -> void:
-	if pistola:  # sem arma na mão, a animação de tiro parecia um gesto qualquer (Léo, 08/11: "animações estranhas")
-		pistola.visible = anim.begins_with("pistol")
-		espingarda.visible = anim.begins_with("rifle")
+	if refino >= 2 and postura_combate:  # armado em combate: arma em punho parado e andando
+		anim = {"idle": "pistol_idle", "walk": "pistol_walk"}.get(anim, anim)
+	_reloading = anim == "reload"
+	_fase_recarga = fase
 	anim = TROCA.get(anim, anim)
 	if not player.has_animation(anim):
 		anim = "idle"
@@ -268,23 +291,45 @@ func pose(anim: String, fase: float, continua := false) -> void:
 	var laco := a.loop_mode != Animation.LOOP_NONE
 	var golpe := continua  # só os golpes do combate chegam com a fase pronta
 	var chao := Vector3(position.x, 0.0, position.z)
+	var passo_chao := 0.0
 	if _ultima_pos != Vector3.INF:
-		_andado += minf(chao.distance_to(_ultima_pos), 1.0)  # teleporte (troca de área) não conta
+		passo_chao = minf(chao.distance_to(_ultima_pos), 1.0)  # teleporte (troca de área) não conta
+		_andado += passo_chao
 	_ultima_pos = chao
+	_vel = passo_chao / dt if dt > 0.0 else 0.0
+	var passada: Dictionary = PASSADA.get(_pasta, {})
+	var mudou := anim != atual
+	if refino >= 1 and mudou and passada.has(anim):
+		# A fase do passo não pula na troca: de uma caminhada para outra ela segue pelo ponto de contato do pé; saindo
+		# do parado, o primeiro passo começa com os pés juntos (contato + 1/4 de ciclo) e alterna a perna.
+		var f0: float
+		if passada.has(atual) and CONTATO.has(atual) and CONTATO.has(anim):
+			f0 = fposmod(_fase - CONTATO[atual] + CONTATO[anim], 1.0)
+		else:
+			_alterna = not _alterna
+			f0 = fposmod(CONTATO.get(anim, 0.25) + (0.25 if _alterna else 0.75), 1.0)
+		_andado = f0 * passada[anim]
+	var passa_pistola := anim.begins_with("pistol")
 	if not continua:
-		var passada: Dictionary = PASSADA.get(_pasta, {})
 		if passada.has(anim):  # caminhada: pela distância andada
 			fase = fposmod(_andado / passada[anim], 1.0)
 			continua = true
 		elif laco:  # parado em laço (respirar, mira): na velocidade do próprio clipe, não na da folha
 			fase = fposmod(agora / 1000.0 / a.length + _desvio, 1.0)
 			continua = true
-	if anim != atual:
+	if mudou:
 		if atual != "":
 			_velha = atual
 			_fase_velha = _fase
 			_mistura = 0.0
 			_dur_mistura = MISTURA_GOLPE if golpe else MISTURA
+			if refino >= 1 and not golpe:
+				# Parar leva mais tempo que partir: o corpo assenta; partir é rápido para o passo não atrasar.
+				if passada.has(atual) and not passada.has(anim):
+					_dur_mistura = 0.34
+				elif passada.has(anim) and not passada.has(atual):
+					_dur_mistura = 0.16
+			_vel_saida = _vel_s if refino >= 1 else 0.0
 		atual = anim
 		_fase = fase
 		_alvo = fase
@@ -295,9 +340,23 @@ func pose(anim: String, fase: float, continua := false) -> void:
 		_fase = fase
 	else:
 		_suavizar(fase, laco, agora, dt)
+	# A animação que sai continua viva durante a mistura (antes congelava e o pé parava de repente).
+	if refino >= 1 and _mistura < 1.0 and _velha != "" and player.has_animation(_velha):
+		var av := player.get_animation(_velha)
+		if passada.has(_velha):
+			_vel_saida *= exp(-dt / 0.2)  # o passo vai se esgotando
+			_fase_velha += _vel_saida * dt / passada[_velha]
+		else:
+			_fase_velha += dt / maxf(av.length, 0.01)
+		_fase_velha = fposmod(_fase_velha, 1.0) if av.loop_mode != Animation.LOOP_NONE else clampf(_fase_velha, 0.0, 0.999)
+	_vel_s = lerpf(_vel_s, _vel, 1.0 - exp(-dt / 0.25)) if dt > 0.0 else _vel_s
 	_mistura = minf(_mistura + dt / _dur_mistura, 1.0)
-	var bt := arvore.tree_root as AnimationNodeBlendTree
 	var velha := _velha if _mistura < 1.0 and _velha != "" else anim
+	if pistola:  # sem arma na mão, a animação de tiro parecia um gesto qualquer (Léo, 08/11: "animações estranhas")
+		var com_arma := passa_pistola or (refino >= 2 and _mistura < 1.0 and velha.begins_with("pistol"))
+		pistola.visible = com_arma
+		espingarda.visible = anim.begins_with("rifle")
+	var bt := arvore.tree_root as AnimationNodeBlendTree
 	(bt.get_node("a") as AnimationNodeAnimation).animation = velha
 	(bt.get_node("b") as AnimationNodeAnimation).animation = anim
 	arvore.set("parameters/ta/seek_request", _tempo(velha, _fase_velha if velha != anim else _fase))
@@ -305,6 +364,97 @@ func pose(anim: String, fase: float, continua := false) -> void:
 	# Suave nas pontas (smoothstep), para a mistura não começar nem parar de repente.
 	arvore.set("parameters/mix/blend_amount", _mistura * _mistura * (3.0 - 2.0 * _mistura))
 	arvore.advance(0.0)
+	if refino >= 1:
+		_extras(anim, fase, dt)
+
+
+# --- Refinamento por cima da animação (refino >= 1) ---------------------------------------------------------------
+# Gira o osso `nome` em torno de um eixo do personagem (X = esquerda, Y = cima, Z = frente), no espaço dele, seja
+# qual for a orientação do esqueleto importado.
+func _girar(nome: String, eixo: Vector3, rad: float) -> void:
+	var i := esqueleto.find_bone("mixamorig_" + nome)
+	if i < 0 or absf(rad) < 0.00001:
+		return
+	var base := (modelo.transform.basis * esqueleto.transform.basis).orthonormalized()
+	var r := Quaternion((base.inverse() * eixo).normalized(), rad)
+	var pai := esqueleto.get_bone_parent(i)
+	var gp := esqueleto.get_bone_global_pose(pai).basis.get_rotation_quaternion() if pai >= 0 else Quaternion.IDENTITY
+	esqueleto.set_bone_pose_rotation(i, gp.inverse() * r * gp * esqueleto.get_bone_pose_rotation(i))
+
+
+func _tronco(frente: float, lado: float, giro: float) -> void:
+	# `frente` (+ inclina para a frente), `lado` (+ para a esquerda) e `giro` (+ vira para a esquerda), repartidos pelo tronco.
+	for o in [["Spine", 0.25], ["Spine1", 0.35], ["Spine2", 0.4]]:
+		_girar(o[0], Vector3.RIGHT, frente * o[1])
+		_girar(o[0], Vector3.BACK, -lado * o[1])
+		_girar(o[0], Vector3.UP, giro * o[1])
+
+
+func _extras(anim: String, fase: float, dt: float) -> void:
+	# A: a cabeça e o peito saem na frente do giro; o corpo vai atrás.
+	_lead = lerpf(_lead, clampf(_resta_giro, -1.1, 1.1) * 0.55, 1.0 - exp(-12.0 * dt)) if dt > 0.0 else _lead
+	_girar("Spine2", Vector3.UP, _lead * 0.3)
+	_girar("Neck", Vector3.UP, _lead * 0.3)
+	_girar("Head", Vector3.UP, _lead * 0.4)
+	if refino < 2:
+		return
+	# B: peso. O tronco inclina com a aceleração (para a frente ao partir, para trás ao parar) e um pouco com a velocidade.
+	if dt > 0.0:
+		var alvo := clampf((_vel - _vel_s) * 0.052, -0.14, 0.16) + clampf(_vel_s * 0.012, 0.0, 0.04)
+		_inclina = lerpf(_inclina, alvo, 1.0 - exp(-14.0 * dt))
+	_tronco(_inclina, 0.0, 0.0)
+	if refino < 3:
+		return
+	# C: impacto. Tranco do tiro, pancada recebida e recarga.
+	if DISPARO.has(anim):
+		var gat: float = DISPARO[anim][0]
+		if _ultima_fase_golpe >= 0.0 and _ultima_fase_golpe < gat and fase >= gat:
+			_recuo = 1.0
+			_recuo_forca = DISPARO[anim][1]
+		_ultima_fase_golpe = fase
+	else:
+		_ultima_fase_golpe = -1.0
+	if _recuo > 0.0:
+		_recuo = maxf(_recuo - dt / 0.28, 0.0)
+		var k := _recuo * _recuo
+		_tronco(-deg_to_rad(_recuo_forca) * k, 0.0, 0.0)
+		_girar("Head", Vector3.RIGHT, deg_to_rad(_recuo_forca * 0.5) * k)
+	if _dano_t < 1.0:
+		_dano_t += dt
+		var t := _dano_t
+		var k := sin(PI * 0.5 * minf(t / 0.1, 1.0)) * exp(-maxf(t - 0.1, 0.0) / 0.22)
+		_tronco(_dano_dir.z * 0.34 * k, -_dano_dir.x * 0.34 * k, _dano_dir.x * 0.1 * k)
+		_girar("Head", Vector3.RIGHT, _dano_dir.z * 0.3 * k)
+		_girar("Head", Vector3.BACK, -_dano_dir.x * 0.3 * k)
+	if anim == "pistol_idle" and _reloading:
+		_recarga(fase)
+
+
+var _reloading := false
+var _fase_recarga := 0.0
+
+
+# Pancada: `dir` é o empurrão no mundo (de quem bateu para quem levou).
+func levar_dano(dir: Vector3) -> void:
+	var d := Vector3(dir.x, 0.0, dir.z).normalized()
+	_dano_dir = Basis(Vector3.UP, rotation.y).inverse() * d
+	_dano_t = 0.0
+
+
+# Recarga da pistola (animação "reload"): o corpo fecha sobre a arma, a cabeça olha para ela e a mão esquerda busca o carregador.
+func _recarga(_fase: float) -> void:
+	var p := _fase_recarga
+	var sobe := smoothstep(0.0, 0.18, p) * (1.0 - smoothstep(0.86, 1.0, p))
+	_tronco(0.1 * sobe, 0.0, -0.1 * sobe)
+	_girar("Head", Vector3.RIGHT, 0.32 * sobe)
+	# braço da arma sobe e vem ao peito; esquerdo cruza o corpo, vai ao cinto (0,2 a 0,45), volta e bate no carregador (0,55 a 0,8)
+	_girar("RightArm", Vector3.RIGHT, -0.55 * sobe)
+	_girar("RightForeArm", Vector3.RIGHT, 0.45 * sobe)
+	var cinto := smoothstep(0.18, 0.4, p) * (1.0 - smoothstep(0.45, 0.6, p))
+	var bate := smoothstep(0.5, 0.62, p) * (1.0 - smoothstep(0.8, 0.9, p))
+	_girar("LeftArm", Vector3.RIGHT, -0.5 * sobe - 0.35 * cinto)
+	_girar("LeftArm", Vector3.UP, -0.45 * sobe)
+	_girar("LeftForeArm", Vector3.RIGHT, 0.7 * sobe + 0.15 * cinto + 0.1 * sin(p * 60.0) * bate)
 
 
 func _tempo(anim: String, fase: float) -> float:
@@ -351,9 +501,20 @@ func _dif(a: float, b: float, laco: bool) -> float:
 
 # Gira suavemente para `yaw` (o jogo só tem 8 direções; no 3D a troca seca de direção parecia um salto).
 func virar(yaw: float) -> void:
-	var agora := Time.get_ticks_msec()
+	var agora := Time.get_ticks_msec() if relogio_teste < 0 else relogio_teste
 	if _ultimo_giro < 0:
 		rotation.y = yaw
+	elif refino >= 1:
+		# Mola amortecida com velocidade máxima: o giro acelera e freia (antes saía na velocidade máxima no primeiro quadro).
+		var dt := minf((agora - _ultimo_giro) / 1000.0, 0.1)
+		var passos := maxi(1, ceili(dt / 0.004))
+		var h := dt / passos
+		for i in passos:
+			var resta := angle_difference(rotation.y, yaw)
+			_w_giro += (140.0 * resta - 24.0 * _w_giro) * h
+			_w_giro = clampf(_w_giro, -9.0, 9.0)
+			rotation.y += _w_giro * h
+		_resta_giro = angle_difference(rotation.y, yaw)
 	else:
 		var dt := (agora - _ultimo_giro) / 1000.0
 		rotation.y = lerp_angle(rotation.y, yaw, 1.0 - exp(-14.0 * dt))
