@@ -15,10 +15,13 @@ func _init() -> void:
 	# Sem arquivos ainda: tudo fica mudo, sem erro.
 	_check(not audio.play_sfx("combat_start"), "efeito sem arquivo fica mudo")
 	_check(not audio.play_sfx("nao_existe"), "evento desconhecido fica mudo")
-	_check(not audio.play_music("combat"), "música sem arquivo fica muda")
+	_check(audio.play_music("combat"), "música de combate toca")
+	_check((audio.music_player.stream as AudioStreamOggVorbis).loop, "música de combate repete")
 	_check(audio.current_music == "combat", "música pedida fica registrada")
 	audio.play_music("combat")
 	_check(audio.current_music == "combat", "pedir a mesma música mantém a faixa")
+	audio.stop_music()
+	_check(audio.play_music("exploration"), "música de investigação toca")
 	audio.stop_music()
 	_check(audio.current_music == "", "parar música limpa o estado")
 

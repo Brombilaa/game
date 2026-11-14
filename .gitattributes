@@ -53,3 +53,6 @@ assets/sprites/personagens/criatura_sangue/*.png -filter -diff -merge -text
 assets/3d/personagens/criatura_textura.png -filter -diff -merge -text
 # O contorno das marcas de pneu do parque (37 KB) também vai direto no Git, como os outros PNGs pequenos.
 assets/3d/parque/marcas_pneu_contorno.png -filter -diff -merge -text
+# As duas músicas (combate e investigação, ~2 MB cada) vão direto no Git, como a fonte e os sprites:
+# o envio ao LFS foi recusado (403) no ambiente da nuvem.
+assets/audio/musica_*.ogg -filter -diff -merge -text
