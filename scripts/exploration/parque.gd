@@ -50,6 +50,7 @@ var dialog_text: Label
 var dialog_image: TextureRect
 var vignette: Texture2D
 var world3d: Node3D  # parque3d.gd embutido
+var luz_dinamica: LuzDinamica  # lanterna do líder e luzes vivas (luz_dinamica.gd)
 var cards: Array[MeshInstance3D] = []  # cartões dos personagens no 3D, reaproveitados a cada quadro
 var blobs: Array[MeshInstance3D] = []  # sombra de contato sob cada cartão
 var cards_used := 0
@@ -90,6 +91,9 @@ func _ready() -> void:
 	_build_dialog()
 	if world3d:
 		fx.muzzle_at = _arma3d
+		luz_dinamica = LuzDinamica.new()
+		luz_dinamica.host = self
+		add_child(luz_dinamica)
 	fx.chest_px = _chest_px
 	var salvo := Progresso.tomar_pendente()
 	if not salvo.is_empty():  # veio de Continuar, Carregar ou do Game Over
