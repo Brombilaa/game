@@ -57,6 +57,17 @@ func start(units: Array[Combatant], surprise_side: int = -1) -> void:
 		_advance()
 
 
+# Entra no combate em andamento (a Dama de Sangue que surge de Roberto Ghular): age no fim da rodada atual e,
+# das próximas em diante, na ordem normal.
+func add_unit(unit: Combatant) -> void:
+	if _by_initiative.has(unit):
+		return
+	_by_initiative.append(unit)
+	if state == State.ACTIVE:
+		order.append(unit)
+		_queue.append(unit)
+
+
 # Sequência de uma rodada: na rodada 1 com surpresa, o lado que surpreendeu inteiro e depois o outro;
 # nas demais, inimigo e aliado alternados, começando pelo inimigo.
 func _round_order(number: int) -> Array[Combatant]:

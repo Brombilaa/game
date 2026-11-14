@@ -359,11 +359,16 @@ func _sync_camera3d() -> void:
 	var cam: Camera3D = world3d.camera
 	var view := get_viewport_rect().size
 	var xf := get_canvas_transform()
-	var center := _uniso(xf.affine_inverse() * (view * 0.5))
+	var center := scenario.from_backdrop(xf.affine_inverse() * (view * 0.5) + scenario.backdrop_origin)  # sempre no nível do chão
 	var target := Vector3(center.x / 64.0, 0.0, center.y / 64.0)
 	cam.size = view.y / (xf.get_scale().y * PX_UNIT)
 	cam.position = target + _to_camera() * P3D.DIST
 	cam.look_at(target, Vector3.UP)
+
+
+# Altura do piso (em unidades 3D) no ponto `p` da sala. O parque é plano; a cripta tem área elevada (local3d.gd).
+func _altura(_p: Vector2) -> float:
+	return 0.0
 
 
 # Direção do chão para a câmera (azimute de 45°, elevação ELEV do parque3d).
@@ -391,7 +396,7 @@ func _sprite3d(tex: Texture2D, src: Rect2, pivot: Vector2, scale: float, flip: b
 	m.set_shader_parameter("regiao", Vector4(src.position.x / ts.x, src.position.y / ts.y, src.size.x / ts.x, src.size.y / ts.y))
 	m.set_shader_parameter("espelhar", flip)
 	var g := _uniso(pos)
-	var feet := Vector3(g.x / 64.0, 0.0, g.y / 64.0)
+	var feet := Vector3(g.x / 64.0, _altura(g), g.y / 64.0)
 	var right := Vector3(cos(PI / 4.0), 0.0, -sin(PI / 4.0))
 	var dx := (src.size.x * 0.5 - pivot.x) * scale / PX_UNIT * (-1.0 if flip else 1.0)
 	var dy := (pivot.y - src.size.y * 0.5) * scale / (PX_UNIT * cos_e)
@@ -425,7 +430,7 @@ func _model3d(pasta: String, pos: Vector2, anim: String, fase: float, dir: Chara
 		world3d.mundo.add_child(ag)
 		agentes[drawing_key] = ag
 	var g := _uniso(pos)
-	ag.position = Vector3(g.x / 64.0, 0.0, g.y / 64.0)
+	ag.position = Vector3(g.x / 64.0, _altura(g), g.y / 64.0)
 	var frente := _uniso(pos + DIR_TELA[dir] * 32.0) - g
 	var golpe: Dictionary = golpes.get(drawing_key, {})
 	var continua := false  # fase do golpe já vem do relógio (contínua)

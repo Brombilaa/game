@@ -1,11 +1,20 @@
-// node finalizar.mjs entrada.glb saida.glb : junta malhas, tira o metal padrão do exportador, normais chapadas nos materiais __flat
-import {NodeIO} from '@gltf-transform/core';
+// node finalizar.mjs entrada.glb saida.glb [célula em m] : junta malhas, tira o metal padrão do exportador, normais chapadas nos materiais __flat
+import {NodeIO,getBounds} from '@gltf-transform/core';
 import {ALL_EXTENSIONS} from '@gltf-transform/extensions';
 import {dedup,flatten,join,weld,prune,textureCompress} from '@gltf-transform/functions';
 import sharp from 'sharp';
 const io=new NodeIO().registerExtensions(ALL_EXTENSIONS);
 const doc=await io.read(process.argv[2]);const root=doc.getRoot();
-await doc.transform(dedup({keepUniqueNames:true}),flatten(),join({keepNamed:false}),weld(),prune());
+// Terceiro argumento (opcional): lado da célula, em metros. As malhas só são juntadas dentro de cada célula do chão,
+// porque o Compatibility ilumina cada malha com um número limitado de luzes; a cripta tem 41 e uma malha só por
+// material ficaria às escuras longe das primeiras.
+const CEL=+(process.argv[4]||0);
+await doc.transform(dedup({keepUniqueNames:true}),flatten());
+if(CEL>0){const cena=root.listScenes()[0],celulas=new Map();
+  for(const n of cena.listChildren()){if(!n.getMesh())continue;const bb=getBounds(n),k=Math.floor((bb.min[0]+bb.max[0])/2/CEL)+'_'+Math.floor((bb.min[2]+bb.max[2])/2/CEL);
+    if(!celulas.has(k)){const gnode=doc.createNode('cel_'+k);cena.addChild(gnode);celulas.set(k,gnode)}cena.removeChild(n);celulas.get(k).addChild(n)}
+  console.log('células',celulas.size)}
+await doc.transform(join({keepNamed:false}),weld(),prune());
 for(const m of root.listMaterials()){const mf=m.getMetallicFactor();
   if(mf===0.5)m.setMetallicFactor(0);else if(mf>0){const c=m.getBaseColorFactor();m.setBaseColorFactor([c[0]*(1-mf),c[1]*(1-mf),c[2]*(1-mf),c[3]]);m.setMetallicFactor(0)}
   m.setRoughnessFactor(1)}
