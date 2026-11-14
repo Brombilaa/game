@@ -82,7 +82,11 @@ func on_combat_ended() -> void:
 
 
 func _start(p: AudioStreamPlayer, cue: Dictionary) -> void:
-	p.stream = load(cue["path"])
+	var stream = load(cue["path"])
+	# Música repete sozinha; efeitos tocam uma vez.
+	if p == music_player and stream is AudioStreamOggVorbis:
+		stream.loop = true
+	p.stream = stream
 	p.volume_db = cue.get("volume_db", 0.0)
 	if p.is_inside_tree():
 		p.play()

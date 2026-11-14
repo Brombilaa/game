@@ -7,7 +7,7 @@
 		"door_open": { "path": "", "volume_db": -4.0 }
 	},
 	"music": {
-		"exploration": { "path": "", "volume_db": -10.0 },
-		"combat": { "path": "", "volume_db": -8.0 }
+		"exploration": { "path": "res://assets/audio/musica_investigacao.ogg", "volume_db": -10.0 },
+		"combat": { "path": "res://assets/audio/musica_combate.ogg", "volume_db": -8.0 }
 	}
 }
