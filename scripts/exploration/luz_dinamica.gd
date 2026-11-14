@@ -2,7 +2,7 @@ class_name LuzDinamica
 extends Node
 # Luz dinâmica dos cenários 3D (modelos A + B escolhidos pelo Léo em 14/11/2026, item V-08 do dossiê visual).
 # A, lanterna do líder: nas cenas noturnas (hora >= HORA_NOITE) o ambiente e o sol escurecem e um cone de luz
-#    quente segue o líder, virado para onde ele olha. Tecla L liga e desliga. Só atmosfera, sem efeito de regra.
+#    quente sai da frente do líder, virado para onde ele olha (o líder fica fora do cone; Léo, 14/11). Tecla L liga e desliga. Só atmosfera, sem efeito de regra.
 # B, luzes vivas: as luzes do cenário tremem (algumas com defeito, que caem de vez em quando) e cada disparo
 #    acende um clarão curto na arma. Valores provisórios do Claude, para o Léo calibrar.
 # Fica ao lado do Parque (parque.gd) e só mexe no mundo 3D (`host.world3d.mundo`).
@@ -13,9 +13,9 @@ const TREME := 0.07  # amplitude do tremor das luzes (fração da energia)
 const CLARAO_SEGUNDOS := 0.12
 const CLARAO_ENERGIA := 16.0
 const SPOT_ENERGIA := 14.0
-const SPOT_ALCANCE := 11.0
-const SPOT_ANGULO := 40.0
-const POCA_ENERGIA := 2.5
+const SPOT_ALCANCE := 8.0
+const SPOT_ANGULO := 38.0
+const ORIGEM_FRENTE := 1.0  # a luz nasce à frente do líder, para ele não entrar no cone
 const COR_LANTERNA := Color(1.0, 0.86, 0.62)
 
 var host: Node  # Parque (parque.gd)
@@ -32,7 +32,6 @@ var _sois: Array[DirectionalLight3D] = []
 var _sol_base := {}
 var _escuro := 0.0  # 0 = cena normal, 1 = lanterna ligada (suavizado)
 var _spot: SpotLight3D
-var _poca: OmniLight3D
 var _alvo_dir := Vector3(0, 0, 1)
 var _dir := Vector3(0, 0, 1)
 var _claroes: Array[Dictionary] = []  # {"luz": OmniLight3D, "t": float}
@@ -76,19 +75,11 @@ func _criar_lanterna() -> void:
 	_spot.light_energy = SPOT_ENERGIA
 	_spot.spot_range = SPOT_ALCANCE
 	_spot.spot_angle = SPOT_ANGULO
-	_spot.spot_angle_attenuation = 0.8
+	_spot.spot_angle_attenuation = 1.6
 	_spot.spot_attenuation = 1.0
 	_spot.shadow_enabled = true
 	_spot.light_specular = 0.0
 	_mundo.add_child(_spot)
-	_poca = OmniLight3D.new()
-	_poca.light_color = COR_LANTERNA
-	_poca.light_energy = POCA_ENERGIA
-	_poca.omni_range = 4.5
-	_poca.omni_attenuation = 1.4
-	_poca.shadow_enabled = false
-	_poca.light_specular = 0.0
-	_mundo.add_child(_poca)
 
 
 func alternar() -> void:
@@ -152,7 +143,6 @@ func _process(delta: float) -> void:
 	for d in _sois:
 		d.light_energy = _sol_base[d] * k
 	_spot.visible = _escuro > 0.01
-	_poca.visible = _spot.visible
 	if not _spot.visible:
 		return
 	var lider: Combatant = host.player
@@ -160,10 +150,8 @@ func _process(delta: float) -> void:
 	_alvo_dir = _direcao(lider)
 	_dir = _dir.slerp(_alvo_dir, clampf(delta * 8.0, 0.0, 1.0)).normalized()
 	_spot.light_energy = SPOT_ENERGIA * _escuro
-	_poca.light_energy = POCA_ENERGIA * _escuro
-	_spot.position = chao + Vector3(0, 1.5, 0) - _dir * 0.2
-	_spot.look_at(chao + _dir * 3.5, Vector3.UP)
-	_poca.position = chao + Vector3(0, 1.8, 0) + _dir * 0.6
+	_spot.position = chao + Vector3(0, 1.2, 0) + _dir * ORIGEM_FRENTE
+	_spot.look_at(chao + _dir * (ORIGEM_FRENTE + 2.4), Vector3.UP)
 
 
 # Para onde o líder olha, no chão do cenário 3D.
