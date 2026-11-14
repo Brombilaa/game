@@ -1,13 +1,13 @@
 class_name GameOptions
 extends RefCounted
-# Opções do menu inicial: volumes (0 a 1) e tela cheia, gravados em user://opcoes.cfg.
+# Opções do menu inicial: volumes (0 a 1), tela cheia, sincronia vertical e combate rápido, em user://opcoes.cfg.
 # O volume geral vai no bus Master. Música e efeitos usam os buses "Music" e "SFX" quando
 # existirem (default_bus_layout.tres). A cópia usada pelo jogo fica no autoload Game:
 # peça com GameOptions.shared().
 
 const PATH := "user://opcoes.cfg"
 const SECTION := "opcoes"
-const DEFAULTS := {"master": 0.8, "music": 0.6, "sfx": 0.7, "fullscreen": false, "fast_combat": false}
+const DEFAULTS := {"master": 0.8, "music": 0.6, "sfx": 0.7, "fullscreen": false, "vsync": true, "fast_combat": false}
 const BUSES := {"master": "Master", "music": "Music", "sfx": "SFX"}
 
 var values: Dictionary = DEFAULTS.duplicate()
@@ -33,6 +33,7 @@ static func load_from(path := PATH) -> GameOptions:
 		options.set_volume(key, float(options.values[key]))
 	options.values["fullscreen"] = bool(options.values["fullscreen"])
 	options.values["fast_combat"] = bool(options.values["fast_combat"])
+	options.values["vsync"] = bool(options.values["vsync"])
 	return options
 
 
@@ -61,3 +62,6 @@ func apply() -> void:
 	var mode: DisplayServer.WindowMode = DisplayServer.WINDOW_MODE_FULLSCREEN if values["fullscreen"] else DisplayServer.WINDOW_MODE_WINDOWED
 	if DisplayServer.window_get_mode() != mode:
 		DisplayServer.window_set_mode(mode)
+	var vsync := DisplayServer.VSYNC_ENABLED if values["vsync"] else DisplayServer.VSYNC_DISABLED
+	if DisplayServer.window_get_vsync_mode() != vsync:
+		DisplayServer.window_set_vsync_mode(vsync)

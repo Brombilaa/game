@@ -1,130 +1,294 @@
 class_name MainMenu
 extends Control
-# Menu inicial, modelo "Vela e pincel" com menu lateral (escolha do Léo, 30/10/2026).
-# Abertura de ~4,7 s: o símbolo é pintado traço por traço, as letras do nome surgem uma a uma
-# e o menu aparece; clique ou tecla pula a abertura. Depois o nome pulsa em vermelho e a luz de
-# vela treme atrás do símbolo. Tudo é desenhado por código (sem imagens), na tela de 960×540.
-# Continuar (só aparece quando há save) abre o save mais recente; Carregar lista o automático e os 3
-# manuais, avisando save corrompido ou de versão mais nova. Quem lê o save e abre o lugar é o Progresso.
-# Opções vêm do autoload Game (GameOptions.shared()) e são gravadas a cada mudança.
-# Cenário da referência do Léo (30/10): mesa de investigação no escuro, vela acesa à esquerda,
-# símbolo pintado na parede e o nome em vermelho. Se existir BG_IMAGE (arte do ChatGPT), ela é
-# o fundo; sem ela, uma mesa simples é desenhada por código. O símbolo é chapado, em 2D.
+# Menu inicial, layout A "Cinema" (Léo, 13/11): fundo animado "A árvore velha" (MenuFundoArvore, escolhido por
+# enquanto), nome do jogo no alto à esquerda, menu fino à esquerda sem caixas e painéis discretos à direita.
+# Feito com nós de Control (cada linha é um Control focável que desenha a si mesmo), então mouse, teclado e foco
+# seguem as regras da Godot. Tudo em Special Elite (decisão de 13/11), sem logo e sem subtítulo.
+# Itens: Continuar (só com save; abre o mais recente), Novo jogo (pede confirmação se já há save), Carregar
+# (automático + 3 manuais, com aviso de save corrompido ou de versão nova), Opções (volumes, tela cheia,
+# sincronia vertical, combate rápido; gravadas a cada mudança), Créditos e Sair (com confirmação).
+# Esc ou o botão direito fecham a confirmação ou o painel. Quem lê o save e abre o lugar é o Progresso.
 
-const GAME_SCENE := "res://scenes/exploration/parque.tscn"  # sala inicial (Léo, 30/10/2026)
-const BG_IMAGE := "res://assets/sprites/menu/fundo_menu.png"
-const CANDLE_AT := Vector2(0.075, 0.26)  # ponta da chama da vela desenhada por código, em fração da tela
-const ART_CANDLE_AT := Vector2(0.136, 0.08)  # meio da chama na arte do fundo (fundo_menu.png)
-const ART_WICK_AT := Vector2(0.1365, 0.148)  # pavio da vela na arte: a chama animada nasce aqui
-const ART_FLAME := Vector2(15.0, 150.0)  # meia largura e altura da chama da arte, em pixels de 1920x1080
-const ART_SIGIL_AT := Vector2(0.62, 0.3)  # na arte, o símbolo e o nome ficam na parede escura de cima
-const ART_DARKEN := 0.25  # escurece a arte por igual, para o nome e o menu lerem por cima
-const TITLE := "PACTO CARMESIM"
-const ITEMS := [["new", "Novo jogo"], ["load", "Carregar"], ["opts", "Opções"], ["quit", "Sair do jogo"]]
+const ITEMS := [["new", "Novo jogo"], ["load", "Carregar"], ["opts", "Opções"], ["credits", "Créditos"], ["quit", "Sair"]]
 const CONTINUE_ITEM := ["continue", "Continuar"]  # primeiro item, só quando há um save que carrega
-const OPTION_ROWS := [["master", "Volume geral"], ["music", "Música"], ["sfx", "Efeitos"], ["fullscreen", "Tela cheia"], ["fast_combat", "Combate rápido (2x)"]]
-const TOGGLE_KEYS := ["fullscreen", "fast_combat"]
+const OPTION_ROWS := [["master", "Volume geral"], ["music", "Música"], ["sfx", "Efeitos"], ["fullscreen", "Tela cheia"], ["vsync", "Sincronia vertical"], ["fast_combat", "Combate rápido (2x)"]]
+const TOGGLE_KEYS := ["fullscreen", "vsync", "fast_combat"]
 const SLOT_MARK := {"auto": "A", "manual_1": "I", "manual_2": "II", "manual_3": "III"}
 const AREA_NAMES := {"test_room": "Sala de teste", "parque": "Parque"}
+const PANEL_TITLES := {"load": "CARREGAR", "opts": "OPÇÕES", "credits": "CRÉDITOS"}
+# Créditos provisórios: o nome de quem faz o jogo ainda não foi definido pelo Léo.
+const CREDITS := [
+	["Pacto Carmesim", "Protótipo da missão 1"],
+	["Criação e direção", "a definir"],
+	["Feito com", "Godot Engine 4.3"],
+	["Fonte", "Special Elite (Apache 2.0)"],
+]
+const VERSION := "v0.1"
 
-# Tempos da abertura, em segundos.
-const DRAW_SECONDS := 2.4  # cada traço do símbolo
-const LETTER_START := 2.2
-const LETTER_STEP := 0.09
-const LETTER_FADE := 0.9
-const MENU_START := 3.6
-const MENU_FADE := 1.0
-const GLOW_START := 4.5
-const GLOW_PERIOD := 4.0
-const INTRO_END := 4.7  # um pouco depois de o menu terminar de aparecer (MENU_START + MENU_FADE)
-const BRUSH_SECONDS := 0.3  # pincelada atrás da opção em foco
-const PANEL_FADE_SECONDS := 0.3
+# Abertura, em segundos: o fundo sai do preto, o nome sobe e os itens entram um a um.
+const BG_FADE := 1.2
+const TITLE_FADE := 2.2
+const ITEM_START := 1.2
+const ITEM_STEP := 0.18
+const ITEM_FADE := 0.9
+const INTRO_END := 3.0  # ITEM_START + 5 * ITEM_STEP + ITEM_FADE: o sexto item (com Continuar) termina aqui
+const FLOAT_PERIOD := 7.0  # o nome flutua devagar
+const FLOAT_PX := 5.0
+const PANEL_FADE := 0.3
 
-const BG := Color("080605")
+const BG := Color("050302")
 const INK := Color("f3e6cc")
-const MENU_INK := Color("d9ccb2")
-const MENU_INK_ON := Color("fff6e4")
-const GOLD := Color("d4aa50")
+const ITEM_INK := Color(0.9, 0.855, 0.77, 0.66)
+const ITEM_ON := Color("fff6e4")
 const MUTED := Color("a8977c")
 const LINE := Color("4a3a28")
 const BLOOD := Color("aa2424")
-const BLOOD_LIGHT := Color("e04040")
-const BLOOD_DARK := Color("5e0c0c")
-const SMOKE_PUFFS := 7
-const DESK_TOP := 0.58  # borda da mesa desenhada por código, em fração da altura
-const MENU_CENTER_Y := 0.72  # menu abaixo da vela, sobre a mesa, como na referência
-const BOOKS := [[0.1, 14.0, "4a1414"], [0.085, 11.0, "1f3324"], [0.095, 15.0, "3b2a18"], [0.075, 10.0, "5a1a1a"], [0.09, 13.0, "2a2a36"]]
-const BOOKS_HEIGHT := 63.0  # soma das alturas de BOOKS: a vela fica em cima da pilha
-const SIGIL_RED := Color("8c1d1d")  # mais escuro que o nome, para o título ler por cima
-const DUST_MOTES := 40
-const TITLE_RED := Color("e0453a")
-const WALL := Color("100b08")
-const WOOD := Color("26170d")
-const WOOD_EDGE := Color("3d2615")
-const WOOD_LINE := Color("170e08")
-const WAX := Color("d8ccb0")
-const WAX_SHADE := Color("b3a586")
-const PANEL_BG := Color(0.07, 0.05, 0.035, 0.96)
+const BLOOD_LIGHT := Color("c8382e")
+const WARN := Color("e0453a")
+const PANEL_BG := Color(0.03, 0.02, 0.018, 0.78)
 
-const TITLE_SIZE := 34
-const TITLE_FONT := preload("res://assets/fonts/CinzelDecorative-Bold.ttf")  # só no nome do jogo; o resto segue na Special Elite
-const TITLE_SHINE := Color("ffb59a")
-const SHINE_PERIOD := 6.0  # um reflexo de luz passa pelo nome a cada 6 s
-const MENU_SIZE := 22
-const MENU_GAP := 40.0
+const TITLE := "PACTO CARMESIM"
+const TITLE_SIZE := 33
+const ITEM_SIZE := 20
+const FONT := preload("res://assets/fonts/SpecialElite-Regular.ttf")
 
 static var pending_slot := ""
 
 var starting := false  # já pediu a troca para o jogo
-
 var t := 0.0
-var focus := 0  # opção do menu em foco
-var focus_time := 0.0
-var panel := ""  # "", "load" ou "opts"
-var panel_focus := 0  # linha em foco no painel; a última é o "Fechar"
-var panel_fade := 0.0
+var panel := ""  # "", "load", "opts" ou "credits"
+var confirming := ""  # "", "new" ou "quit": pergunta aberta
 var save_dir := SaveSlots.DIR
 var slots: Array[Dictionary] = []
 var items: Array = ITEMS.duplicate()  # ITEMS, com Continuar na frente quando há save
 var continue_slot := ""  # slot que o Continuar abre
 var options_path := GameOptions.PATH
 var options := GameOptions.shared()
-var strokes := sigil_strokes()
-var blots := sigil_blots()
-var light_tex := _radial([Color(0.6, 0.24, 0.12, 0.34), Color(0.6, 0.24, 0.12, 0.0)], [0.0, 1.0])
-var candle_tex := _radial([Color(1.0, 0.62, 0.25, 0.4), Color(1.0, 0.5, 0.2, 0.12), Color(1.0, 0.45, 0.2, 0.0)], [0.0, 0.35, 1.0])
-var bg_tex: Texture2D = null
-var vignette_tex := _radial([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0.82)], [0.0, 0.5, 1.0])
+
+var background: Control  # MenuFundoArvore no menu inicial; o jogo desfocado na pausa
+var curtain: ColorRect  # preto da abertura
+var title_label: Label
+var title_rule: ColorRect
+var menu_box: VBoxContainer
+var menu_rows: Array[MenuRow] = []
+var version_label: Label
+var panel_box: PanelContainer
+var panel_title: Label
+var panel_body: VBoxContainer
+var panel_rows: Array[MenuRow] = []
+var dialog: Control
+var dialog_text: Label
+var dialog_rows: Array[MenuRow] = []
+var _title_y := 0.0
+var _last_focus: Control = null
 
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	RenderingServer.set_default_clear_color(BG)
+	if not _is_pause():
+		RenderingServer.set_default_clear_color(BG)
+	theme = menu_theme()
 	options.apply()
-	if ResourceLoader.exists(BG_IMAGE):
-		bg_tex = load(BG_IMAGE)
 	GameCursor.apply(GameCursor.Kind.ARROW)
+	background = _make_background()
+	add_child(background)
+	_build_title()
+	menu_box = VBoxContainer.new()
+	menu_box.add_theme_constant_override("separation", 2)
+	add_child(menu_box)
+	version_label = _label(_footer_text(), 10, Color(INK, 0.4))
+	add_child(version_label)
+	_build_panel()
+	_build_dialog()
+	curtain = ColorRect.new()
+	curtain.color = Color.BLACK
+	curtain.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	curtain.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(curtain)
 	refresh_items()
+	resized.connect(_layout)
+	_layout()
+	_apply_intro()
 
 
-# Continuar só existe quando algum slot carrega; o foco começa nele.
-func refresh_items() -> void:
+# Tema do menu: Special Elite em tudo, sem caixas nem bordas padrão da Godot.
+static func menu_theme() -> Theme:
+	var th := Theme.new()
+	th.default_font = FONT
+	th.default_font_size = 15
+	th.set_color("font_color", "Label", INK)
+	var empty := StyleBoxEmpty.new()
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = PANEL_BG
+	panel_style.border_color = Color(LINE, 0.9)
+	panel_style.border_width_top = 1
+	panel_style.border_width_bottom = 1
+	panel_style.content_margin_left = 28
+	panel_style.content_margin_right = 28
+	panel_style.content_margin_top = 18
+	panel_style.content_margin_bottom = 16
+	th.set_stylebox("panel", "PanelContainer", panel_style)
+	th.set_stylebox("focus", "Control", empty)
+	return th
+
+
+static func spaced_font(spacing: int) -> FontVariation:
+	var f := FontVariation.new()
+	f.base_font = FONT
+	f.spacing_glyph = spacing
+	return f
+
+
+func _label(text: String, font_size: int, color: Color, spacing := 0) -> Label:
+	var l := Label.new()
+	l.text = text
+	l.add_theme_font_size_override("font_size", font_size)
+	l.add_theme_color_override("font_color", color)
+	if spacing != 0:
+		l.add_theme_font_override("font", spaced_font(spacing))
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return l
+
+
+func _build_title() -> void:
+	title_label = _label(_title_text(), TITLE_SIZE, Color("efdcc6"), 8)
+	title_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+	title_label.add_theme_constant_override("shadow_offset_y", 2)
+	title_label.add_theme_constant_override("shadow_outline_size", 6)
+	add_child(title_label)
+	title_rule = ColorRect.new()
+	title_rule.color = Color(BLOOD_LIGHT, 0.8)
+	title_rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(title_rule)
+
+
+func _build_panel() -> void:
+	panel_box = PanelContainer.new()
+	panel_box.visible = false
+	panel_box.modulate.a = 0.0
+	add_child(panel_box)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 8)
+	panel_box.add_child(col)
+	panel_title = _label("", 14, Color("d4aa50"), 5)
+	panel_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(panel_title)
+	panel_body = VBoxContainer.new()
+	panel_body.add_theme_constant_override("separation", 6)
+	col.add_child(panel_body)
+
+
+func _build_dialog() -> void:
+	dialog = Control.new()
+	dialog.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dialog.visible = false
+	dialog.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(dialog)
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.6)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dialog.add_child(dim)
+	var box := PanelContainer.new()
+	box.name = "Box"
+	dialog.add_child(box)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 14)
+	box.add_child(col)
+	dialog_text = _label("", 16, INK)
+	dialog_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	dialog_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	dialog_text.custom_minimum_size = Vector2(320, 0)
+	col.add_child(dialog_text)
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 40)
+	col.add_child(row)
+	for spec in [["yes", "Sim"], ["no", "Não"]]:
+		var r := MenuRow.new(self, MenuRow.Kind.ITEM, spec[0], spec[1])
+		r.font_size = 17
+		r.custom_minimum_size = Vector2(90, 30)
+		r.activated.connect(func(id: String) -> void: confirm(id == "yes"))
+		row.add_child(r)
+		dialog_rows.append(r)
+
+
+func _layout() -> void:
+	var w := size.x
+	var h := size.y
+	background.position = Vector2.ZERO
+	background.size = size
+	title_label.position = Vector2(w * 0.06, w * 0.08 - TITLE_SIZE * 0.6)
+	_title_y = title_label.position.y
+	title_rule.position = Vector2(w * 0.06 + 2, title_label.position.y + TITLE_SIZE * 1.45)
+	title_rule.size = Vector2(w * 0.05, 1)
+	menu_box.position = Vector2(w * 0.06, h * 0.5 - h * 0.08)
+	menu_box.size = Vector2(w * 0.3, 0)
+	version_label.position = Vector2(w * 0.014, h - 20)
+	panel_box.custom_minimum_size = Vector2(w * 0.52, 0)
+	panel_box.reset_size()
+	panel_box.position = Vector2(w * 0.4, h * 0.2)
+	var box: Control = dialog.get_node("Box")
+	box.reset_size()
+	box.position = (size - box.size) / 2.0
+
+
+# --- Pontos que o menu de pausa (PauseMenu) troca ------------------------------------
+
+func _is_pause() -> bool:
+	return false
+
+
+func _make_background() -> Control:
+	return MenuFundoArvore.new()
+
+
+func _title_text() -> String:
+	return TITLE
+
+
+func _footer_text() -> String:
+	return VERSION
+
+
+# Continuar só existe quando algum slot carrega.
+func _menu_items() -> Array:
 	continue_slot = SaveSlots.latest(save_dir)
-	items = ITEMS.duplicate()
+	var list: Array = ITEMS.duplicate()
 	if continue_slot != "":
-		items.push_front(CONTINUE_ITEM)
-	focus = clampi(focus, 0, items.size() - 1)
+		list.push_front(CONTINUE_ITEM)
+	return list
 
+
+func _ask_text(action: String) -> String:
+	return "Começar um novo jogo? O save automático será substituído ao chegar no parque." if action == "new" else "Sair do jogo?"
+
+
+func _confirmed(action: String) -> void:
+	if action == "new":
+		_start_game("")
+	elif action == "quit":
+		get_tree().quit()
+
+
+func _panel_title(which: String) -> String:
+	return PANEL_TITLES.get(which, which.to_upper())
+
+
+func _fill_panel(_which: String) -> void:
+	pass
+
+
+# --- Abertura -------------------------------------------------------------------------
 
 func _process(delta: float) -> void:
 	t += delta
-	focus_time += delta
-	panel_fade = move_toward(panel_fade, 1.0 if panel != "" else 0.0, delta / PANEL_FADE_SECONDS)
-	queue_redraw()
+	_apply_intro()
+	var mouse := get_local_mouse_position()
+	if size.x > 0 and background is MenuFundoArvore:
+		background.parallax = Vector2(mouse.x / size.x - 0.5, mouse.y / size.y - 0.5)
 
-
-# --- Abertura ---------------------------------------------------------------
 
 func intro_done() -> bool:
 	return t >= INTRO_END
@@ -132,106 +296,205 @@ func intro_done() -> bool:
 
 func skip_intro() -> void:
 	t = maxf(t, INTRO_END)
+	_apply_intro()
 
 
-static func stroke_progress(time: float, delay: float) -> float:
-	var x := clampf((time - delay) / DRAW_SECONDS, 0.0, 1.0)
-	return 1.0 - pow(1.0 - x, 3.0)
+static func ease_out(k: float) -> float:
+	k = clampf(k, 0.0, 1.0)
+	return 1.0 - pow(1.0 - k, 3.0)
 
 
-static func letter_alpha(time: float, index: int) -> float:
-	return clampf((time - LETTER_START - index * LETTER_STEP) / LETTER_FADE, 0.0, 1.0)
+# Transparência de cada item na abertura (0 a 1), um depois do outro.
+static func item_alpha(time: float, index: int) -> float:
+	return ease_out((time - ITEM_START - index * ITEM_STEP) / ITEM_FADE)
 
 
-static func menu_alpha(time: float) -> float:
-	return clampf((time - MENU_START) / MENU_FADE, 0.0, 1.0)
+func _apply_intro() -> void:
+	curtain.color.a = 1.0 - ease_out(t / BG_FADE)
+	var k := ease_out(t / TITLE_FADE)
+	title_label.modulate.a = k
+	title_rule.modulate.a = k
+	title_label.position.y = _title_y + (1.0 - k) * 12.0 + sin(t * TAU / FLOAT_PERIOD) * FLOAT_PX
+	for i in menu_rows.size():
+		menu_rows[i].intro = item_alpha(t, i)
+	version_label.modulate.a = ease_out((t - ITEM_START) / ITEM_FADE)
 
 
-# Trecho inicial da linha, do começo até a fração `p` do comprimento total.
-static func partial(points: PackedVector2Array, p: float) -> PackedVector2Array:
-	var out := PackedVector2Array()
-	if points.size() < 2 or p <= 0.0:
-		return out
-	var total := 0.0
-	for i in range(1, points.size()):
-		total += points[i - 1].distance_to(points[i])
-	var left := total * minf(p, 1.0)
-	out.append(points[0])
-	for i in range(1, points.size()):
-		var seg := points[i - 1].distance_to(points[i])
-		if seg >= left:
-			out.append(points[i - 1].lerp(points[i], left / seg if seg > 0.0 else 1.0))
-			return out
-		left -= seg
-		out.append(points[i])
-	return out
+# --- Itens ----------------------------------------------------------------------------
+
+# Continuar só existe quando algum slot carrega; o foco começa no primeiro item.
+func refresh_items() -> void:
+	items = _menu_items()
+	for r in menu_rows:
+		menu_box.remove_child(r)
+		r.queue_free()
+	menu_rows.clear()
+	for spec in items:
+		var r := MenuRow.new(self, MenuRow.Kind.ITEM, spec[0], spec[1])
+		r.activated.connect(activate)
+		menu_box.add_child(r)
+		menu_rows.append(r)
+	if is_inside_tree() and panel == "" and confirming == "":
+		menu_rows[0].grab_focus.call_deferred()
 
 
-# --- Símbolo (coordenadas de -100 a 100) ----------------------------------------
-
-# Cada traço: {"points", "width", "delay"}. Ordem = ordem em que o pincel pinta.
-static func sigil_strokes() -> Array[Dictionary]:
-	var list: Array[Dictionary] = []
-	# Anel externo, uma volta e pouco, levemente torto como pintado à mão.
-	var ring := PackedVector2Array()
-	for i in 53:
-		var a := deg_to_rad(-92.0 + i * 7.0)
-		var r := 85.0 + 2.0 * sin(a * 3.0) + 1.5 * sin(a * 7.0 + 1.0)
-		ring.append(Vector2(cos(a), sin(a)) * r)
-	list.append({"points": ring, "width": 7.0, "delay": 0.0})
-	list.append({"points": _arc(72.0, 155.0, 205.0), "width": 2.2, "delay": 0.5})
-	list.append({"points": _arc(72.0, -25.0, 25.0), "width": 2.2, "delay": 0.5})
-	list.append({"points": PackedVector2Array([Vector2(-58, -34), Vector2(60, -36), Vector2(1, 66), Vector2(-58, -34)]), "width": 6.0, "delay": 0.9})
-	list.append({"points": PackedVector2Array([Vector2(0, -100), Vector2(1, 98)]), "width": 4.5, "delay": 1.4})
-	var eye := _quad(Vector2(-32, -6), Vector2(0, -26), Vector2(32, -6))
-	eye.append_array(_quad(Vector2(32, -6), Vector2(0, 14), Vector2(-32, -6)))
-	list.append({"points": eye, "width": 4.0, "delay": 1.7})
-	list.append({"points": PackedVector2Array([Vector2(-26, 40), Vector2(26, 38)]), "width": 4.0, "delay": 1.9})
-	list.append({"points": PackedVector2Array([Vector2(-14, 52), Vector2(14, 51)]), "width": 4.0, "delay": 1.95})
-	var runes := [
-		[Vector2(-6, -96), Vector2(0, -88), Vector2(6, -96)],
-		[Vector2(88, -30), Vector2(96, -24)], [Vector2(92, -34), Vector2(92, -20)],
-		[Vector2(60, 74), Vector2(70, 70), Vector2(68, 80)],
-		[Vector2(-66, 72), Vector2(-74, 66)], [Vector2(-72, 76), Vector2(-64, 64)],
-		[Vector2(-94, -24), Vector2(-86, -20), Vector2(-94, -16)],
-		[Vector2(-40, -90), Vector2(-36, -80)], [Vector2(-30, -92), Vector2(-34, -82)],
-		[Vector2(42, -88), Vector2(50, -80)], [Vector2(50, -88), Vector2(42, -80)],
-	]
-	for i in runes.size():
-		list.append({"points": PackedVector2Array(runes[i]), "width": 2.6, "delay": 1.2 + i * 0.05})
-	return list
+func activate(item: String) -> void:
+	if starting:
+		return
+	if not intro_done():
+		skip_intro()
+	match item:
+		"continue":
+			_start_game(continue_slot)
+		"new":
+			if continue_slot != "":
+				_ask("new")
+			else:
+				_start_game("")
+		"load":
+			refresh_slots()
+			_open("load")
+		"opts":
+			_open("opts")
+		"credits":
+			_open("credits")
+		"quit":
+			_ask("quit")
 
 
-# Manchas de tinta: Vector3(x, y, raio) e o instante em que caem.
-static func sigil_blots() -> Array[Dictionary]:
-	var list: Array[Dictionary] = []
-	for b in [[0, -6, 7, 2.1], [-58, -34, 4.5, 2.2], [60, -36, 4, 2.25], [1, 66, 5, 2.3], [38, -58, 2.2, 2.35], [-46, 30, 1.8, 2.4], [70, 56, 2.6, 2.4]]:
-		list.append({"at": Vector2(b[0], b[1]), "radius": float(b[2]), "delay": float(b[3])})
-	return list
+# --- Confirmação ----------------------------------------------------------------------
+
+func _ask(action: String) -> void:
+	_last_focus = get_viewport().gui_get_focus_owner()
+	confirming = action
+	dialog_text.text = _ask_text(action)
+	dialog.visible = true
+	_layout()
+	dialog_rows[1].grab_focus()  # o foco começa no "Não"
 
 
-static func _arc(radius: float, from_deg: float, to_deg: float) -> PackedVector2Array:
-	var out := PackedVector2Array()
-	for i in 9:
-		var a := deg_to_rad(lerpf(from_deg, to_deg, i / 8.0))
-		out.append(Vector2(cos(a), sin(a)) * radius)
-	return out
+func confirm(yes: bool) -> void:
+	var action := confirming
+	confirming = ""
+	dialog.visible = false
+	if _last_focus and is_instance_valid(_last_focus):
+		_last_focus.grab_focus()
+	if yes:
+		_confirmed(action)
 
 
-static func _quad(a: Vector2, c: Vector2, b: Vector2) -> PackedVector2Array:
-	var out := PackedVector2Array()
-	for i in 13:
-		var k := i / 12.0
-		out.append(a.lerp(c, k).lerp(c.lerp(b, k), k))
-	return out
+# --- Painéis --------------------------------------------------------------------------
+
+func _open(which: String) -> void:
+	panel = which
+	panel_title.text = _panel_title(which)
+	panel_rows.clear()
+	for c in panel_body.get_children():
+		panel_body.remove_child(c)  # sai já, para o painel encolher na altura do conteúdo novo
+		c.queue_free()
+	match which:
+		"load":
+			for i in slots.size():
+				var r := MenuRow.new(self, MenuRow.Kind.SLOT, str(i), "")
+				r.slot = slots[i]
+				r.disabled = slots[i]["empty"]
+				r.activated.connect(func(id: String) -> void: load_slot(int(id)))
+				_add_panel_row(r)
+		"opts":
+			for spec in OPTION_ROWS:
+				var kind := MenuRow.Kind.TOGGLE if spec[0] in TOGGLE_KEYS else MenuRow.Kind.VOLUME
+				var r := MenuRow.new(self, kind, spec[0], spec[1])
+				r.activated.connect(func(id: String) -> void: change_option(id, 0.0))
+				_add_panel_row(r)
+		"credits":
+			for line in CREDITS:
+				var block := VBoxContainer.new()
+				block.add_theme_constant_override("separation", 0)
+				var head := _label(line[0], 11, MUTED, 2)
+				var body := _label(line[1], 15, INK)
+				block.add_child(head)
+				block.add_child(body)
+				panel_body.add_child(block)
+		_:
+			_fill_panel(which)
+	var close := MenuRow.new(self, MenuRow.Kind.ITEM, "close", "Fechar")
+	close.font_size = 15
+	close.centered = true
+	close.activated.connect(func(_id: String) -> void: close_panel())
+	_add_panel_row(close)
+	panel_box.visible = true
+	_layout()
+	create_tween().tween_property(panel_box, "modulate:a", 1.0, PANEL_FADE)
+	for r in panel_rows:
+		if not r.disabled:
+			r.grab_focus()
+			break
 
 
-# --- Carregar ---------------------------------------------------------------
+func _add_panel_row(r: MenuRow) -> void:
+	panel_body.add_child(r)
+	panel_rows.append(r)
+
+
+func close_panel() -> void:
+	if panel == "":
+		return
+	if panel == "opts":
+		options.save(options_path)
+	var was := panel
+	panel = ""
+	panel_box.modulate.a = 0.0
+	panel_box.visible = false
+	for r in menu_rows:
+		if items[menu_rows.find(r)][0] == was:
+			r.grab_focus()
+			return
+	if not menu_rows.is_empty():
+		menu_rows[0].grab_focus()
+
+
+# Volume: `step` soma ao valor (setas); 0 num interruptor inverte. Grava a cada mudança.
+func change_option(key: String, step: float) -> void:
+	if key in TOGGLE_KEYS:
+		options.values[key] = not bool(options.values.get(key, false))
+	else:
+		options.set_volume(key, options.volume(key) + step)
+	options.apply()
+	options.save(options_path)
+
+
+func set_volume(key: String, value: float) -> void:
+	options.set_volume(key, value)
+	options.apply()
+	options.save(options_path)
+
+
+# --- Carregar -------------------------------------------------------------------------
 
 func refresh_slots() -> void:
 	slots.clear()
 	for entry in SaveSlots.list(save_dir):
 		slots.append(entry)
+
+
+func load_slot(index: int) -> bool:
+	if index < 0 or index >= slots.size() or slots[index]["empty"]:
+		return false
+	return _start_game(slots[index]["slot"])
+
+
+static func area_label(area: String) -> String:
+	if area.is_empty():
+		return "Local desconhecido"
+	return AREA_NAMES.get(area, area.capitalize())
+
+
+static func date_label(unix: int) -> String:
+	if unix <= 0:
+		return ""
+	var bias: int = Time.get_time_zone_from_system().get("bias", 0)
+	var d := Time.get_datetime_dict_from_unix_time(unix + bias * 60)
+	return "Salvo em %02d/%02d às %02d:%02d" % [d["day"], d["month"], d["hour"], d["minute"]]
 
 
 # Nome do lugar no slot: o rótulo gravado ("DELEGACIA · 21h" vira "Delegacia · 21h") ou o id da área.
@@ -256,50 +519,7 @@ static func slot_detail(entry: Dictionary) -> String:
 	return ("Automático · " + when) if entry.get("slot") == SaveSlots.AUTO else when
 
 
-static func area_label(area: String) -> String:
-	if area.is_empty():
-		return "Local desconhecido"
-	return AREA_NAMES.get(area, area.capitalize())
-
-
-static func date_label(unix: int) -> String:
-	if unix <= 0:
-		return ""
-	var bias: int = Time.get_time_zone_from_system().get("bias", 0)
-	var d := Time.get_datetime_dict_from_unix_time(unix + bias * 60)
-	return "Salvo em %02d/%02d às %02d:%02d" % [d["day"], d["month"], d["hour"], d["minute"]]
-
-
-# --- Ações --------------------------------------------------------------------
-
-func activate(item: String) -> void:
-	match item:
-		"continue":
-			_start_game(continue_slot)
-		"new":
-			_start_game("")
-		"load":
-			refresh_slots()
-			_open("load")
-		"opts":
-			_open("opts")
-		"quit":
-			get_tree().quit()
-
-
-func close_panel() -> void:
-	if panel == "opts":
-		options.save(options_path)
-	panel = ""
-
-
-func load_slot(index: int) -> bool:
-	if index < 0 or index >= slots.size() or slots[index]["empty"]:
-		return false
-	return _start_game(slots[index]["slot"])
-
-
-# Troca para o jogo com fade; um segundo clique durante a troca é ignorado.
+# Troca para o jogo com fade; um segundo pedido durante a troca é ignorado.
 func _start_game(slot: String) -> bool:
 	if starting:
 		return false
@@ -316,532 +536,175 @@ func _start_game(slot: String) -> bool:
 	return ok
 
 
-func _open(which: String) -> void:
-	panel = which
-	panel_focus = 0
-
-
-func _panel_rows() -> int:
-	return (slots.size() if panel == "load" else OPTION_ROWS.size()) + 1
-
-
-func _change_option(row: int, step: float) -> void:
-	var key: String = OPTION_ROWS[row][0]
-	if key in TOGGLE_KEYS:
-		options.values[key] = not options.values[key]
-	else:
-		options.set_volume(key, options.volume(key) + step)
-	options.apply()
-	options.save(options_path)  # grava a cada mudança
-
-
-func _accept_panel_row(row: int) -> void:
-	if row == _panel_rows() - 1:
-		close_panel()
-	elif panel == "load":
-		load_slot(row)
-	elif OPTION_ROWS[row][0] in TOGGLE_KEYS:
-		_change_option(row, 0.0)
-
-
-# --- Entrada --------------------------------------------------------------------
-
-func _set_focus(i: int) -> void:
-	if i != focus:
-		focus = i
-		focus_time = 0.0
-
+# --- Entrada --------------------------------------------------------------------------
 
 func _gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseMotion:
-		var hit := _hit(event.position)
-		if hit.x == 0:
-			_set_focus(hit.y)
-		elif hit.x == 1:
-			panel_focus = hit.y
-	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		accept_event()
-		if starting:
-			return
+	if event is InputEventMouseButton and event.pressed:
 		if not intro_done():
 			skip_intro()
-			return
-		var hit := _hit(event.position)
-		if hit.x == 0:
-			activate(items[hit.y][0])
-		elif hit.x == 1:
-			panel_focus = hit.y
-			if panel == "opts" and hit.y < OPTION_ROWS.size() and not OPTION_ROWS[hit.y][0] in TOGGLE_KEYS:
-				var bar := _option_bar(hit.y)
-				var key: String = OPTION_ROWS[hit.y][0]
-				options.set_volume(key, (event.position.x - bar.position.x) / bar.size.x)
-				options.apply()
-				options.save(options_path)
-			else:
-				_accept_panel_row(hit.y)
+			accept_event()
+		elif event.button_index == MOUSE_BUTTON_RIGHT:
+			_back()
+			accept_event()
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if starting:
+	if starting or not event.is_pressed():
 		return
-	if not event.is_pressed() or event.is_echo() and not (event.is_action("ui_left") or event.is_action("ui_right")):
+	if not intro_done() and event is InputEventKey:
+		skip_intro()
+		get_viewport().set_input_as_handled()
 		return
-	if not intro_done():
-		if event is InputEventKey:
-			skip_intro()
-			get_viewport().set_input_as_handled()
-		return
-	var handled := true
-	if panel == "":
-		if event.is_action("ui_up"):
-			_set_focus(posmod(focus - 1, items.size()))
-		elif event.is_action("ui_down"):
-			_set_focus(posmod(focus + 1, items.size()))
-		elif event.is_action("ui_accept"):
-			activate(items[focus][0])
-		else:
-			handled = false
-	else:
-		if event.is_action("ui_cancel"):
-			close_panel()
-		elif event.is_action("ui_up"):
-			panel_focus = posmod(panel_focus - 1, _panel_rows())
-		elif event.is_action("ui_down"):
-			panel_focus = posmod(panel_focus + 1, _panel_rows())
-		elif event.is_action("ui_accept"):
-			_accept_panel_row(panel_focus)
-		elif panel == "opts" and panel_focus < OPTION_ROWS.size() and (event.is_action("ui_left") or event.is_action("ui_right")):
-			_change_option(panel_focus, 0.1 if event.is_action("ui_right") else -0.1)
-		else:
-			handled = false
-	if handled:
+	if event.is_action("ui_cancel") or (event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT):
+		_back()
 		get_viewport().set_input_as_handled()
 
 
-# Vector2i(0, i) = opção i do menu; (1, i) = linha i do painel; (-1, -1) = nada.
-func _hit(p: Vector2) -> Vector2i:
-	if panel != "":
-		for i in _panel_rows():
-			if _panel_row_rect(i).has_point(p):
-				return Vector2i(1, i)
-		return Vector2i(-1, -1)
-	for i in items.size():
-		if _item_rect(i).has_point(p):
-			return Vector2i(0, i)
-	return Vector2i(-1, -1)
+# Esc ou botão direito: fecha a pergunta, depois o painel.
+func _back() -> void:
+	if confirming != "":
+		confirm(false)
+	elif panel != "":
+		close_panel()
 
 
-# --- Layout ---------------------------------------------------------------------
+# Uma linha do menu: item, slot de save, volume ou interruptor. Focável por mouse e teclado; desenha a si mesma.
+class MenuRow:
+	extends Control
 
-func _menu_x() -> float:
-	return size.x * 0.05
+	signal activated(id: String)
 
+	enum Kind { ITEM, SLOT, VOLUME, TOGGLE }
 
-func _item_y(i: int) -> float:
-	return size.y * MENU_CENTER_Y + (i - (items.size() - 1) / 2.0) * MENU_GAP
+	var menu: MainMenu
+	var kind: Kind
+	var id := ""
+	var text := ""
+	var slot := {}
+	var disabled := false
+	var font_size := MainMenu.ITEM_SIZE
+	var centered := false
+	var intro := 1.0  # transparência da abertura
+	var on := 0.0  # animação do foco, 0 a 1
+	var _font: FontVariation
 
+	func _init(owner_menu: MainMenu, row_kind: Kind, row_id: String, row_text: String) -> void:
+		menu = owner_menu
+		kind = row_kind
+		id = row_id
+		text = row_text
+		focus_mode = Control.FOCUS_ALL
+		mouse_filter = Control.MOUSE_FILTER_STOP
+		_font = MainMenu.spaced_font(3 if kind == Kind.ITEM else 1)
+		match kind:
+			Kind.ITEM:
+				custom_minimum_size = Vector2(0, 36)
+			Kind.SLOT:
+				custom_minimum_size = Vector2(0, 46)
+			_:
+				custom_minimum_size = Vector2(0, 30)
+		mouse_entered.connect(func() -> void:
+			if not disabled and menu.intro_done():
+				grab_focus())
 
-func _item_rect(i: int) -> Rect2:
-	return Rect2(_menu_x() + 8, _item_y(i) - MENU_GAP / 2.0, size.x * 0.25, MENU_GAP)
+	func _process(delta: float) -> void:
+		var target := 1.0 if has_focus() else 0.0
+		var before := on
+		on = move_toward(on, target, delta / 0.35)
+		if on != before or intro < 1.0:
+			queue_redraw()
 
+	func _bar() -> Rect2:
+		return Rect2(size.x * 0.46, size.y / 2.0 - 3.0, size.x * 0.42, 6.0)
 
-func _sigil_center() -> Vector2:
-	if bg_tex:
-		return size * ART_SIGIL_AT
-	return Vector2(size.x * 0.64, size.y * 0.46)
+	func _gui_input(event: InputEvent) -> void:
+		if disabled or menu.starting:
+			return
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			accept_event()
+			if not menu.intro_done():
+				menu.skip_intro()
+				return
+			if kind == Kind.VOLUME:
+				var bar := _bar()
+				menu.set_volume(id, (event.position.x - bar.position.x) / bar.size.x)
+			else:
+				activated.emit(id)
+			queue_redraw()
+		elif event is InputEventMouseMotion and kind == Kind.VOLUME and event.button_mask & MOUSE_BUTTON_MASK_LEFT:
+			var bar := _bar()
+			menu.set_volume(id, (event.position.x - bar.position.x) / bar.size.x)
+			queue_redraw()
+			accept_event()
+		elif event.is_action_pressed("ui_accept"):
+			accept_event()
+			if kind != Kind.VOLUME:
+				activated.emit(id)
+			queue_redraw()
+		elif kind == Kind.VOLUME and (event.is_action_pressed("ui_left", true) or event.is_action_pressed("ui_right", true)):
+			accept_event()
+			menu.change_option(id, 0.05 if event.is_action("ui_right") else -0.05)
+			queue_redraw()
 
+	func _draw() -> void:
+		var e := MainMenu.ease_out(on)
+		var a := intro * (0.45 if disabled else 1.0)
+		match kind:
+			Kind.ITEM:
+				_draw_item(e, a)
+			Kind.SLOT:
+				_draw_slot(e, a)
+			Kind.VOLUME, Kind.TOGGLE:
+				_draw_option(e, a)
 
-func _sigil_scale() -> float:
-	return size.x * (0.2 if bg_tex else 0.40) / 220.0
+	func _draw_item(e: float, a: float) -> void:
+		var shift := 11.0 * e + (1.0 - intro) * 10.0
+		var col := MainMenu.ITEM_INK.lerp(MainMenu.ITEM_ON, e)
+		var y := size.y / 2.0 + font_size * 0.35
+		if centered:
+			draw_string(_font, Vector2(0, y), text, HORIZONTAL_ALIGNMENT_CENTER, size.x, font_size, Color(col, col.a * a))
+			if e > 0.01:
+				var tw := _font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+				var cx := size.x / 2.0
+				draw_line(Vector2(cx - tw / 2.0 * e, y + 6), Vector2(cx + tw / 2.0 * e, y + 6), Color(MainMenu.BLOOD_LIGHT, a), 1.0)
+			return
+		draw_string(_font, Vector2(22.0 + shift, y), text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(col, col.a * a))
+		if e > 0.01:
+			draw_line(Vector2(shift - 4.0, size.y / 2.0), Vector2(shift - 4.0 + 17.0 * e, size.y / 2.0), Color(MainMenu.BLOOD_LIGHT, a), 1.0)
 
-
-func _flame_at() -> Vector2:
-	return size * (ART_CANDLE_AT if bg_tex else CANDLE_AT)
-
-
-func _panel_rect() -> Rect2:
-	var h := 320.0 if panel == "load" else 272.0
-	var x := size.x * 0.33
-	return Rect2(x, (size.y - h) / 2.0, size.x * 0.96 - x, h)
-
-
-func _panel_row_rect(i: int) -> Rect2:
-	var r := _panel_rect()
-	if i == _panel_rows() - 1:
-		return Rect2(r.get_center().x - 50, r.end.y - 34, 100, 26)
-	var row_h := 50.0 if panel == "load" else 34.0
-	return Rect2(r.position.x + 24, r.position.y + 46 + i * (row_h + 8), r.size.x - 48, row_h)
-
-
-func _option_bar(i: int) -> Rect2:
-	var row := _panel_row_rect(i)
-	return Rect2(row.position.x + row.size.x * 0.42, row.get_center().y - 3, row.size.x * 0.42, 6)
-
-
-# --- Desenho --------------------------------------------------------------------
-
-func _draw() -> void:
-	var font := get_theme_default_font()
-	draw_rect(Rect2(Vector2.ZERO, size), BG)
-	var center := _sigil_center()
-	var flicker := 0.86 + 0.08 * sin(t * 7.3) + 0.06 * sin(t * 13.1 + 1.7)
-	if bg_tex:
-		_draw_cover(bg_tex)
-	else:
-		_draw_desk()
-	var light_size := Vector2(size.x * 0.9, size.y * 1.3)
-	draw_texture_rect(light_tex, Rect2(center - light_size / 2.0, light_size), false, Color(1, 1, 1, 0.6 * flicker))
-	var flame := _flame_at()
-	var glow_size := Vector2.ONE * size.x * (0.6 if bg_tex else 0.8) * (0.96 + 0.04 * flicker)
-	draw_texture_rect(candle_tex, Rect2(flame - glow_size / 2.0, glow_size), false, Color(1, 1, 1, flicker * (0.7 if bg_tex else 1.0)))
-	if not bg_tex:
-		_draw_candle(flame, flicker)
-	_draw_smoke(flame)
-	_draw_dust(flame)
-	_draw_sigil(center, _sigil_scale(), 1.0 - 0.6 * panel_fade)
-	draw_texture_rect(vignette_tex, Rect2(Vector2.ZERO, size), false)
-	if bg_tex:
-		_draw_art_flame(flicker)  # depois da vinheta, que apagava a chama no canto
-		_draw_menu_shade(menu_alpha(t))
-	_draw_title(font, center, 1.0 - panel_fade)
-	_draw_menu(font, menu_alpha(t))
-	if panel != "":
-		_draw_panel(font, panel_fade)
-	draw_string(font, Vector2(size.x - 34, size.y - 10), "v0.1", HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(0.43, 0.36, 0.27))
-
-
-# Fundo da arte cobrindo a tela inteira, sem distorcer.
-func _draw_cover(tex: Texture2D) -> void:
-	var tex_size := Vector2(tex.get_size())
-	var k := maxf(size.x / tex_size.x, size.y / tex_size.y)
-	draw_texture_rect(tex, Rect2((size - tex_size * k) / 2.0, tex_size * k), false)
-	draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, ART_DARKEN))
-
-
-# Sombra à esquerda, atrás do menu: a arte ali é clara (mapa, papéis) e apagava as opções.
-func _draw_menu_shade(alpha: float) -> void:
-	if alpha <= 0.0:
-		return
-	var top := size.y * 0.3
-	var right := size.x * 0.45
-	var dark := Color(0.03, 0.02, 0.015, 0.85 * alpha)
-	var clear := Color(dark, 0.0)
-	var rect := PackedVector2Array([Vector2(0, top), Vector2(right, top), Vector2(right, size.y), Vector2(0, size.y)])
-	draw_polygon(rect, PackedColorArray([clear, clear, clear, dark]))
-	draw_polygon(rect, PackedColorArray([clear, clear, clear, dark]))
-
-
-# Mesa de investigação provisória, enquanto não chega a arte do fundo.
-func _draw_desk() -> void:
-	var top := size.y * DESK_TOP
-	draw_rect(Rect2(0, 0, size.x, top), WALL)
-	for i in range(1, 16):
-		var x := size.x * i / 16.0
-		draw_line(Vector2(x, 0), Vector2(x, top), Color(0, 0, 0, 0.35), 1.0)
-	draw_rect(Rect2(0, top, size.x, size.y - top), WOOD)
-	draw_rect(Rect2(0, top, size.x, 3), WOOD_EDGE)
-	for i in 6:
-		var y := top + 16 + i * 26.0
-		draw_line(Vector2(0, y), Vector2(size.x, y + 8), WOOD_LINE, 1.0)
-	# Livros empilhados atrás da vela.
-	var by := top
-	for b in BOOKS:
-		var w: float = size.x * float(b[0])
-		var h: float = b[1]
-		var hex: String = b[2]
-		by -= h
-		var x0 := size.x * CANDLE_AT.x - w / 2.0
-		draw_rect(Rect2(x0, by, w, h), Color(hex))
-		draw_line(Vector2(x0 + 3, by + 2), Vector2(x0 + w - 3, by + 2), Color(0.85, 0.7, 0.4, 0.25), 1.0)
-	# Papéis espalhados na mesa.
-	for paper in [[Vector2(0.33, 0.8), Vector2(120, 80), -0.12, 0.32], [Vector2(0.56, 0.87), Vector2(96, 120), 0.22, 0.24], [Vector2(0.42, 0.95), Vector2(80, 60), 0.35, 0.2]]:
-		var at: Vector2 = paper[0]
-		var dims: Vector2 = paper[1]
-		draw_set_transform(Vector2(size.x * at.x, size.y * at.y), float(paper[2]), Vector2.ONE)
-		draw_rect(Rect2(-dims / 2.0, dims), Color(0.74, 0.64, 0.48, float(paper[3])))
-		for line in range(1, 6):
-			var ly := -dims.y / 2.0 + line * dims.y / 6.5
-			draw_line(Vector2(-dims.x / 2.0 + 8, ly), Vector2(dims.x / 2.0 - 12, ly), Color(0.1, 0.07, 0.05, float(paper[3])), 1.0)
-		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	# Relógio de bolso.
-	var watch := Vector2(size.x * 0.9, size.y * 0.85)
-	draw_arc(watch + Vector2(-18, -10), 22.0, -0.4, 2.2, 16, Color(0.55, 0.43, 0.2, 0.8), 1.5)
-	draw_circle(watch, 16.0, Color("6b5428"))
-	draw_circle(watch, 13.0, Color("d9cba8"))
-	draw_line(watch, watch + Vector2(0, -9), Color("1a140c"), 1.5)
-	draw_line(watch, watch + Vector2(6, 2), Color("1a140c"), 1.5)
-
-
-# Vela acesa: cera chapada em dois tons, pires, pavio e chama que balança.
-func _draw_candle(flame: Vector2, flicker: float) -> void:
-	var wick := flame + Vector2(0, 30)
-	var stand := size.y * DESK_TOP - BOOKS_HEIGHT
-	var wax := Rect2(wick.x - 8, wick.y + 4, 16, maxf(stand - wick.y - 10, 20.0))
-	draw_rect(wax, WAX)
-	draw_rect(Rect2(wax.position.x + 10, wax.position.y, 6, wax.size.y), WAX_SHADE)
-	draw_rect(Rect2(wick.x - 20, wax.end.y, 40, 6), Color("5a4630"))
-	draw_line(wick + Vector2(0, 4), wick + Vector2(0, -3), Color("1a1410"), 2.0)
-	var h := 26.0 * (0.92 + 0.1 * flicker)
-	var sway := 1.6 * sin(t * 5.3) + 0.8 * sin(t * 11.0)
-	draw_colored_polygon(flame_points(wick, 6.0, h, sway), Color(1.0, 0.52, 0.14, 0.92))
-	draw_colored_polygon(flame_points(wick, 3.2, h * 0.62, sway * 0.6), Color(1.0, 0.92, 0.62))
-
-
-# Chama animada por cima da chama parada da arte (que o escurecimento do fundo apagou).
-func _draw_art_flame(flicker: float) -> void:
-	var k := size.x / 1920.0
-	var wick := size * ART_WICK_AT
-	var h := ART_FLAME.y * k * (0.92 + 0.1 * flicker)
-	var sway := (3.0 * sin(t * 5.3) + 1.5 * sin(t * 11.0)) * k
-	draw_colored_polygon(flame_points(wick, ART_FLAME.x * k, h, sway), Color(1.0, 0.55, 0.16, 0.8))
-	draw_colored_polygon(flame_points(wick, ART_FLAME.x * 0.55 * k, h * 0.62, sway * 0.6), Color(1.0, 0.93, 0.66, 0.95))
-
-
-# Fumaça fina saindo da chama: bolinhas translúcidas que sobem, balançam e somem.
-func _draw_smoke(flame: Vector2) -> void:
-	for i in SMOKE_PUFFS:
-		var k := fposmod(t * 0.22 + i / float(SMOKE_PUFFS), 1.0)
-		var p := flame + Vector2(sin(k * 9.0 + i) * 10.0 * k, -12.0 - k * size.y * 0.32)
-		draw_circle(p, 2.0 + k * 9.0, Color(0.55, 0.5, 0.45, 0.16 * (1.0 - k) * minf(k * 6.0, 1.0)))
-
-
-# Poeira flutuando na luz da vela; cada grão tem a sua velocidade e o seu balanço.
-func _draw_dust(flame: Vector2) -> void:
-	for i in DUST_MOTES:
-		var seed := float(i) * 12.9898
-		var k := fposmod(t * (0.03 + 0.02 * fposmod(seed, 1.0)) + fposmod(seed * 7.1, 1.0), 1.0)
-		var x := flame.x + (fposmod(seed * 3.7, 1.0) - 0.4) * size.x * 0.5 + sin(t * 0.7 + seed) * 8.0
-		var y := size.y * (0.95 - k * 0.9)
-		var near := clampf(1.0 - Vector2(x, y).distance_to(flame) / (size.x * 0.4), 0.0, 1.0)
-		draw_circle(Vector2(x, y), 1.0, Color(1.0, 0.85, 0.6, 0.55 * near * sin(k * PI)))
-
-
-# Contorno de gota da chama: ponta em cima (balançando), mais larga perto da base.
-static func flame_points(bottom: Vector2, half_width: float, height: float, sway: float) -> PackedVector2Array:
-	var out := PackedVector2Array()
-	for i in 11:
-		var k := i / 10.0
-		out.append(bottom + Vector2(sway * (1.0 - k) + half_width * sin(PI * pow(k, 0.7)), -height * (1.0 - k)))
-	for i in range(9, 0, -1):
-		var k := i / 10.0
-		out.append(bottom + Vector2(sway * (1.0 - k) - half_width * sin(PI * pow(k, 0.7)), -height * (1.0 - k)))
-	return out
-
-
-func _draw_sigil(center: Vector2, k: float, alpha: float) -> void:
-	for s in strokes:
-		var p := stroke_progress(t, s["delay"])
-		var pts := partial(s["points"], p)
-		if pts.size() < 2:
-			continue
-		var screen := PackedVector2Array()
-		for v in pts:
-			screen.append(center + v * k)
-		_brush(screen, float(s["width"]) * k, alpha)
-	for b in blots:
-		var a := clampf((t - float(b["delay"])) / 0.6, 0.0, 1.0)
-		if a > 0.0:
-			var r: float = b["radius"] * k * (0.4 + 0.6 * a)
-			draw_circle(center + b["at"] * k, r, Color(SIGIL_RED, a * alpha))
-
-
-# Pincelada chapada, em 2D: uma cor só, sem borda escura nem brilho (que davam cara de 3D, Léo 30/10).
-# A borda irregular vem de uma segunda passada da mesma cor, mais fina e deslocada.
-func _brush(pts: PackedVector2Array, w: float, alpha: float) -> void:
-	var c := Color(SIGIL_RED, alpha)
-	draw_polyline(pts, c, w, true)
-	draw_polyline(_offset(pts, w * 0.18), c, w * 0.7, true)
-	draw_circle(pts[0], w * 0.5, c)
-	draw_circle(pts[pts.size() - 1], w * 0.45, c)
-
-
-static func _offset(pts: PackedVector2Array, d: float) -> PackedVector2Array:
-	var out := PackedVector2Array()
-	for i in pts.size():
-		var a := pts[maxi(i - 1, 0)]
-		var b := pts[mini(i + 1, pts.size() - 1)]
-		var n := (b - a).orthogonal().normalized()
-		out.append(pts[i] + n * d)
-	return out
-
-
-func _letters_width(font: Font, text: String, font_size: int, spacing: float) -> float:
-	var w := 0.0
-	for ch in text:
-		w += font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + spacing
-	return w - spacing
-
-
-func _draw_title(_font: Font, center: Vector2, alpha: float) -> void:
-	if alpha <= 0.0:
-		return
-	var font: Font = TITLE_FONT
-	var spacing := TITLE_SIZE * 0.08
-	var width := _letters_width(font, TITLE, TITLE_SIZE, spacing)
-	var left := minf(center.x - width / 2.0, size.x - 16 - width)
-	var x := left
-	var base := center.y + TITLE_SIZE * 0.35
-	var glow := 0.0
-	if t > GLOW_START:
-		glow = 0.5 - 0.5 * cos((t - GLOW_START) * TAU / GLOW_PERIOD)
-	# Posição do reflexo, de -0.3 a 1.3 da largura do nome, só depois da abertura.
-	var sweep := -1.0
-	if t > INTRO_END:
-		sweep = fposmod(t - INTRO_END, SHINE_PERIOD) / SHINE_PERIOD * 2.4 - 0.3
-	for i in TITLE.length():
-		var ch := TITLE[i]
-		var a := letter_alpha(t, i) * alpha
-		var adv := font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, TITLE_SIZE).x
-		if a > 0.0 and ch != " ":
-			# A letra desce 6 px enquanto aparece.
-			var pos := Vector2(x, base - 6.0 * (1.0 - a))
-			# Brilho vermelho suave que respira: contornos largos e quase transparentes, um dentro do outro.
-			for k in 3:
-				var o_size := int((22 - k * 6) * (0.85 + 0.3 * glow))
-				draw_char_outline(font, pos, ch, TITLE_SIZE, o_size, Color(BLOOD_LIGHT, (0.05 + 0.04 * glow) * a))
-			draw_char(font, pos + Vector2(0, 3), ch, TITLE_SIZE, Color(0, 0, 0, 0.75 * a))
-			draw_char_outline(font, pos, ch, TITLE_SIZE, 5, Color(0.06, 0.015, 0.015, a))
-			var shine := exp(-pow(((x + adv / 2.0 - left) / width - sweep) * 7.0, 2.0))
-			draw_char(font, pos, ch, TITLE_SIZE, Color(TITLE_RED.lerp(TITLE_SHINE, 0.55 * shine), a))
-		x += adv + spacing
-	# Ornamento dourado abaixo do nome.
-	var oa := menu_alpha(t) * alpha
-	if oa > 0.0:
-		var y := base + 18
-		var cx := center.x
-		for side in [-1.0, 1.0]:
-			for j in 12:
-				var x0: float = cx + side * (10.0 + j * 8.0)
-				draw_line(Vector2(x0, y), Vector2(x0 + side * 8.0, y), Color(GOLD, oa * (1.0 - j / 12.0)), 1.0)
-		_diamond(Vector2(cx, y), 4.0, Color(GOLD, oa), false)
-
-
-func _diamond(c: Vector2, r: float, color: Color, filled: bool) -> void:
-	var pts := PackedVector2Array([c + Vector2(0, -r), c + Vector2(r, 0), c + Vector2(0, r), c + Vector2(-r, 0)])
-	if filled:
-		draw_colored_polygon(pts, color)
-	else:
-		pts.append(pts[0])
-		draw_polyline(pts, color, 1.0)
-
-
-func _draw_menu(font: Font, alpha: float) -> void:
-	if alpha <= 0.0:
-		return
-	var lx := _menu_x()
-	var top := _item_y(0) - MENU_GAP * 0.75
-	var bottom := _item_y(items.size() - 1) + MENU_GAP * 0.75
-	draw_line(Vector2(lx, top), Vector2(lx, bottom), Color(GOLD, 0.45 * alpha), 1.0)
-	_diamond(Vector2(lx, top - 4), 4.0, Color(GOLD, alpha), true)
-	_diamond(Vector2(lx, bottom + 4), 4.0, Color(GOLD, alpha), true)
-	for i in items.size():
-		var y := _item_y(i)
-		var label: String = items[i][1]
-		var tx := lx + 16
-		var on: bool = i == focus and (panel == "" or items[i][0] == panel)
-		if on:
-			var w := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, MENU_SIZE).x
-			var grow := clampf(focus_time / BRUSH_SECONDS, 0.0, 1.0) if panel == "" else 1.0
-			_brush_mark(Vector2(tx - 8, y), (w + 24) * (1.0 - pow(1.0 - grow, 3.0)), Color(BLOOD, 0.95 * alpha))
-			_diamond(Vector2(lx, y), 4.0, Color(BLOOD_LIGHT, alpha), true)
-		draw_string(font, Vector2(tx, y + MENU_SIZE * 0.35), label, HORIZONTAL_ALIGNMENT_LEFT, -1, MENU_SIZE, Color(MENU_INK_ON if on else MENU_INK, alpha))
-
-
-# Pincelada horizontal irregular atrás da opção em foco.
-func _brush_mark(left_mid: Vector2, width: float, color: Color) -> void:
-	if width < 4.0:
-		return
-	var top := PackedVector2Array()
-	var bottom := PackedVector2Array()
-	for i in 9:
-		var k := i / 8.0
-		var x := left_mid.x + width * k
-		top.append(Vector2(x, left_mid.y - 7.0 + 2.5 * sin(k * 7.0) - 2.0 * k))
-		bottom.append(Vector2(x, left_mid.y + 9.0 + 2.0 * sin(k * 5.0 + 2.0) - 3.0 * sin(k * PI)))
-	bottom.reverse()
-	top.append_array(bottom)
-	draw_colored_polygon(top, color)
-
-
-func _draw_panel(font: Font, alpha: float) -> void:
-	var r := _panel_rect()
-	draw_rect(r.grow(5), Color(PANEL_BG, alpha))
-	draw_rect(r.grow(5), Color(GOLD, 0.22 * alpha), false, 1.0)
-	draw_rect(r, Color(GOLD, 0.55 * alpha), false, 1.0)
-	var c := 12.0
-	for corner in [[r.position + Vector2(-8, -8), Vector2(1, 1)], [r.end + Vector2(8, 8), Vector2(-1, -1)]]:
-		var p: Vector2 = corner[0]
-		var d: Vector2 = corner[1]
-		draw_line(p, p + Vector2(c * d.x, 0), Color(GOLD, alpha), 2.0)
-		draw_line(p, p + Vector2(0, c * d.y), Color(GOLD, alpha), 2.0)
-	var heading := "CARREGAR" if panel == "load" else "OPÇÕES"
-	var spacing := 5.0
-	var hw := _letters_width(font, heading, 14, spacing)
-	var hx := r.get_center().x - hw / 2.0
-	for ch in heading:
-		draw_char(font, Vector2(hx, r.position.y + 28), ch, 14, Color(GOLD, alpha))
-		hx += font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + spacing
-	if panel == "load":
-		_draw_slots(font, alpha)
-	else:
-		_draw_options(font, alpha)
-	var close := _panel_row_rect(_panel_rows() - 1)
-	var close_on := panel_focus == _panel_rows() - 1
-	draw_string(font, Vector2(close.position.x, close.get_center().y + 5), "Fechar", HORIZONTAL_ALIGNMENT_CENTER, close.size.x, 14, Color(GOLD if close_on else MENU_INK, alpha))
-
-
-func _draw_slots(font: Font, alpha: float) -> void:
-	for i in slots.size():
-		var row := _panel_row_rect(i)
-		var entry: Dictionary = slots[i]
-		var empty: bool = entry["empty"]
-		var status := str(entry.get("status", SaveGame.EMPTY if empty else SaveGame.OK_STATUS))
-		var on := i == panel_focus and not empty
-		var a := alpha * (0.5 if empty else 1.0)
-		draw_rect(row, Color(0.35, 0.05, 0.05, 0.35 * alpha) if on else Color(0, 0, 0, 0.35 * alpha))
-		draw_rect(row, Color(BLOOD_LIGHT if on else LINE, a), false, 1.0)
-		draw_string(font, Vector2(row.position.x + 14, row.get_center().y + 9), SLOT_MARK.get(entry["slot"], "?"), HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(GOLD, a))
-		var tx := row.position.x + 64
+	func _draw_slot(e: float, a: float) -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		draw_rect(r, Color(0.35, 0.05, 0.05, 0.28 * e * a))
+		draw_line(Vector2(0, size.y - 0.5), Vector2(size.x, size.y - 0.5), Color(MainMenu.LINE, a), 1.0)
+		if e > 0.01:
+			draw_line(Vector2(0, 4), Vector2(0, size.y - 4), Color(MainMenu.BLOOD_LIGHT, a * e), 2.0)
+		draw_string(_font, Vector2(14, size.y / 2.0 + 8), MainMenu.SLOT_MARK.get(slot.get("slot", ""), "?"), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color("d4aa50", a))
+		var tx := 64.0 + 6.0 * e
+		var status := str(slot.get("status", SaveGame.EMPTY if slot.get("empty", true) else SaveGame.OK_STATUS))
 		if status == SaveGame.EMPTY:
-			draw_string(font, Vector2(tx, row.get_center().y + 5), "Vazio", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(MENU_INK, a))
-		elif empty:  # existe, mas não carrega: avisa em vez de fingir que está vazio
-			draw_string(font, Vector2(tx, row.get_center().y + 5), slot_detail(entry), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(BLOOD_LIGHT, alpha * 0.8))
+			draw_string(_font, Vector2(tx, size.y / 2.0 + 5), "Vazio", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(MainMenu.MUTED, a))
+		elif slot.get("empty", true):  # existe, mas não carrega: avisa em vez de fingir que está vazio
+			draw_string(_font, Vector2(tx, size.y / 2.0 + 5), MainMenu.slot_detail(slot), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(MainMenu.WARN, intro * 0.85))
 		else:
-			draw_string(font, Vector2(tx, row.position.y + 21), slot_label(entry), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(MENU_INK_ON, a))
-			draw_string(font, Vector2(tx, row.position.y + 39), slot_detail(entry), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(MUTED, a))
+			var col := MainMenu.ITEM_INK.lerp(MainMenu.ITEM_ON, e)
+			draw_string(_font, Vector2(tx, 20), MainMenu.slot_label(slot), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(col, a))
+			draw_string(_font, Vector2(tx, 37), MainMenu.slot_detail(slot), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(MainMenu.MUTED, a))
 
-
-func _draw_options(font: Font, alpha: float) -> void:
-	for i in OPTION_ROWS.size():
-		var row := _panel_row_rect(i)
-		var key: String = OPTION_ROWS[i][0]
-		var on := i == panel_focus
-		draw_string(font, Vector2(row.position.x + 8, row.get_center().y + 6), OPTION_ROWS[i][1], HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(MENU_INK_ON if on else MENU_INK, alpha))
-		if on:
-			_diamond(Vector2(row.position.x - 6, row.get_center().y), 3.0, Color(BLOOD_LIGHT, alpha), true)
-		var bar := _option_bar(i)
-		if key in TOGGLE_KEYS:
-			var box := Rect2(bar.position.x, row.get_center().y - 7, 14, 14)
-			draw_rect(box, Color(GOLD, alpha), false, 1.0)
-			if options.values[key]:
-				draw_rect(box.grow(-3), Color(BLOOD_LIGHT, alpha))
-		else:
-			var v := options.volume(key)
-			draw_rect(bar, Color(0, 0, 0, 0.5 * alpha))
-			draw_rect(Rect2(bar.position, Vector2(bar.size.x * v, bar.size.y)), Color(BLOOD if not on else BLOOD_LIGHT, alpha))
-			draw_rect(bar, Color(GOLD, 0.5 * alpha), false, 1.0)
-			draw_string(font, Vector2(bar.end.x + 10, row.get_center().y + 5), "%d%%" % roundi(v * 100), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(MUTED, alpha))
-
-
-static func _radial(colors: Array, offsets: Array) -> GradientTexture2D:
-	var g := Gradient.new()
-	g.offsets = PackedFloat32Array(offsets)
-	g.colors = PackedColorArray(colors)
-	var tex := GradientTexture2D.new()
-	tex.gradient = g
-	tex.fill = GradientTexture2D.FILL_RADIAL
-	tex.fill_from = Vector2(0.5, 0.5)
-	tex.fill_to = Vector2(1.0, 0.5)
-	tex.width = 256
-	tex.height = 256
-	return tex
+	func _draw_option(e: float, a: float) -> void:
+		var col := MainMenu.ITEM_INK.lerp(MainMenu.ITEM_ON, e)
+		var y := size.y / 2.0 + 5.0
+		draw_string(_font, Vector2(14.0 + 4.0 * e, y), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(col, col.a * a))
+		if e > 0.01:
+			draw_line(Vector2(0, size.y / 2.0), Vector2(9.0 * e, size.y / 2.0), Color(MainMenu.BLOOD_LIGHT, a), 1.0)
+		var bar := _bar()
+		if kind == Kind.TOGGLE:
+			var box := Rect2(bar.position.x, size.y / 2.0 - 7.0, 14, 14)
+			draw_rect(box, Color("d4aa50", 0.8 * a), false, 1.0)
+			if bool(menu.options.values.get(id, false)):
+				draw_rect(box.grow(-3), Color(MainMenu.BLOOD_LIGHT, a))
+			return
+		var v := menu.options.volume(id)
+		draw_rect(bar, Color(0, 0, 0, 0.5 * a))
+		draw_rect(Rect2(bar.position, Vector2(bar.size.x * v, bar.size.y)), Color(MainMenu.BLOOD.lerp(MainMenu.BLOOD_LIGHT, e), a))
+		draw_rect(bar, Color("d4aa50", 0.45 * a), false, 1.0)
+		draw_string(_font, Vector2(bar.end.x + 10, y), "%d%%" % roundi(v * 100), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(MainMenu.MUTED, a))
