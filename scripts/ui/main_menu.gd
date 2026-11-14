@@ -16,10 +16,11 @@ const TOGGLE_KEYS := ["fullscreen", "vsync", "fast_combat"]
 const SLOT_MARK := {"auto": "A", "manual_1": "I", "manual_2": "II", "manual_3": "III"}
 const AREA_NAMES := {"test_room": "Sala de teste", "parque": "Parque"}
 const PANEL_TITLES := {"load": "CARREGAR", "opts": "OPÇÕES", "credits": "CRÉDITOS"}
-# Créditos provisórios: o nome de quem faz o jogo ainda não foi definido pelo Léo.
+# Créditos (Léo, 14/11). "\n" quebra a linha (sem quebra automática, para o painel ter a altura certa).
 const CREDITS := [
 	["Pacto Carmesim", "Protótipo da missão 1"],
-	["Criação e direção", "a definir"],
+	["Direção", "Leonardo Brombila"],
+	["Escritores", "Bryan Pomnitz, Bryan Lind\nVinicius Costa, Leonardo Brombila"],
 	["Feito com", "Godot Engine 4.3"],
 	["Fonte", "Special Elite (Apache 2.0)"],
 ]
