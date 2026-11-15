@@ -43,6 +43,35 @@
 	"default_max_range_m": 20,
 	"enemy_radius": 10,
 	"_fichas": "Armas vêm de armas.json e inimigos de inimigos.json (GameData). Distâncias delas em metros, convertidas por pixels_per_meter. O custo do ataque é custo_pa da arma; attack_pa_cost vale quando ele for null. default_max_range_m vale quando alcance_maximo da arma for null. enemy_defense (redução de dano, 0 a 1) vale quando defesa da ficha for null.",
+	"sanidade": {
+		"_status": "GDD #11 (Léo, 29/10/2026): SAN 0 = ruptura com debuffs; volta ao normal com ritual de cura, perk ou zona segura; SAN a 0 duas vezes no mesmo combate = loucura = morte do personagem. Todo o resto é PROVISÓRIO do Claude (15/11/2026), aguardando revisão do Léo.",
+		"ruptura_acerto": 0.20,
+		"ruptura_dano": 0.20,
+		"ruptura_pa": 1,
+		"_ruptura": "Léo: -20% de acerto (provisório dele). Claude: -20% de dano e -1 PA por turno (mínimo 1 PA).",
+		"rupturas_para_loucura": 2,
+		"_loucura": "Claude: perder SAN já em ruptura conta como chegar a 0 de novo. Duas vezes no mesmo combate = loucura. Fora de combate nunca enlouquece; a contagem zera ao fim de cada combate.",
+		"resistir_por_pre": 0.10,
+		"_resistir": "Claude: cada ponto de PRE acima de 1 dá 10% de chance de não perder SAN num susto (não vale para custo de ritual).",
+		"perdas": {
+			"aliado_caido": 2,
+			"aliado_morto": 4,
+			"critico_recebido": 1,
+			"pista_perturbadora": 2,
+			"zona_horror": 1
+		},
+		"_perdas": "Claude: quanto cada susto tira de SAN. aliado_caido e aliado_morto valem para quem está vivo no grupo; critico_recebido para quem leva o crítico; pista_perturbadora é o padrão quando a pista diz só \"perturbadora\": true (ou use \"perda_san\": N).",
+		"terror_ao_ver": {
+			"criatura_sangue": 3,
+			"dama_sangue": 5,
+			"cultista": 0,
+			"atirador": 0,
+			"roberto_ghular": 1
+		},
+		"_terror": "Claude: primeira vez no combate que o grupo vê cada tipo de inimigo; cada membro vivo perde esse tanto (uma vez por tipo por combate).",
+		"estagios": [0.5, 0.25],
+		"_estagios": "Claude: abaixo de 50% = abalado, abaixo de 25% = à beira, 0 = ruptura. Usado por tela, som e falas."
+	},
 	"units": {
 		"agente": { "side": "player", "pv": 30, "san": 12, "agi": 2, "defense": 0.0, "weapon": "pistola", "radius": 10 }
 	}

@@ -15,6 +15,7 @@ enum State { IDLE, ACTIVE, ENDED }
 enum Result { NONE, VICTORY, GAME_OVER }
 
 var pa_per_turn := 3
+var rupture_pa := 1  # PA a menos por turno em ruptura de SAN (combat.json > sanidade > ruptura_pa)
 var state := State.IDLE
 var result := Result.NONE
 var round_number := 0
@@ -156,7 +157,10 @@ func can_delay(unit: Combatant) -> bool:
 
 # PA com que a unidade começa cada turno: o da ficha, se houver, senão o padrão.
 func turn_pa(unit: Combatant) -> int:
-	return unit.pa_per_turn if unit.pa_per_turn >= 0 else pa_per_turn
+	var pa := unit.pa_per_turn if unit.pa_per_turn >= 0 else pa_per_turn
+	if unit.ruptured:
+		pa = maxi(pa - rupture_pa, 1)  # ruptura de SAN: sempre sobra 1 PA
+	return pa
 
 
 func _advance() -> void:
