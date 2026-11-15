@@ -1,17 +1,16 @@
 class_name CenaTentaculo
 extends Node
-# Cutscene in-game do fim da missão 1 (Léo, 15/11/2026): com a Dama de Sangue em ~30% de vida, um tentáculo dela sobe,
-# desce até o chão, rasteja até o Fernando e atravessa o meio do corpo dele. Depois, a morte e o fim do capítulo.
+# Cutscene in-game da morte do Fernando (Léo, 15/11/2026): com a Dama de Sangue em ~30% de vida, um tentáculo dela sobe,
+# desce até o chão, rasteja até o Fernando e atravessa o meio do corpo dele. Ele morre e o combate continua.
 # Roda dentro do jogo, em modo cinema (Cinema), com o combate congelado e o HUD escondido. Tempos, textos e a
 # forma do tentáculo são provisórios do Claude. Filho da sala (local3d.gd): o _process dele roda depois do da sala e
 # manda na câmera.
 
-signal terminou
+signal terminou  # a cena acabou e o combate voltou
 
-const MENU := "res://scenes/menu/main_menu.tscn"
 const ZOOM_DAMA := 1.5
 const ZOOM_PONTA := 1.25
-const ZOOM_GOLPE := 2.3
+const ZOOM_GOLPE := 1.4  # o corpo inteiro cabe na janela das faixas (Léo, 15/11: "não dá pra ver a morte")
 const T_SOBE := 1.5  # s: do corpo da Dama até o ar e de volta ao chão
 const T_RASTEJA := 1.7  # s: pelo chão até as costas do Fernando
 const T_ENROSCA := 0.7  # s: a ponta se levanta e mira
@@ -30,6 +29,7 @@ var _cam_alvo := Vector2.ZERO  # onde a câmera quer estar (desenho iso)
 var _zoom_alvo := 1.0
 var _seguir_ponta := false
 var _zoom_base := 1.0
+var _limites: Array = []
 
 
 func iniciar(sala, a_dama: Combatant, a_fim: Dictionary) -> void:
@@ -64,6 +64,11 @@ func _congelar_combate() -> void:
 	room.facing8[dama] = CharacterSheet.dir_from_vector(room._iso(fernando.pos) - room._iso(dama.pos))  # a Dama olha para ele
 	var cam: Camera2D = room.camera
 	_zoom_base = cam.zoom.x
+	_limites = [cam.limit_left, cam.limit_top, cam.limit_right, cam.limit_bottom]  # a cena enquadra além da borda do mapa
+	cam.limit_left = -100000
+	cam.limit_top = -100000
+	cam.limit_right = 100000
+	cam.limit_bottom = 100000
 	_cam_alvo = cam.position
 	_zoom_alvo = _zoom_base
 	room.queue_redraw()
@@ -144,7 +149,7 @@ func tocar() -> void:
 	await _crescer(tentaculo.fracao_em(5), T_RASTEJA)
 	# 4. Enrosca: a ponta se levanta; a câmera abre em Fernando.
 	_seguir_ponta = false
-	_cam_alvo = _iso3(f + Vector3(0, 1.0, 0))
+	_cam_alvo = _iso3(f + Vector3(0, 2.6, 0))
 	_zoom_alvo = ZOOM_GOLPE
 	await _crescer(tentaculo.fracao_em(6), T_ENROSCA)
 	room._attack_started(dama, fernando, room._attack_aim(dama))  # a Dama se inclina para o golpe
@@ -154,7 +159,7 @@ func tocar() -> void:
 	tentaculo.ondula = 0.02
 	await _crescer(1.0, T_GOLPE, Tween.TRANS_EXPO)
 	_impacto(f)
-	_zoom_alvo = ZOOM_GOLPE + 0.5
+	_zoom_alvo = ZOOM_GOLPE + 0.2
 	await _esperar(0.28)  # o mundo para um instante no golpe
 	_zoom_alvo = ZOOM_GOLPE
 	# 6. Segura: o Fernando erguido, com o tentáculo atravessado.
@@ -178,8 +183,8 @@ func tocar() -> void:
 	room.fx.shake_time = 0.3
 	room.fx.shake_px = 3.0
 	_poca(f)
-	_cam_alvo = _iso3(f + Vector3(0, 0.3, 0))
-	_zoom_alvo = ZOOM_PONTA + 0.2
+	_cam_alvo = _iso3(f + Vector3(0, 0.2, 0))
+	_zoom_alvo = ZOOM_PONTA + 0.25
 	await _esperar(0.8)
 	if fim.has("legenda"):
 		cinema.legenda(str(fim["legenda"]), 2.4)
@@ -187,7 +192,7 @@ func tocar() -> void:
 	_cam_alvo = _iso3(d + Vector3(0, 1.5, 0))  # a câmera sobe até a Dama, que olha o grupo
 	_zoom_alvo = ZOOM_DAMA
 	await _esperar(2.2)
-	await _fim_do_capitulo()
+	await _retomar()
 
 
 # Três tentáculos menores ondulando atrás da Dama, para ela não ser só um corpo com um braço.
@@ -243,33 +248,33 @@ func _impacto(f: Vector3) -> void:
 		ag.levar_dano(Vector3(-sin(PI / 4.0), 0.0, -cos(PI / 4.0)))
 
 
-# Escurece com as barras ainda na tela, mostra o fim do capítulo (provisório) e volta ao menu.
-func _fim_do_capitulo() -> void:
-	var camada := CanvasLayer.new()
-	camada.layer = 99
-	room.add_child(camada)
-	var preto := ColorRect.new()
-	preto.color = Color(0, 0, 0, 0)
-	preto.set_anchors_preset(Control.PRESET_FULL_RECT)
-	preto.mouse_filter = Control.MOUSE_FILTER_STOP
-	camada.add_child(preto)
-	var titulo := Label.new()
-	titulo.text = str(fim.get("titulo", "FIM DO CAPÍTULO 1"))
-	titulo.set_anchors_preset(Control.PRESET_FULL_RECT)
-	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	titulo.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	titulo.add_theme_font_size_override("font_size", 40)
-	titulo.add_theme_color_override("font_color", Color(0.78, 0.12, 0.14, 0.0))
-	preto.add_child(titulo)
-	var tw := create_tween()
-	tw.tween_property(preto, "color:a", 1.0, 1.6)
-	tw.tween_property(titulo, "theme_override_colors/font_color:a", 1.0, 1.0)
-	tw.tween_interval(3.2)
-	await tw.finished
-	fernando.pv = 0  # só agora: em pé ou caído, o corpo continuava desenhado na cena
-	fernando.dead = true
+# O combate continua (Léo, 15/11): o Fernando fica caído para sempre, as barras saem e a vez passa ao próximo.
+# O fim do capítulo vem depois (Dama morta, Letícia, celeiro com a Ordem, cutscene fora do jogo): não é aqui.
+func _retomar() -> void:
+	fernando.pv = 0
+	fernando.dead = true  # morto de verdade: o kit não o levanta e o corpo fica na cena
 	Missao1.marcar("fernando_morreu")
-	Missao1.marcar("capitulo1_fim")
+	tentaculo.queue_free()
+	for t in extras:
+		t.queue_free()
+	await cinema.sair(0.9)
+	cinema.queue_free()
+	var cam: Camera2D = room.camera
+	cam.zoom = Vector2(_zoom_base, _zoom_base)
+	cam.limit_left = _limites[0]
+	cam.limit_top = _limites[1]
+	cam.limit_right = _limites[2]
+	cam.limit_bottom = _limites[3]
+	if room.player == fernando:
+		for m in room.party:
+			if not m.dead and m.is_alive():
+				room.player = m
+				break
+	room.mode = room.Mode.COMBAT
+	room.busy = false
+	Engine.time_scale = 2.0 if room.options.values["fast_combat"] else 1.0
+	room.audio.on_combat_started()
+	room.turns.state = TurnManager.State.ACTIVE
+	room.turns._advance()  # segue a ordem normal: a Dama continua em ~30% e o grupo luta sem o Fernando
 	terminou.emit()
-	if room.is_inside_tree() and room.get_tree().current_scene == room:
-		Scenes.go(room.get_tree(), MENU)
+	queue_free()

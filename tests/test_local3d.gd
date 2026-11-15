@@ -28,7 +28,7 @@ func _run() -> void:
 	await _celeiro()
 	await _cripta()
 	_cinema_e_tentaculo()
-	await _fim_da_missao()  # por último: deixa a cutscene em andamento (o teste acaba antes de ela terminar)
+	await _fim_da_missao()
 	print("Falhas: %d" % failures if failures > 0 else "OK: test_local3d")
 	quit(1 if failures > 0 else 0)
 
@@ -289,6 +289,20 @@ func _fim_da_missao() -> void:
 	var filhos := room.get_child_count()
 	room._on_fx_impact({"attacker": room.player, "target": dama, "r": acerto, "from_pv": 4})
 	_check(room.get_child_count() == filhos, "fim: a cutscene não recomeça")
+	# A cena acaba e o combate continua sem o Fernando (Léo: depois dele a Dama morre, a Letícia é salva...).
+	var cena: CenaTentaculo = null
+	for c in room.get_children():
+		if c is CenaTentaculo:
+			cena = c
+	Engine.time_scale = 8.0  # a cena dura ~20 s de jogo
+	await cena.terminou
+	Engine.time_scale = 1.0
+	var fernando: Combatant = room.party[0]
+	_check(room.mode == room.Mode.COMBAT and room.turns.state == TurnManager.State.ACTIVE, "fim: depois da cena o combate volta")
+	_check(fernando.name == "Fernando" and fernando.dead and not fernando.is_alive() and Missao1.tem("fernando_morreu"), "fim: o Fernando morre de vez")
+	_check(room.player != fernando and room.player.is_alive(), "fim: o controle passa a alguém de pé")
+	_check(room._drawn_units().has(fernando), "fim: o corpo do Fernando continua na cena")
+	_check(not Missao1.tem("capitulo1_fim") and dama.is_alive(), "fim: o capítulo não acaba aqui e a Dama segue viva")
 
 
 func _entrar_na_zona(room, id: String) -> void:

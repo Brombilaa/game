@@ -11,7 +11,7 @@ extends "res://scripts/exploration/parque.gd"
 #   - visao: o que barra a visão quando é menos do que o que barra o passo (parapeito, fosso, altar);
 #   - niveis: áreas elevadas; só mudam a altura em que cada um é desenhado (e o clique acha o piso certo);
 #   - chefe: Roberto Ghular se mata com pouca vida e a Dama de Sangue surge dele, no mesmo combate;
-#   - fim: com a Dama em ~30% de vida toca a cutscene do tentáculo e do fim do capítulo (cena_tentaculo.gd);
+#   - fim: com a Dama em ~30% de vida toca a cutscene da morte do Fernando pelo tentáculo (cena_tentaculo.gd);
 #   - grupos: marca gravada quando todos os inimigos de um grupo caem (não voltam ao carregar o save).
 # O lugar aberto vem de Missao1.local (ou de `local_id`, para abrir a cena direto no editor).
 
@@ -446,8 +446,17 @@ func _draw_hud(font: Font) -> void:
 
 
 func _draw_health_bar(u: Combatant, at: Vector2) -> void:
-	if mode != Mode.CUTSCENE:
+	if mode != Mode.CUTSCENE and not u.dead:
 		super(u, at)
+
+
+# O Fernando morto (cutscene do tentáculo) continua deitado na cena.
+func _drawn_units() -> Array[Combatant]:
+	var out := super()
+	for m in party:
+		if m.dead and m.name == "Fernando" and Missao1.tem("fernando_morreu") and not out.has(m):
+			out.append(m)
+	return out
 
 
 func can_pause() -> bool:

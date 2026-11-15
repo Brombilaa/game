@@ -1,7 +1,7 @@
 extends SceneTree
 # Grava em vídeo a cutscene do fim da missão 1 (tentáculo da Dama de Sangue atravessa o Fernando) como aparece no jogo.
 # xvfb-run -a godot --path . --rendering-driver opengl3 --resolution 1920x1080 --fixed-fps 30 --write-movie fim.avi -s tools/gravar_fim.gd -- 0
-#   (o argumento é o modo do cinema; o vídeo acaba quando a cutscene termina, na tela do FIM DO CAPÍTULO)
+#   (o argumento é o modo do cinema; o vídeo acaba quando a cutscene termina, quando o combate volta)
 func _initialize() -> void:
 	var a := OS.get_cmdline_user_args()
 	var modo := int(a[0])

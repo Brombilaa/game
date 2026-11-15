@@ -1480,7 +1480,7 @@ func _draw_unit(u: Combatant) -> void:
 			var frames: Array = CharacterSheet.WALK_FRAMES if walking else CharacterSheet.IDLE_FRAMES
 			var n := walk_n % frames.size() if walking else idle_frame
 			agent_sheets[looks.get(u, 0)].draw(self, at, frames[n], facing8.get(u, CharacterSheet.Dir.SE))
-		if not u.is_alive():
+		if not u.is_alive() and not u.dead:
 			draw_string(ThemeDB.fallback_font, at + Vector2(-22, -CharacterSheet.HEIGHT - 14), "CAÍDO", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(1, 0.4, 0.4))
 	else:
 		var variant := _enemy_variant(i)
