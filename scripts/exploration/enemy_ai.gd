@@ -47,10 +47,10 @@ func run_turn(unit: Combatant) -> void:
 # com metade do PV ou menos, ou sem SAN, pesa como se estivesse a 60% da distância. Empate: o mais perto.
 # Foco (Léo, 13/11): com 2 ou mais do grupo de pé no raio de foco, o alvo que já levou ataque de 2 outros
 # inimigos nesta rodada fica de fora; assim nunca são 3 no mesmo personagem.
-func pick_target(unit: Combatant) -> Combatant:
+func pick_target(unit: Combatant, attackers = null) -> Combatant:
 	var best: Combatant = null
 	var best_score := INF
-	var crowded := _crowded_targets(unit)
+	var crowded := _crowded_targets(unit, attackers)
 	for m in room.party:
 		if not m.is_alive() or crowded.has(m):
 			continue
@@ -65,8 +65,10 @@ func pick_target(unit: Combatant) -> Combatant:
 
 # Alvos que já têm o máximo de atacantes nesta rodada (sem contar este inimigo). Vazio quando há menos de
 # 2 membros de pé no raio de foco: aí a regra não vale e todos podem mirar o mesmo.
-func _crowded_targets(unit: Combatant) -> Array:
-	_sync_round()
+func _crowded_targets(unit: Combatant, attackers = null) -> Array:
+	if attackers == null:
+		_sync_round()
+		attackers = _attackers
 	var radius: float = room.cfg.value("focus_radius_m") * room.cfg.value("pixels_per_meter")
 	var near := 0
 	for m in room.party:
@@ -76,8 +78,8 @@ func _crowded_targets(unit: Combatant) -> Array:
 		return []
 	var cap := int(room.cfg.value("focus_max_attackers"))
 	var out := []
-	for t in _attackers:
-		var others: Array = (_attackers[t] as Array).filter(func(a): return a != unit)
+	for t in attackers:
+		var others: Array = (attackers[t] as Array).filter(func(a): return a != unit)
 		if others.size() >= cap:
 			out.append(t)
 	return out
@@ -223,3 +225,77 @@ func _cover_spot(unit: Combatant, target: Combatant, near: Vector2) -> Vector2:
 				best_dist = d
 				best = spot
 	return best
+
+
+
+# --- Intenção (sugestão 11, 15/11) -------------------------------------------------------------
+# O que cada inimigo vivo deve fazer na próxima vez dele, para o HUD mostrar no turno do grupo. Usa a mesma
+# escolha de alvo do turno de verdade (pick_target, com o limite de foco simulado na ordem em que os
+# inimigos vão agir) e não mexe em nada. Cada item: {unit, target, acao, alcance_px, ameaca_px}.
+#   acao "ataca": já alcança o alvo daqui; "aproxima_ataca": anda e ainda ataca; "aproxima": só anda.
+#   alcance_px: alcance da arma (borda a borda); ameaca_px: até onde chega andando com o PA do turno e
+#   ainda atacando (centro do inimigo até a borda do alvo).
+# É uma previsão: se o grupo mexer depois, a conta muda (a sala recalcula a cada ação).
+func predict_intents() -> Array:
+	var out := []
+	if room.turns == null:
+		return out
+	var sim := {}
+	_sync_round()
+	for t in _attackers:
+		sim[t] = (_attackers[t] as Array).duplicate()
+	var this_round := _upcoming_enemies(true)
+	var next_sim := {}  # quem já agiu nesta rodada só volta na próxima, com o registro de foco zerado
+	var seq: Array = this_round.duplicate()
+	for e in _upcoming_enemies(false):
+		if not seq.has(e):
+			seq.append(e)
+	for unit: Combatant in seq:
+		var plan: Dictionary = sim if this_round.has(unit) else next_sim
+		var target := pick_target(unit, plan)
+		if target == null:
+			continue
+		var full_pa: int = room.turns.turn_pa(unit)
+		var cost := int(unit.weapon["pa_cost"])
+		var reach := float(unit.weapon["max_range"])
+		var walk_px: float = room.cfg.value("free_move_px") + maxi(full_pa - cost, 0) * room.cfg.value("pixels_per_pa")
+		var acao := "aproxima"
+		var probe := _probe(unit, unit.pos, full_pa)
+		if room.rules.attack_blocker(probe, target, room._sight_blockers(), room.covers) == "":
+			acao = "ataca"
+		elif unit.pos.distance_to(target.pos) - target.radius - unit.radius <= reach + walk_px:  # em linha reta: aproximado
+			acao = "aproxima_ataca"
+		if acao != "aproxima":
+			if not plan.has(target):
+				plan[target] = []
+			(plan[target] as Array).append(unit)
+		out.append({"unit": unit, "target": target, "acao": acao, "alcance_px": reach, "ameaca_px": reach + walk_px})
+	return out
+
+
+# Inimigos vivos na ordem em que vão agir: com `this_round`, os que ainda faltam nesta rodada (a vez atual
+# incluída); sem, todos os vivos na ordem da rodada.
+func _upcoming_enemies(this_round: bool) -> Array[Combatant]:
+	var list: Array[Combatant] = []
+	var source: Array = room.turns._queue.duplicate() if this_round else room.turns.order.duplicate()
+	if this_round and room.turns.current:
+		source.push_front(room.turns.current)
+	for u in source:
+		if u.side == Combatant.Side.ENEMY and u.is_alive() and not list.has(u) and not u.get("objeto"):
+			list.append(u)
+	if not this_round:
+		for e in room.enemies:
+			if e.is_alive() and not list.has(e) and not e.get("objeto"):
+				list.append(e)
+	return list
+
+
+func _probe(unit: Combatant, at: Vector2, pa: int) -> Combatant:
+	var p := Combatant.new()
+	p.radius = unit.radius
+	p.weapon = unit.weapon
+	p.side = unit.side
+	p.pos = at
+	p.pa = pa
+	p.mag = unit.mag
+	return p
