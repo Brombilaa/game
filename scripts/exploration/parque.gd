@@ -807,9 +807,11 @@ func can_pause() -> bool:
 	return mode != Mode.CUTSCENE and super()
 
 
-# Objetivos do HUD: investigar o parque, depois o símbolo da árvore; em combate, sobreviver.
+# Objetivos do HUD: os "objetivos" de parque.json, no mesmo formato dos outros lugares (Objectives.from_data).
 func _objectives() -> Array[Dictionary]:
-	return Objectives.build(scenario.clues, seen_clues, mode == Mode.COMBAT)
+	if scenario.objetivos.is_empty():
+		return Objectives.build(scenario.clues, seen_clues, mode == Mode.COMBAT)
+	return Objectives.from_data(scenario.objetivos, seen_clues, Missao1.tem, mode == Mode.COMBAT)
 
 
 # Caio tem a folha de parado em 3D; a Letícia ainda é figura provisória (corpo, cabeça e nome).
