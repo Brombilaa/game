@@ -579,6 +579,7 @@ func _process(delta: float) -> void:
 	if inv_panel and inv_panel.open:
 		return  # inventário aberto: o tempo para (GDD #23)
 	minimap._update_discovered()
+	_update_enemy_turn_speed()
 	fx.update(delta)
 	_apply_zoom_pulse()
 	camera.offset = fx.shake_offset()
@@ -709,6 +710,7 @@ func _start_combat(surprise_side: int = -1) -> void:
 	combat_log.clear()
 	cam_pan = Vector2.ZERO
 	Engine.time_scale = 2.0 if options.values["fast_combat"] else 1.0  # P7: combate rápido (Opções)
+	enemy_turn_boost = false
 	path = PackedVector2Array()
 	moving_unit = null
 	pending_door = false
@@ -737,6 +739,24 @@ func _start_combat(surprise_side: int = -1) -> void:
 	queue_redraw()
 
 
+# Acelerar a vez do inimigo (Léo, 15/11): segurando Shift enquanto os inimigos agem, o tempo sobe para
+# 4x (8x com o combate rápido ligado). Soltou, ou voltou a vez do grupo, o tempo volta ao normal.
+const ENEMY_TURN_BOOST := 2.0
+var enemy_turn_boost := false
+
+
+func _update_enemy_turn_speed() -> void:
+	if mode != Mode.COMBAT:
+		return
+	var enemy_acting: bool = busy and turns != null and turns.current != null and turns.current.side == Combatant.Side.ENEMY
+	var want: bool = enemy_acting and Input.is_key_pressed(KEY_SHIFT)
+	if want == enemy_turn_boost:
+		return
+	enemy_turn_boost = want
+	Engine.time_scale = (2.0 if options.values["fast_combat"] else 1.0) * (ENEMY_TURN_BOOST * 2.0 if want else 1.0)
+	queue_redraw()
+
+
 func _on_turn_started(unit: Combatant) -> void:
 	rules.units = _living_units()  # M4: quem está em campo, para achar o flanqueador
 	queue_redraw()
@@ -755,6 +775,7 @@ func _exit_tree() -> void:
 
 func _on_combat_ended(result: TurnManager.Result) -> void:
 	Engine.time_scale = 1.0
+	enemy_turn_boost = false
 	hud.on_turn_ended()
 	audio.on_combat_ended()
 	if result == TurnManager.Result.VICTORY:

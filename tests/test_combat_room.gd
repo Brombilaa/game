@@ -402,6 +402,28 @@ func _test_small_upgrades() -> void:
 	room.options.values["fast_combat"] = true
 	room._start_combat()
 	_check(is_equal_approx(Engine.time_scale, 2.0), "combate rápido: tempo em 2x")
+	# Acelerar a vez do inimigo: Shift só vale enquanto o inimigo age.
+	room.busy = true
+	room.turns.current = room.enemies[0]
+	Input.action_press("ui_accept")  # só garante o Input inicializado
+	Input.action_release("ui_accept")
+	var ev := InputEventKey.new()
+	ev.keycode = KEY_SHIFT
+	ev.physical_keycode = KEY_SHIFT
+	ev.pressed = true
+	Input.parse_input_event(ev)
+	Input.flush_buffered_events()
+	await process_frame
+	await process_frame
+	room.busy = true
+	room._update_enemy_turn_speed()
+	_check(is_equal_approx(Engine.time_scale, 8.0), "Shift na vez do inimigo: 4x sobre o combate rápido (8x)")
+	room.turns.current = room.player
+	room._update_enemy_turn_speed()
+	_check(is_equal_approx(Engine.time_scale, 2.0), "na vez do grupo o tempo volta ao do combate rápido")
+	ev.pressed = false
+	Input.parse_input_event(ev)
+	room.busy = false
 	room.queue_free()
 	await process_frame
 	_check(is_equal_approx(Engine.time_scale, 1.0), "ao sair da sala o tempo volta a 1x")
