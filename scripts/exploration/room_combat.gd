@@ -185,7 +185,7 @@ func _combat_click(click: Vector2) -> void:
 # um uso por kit.
 func _revive(fallen: Combatant) -> void:
 	var kit := room.cfg.game_data.get_entry("itens", "kit_primeiros_socorros")
-	var cost := int(kit["custo_pa_combate"])
+	var cost := int(room.cfg.regra("custo_reanimar_pa", kit["custo_pa_combate"]))  # regras.json (GDD #12)
 	if room.inventory.count(TestRoom.KIT_ID) <= 0:
 		_reject("requirement")
 		room.hud.show_notice("Sem kit de primeiros socorros")
@@ -196,7 +196,7 @@ func _revive(fallen: Combatant) -> void:
 		_reject("no_pa")
 	else:
 		room.inventory.remove(TestRoom.KIT_ID)
-		fallen.pv = maxi(floori(fallen.max_pv * float(kit["valor"])), 1)
+		fallen.pv = maxi(floori(fallen.max_pv * float(room.cfg.regra("reanimar_pv_percentual", kit["valor"]))), 1)
 		_popup(fallen.pos, "REANIMADO", "heal")
 	_after_player_action()
 
@@ -291,7 +291,7 @@ func _swap_weapon() -> void:
 	if room.mode == TestRoom.Mode.COMBAT:
 		if not room._player_ready():
 			return
-		if not room.turns.spend(room.player, TestRoom.SWAP_PA):
+		if not room.turns.spend(room.player, int(room.cfg.regra("custo_trocar_arma_pa", 1))):
 			_reject("no_pa")
 			return
 	room.gear[room.player]["secundaria"] = room.gear[room.player]["principal"]
@@ -320,7 +320,7 @@ func _reload() -> void:
 	if room.mode == TestRoom.Mode.COMBAT:
 		if not room._player_ready():
 			return
-		if not room.turns.spend(room.player, TestRoom.RELOAD_PA):
+		if not room.turns.spend(room.player, int(room.cfg.regra("custo_recarga_pa", 1))):
 			_reject("no_pa")
 			return
 	var take := mini(size - have, stock)

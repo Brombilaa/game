@@ -77,7 +77,7 @@ func _gear_change_cost(m: Combatant, kind: String) -> Variant:
 		return "Troque de colete fora do combate"
 	if m != room.player:
 		return "Só quem está na vez troca de arma"
-	return TestRoom.SWAP_PA
+	return int(room.cfg.regra("custo_trocar_arma_pa", 1))
 
 
 # Equipa o item do espaço `bag_index` no espaço `slot` de `m`; o que estava lá vai para o lugar dele.
@@ -163,7 +163,7 @@ func gear_discard(bag_index: int) -> String:
 	return "" if gone.is_empty() else "Descartou %s" % room.cfg.game_data.get_entry("itens", str(gone["id"])).get("nome", room.cfg.game_data.get_entry("armas", str(gone["id"])).get("nome", gone["id"]))
 
 
-# Usa um consumível da mochila em `m`: bandagem tira o sangramento, antídoto o veneno.
+# Usa um consumível da mochila em `m`: bandagem tira o sangramento, antídoto o veneno, curativo recupera PV.
 # O kit de primeiros socorros reanima aliado caído e só se usa pela barra de combate.
 func gear_use(m: Combatant, bag_index: int) -> String:
 	var id := str(room.inventory.slots[bag_index].get("id", ""))
@@ -173,17 +173,26 @@ func gear_use(m: Combatant, bag_index: int) -> String:
 		return "Recarregue a arma com G"
 	if id == TestRoom.KIT_ID:
 		return "O kit reanima um aliado caído (barra de combate)"
-	if not cures.has(effect):
+	var heal := effect == "curar_pv"
+	if not cures.has(effect) and not heal:
 		return "Sem efeito por enquanto"
-	if not m.has_condition(cures[effect]):
+	if heal and (not m.is_alive() or m.pv >= m.max_pv):
+		return "%s não precisa" % m.name if m.is_alive() else "Caído só volta com o kit"
+	if not heal and not m.has_condition(cures[effect]):
 		return "%s não precisa" % m.name
 	if room.mode == TestRoom.Mode.COMBAT:
 		if m != room.player:
 			return "Só quem está na vez usa itens"
-		if not room.turns.spend(room.player, int(room.cfg.game_data.get_entry("itens", id)["custo_pa_combate"])):
+		var custo = room.cfg.game_data.get_entry("itens", id)["custo_pa_combate"]
+		if not room.turns.spend(room.player, int(custo if custo != null else room.cfg.regra("custo_usar_item_pa", 1))):
 			room._reject("no_pa")
 			return "PA insuficientes"
-	m.conditions.erase(cures[effect])
+	if heal:  # curativo: recupera uma fração do PV máximo (valor em itens.json; provisório)
+		var cura := maxi(floori(m.max_pv * float(room.cfg.game_data.get_entry("itens", id)["valor"])), 1)
+		m.pv = mini(m.pv + cura, m.max_pv)
+		room._popup(m.pos, "+%d" % cura, "heal")
+	else:
+		m.conditions.erase(cures[effect])
 	room.inventory.remove(id)
 	if room.use_3d and room._sheet3d(m) != null:
 		room.nikolai_clock[m] = {"anim": "pickup_object", "start": Time.get_ticks_msec()}  # gesto de usar o item

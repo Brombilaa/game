@@ -31,14 +31,14 @@ func _action_slots() -> Array:
 	var ammo := room.ammo_of(room.player)  # [carregador, reserva] ou [] se a arma não usa munição
 	var attack := "Atacar · %d PA · clique no inimigo" % int(room.player.weapon["pa_cost"])
 	if not ammo.is_empty():
-		attack = "Atacar · %d PA · G recarrega (%d PA)" % [int(room.player.weapon["pa_cost"]), room.RELOAD_PA]
+		attack = "Atacar · %d PA · G recarrega (%d PA)" % [int(room.player.weapon["pa_cost"]), int(room.cfg.regra("custo_recarga_pa", 1))]
 	var slots := [[id, str(data.get_entry("armas", id).get("nome", id)), attack, true, ammo]]
 	var second := room._reserve_id()
 	if second != "":
 		var second_ammo := []
 		if int(room.cfg.weapon(second)["mag_size"]) > 0:
 			second_ammo = [int(room.player.mag.get(second, 0)), room.inventory.count(room.ammo_item(second))]
-		slots.append([second, str(data.get_entry("armas", second).get("nome", second)), "Trocar arma · %d PA · tecla Q" % room.SWAP_PA, room.player.pa >= room.SWAP_PA, second_ammo])
+		slots.append([second, str(data.get_entry("armas", second).get("nome", second)), "Trocar arma · %d PA · tecla Q" % int(room.cfg.regra("custo_trocar_arma_pa", 1)), room.player.pa >= int(room.cfg.regra("custo_trocar_arma_pa", 1)), second_ammo])
 	slots.append(["kit", "Kit de primeiros socorros", "Reanimar · %d PA · restam %d" % [int(kit["custo_pa_combate"]), room.inventory.count(room.KIT_ID)], room.inventory.count(room.KIT_ID) > 0])
 	slots.append(["vigilancia", "Vigilância", "%d PA · tecla F · atira no 1º inimigo que se mover no cone" % int(room.player.weapon["pa_cost"]), room.rules.overwatch_blocker(room.player) == "" or room.player.overwatch])
 	slots.append(["atrasar", "Atrasar", "Age depois na rodada · tecla D", true])
