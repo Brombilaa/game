@@ -40,6 +40,7 @@ func _check_detection() -> void:
 			if not m.is_alive() or e.pos.distance_to(m.pos) > room.rules.perception_range(e, m):
 				continue
 			if Pathfinder.has_line_of_sight(e.pos, m.pos, room._sight_blockers()):
+				room.audio.play_sfx("enemy_spotted")
 				room._start_combat(Combatant.Side.ENEMY)  # quem percebe pega o grupo desprevenido
 				return
 
@@ -197,6 +198,7 @@ func _revive(fallen: Combatant) -> void:
 	else:
 		room.inventory.remove(TestRoom.KIT_ID)
 		fallen.pv = maxi(floori(fallen.max_pv * float(room.cfg.regra("reanimar_pv_percentual", kit["valor"]))), 1)
+		room.audio.play_sfx("item_use")
 		_popup(fallen.pos, "REANIMADO", "heal")
 	_after_player_action()
 
@@ -328,6 +330,7 @@ func _reload() -> void:
 	room.player.mag[wid] = have + take
 	if room.use_3d and room._sheet3d(room.player) != null and not room.fx.animating():
 		room.nikolai_clock[room.player] = {"anim": "reload", "start": Time.get_ticks_msec()}
+	room.audio.play_sfx("reload")
 	_popup(room.player.pos, "Recarregou")
 	room.queue_redraw()
 
@@ -415,6 +418,7 @@ func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void
 	# Quem ataca vira para o alvo (antes atirava para onde estivesse olhando: Léo, 08/11, "combate dessincronizado").
 	if target.pos != attacker.pos:
 		room.facing8[attacker] = CharacterSheet.dir_from_vector(room._iso(target.pos) - room._iso(attacker.pos))  # direção vista na tela
+	room.audio.play_attack(attacker.weapon)
 	var aim := room._attack_aim(attacker)
 	room.fx.start(attacker, target, r, before, aim)
 	room._attack_started(attacker, target, aim)
@@ -442,6 +446,7 @@ func _on_fx_impact(job: Dictionary) -> void:
 	var target: Combatant = job["target"]
 	var r: Dictionary = job["r"]
 	var attacker: Combatant = job["attacker"]
+	room.audio.play_impact(r, target.defense > 0.0, not target.is_alive())
 	if r.get("blocked", false):
 		_log("%s atira em %s: bloqueado" % [attacker.name, target.name])
 	elif not r.get("hit", false):

@@ -193,6 +193,7 @@ func gear_use(m: Combatant, bag_index: int) -> String:
 		room._popup(m.pos, "+%d" % cura, "heal")
 	else:
 		m.conditions.erase(cures[effect])
+	room.audio.play_sfx("item_use")
 	room.inventory.remove(id)
 	if room.use_3d and room._sheet3d(m) != null:
 		room.nikolai_clock[m] = {"anim": "pickup_object", "start": Time.get_ticks_msec()}  # gesto de usar o item
