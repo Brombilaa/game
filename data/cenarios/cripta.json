@@ -10757,6 +10757,12 @@
   "texto": "Roberto Ghular crava a adaga no próprio peito. Do sangue dele se ergue a Dama de Sangue.",
   "provisorio": true
  },
+ "fim": {
+  "limite": 0.3,
+  "legenda": "Fernando não se levanta.",
+  "titulo": "FIM DO CAPÍTULO 1",
+  "provisorio": true
+ },
  "grupos": {
   "corredor": {
    "marca": "cripta_corredor_limpo"
