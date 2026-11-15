@@ -66,6 +66,8 @@ static func capturar(room: Node, area: String, rotulo: String, pista_do_combate 
 			"max_pv": m.max_pv,
 			"san": m.san,
 			"max_san": m.max_san,
+			"ruptura": m.ruptured,
+			"louco": m.insane,
 			"morto": m.dead,
 			"equip": (room.gear.get(m, {}) as Dictionary).duplicate(),
 		})
@@ -114,6 +116,8 @@ static func aplicar(room: Node, data: Dictionary) -> void:
 		m.max_san = int(g.get("max_san", m.max_san))
 		m.san = clampi(int(g.get("san", m.san)), 0, m.max_san)
 		m.dead = bool(g.get("morto", false))
+		m.ruptured = bool(g.get("ruptura", false))
+		m.insane = bool(g.get("louco", false))
 		var equip = g.get("equip")
 		if equip is Dictionary and room.gear.has(m):
 			for slot in room.gear[m]:
