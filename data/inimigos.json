@@ -144,7 +144,7 @@
         "fase": 1,
         "abaixo_de": 1.0,
         "dano_mult": 1.0,
-        "mare_intervalo": 3,
+        "mare_intervalo": 4,
         "texto": null,
         "registro": null
       },
@@ -152,7 +152,7 @@
         "fase": 2,
         "abaixo_de": 0.5,
         "dano_mult": 1.25,
-        "mare_intervalo": 2,
+        "mare_intervalo": 3,
         "texto": "A DAMA DE SANGUE SE ENFURECE",
         "registro": "A Dama de Sangue se enfurece: agora bate 25% mais forte."
       }
@@ -173,8 +173,8 @@
         "pa": 3,
         "invoca": "cultista",
         "quantos": 2,
-        "intervalo": 3,
-        "primeiro": 2,
+        "intervalo": 4,
+        "primeiro": 3,
         "max_em_campo": 4,
         "requer_simbolo": true
       },
@@ -189,7 +189,7 @@
           18
         ],
         "condicao": "sangrando",
-        "primeiro": 1,
+        "primeiro": 2,
         "aviso": "A Dama de Sangue concentra o sangue"
       },
       {
