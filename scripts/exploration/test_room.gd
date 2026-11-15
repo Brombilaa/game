@@ -53,6 +53,7 @@ const POPUP_STYLES := {
 	"down": {"size": 14, "color": Color(0.95, 0.3, 0.25)},
 	"heal": {"size": 15, "color": Color(0.5, 0.9, 0.55)},
 	"info": {"size": 13, "color": Color(1.0, 1.0, 0.75)},
+	"san": {"size": 22, "color": Color(0.49, 0.65, 0.93)},
 }
 
 # Quadro da caminhada avança por distância percorrida na tela (não por tempo): os pés não deslizam,
@@ -128,6 +129,7 @@ var covers: Array = [
 var cfg := CombatConfig.load_file()
 
 var rules := CombatRules.new(cfg)
+var san := SanRules.new(cfg)  # SAN como medidor de terror: perda, ruptura e loucura (GDD #11)
 
 # Grupo: Fernando, Nikolai e Miguel pelas fichas do GDD (classe e atributos; Ficha e personagens.json).
 var party: Array[Combatant] = [

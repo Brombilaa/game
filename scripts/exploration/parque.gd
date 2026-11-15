@@ -1170,7 +1170,10 @@ func _close_dialog() -> void:
 		return
 	seen_clues.append(cid)
 	audio.play_sfx("clue_found")
-	collect_items(scenario.clues[cid]["da"])
+	var c: Dictionary = scenario.clues[cid]
+	if c["perda_san"] > 0 or c["perturbadora"]:  # pista que perturba: quem leu (o líder) perde SAN
+		room_combat._san_report({player: san.clue_read(player, {"perda_san": c["perda_san"]} if c["perda_san"] > 0 else c)}, "lê a pista")
+	collect_items(c["da"])
 	pista_gatilho = cid
 	for trigger in scenario.triggers_after(cid):
 		_run_trigger(trigger)
