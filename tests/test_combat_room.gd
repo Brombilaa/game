@@ -20,6 +20,7 @@ func _run() -> void:
 	await _test_enemy_roles()
 	await _test_focus_limit()
 	await _test_overwatch()
+	await _test_enemy_intent()
 	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
 	room.rules.rng.seed = 3
 	root.add_child(room)
@@ -368,6 +369,53 @@ func _test_overwatch() -> void:
 	await process_frame
 	await process_frame
 	_check(room.action_bar._action_slots().any(func(sl: Array) -> bool: return sl[0] == "vigilancia"), "a barra de ações tem o botão de vigilância")
+	room.mode = room.Mode.EXPLORATION
+	room.queue_free()
+	await process_frame
+
+
+# Intenção do inimigo (sugestão 11): a previsão segue a escolha de alvo da IA, com o limite de foco, e o desenho
+# aparece só no turno do grupo.
+func _test_enemy_intent() -> void:
+	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
+	root.add_child(room)
+	await process_frame
+	var a: Combatant = room.party[0]
+	var b: Combatant = room.party[1]
+	var c: Combatant = room.party[2]
+	a.pos = Vector2(200, 300)
+	b.pos = Vector2(200, 400)
+	c.pos = Vector2(120, 600)
+	room.enemies.clear()
+	var shooters: Array[Combatant] = []
+	for i in 3:
+		shooters.append(room.cfg.make_enemy("atirador", Vector2(320, 300 + i * 10)))
+	var far: Combatant = room.cfg.make_enemy("cultista", Vector2(1200, 700))
+	room.enemies.append_array(shooters)
+	room.enemies.append(far)
+	room.mode = room.Mode.COMBAT
+	room.turns = TurnManager.new()
+	var units: Array[Combatant] = []
+	units.append_array(room.party)
+	units.append_array(room.enemies)
+	room.turns.start(units, Combatant.Side.PLAYER)
+	var list: Array = room.ai.predict_intents()
+	_check(list.size() == 4, "uma intenção por inimigo vivo")
+	var on_a := list.filter(func(it): return it.target == a and it.acao != "aproxima").size()
+	_check(on_a == 2 and list.any(func(it): return it.target == b), "a previsão respeita o limite de 2 inimigos no mesmo alvo")
+	var far_it: Dictionary = list.filter(func(it): return it.unit == far)[0]
+	_check(far_it.acao == "aproxima", "inimigo longe do grupo só avança")
+	_check(list.filter(func(it): return it.unit == shooters[0])[0].acao == "ataca", "atirador perto já ataca dali")
+	_check(far_it.ameaca_px > far_it.alcance_px, "o alcance andando passa o alcance da arma")
+	var intent: EnemyIntent = room.enemy_intent
+	_check(intent.ativo() == (room.turns.current.side == Combatant.Side.PLAYER), "a intenção aparece só no turno do grupo")
+	for e in ["A", "B", "C"]:  # os três estilos desenham sem erro, com o alcance de um inimigo
+		intent.estilo = e
+		intent.foco = shooters[0]
+		intent.queue_redraw()
+		await process_frame
+	a.pos = Vector2(200, 700)
+	_check(room.ai.predict_intents() != list and intent.intents().any(func(it): return it.target != a or it.unit != shooters[0]), "a previsão muda quando o grupo se move")
 	room.mode = room.Mode.EXPLORATION
 	room.queue_free()
 	await process_frame

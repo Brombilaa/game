@@ -40,8 +40,7 @@ func _run() -> void:
 	for m in room.party:
 		m.max_pv = 30
 		m.pv = 22
-	var intent := EnemyIntent.new(room)
-	room.add_child(intent)
+	var intent: EnemyIntent = room.enemy_intent
 	var c := Vector2.ZERO
 	for u in room.party + room.enemies:
 		c += u.pos

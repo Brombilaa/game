@@ -277,6 +277,7 @@ func _ready() -> void:
 	add_child(hud)
 	add_child(audio)
 	add_child(hud_blur)
+	add_child(enemy_intent)
 	for path in AGENT_SHEETS:
 		agent_sheets.append(CharacterSheet.new(path))
 	looks[party[0]] = 0
@@ -671,6 +672,7 @@ func _gear_scarce() -> bool:
 
 
 var ai := EnemyAi.new(self)
+var enemy_intent := EnemyIntent.new(self)  # quem cada inimigo vai atacar, no turno do grupo (modelo A, sugestão 11)
 
 
 func _run_enemy_turn(unit: Combatant) -> void:
