@@ -1305,7 +1305,7 @@
  ],
  "pistas": [
   {
-   "id": "tapete", "da": [{"item": "kit_primeiros_socorros", "qtd": 1}, {"item": "municao_escopeta", "qtd": 5}],
+   "id": "tapete",
    "pos": [
     849.9,
     156.8

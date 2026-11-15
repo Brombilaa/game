@@ -117,6 +117,7 @@ const FIELDS := {
 		"fraquezas": {"t": "lista", "nulo": false},
 		"chefe": {"t": "bool", "nulo": false},
 		"fases": {"t": "dict_lista", "nulo": false},
+		"drops": {"t": "dict_lista", "nulo": false},  # itens que larga ao morrer: {item, qtd, chance} (provisório do Claude)
 	},
 	"arvores": {
 		"id": {"t": "texto", "nulo": false},

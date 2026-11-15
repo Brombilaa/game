@@ -95,7 +95,7 @@
  ],
  "pistas": [
   {
-   "id": "livro_faltando", "da": [{"item": "municao_pistola", "qtd": 8}],
+   "id": "livro_faltando",
    "pos": [
     64.0,
     217.6
