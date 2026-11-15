@@ -9,6 +9,9 @@ const REJECTION_MESSAGES := {
 	"out_of_range": "Fora de alcance",
 	"no_line_of_sight": "Sem linha de visão",
 	"reloading": "Recarregando",
+	"no_ammo": "Sem munição (clique para recarregar)",
+	"no_reserve": "Sem munição na mochila",
+	"mag_full": "Carregador cheio",
 	"requirement": "Requisito não atendido",
 }
 const UNKNOWN_REJECTION := "Ação inválida"
