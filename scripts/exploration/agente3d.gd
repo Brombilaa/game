@@ -562,21 +562,36 @@ func _armar(metro: float) -> void:
 	pistola = _arma(mao, CANO_PISTOLA, TOPO_PISTOLA, metro, [
 		[Vector3(0.03, 0.045, 0.26), Vector3(0.01, 0.085, 0.12), aco],  # ferrolho e cano
 		[Vector3(0.035, 0.13, 0.05), Vector3(0.01, 0.03, 0.05), aco],  # coronha (na palma)
-	])
+	], MODELO_PISTOLA, DESLOCA_PISTOLA)
 	espingarda = _arma(mao, CANO_RIFLE, TOPO_RIFLE, metro, [
 		[Vector3(0.035, 0.035, 0.85), Vector3(0.01, 0.09, 0.45), aco],  # cano
 		[Vector3(0.055, 0.07, 0.32), Vector3(0.01, 0.07, 0.25), madeira],  # telha
 		[Vector3(0.055, 0.12, 0.4), Vector3(0.01, 0.03, -0.15), madeira],  # coronha
-	])
+	], MODELO_ESCOPETA, DESLOCA_ESCOPETA)
 
 
-func _arma(mao: Node3D, cano: Vector3, topo: Vector3, metro: float, pecas: Array) -> Node3D:
+# Modelos 3D das armas (estilo PC antigo, Léo 15/11): metros, origem na empunhadura, cano para +Z. `desloca` leva a empunhadura
+# do modelo para a palma da mão do esqueleto (onde ficavam as caixas). Sem o arquivo, volta para as caixas.
+const MODELO_PISTOLA := "res://assets/3d/armas/pistola.glb"
+const MODELO_ESCOPETA := "res://assets/3d/armas/escopeta.glb"
+const DESLOCA_PISTOLA := Vector3(0.01, 0.035, 0.06)
+const DESLOCA_ESCOPETA := Vector3(0.01, 0.05, 0.08)
+
+
+func _arma(mao: Node3D, cano: Vector3, topo: Vector3, metro: float, pecas: Array, modelo_arma := "", desloca := Vector3.ZERO) -> Node3D:
 	var arma := Node3D.new()
 	var z := cano.normalized()
 	var x := topo.cross(z).normalized()
 	var y := z.cross(x)
 	arma.transform = Transform3D(Basis(x, y, z), Vector3.ZERO)
 	arma.scale = Vector3.ONE * metro
+	if modelo_arma != "" and ResourceLoader.exists(modelo_arma):
+		var cena := load(modelo_arma) as PackedScene
+		if cena:
+			var inst := cena.instantiate() as Node3D
+			inst.position = desloca
+			arma.add_child(inst)
+			pecas = []
 	for p in pecas:
 		var m := MeshInstance3D.new()
 		var b := BoxMesh.new()
