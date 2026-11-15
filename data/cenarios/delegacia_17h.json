@@ -1294,7 +1294,114 @@
    ]
   }
  ],
- "pistas": [],
+ "pistas": [
+  {
+   "id": "livro_ocorrencias",
+   "pos": [
+    902.4,
+    1030.4
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "O livro de ocorrências está aberto no balcão. Nas últimas três semanas, a mesma anotação: \"Barulho na Fazenda Ghular\". Nenhuma viatura foi enviada. A última página foi arrancada.",
+   "provisorio": true
+  },
+  {
+   "id": "agenda_ghular",
+   "pos": [
+    992.0,
+    313.6
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Na agenda do delegado Ghular, as datas estão riscadas. Só uma linha sobrou legível: \"Roberto voltou da fazenda. Não parece mais ele.\"",
+   "provisorio": true
+  },
+  {
+   "id": "gaveta_provas",
+   "pos": [
+    1043.2,
+    723.2
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "A gaveta da sala de provas foi forçada. Dentro, entre papéis manchados, ainda restam algumas balas soltas.",
+   "provisorio": true,
+   "da": [
+    {
+     "item": "municao_pistola",
+     "qtd": 6
+    }
+   ]
+  },
+  {
+   "id": "ficha_desaparecidos",
+   "pos": [
+    268.8,
+    403.2
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "No arquivo, uma pasta cheia de fichas de desaparecidos de Aurora. Todas têm a mesma anotação a lápis: \"visto pela última vez perto da fazenda\".",
+   "provisorio": true
+  },
+  {
+   "id": "cela_arranhoes",
+   "pos": [
+    192.0,
+    620.8
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "As paredes da cela estão marcadas por arranhões fundos, feitos de dentro para fora. Desenhado com o que parece sangue, o mesmo símbolo da árvore do parque.",
+   "provisorio": true
+  },
+  {
+   "id": "kit_recepcao",
+   "pos": [
+    288.0,
+    1056.0
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Debaixo de um banco da recepção, esquecido por alguém com pressa, há um kit com curativos e uma bandagem.",
+   "provisorio": true,
+   "da": [
+    {
+     "item": "curativo",
+     "qtd": 1
+    },
+    {
+     "item": "bandagem",
+     "qtd": 1
+    }
+   ]
+  }
+ ],
  "gatilhos": [],
  "zonas": [
   {
@@ -1313,6 +1420,16 @@
  ],
  "inimigos": [],
  "objetivos": [
+  {
+   "texto": "Ler o livro de ocorrências",
+   "pista": "livro_ocorrencias",
+   "provisorio": true
+  },
+  {
+   "texto": "Procurar pistas no escritório do Ghular",
+   "pista": "agenda_ghular",
+   "provisorio": true
+  },
   {
    "texto": "Seguir para a biblioteca",
    "provisorio": true
