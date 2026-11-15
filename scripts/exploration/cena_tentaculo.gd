@@ -16,7 +16,7 @@ const T_SOBE := 1.5  # s: do corpo da Dama até o ar e de volta ao chão
 const T_RASTEJA := 1.7  # s: pelo chão até as costas do Fernando
 const T_ENROSCA := 0.7  # s: a ponta se levanta e mira
 const T_GOLPE := 0.16  # s: a estocada
-const T_SEGURA := 1.6  # s: segura o Fernando erguido, com o tentáculo atravessado
+const T_SEGURA := 1.8  # s: segura o Fernando erguido, com o tentáculo atravessado
 const T_RECUA := 0.9  # s: o tentáculo sai do corpo e volta
 
 var room  # local3d.gd
@@ -24,6 +24,7 @@ var dama: Combatant
 var fernando: Combatant
 var cinema: Cinema
 var tentaculo: Tentaculo3D
+var extras: Array[Tentaculo3D] = []
 var fim: Dictionary  # data/cenarios/cripta.json -> "fim"
 var _cam_alvo := Vector2.ZERO  # onde a câmera quer estar (desenho iso)
 var _zoom_alvo := 1.0
@@ -60,6 +61,7 @@ func _congelar_combate() -> void:
 	if not fernando.is_alive():
 		fernando.pv = 1  # caído quando a cena começou: a cena é dele
 	room.facing8[fernando] = CharacterSheet.dir_from_vector(Vector2(0, 1))  # de frente para a câmera
+	room.facing8[dama] = CharacterSheet.dir_from_vector(room._iso(fernando.pos) - room._iso(dama.pos))  # a Dama olha para ele
 	var cam: Camera2D = room.camera
 	_zoom_base = cam.zoom.x
 	_cam_alvo = cam.position
@@ -130,8 +132,10 @@ func tocar() -> void:
 	_zoom_alvo = ZOOM_DAMA
 	room.fx.shake_time = 0.4
 	room.fx.shake_px = 4.0
+	create_tween().tween_property(self, "_zoom_alvo", ZOOM_DAMA + 0.3, 2.2).set_trans(Tween.TRANS_SINE)  # a câmera se aproxima devagar
+	_extras(d, h, lado)
 	await cinema.entrar(1.0)
-	await _esperar(0.4)
+	await _esperar(0.9)
 	# 2. O tentáculo sobe e desce até o chão; a câmera segue a ponta.
 	_seguir_ponta = true
 	_zoom_alvo = ZOOM_PONTA
@@ -143,18 +147,25 @@ func tocar() -> void:
 	_cam_alvo = _iso3(f + Vector3(0, 1.0, 0))
 	_zoom_alvo = ZOOM_GOLPE
 	await _crescer(tentaculo.fracao_em(6), T_ENROSCA)
-	await _esperar(0.35)
+	room._attack_started(dama, fernando, room._attack_aim(dama))  # a Dama se inclina para o golpe
+	await _esperar(0.55)
 	# 5. A estocada.
 	var viva := tentaculo.ondula
 	tentaculo.ondula = 0.02
 	await _crescer(1.0, T_GOLPE, Tween.TRANS_EXPO)
 	_impacto(f)
+	_zoom_alvo = ZOOM_GOLPE + 0.5
+	await _esperar(0.28)  # o mundo para um instante no golpe
+	_zoom_alvo = ZOOM_GOLPE
 	# 6. Segura: o Fernando erguido, com o tentáculo atravessado.
 	var ag: Agente3D = room.agentes.get(fernando)
 	if ag:
 		var tw := create_tween().set_parallel(true)
 		tw.tween_property(ag.modelo, "position:y", ag.modelo.position.y + 0.35, 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		tw.tween_property(ag.modelo, "rotation:x", -0.3, 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		var bal := create_tween().set_loops(2)  # o corpo balança, preso no tentáculo
+		bal.tween_property(ag.modelo, "rotation:z", 0.07, 0.4).set_trans(Tween.TRANS_SINE)
+		bal.tween_property(ag.modelo, "rotation:z", -0.07, 0.4).set_trans(Tween.TRANS_SINE)
 	await _esperar(T_SEGURA)
 	tentaculo.ondula = viva
 	# 7. O tentáculo sai do corpo e volta; o Fernando cai.
@@ -166,11 +177,53 @@ func tocar() -> void:
 	await recua.finished
 	room.fx.shake_time = 0.3
 	room.fx.shake_px = 3.0
-	_zoom_alvo = ZOOM_PONTA
+	_poca(f)
+	_cam_alvo = _iso3(f + Vector3(0, 0.3, 0))
+	_zoom_alvo = ZOOM_PONTA + 0.2
+	await _esperar(0.8)
 	if fim.has("legenda"):
 		cinema.legenda(str(fim["legenda"]), 2.4)
-	await _esperar(3.6)
+	await _esperar(2.6)
+	_cam_alvo = _iso3(d + Vector3(0, 1.5, 0))  # a câmera sobe até a Dama, que olha o grupo
+	_zoom_alvo = ZOOM_DAMA
+	await _esperar(2.2)
 	await _fim_do_capitulo()
+
+
+# Três tentáculos menores ondulando atrás da Dama, para ela não ser só um corpo com um braço.
+func _extras(d: Vector3, h: Vector3, lado: Vector3) -> void:
+	for k in 3:
+		var u := float(k - 1)
+		var base := d + Vector3(0, 1.8, 0) + lado * u * 0.3
+		var pts: Array[Vector3] = [base, base + Vector3(0, 1.2, 0) - h * 0.3 + lado * u * 0.6, base + Vector3(0, 2.4 + 0.5 * k, 0) + lado * u * 1.4, base + Vector3(0, 3.4 + 0.4 * k, 0) + h * 0.5 + lado * u * 2.0]
+		var t := Tentaculo3D.new()
+		t.raio_base = 0.2
+		t.raio_ponta = 0.07
+		t.ondula = 0.4
+		room.world3d.mundo.add_child(t)
+		t.definir(pts)
+		extras.append(t)
+		var tw := create_tween()
+		tw.tween_interval(0.25 * k)
+		tw.tween_property(t, "crescimento", 1.0, 1.4).set_trans(Tween.TRANS_SINE)
+
+
+# Poça de sangue que cresce sob o Fernando.
+func _poca(f: Vector3) -> void:
+	var q := QuadMesh.new()
+	q.size = Vector2(2.4, 2.4)
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.albedo_color = Color(0.32, 0.015, 0.04, 0.88)
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	var mi := MeshInstance3D.new()
+	mi.mesh = q
+	mi.material_override = m
+	mi.rotation_degrees = Vector3(-90, 0, 0)
+	mi.position = f + Vector3(0, 0.06, 0)
+	mi.scale = Vector3(0.1, 0.1, 0.1)
+	room.world3d.mundo.add_child(mi)
+	create_tween().tween_property(mi, "scale", Vector3(1, 1, 1), 3.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 
 # Sangue, clarão vermelho e tranco da câmera no instante em que a ponta atravessa o peito.
