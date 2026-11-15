@@ -1,0 +1,25 @@
+{
+	"_nota": "Morte do Caio (Léo, 15/11/2026): no início do combate da árvore, a Criatura de Sangue perto da van ataca o Caio pelas costas, saltando em cima dele; a Letícia se afasta de costas e entra em choque. Depois o combate começa (emboscada). Falas, tempos e posições são provisórios do Claude.",
+	"passos": [
+		{"faz": "cinema", "estado": "entrar", "tempo": 0.6, "junto": true},
+		{"faz": "camera", "em": "caio", "zoom": 1.35, "tempo": 0.9},
+		{"faz": "olhar", "quem": "inimigo:1", "para": "caio"},
+		{"faz": "anim", "quem": "inimigo:1", "anim": "attack", "tempo": 3.2, "laco": true},
+		{"faz": "esperar", "tempo": 0.5},
+		{"faz": "saltar", "quem": "inimigo:1", "sobre": "caio", "perto": 18, "tempo": 0.55, "altura": 1.3},
+		{"faz": "anim", "quem": "caio", "anim": "death", "tempo": 2.4},
+		{"faz": "sangue", "em": "caio", "qtd": 40},
+		{"faz": "flash", "forca": 0.15},
+		{"faz": "tremor", "forca": 10, "tempo": 0.5},
+		{"faz": "fala", "quem": "Letícia", "texto": "CAIO!", "tempo": 1.0, "junto": true},
+		{"faz": "esperar", "tempo": 1.2},
+		{"faz": "sangue", "em": "caio", "qtd": 24, "altura": 20},
+		{"faz": "poca", "em": "caio", "tamanho": 2.2},
+		{"faz": "camera", "em": [380, 700], "zoom": 1.3, "tempo": 0.2},
+		{"faz": "andar", "quem": "leticia", "ate": [500, 630], "de_costas": true, "vel": 70},
+		{"faz": "choque", "quem": "leticia"},
+		{"faz": "legenda", "texto": "Letícia entra em choque.", "tempo": 2.0},
+		{"faz": "marca", "id": "caio_morreu"},
+		{"faz": "camera", "em": "lider", "zoom": "jogador", "tempo": 1.0}
+	]
+}

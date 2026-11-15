@@ -57,8 +57,8 @@
 	],
 	"gatilhos": [
 		{"id": "combate_arvore", "apos": "arvore_simbolo", "tipo": "combate",
-			"inimigos": [{"tipo": "criatura_sangue", "pos": [1100, 300], "origem": "salta da mata e cai na frente da árvore"}, {"tipo": "criatura_sangue", "pos": [450, 800], "origem": "atrás do grupo, perto dos NPCs"}],
-			"cutscene_depois": "morte_caio"}
+			"inimigos": [{"tipo": "criatura_sangue", "pos": [1100, 300], "origem": "salta da mata e cai na frente da árvore"}, {"tipo": "criatura_sangue", "pos": [250, 690], "origem": "perto da van, atrás do Caio: abre o combate saltando em cima dele (Léo, 15/11)"}],
+			"cutscene_antes": "morte_caio", "marca_cena": "caio_morreu"}
 	],
 	"oclusores": [
 		{"id": "arvore", "arquivo": "res://assets/sprites/cenario/parque/oclusao/arvore.png", "pos": [1220, 53]},
