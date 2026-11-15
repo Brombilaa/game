@@ -9,7 +9,7 @@
 		{"faz": "saltar", "quem": "inimigo:1", "sobre": "caio", "perto": 18, "tempo": 0.55, "altura": 1.3},
 		{"faz": "anim", "quem": "caio", "anim": "death", "tempo": 2.4},
 		{"faz": "sangue", "em": "caio", "qtd": 40},
-		{"faz": "flash", "forca": 0.35},
+		{"faz": "flash", "forca": 0.15},
 		{"faz": "tremor", "forca": 10, "tempo": 0.5},
 		{"faz": "fala", "quem": "Letícia", "texto": "CAIO!", "tempo": 1.0, "junto": true},
 		{"faz": "esperar", "tempo": 1.2},
