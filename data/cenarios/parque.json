@@ -44,12 +44,12 @@
 		{"id": "pneus_arvore", "rect": [1112, 312, 78, 75], "_nota": "pilha de dois pneus ao lado da árvore; medido sobre o fundo em 5/11"}
 	],
 	"pistas": [
-		{"id": "caio", "pos": [330, 740], "raio": 80, "ordem": 1, "bolinha": [0, -90], "texto": "O Caio não se mexe mais. Na mochila dele: uma escopeta, balas, bandagens e uma pulseira da amizade desbotada.", "da": [{"item": "escopeta", "qtd": 1}, {"item": "municao_escopeta", "qtd": 6}, {"item": "bandagem", "qtd": 2}, {"item": "pulseira_amizade", "qtd": 1}]},
+		{"id": "caio", "pos": [330, 740], "raio": 80, "ordem": 1, "perda_san": 3, "bolinha": [0, -90], "texto": "O Caio não se mexe mais. Na mochila dele: uma escopeta, balas, bandagens e uma pulseira da amizade desbotada.", "da": [{"item": "escopeta", "qtd": 1}, {"item": "municao_escopeta", "qtd": 6}, {"item": "bandagem", "qtd": 2}, {"item": "pulseira_amizade", "qtd": 1}]},
 		{"id": "marcas_pneu", "pos": [226, 520], "raio": 70, "ordem": 1, "bolinha": [0, -28], "destaque": {"decalque": {"png": "res://assets/3d/parque/marcas_pneu_contorno.png", "min": [-3.0, 3.0], "max": [9.0, 12.0], "y": 0.03}}, "texto": "Marcas largas de pneu. Vão da terra central até a entrada, como se algo tivesse sido arrastado."},
 		{"id": "balanco", "pos": [1200, 700], "raio": 100, "ordem": 1, "bolinha": [0, -125], "destaque": {"nomes": ["Mesh42", "Mesh43", "Mesh44"]}, "texto": "O assento do balanço está cheio de arranhões fundos."},
-		{"id": "banco_quebrado", "pos": [900, 400], "raio": 85, "ordem": 1, "bolinha": [0, -62], "destaque": {"nomes": ["Mesh28", "Mesh30"]}, "texto": "Garras abriram as tábuas do banco. Há sangue seco na madeira."},
+		{"id": "banco_quebrado", "pos": [900, 400], "raio": 85, "ordem": 1, "perda_san": 1, "bolinha": [0, -62], "destaque": {"nomes": ["Mesh28", "Mesh30"]}, "texto": "Garras abriram as tábuas do banco. Há sangue seco na madeira."},
 		{"id": "banco_velho", "pos": [440, 100], "raio": 85, "ordem": 1, "bolinha": [0, -62], "texto": "Um banco velho, coberto de limo.", "destaque": {"nomes": ["Mesh25", "Mesh26", "Mesh27"], "caixa": {"min": [5.5, 0.0, 0.7], "max": [8.5, 1.4, 2.6]}}},
-		{"id": "arvore_simbolo", "pos": [1130, 235], "raio": 80, "ordem": 2, "bolinha": [6, -74], "areas": [[29, -250, 170, 150], [20, -70, 45, 75]], "_areas": "clique na árvore inteira: elipses [cx, cy, rx, ry] em px do desenho, relativas ao pé da pista (copa e tronco)", "texto": "Um símbolo pintado em vermelho no tronco. Parece sangrar.", "inspecao": "res://assets/sprites/cenario/parque/inspecao_simbolo.png", "destaque": {"nomes": ["Mesh10"]}}
+		{"id": "arvore_simbolo", "pos": [1130, 235], "raio": 80, "ordem": 2, "perturbadora": true, "bolinha": [6, -74], "areas": [[29, -250, 170, 150], [20, -70, 45, 75]], "_areas": "clique na árvore inteira: elipses [cx, cy, rx, ry] em px do desenho, relativas ao pé da pista (copa e tronco)", "texto": "Um símbolo pintado em vermelho no tronco. Parece sangrar.", "inspecao": "res://assets/sprites/cenario/parque/inspecao_simbolo.png", "destaque": {"nomes": ["Mesh10"]}}
 	],
 	"_recortes": "caixas do mundo 3D de onde se tiram triângulos da folhagem (sem mexer no glb): o arbusto que tapava o tronco da árvore (Léo, 13/11)",
 	"recortes": [
@@ -57,8 +57,8 @@
 	],
 	"gatilhos": [
 		{"id": "combate_arvore", "apos": "arvore_simbolo", "tipo": "combate",
-			"inimigos": [{"tipo": "criatura_sangue", "pos": [1100, 300], "origem": "salta da mata e cai na frente da árvore"}, {"tipo": "criatura_sangue", "pos": [450, 800], "origem": "atrás do grupo, perto dos NPCs"}],
-			"cutscene_depois": "morte_caio"}
+			"inimigos": [{"tipo": "criatura_sangue", "pos": [1100, 300], "origem": "salta da mata e cai na frente da árvore"}, {"tipo": "criatura_sangue", "pos": [250, 690], "origem": "perto da van, atrás do Caio: abre o combate saltando em cima dele (Léo, 15/11)"}],
+			"cutscene_antes": "morte_caio", "marca_cena": "caio_morreu"}
 	],
 	"oclusores": [
 		{"id": "arvore", "arquivo": "res://assets/sprites/cenario/parque/oclusao/arvore.png", "pos": [1220, 53]},
