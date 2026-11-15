@@ -13,7 +13,7 @@
 		{"faz": "camera", "em": [480, 660], "zoom": 1.3, "tempo": 2.6},
 		{"faz": "anim", "quem": "caio", "anim": "hit", "tempo": 2.6},
 		{"faz": "sangue", "em": "caio", "qtd": 18, "altura": 105},
-		{"faz": "flash", "forca": 0.45},
+		{"faz": "flash", "forca": 0.2},
 		{"faz": "tremor", "forca": 6, "tempo": 0.4},
 		{"faz": "esperar", "tempo": 0.8},
 		{"faz": "anim", "quem": "caio", "anim": "death", "tempo": 3.0},
