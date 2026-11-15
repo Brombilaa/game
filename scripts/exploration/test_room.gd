@@ -19,7 +19,7 @@ extends Node2D
 # O agente usa a folha real do Nikolai, do Miguel ou do Fernando (CharacterSheet, 128 px; só o visual
 # muda); o atirador ainda é arte provisória (PlaceholderArt ampliada).
 
-enum Mode { EXPLORATION, COMBAT, GAME_OVER }
+enum Mode { EXPLORATION, COMBAT, GAME_OVER, CUTSCENE }  # CUTSCENE: cena do fim da missão 1 (CenaTentaculo)
 
 
 signal move_finished
@@ -1538,7 +1538,7 @@ func _draw_unit(u: Combatant) -> void:
 			var frames: Array = CharacterSheet.WALK_FRAMES if walking else CharacterSheet.IDLE_FRAMES
 			var n := walk_n % frames.size() if walking else idle_frame
 			agent_sheets[looks.get(u, 0)].draw(self, at, frames[n], facing8.get(u, CharacterSheet.Dir.SE))
-		if not u.is_alive():
+		if not u.is_alive() and not u.dead:
 			draw_string(ThemeDB.fallback_font, at + Vector2(-22, -CharacterSheet.HEIGHT - 14), "CAÍDO", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(1, 0.4, 0.4))
 	else:
 		var variant := _enemy_variant(i)
