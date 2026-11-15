@@ -32,6 +32,44 @@ func _run() -> void:
 	_check(room._dist_casco(Vector2(50, 25), casco) == 0.0, "dentro do contorno da pista conta como clique")
 	_check(is_equal_approx(room._dist_casco(Vector2(105, 25), casco), 5.0) and 5.0 <= room.MALHA_MARGEM, "logo fora do contorno ainda clica (folga)")
 	_check(room._dist_casco(Vector2(140, 25), casco) > room.MALHA_MARGEM, "longe do contorno não clica")
+	# Escassez (sugestão 7): mochila magra; itens só do Caio e dos inimigos (Léo, 15/11).
+	_check(room.inventory.count("kit_primeiros_socorros") == 1 and room.inventory.count("bandagem") == 0 and room.inventory.count("antidoto") == 0, "missão: começa só com 1 kit, sem bandagem nem antídoto")
+	_check(room.inventory.count("municao_pistola") == 12 and room.inventory.count("municao_escopeta") == 0, "missão: reserva curta de pistola e nenhuma bala de escopeta")
+	var fernando: Combatant = room.party[0]
+	_check(room.gear[fernando]["secundaria"] == "" and not fernando.mag.has("escopeta"), "missão: o Fernando ainda não tem a escopeta")
+	_check(room.scenario.clues["balanco"]["da"].is_empty() and room.scenario.clues["marcas_pneu"]["da"].is_empty(), "as pistas que já existiam não dão nada")
+	var msg: String = room.collect_items(room.scenario.clues["caio"]["da"])
+	_check(room.inventory.count("escopeta") == 1 and room.inventory.count("municao_escopeta") == 6 and room.inventory.count("bandagem") == 2 and room.inventory.count("pulseira_amizade") == 1, "inspecionar o Caio dá escopeta, balas, bandagens e a pulseira")
+	_check(msg.begins_with("Achou: 1x Escopeta"), "o aviso nomeia a escopeta")
+	# Pulseira: +2 de SAN máxima no acessório; escopeta equipada começa vazia e recarrega da mochila.
+	var san0 := fernando.max_san
+	var pul := -1
+	var esc := -1
+	for i in room.inventory.slots.size():
+		if not room.inventory.slots[i].is_empty():
+			if room.inventory.slots[i]["id"] == "pulseira_amizade":
+				pul = i
+			elif room.inventory.slots[i]["id"] == "escopeta":
+				esc = i
+	room.gear_equip(fernando, "acessorio", pul)
+	_check(fernando.max_san == san0 + 2 and fernando.san == fernando.max_san, "a pulseira dá 2 de SAN máxima")
+	room.gear_unequip(fernando, "acessorio")
+	_check(fernando.max_san == san0, "tirar a pulseira devolve a SAN")
+	room.gear_equip(fernando, "secundaria", esc)
+	_check(int(fernando.mag.get("escopeta", -1)) == 0, "escopeta recém-achada começa com o carregador vazio")
+	# Inimigo abatido larga itens da ficha.
+	var cultista: Combatant = room.cfg.make_enemy("cultista", Vector2.ZERO)
+	cultista.drops = [{"item": "bandagem", "qtd": 1, "chance": 1.0}]
+	var antes: int = room.inventory.count("bandagem")
+	room._loot_enemy(cultista)
+	_check(room.inventory.count("bandagem") == antes + 1, "inimigo abatido larga o item da ficha")
+	var cheia := Inventory.new(room.cfg.game_data)
+	var inv: Inventory = room.inventory
+	for i in cheia.SIZE:
+		cheia.slots[i] = {"id": "colete_leve", "qty": 1}
+	room.inventory = cheia
+	_check(room.collect_items([{"item": "bandagem", "qtd": 1}]) == "Mochila cheia" and cheia.count("bandagem") == 0, "mochila cheia: o item não entra e avisa")
+	room.inventory = inv
 	var z0: float = room.camera.zoom.x
 	room._zoom_by(100.0)
 	_check(room.camera.zoom.x == room.ZOOM_MAX and z0 < room.ZOOM_MAX, "a roda aproxima até o zoom máximo")

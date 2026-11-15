@@ -44,6 +44,7 @@
 		{"id": "pneus_arvore", "rect": [1112, 312, 78, 75], "_nota": "pilha de dois pneus ao lado da árvore; medido sobre o fundo em 5/11"}
 	],
 	"pistas": [
+		{"id": "caio", "pos": [330, 740], "raio": 80, "ordem": 1, "bolinha": [0, -90], "texto": "O Caio não se mexe mais. Na mochila dele: uma escopeta, balas, bandagens e uma pulseira da amizade desbotada.", "da": [{"item": "escopeta", "qtd": 1}, {"item": "municao_escopeta", "qtd": 6}, {"item": "bandagem", "qtd": 2}, {"item": "pulseira_amizade", "qtd": 1}]},
 		{"id": "marcas_pneu", "pos": [226, 520], "raio": 70, "ordem": 1, "bolinha": [0, -28], "destaque": {"decalque": {"png": "res://assets/3d/parque/marcas_pneu_contorno.png", "min": [-3.0, 3.0], "max": [9.0, 12.0], "y": 0.03}}, "texto": "Marcas largas de pneu. Vão da terra central até a entrada, como se algo tivesse sido arrastado."},
 		{"id": "balanco", "pos": [1200, 700], "raio": 100, "ordem": 1, "bolinha": [0, -125], "destaque": {"nomes": ["Mesh42", "Mesh43", "Mesh44"]}, "texto": "O assento do balanço está cheio de arranhões fundos."},
 		{"id": "banco_quebrado", "pos": [900, 400], "raio": 85, "ordem": 1, "bolinha": [0, -62], "destaque": {"nomes": ["Mesh28", "Mesh30"]}, "texto": "Garras abriram as tábuas do banco. Há sangue seco na madeira."},

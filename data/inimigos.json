@@ -16,7 +16,19 @@
     "resistencias": [],
     "fraquezas": [],
     "chefe": false,
-    "fases": []
+    "fases": [],
+    "drops": [
+      {
+        "item": "municao_pistola",
+        "qtd": 4,
+        "chance": 0.5
+      },
+      {
+        "item": "bandagem",
+        "qtd": 1,
+        "chance": 0.2
+      }
+    ]
   },
   {
     "id": "atirador_teste",
@@ -35,7 +47,24 @@
     "resistencias": [],
     "fraquezas": [],
     "chefe": false,
-    "fases": []
+    "fases": [],
+    "drops": [
+      {
+        "item": "municao_pistola",
+        "qtd": 5,
+        "chance": 0.6
+      },
+      {
+        "item": "bandagem",
+        "qtd": 1,
+        "chance": 0.3
+      },
+      {
+        "item": "antidoto",
+        "qtd": 1,
+        "chance": 0.15
+      }
+    ]
   },
   {
     "id": "cultista",
@@ -54,7 +83,19 @@
     "resistencias": [],
     "fraquezas": [],
     "chefe": false,
-    "fases": []
+    "fases": [],
+    "drops": [
+      {
+        "item": "municao_pistola",
+        "qtd": 4,
+        "chance": 0.5
+      },
+      {
+        "item": "bandagem",
+        "qtd": 1,
+        "chance": 0.2
+      }
+    ]
   },
   {
     "id": "atirador",
@@ -73,7 +114,24 @@
     "resistencias": [],
     "fraquezas": [],
     "chefe": false,
-    "fases": []
+    "fases": [],
+    "drops": [
+      {
+        "item": "municao_pistola",
+        "qtd": 5,
+        "chance": 0.6
+      },
+      {
+        "item": "bandagem",
+        "qtd": 1,
+        "chance": 0.3
+      },
+      {
+        "item": "antidoto",
+        "qtd": 1,
+        "chance": 0.15
+      }
+    ]
   },
   {
     "id": "criatura_sangue",
@@ -92,7 +150,14 @@
     "resistencias": [],
     "fraquezas": [],
     "chefe": false,
-    "fases": []
+    "fases": [],
+    "drops": [
+      {
+        "item": "bandagem",
+        "qtd": 1,
+        "chance": 0.15
+      }
+    ]
   },
   {
     "id": "roberto_ghular",
@@ -111,7 +176,19 @@
     "resistencias": [],
     "fraquezas": [],
     "chefe": true,
-    "fases": []
+    "fases": [],
+    "drops": [
+      {
+        "item": "kit_primeiros_socorros",
+        "qtd": 1,
+        "chance": 1.0
+      },
+      {
+        "item": "municao_pistola",
+        "qtd": 6,
+        "chance": 1.0
+      }
+    ]
   },
   {
     "id": "dama_sangue",
@@ -130,6 +207,7 @@
     "resistencias": [],
     "fraquezas": [],
     "chefe": true,
-    "fases": []
+    "fases": [],
+    "drops": []
   }
 ]
