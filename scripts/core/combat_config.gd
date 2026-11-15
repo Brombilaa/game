@@ -60,8 +60,38 @@ func condition(id: String) -> Dictionary:
 	return c
 
 
-# Cria um protagonista de teste a partir da ficha em "units" de combat.json
-# (personagens.json ainda não tem atributos nem classes definidos).
+# Valor de regras.json; `padrao` quando a regra ainda está pendente (null) ou não existe.
+func regra(chave: String, padrao: Variant = null) -> Variant:
+	var v = game_data.rule(chave)
+	return padrao if v == null else v
+
+
+# Cria um agente pela ficha do GDD (Ficha): classe de personagens.json, atributos escolhidos
+# na tela de fichas (ou os sugeridos), PV e SAN calculados, AGI como iniciativa, arma inicial.
+func make_agent(personagem: String, pos: Vector2, atributos: Dictionary = {}) -> Combatant:
+	var p := game_data.get_entry("personagens", personagem)
+	assert(not p.is_empty(), "personagem inexistente: " + personagem)
+	var attrs := atributos if not atributos.is_empty() else Ficha.atributos_de(game_data, personagem)
+	var classe := Ficha.classe_de(game_data, personagem)
+	var u := Combatant.new()
+	u.name = p["nome"]
+	u.personagem = personagem
+	u.atributos = attrs.duplicate()
+	u.side = Combatant.Side.PLAYER
+	u.max_pv = Ficha.pv_max(game_data, classe, attrs)
+	u.pv = u.max_pv
+	u.max_san = Ficha.san_max(game_data, classe, attrs)
+	u.san = u.max_san
+	u.initiative = int(attrs.get("AGI", 1))
+	u.defense = 0.0
+	u.weapon = weapon(p["arma_inicial"] if p["arma_inicial"] != null else "soco")
+	u.radius = float(data["units"]["agente"]["radius"])
+	u.pos = pos
+	return u
+
+
+# Cria um protagonista de teste a partir da ficha genérica em "units" de combat.json.
+# O jogo usa make_agent (fichas do GDD); esta fica para testes de regra que não dependem da classe.
 func make_unit(unit_id: String, display_name: String, pos: Vector2) -> Combatant:
 	var sheet: Dictionary = data["units"][unit_id]
 	var u := Combatant.new()

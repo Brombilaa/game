@@ -197,6 +197,7 @@ func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers:
 		return result
 	result.hit = true
 	var dmg := float(rng.randi_range(int(attacker.weapon["damage_min"]), int(attacker.weapon["damage_max"])))
+	dmg += Ficha.bonus_dano(cfg.game_data, attacker.atributos, attacker.weapon)  # Força (provisório, GDD #11)
 	if rng.randf() < cfg.value("crit_chance"):
 		result.crit = true
 		dmg *= cfg.value("crit_multiplier")

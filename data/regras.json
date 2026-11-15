@@ -20,6 +20,11 @@
   "bonus_altura": null,
   "pv_ganho_por_nivel_por_vig": 1.0,
   "san_ganho_por_nivel_por_pre": null,
+  "_efeito_atributos": "Provisórios do Claude (GDD #11, 29/10/2026): FOR soma dano por ponto acima de 1 no corpo a corpo e nas armas de for_dano_armas; INT soma ao dano e à cura de ritual por ponto acima de 1; PRE soma SAN por ponto acima de 1. AGI é a iniciativa e o bônus de acerto (agi_hit_bonus em combat.json).",
+  "for_dano_por_ponto": 1,
+  "for_dano_armas": ["escopeta"],
+  "int_ritual_por_ponto": 1,
+  "pre_san_por_ponto": 2,
   "descanso_normal_percentual": 1.0,
   "descanso_completo_percentual": 1.0
 }

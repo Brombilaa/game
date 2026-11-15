@@ -5,6 +5,8 @@ extends RefCounted
 enum Side { PLAYER, ENEMY }
 
 var name := ""
+var personagem := ""  # id em personagens.json (agentes); vazio para inimigos
+var atributos: Dictionary = {}  # VIG, FOR, INT, AGI, PRE da ficha (Ficha); vazio para inimigos
 var side := Side.PLAYER
 var max_pv := 1
 var pv := 1
