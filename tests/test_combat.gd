@@ -20,6 +20,7 @@ func _init() -> void:
 	_test_stealth()
 	_test_conditions()
 	_test_ammo()
+	_test_overwatch()
 	print("Falhas: %d" % failures)
 	quit(1 if failures > 0 else 0)
 
@@ -366,3 +367,50 @@ func _test_ammo() -> void:
 	_check(rules.attack_blocker(a, t, [], []) == "no_ammo", "sem balas o ataque é bloqueado (no_ammo)")
 	var e := cfg.make_enemy("cultista_teste", Vector2(300, 100))
 	_check(int(e.weapon["mag_size"]) == 0 and not rules.needs_reload(e), "arma sem carregador não usa munição")
+
+
+func _test_overwatch() -> void:
+	var rules := CombatRules.new(cfg)
+	var a := _unit("agente", "A", 5, Vector2(100, 100))
+	a.weapon = cfg.weapon("pistola")
+	a.mag["pistola"] = 5
+	var e := cfg.make_enemy("cultista_teste", Vector2(200, 100))
+	e.max_pv = 999
+	e.pv = 999
+	rules.units = [a, e]
+	a.pa = 3
+	var cost := int(a.weapon["pa_cost"])
+	_check(rules.overwatch_blocker(a) == "", "vigilância é possível com PA e munição")
+	_check(rules.start_overwatch(a) == "" and a.overwatch and a.pa == 3 - cost, "entrar em vigilância paga os PA de um tiro")
+	_check(rules.start_overwatch(a) == "requirement", "já em vigilância: recusa")
+	_check(rules.overwatch_watcher(e, [], []) == a, "inimigo à vista e ao alcance é visto pelo vigia")
+	var walls: Array[Rect2] = [Rect2(140, 0, 20, 300)]
+	_check(rules.overwatch_watcher(e, walls, []) == null, "parede entre os dois: sem tiro")
+	var far := cfg.make_enemy("cultista_teste", Vector2(5000, 100))
+	_check(rules.overwatch_watcher(far, [], []) == null, "fora do alcance: sem tiro")
+	var before := a.pa
+	var r := rules.overwatch_shot(a, e, [], [])
+	_check(r.ok and not a.overwatch and a.pa == before, "tiro de reação usa os PA já pagos e encerra a vigilância")
+	_check(a.hit_bonus == 0.0, "penalidade de acerto da vigilância não fica na ficha")
+	_check(rules.overwatch_watcher(e, [], []) == null, "vigilância dispara uma vez só")
+	var b := _unit("agente", "B", 4, Vector2(100, 140))
+	b.weapon = cfg.weapon("pistola")
+	b.mag["pistola"] = 0
+	b.pa = 3
+	_check(rules.overwatch_blocker(b) == "no_ammo", "sem munição não vigia")
+	b.mag["pistola"] = 1
+	b.pa = cost - 1
+	_check(rules.overwatch_blocker(b) == "no_pa", "sem PA para um tiro não vigia")
+	var chance_plain := rules.hit_chance(a, e)
+	a.hit_bonus -= cfg.value("overwatch_hit_penalty")
+	_check(rules.hit_chance(a, e) < chance_plain, "tiro de reação acerta menos")
+	a.hit_bonus = 0.0
+	# a vigilância acaba no próximo turno de quem vigia
+	var c := _unit("agente", "C", 9, Vector2.ZERO)
+	var foe := _unit("cultista_teste", "F", 1, Vector2(50, 0))
+	c.overwatch = true
+	var tm := TurnManager.new(3)
+	tm.start([c, foe] as Array[Combatant])
+	while tm.current != c:
+		tm.end_turn()
+	_check(not c.overwatch, "vigilância some quando volta o turno de quem vigia")

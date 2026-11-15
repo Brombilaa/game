@@ -388,6 +388,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_swap_weapon()
 		elif event.pressed and event.keycode == KEY_G:
 			_reload()
+		elif event.pressed and event.keycode == KEY_F:
+			_overwatch()
 		elif event.pressed and event.keycode == KEY_V:
 			use_3d = not use_3d
 			_popup(player.pos, "Nikolai 3D" if use_3d else "Nikolai 2D")
@@ -626,6 +628,8 @@ func _process(delta: float) -> void:
 		walk_dist[moving_unit] = walk_dist.get(moving_unit, 0.0) + before.distance_to(_iso(moving_unit.pos))
 		if moving_unit.pos.is_equal_approx(path[0]):
 			path.remove_at(0)
+		if mode == Mode.COMBAT and moving_unit.side == Combatant.Side.ENEMY and _overwatch_fire(moving_unit):
+			path = PackedVector2Array()  # o inimigo é detido pelo tiro de vigilância
 		if path.is_empty():
 			moving_unit = null
 			move_finished.emit()
@@ -1153,6 +1157,35 @@ func _player_delay() -> void:
 		_reject("requirement")
 	else:
 		hud.show_notice("Atrasou")
+
+
+# Vigilância (tecla F, Léo 15/11): paga os PA de um tiro e, no turno dos inimigos, atira no primeiro que se
+# mover à vista e ao alcance. Só em combate, na vez do controlado; dura até o próximo turno dele.
+func _overwatch() -> void:
+	if not _player_ready():
+		return
+	if _reloading(player):
+		_reject("reloading")
+		return
+	var reason := rules.start_overwatch(player)
+	if reason != "":
+		_reject(reason)
+		return
+	_popup(player.pos, "Vigilância")
+	_log("%s vigia" % player.name)
+	_after_player_action()
+
+
+# Chamado a cada passo de um inimigo em combate: se um vigia o enxerga ao alcance, o tiro de reação sai na hora
+# (e o inimigo para onde está). Retorna true quando houve tiro.
+func _overwatch_fire(mover: Combatant) -> bool:
+	rules.units = _living_units()
+	var watcher := rules.overwatch_watcher(mover, _sight_blockers(), covers)
+	if watcher == null:
+		return false
+	_popup(watcher.pos, "Vigilância")
+	_show_attack(watcher, mover, rules.overwatch_shot(watcher, mover, _sight_blockers(), covers))
+	return true
 
 
 func _reject(reason: String) -> void:
