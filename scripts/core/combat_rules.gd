@@ -157,6 +157,8 @@ func attack_blocker(attacker: Combatant, target: Combatant, walls: Array[Rect2],
 		return "requirement"
 	if attacker.pa < int(attacker.weapon["pa_cost"]):
 		return "no_pa"
+	if needs_reload(attacker):
+		return "no_ammo"
 	if gap(attacker, target) > float(attacker.weapon["max_range"]):
 		return "out_of_range"
 	if not Pathfinder.has_line_of_sight(attacker.pos, target.pos, walls):
@@ -166,6 +168,12 @@ func attack_blocker(attacker: Combatant, target: Combatant, walls: Array[Rect2],
 			if c.kind == "full" and Pathfinder.segment_crosses_rect(attacker.pos, target.pos, c.rect):
 				return "no_line_of_sight"
 	return ""
+
+
+# Arma com carregador (mag_size > 0) que a unidade controla (u.mag) e carregador vazio.
+# Quem não tem o carregador registrado (inimigos) atira sem limite.
+func needs_reload(u: Combatant) -> bool:
+	return int(u.weapon.get("mag_size", 0)) > 0 and u.mag.has(u.weapon["id"]) and int(u.mag[u.weapon["id"]]) <= 0
 
 
 # Resolve o ataque, gasta PA e aplica dano. Coberturas não são destruídas (Léo: ainda não).
@@ -178,6 +186,8 @@ func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers:
 		return result
 	result.ok = true
 	attacker.pa -= int(attacker.weapon["pa_cost"])
+	if int(attacker.weapon.get("mag_size", 0)) > 0 and attacker.mag.has(attacker.weapon["id"]):
+		attacker.mag[attacker.weapon["id"]] = int(attacker.mag[attacker.weapon["id"]]) - 1  # cada tiro gasta 1 bala
 	var c := cover_between(attacker.pos, target, covers)
 	if c:
 		result.cover = c.kind

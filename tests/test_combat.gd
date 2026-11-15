@@ -19,6 +19,7 @@ func _init() -> void:
 	_test_cover()
 	_test_stealth()
 	_test_conditions()
+	_test_ammo()
 	print("Falhas: %d" % failures)
 	quit(1 if failures > 0 else 0)
 
@@ -345,3 +346,23 @@ func _test_flank() -> void:
 	ally.pos = Vector2(300, 300)
 	ally.pv = 0
 	_check(rules.flanker(a, e) == null, "aliado caído não flanqueia")
+
+
+# Munição: cada tiro gasta 1 bala do carregador; vazio bloqueia o ataque; armas sem carregador (inimigos) não gastam.
+func _test_ammo() -> void:
+	var a := _unit("agente", "A", 5, Vector2(100, 100))
+	a.weapon = cfg.weapon("pistola")
+	_check(int(a.weapon["mag_size"]) == 12, "pistola tem carregador de 12 em armas.json")
+	a.mag["pistola"] = 2
+	var t := _unit("cultista_teste", "C", 1, Vector2(140, 100))
+	t.max_pv = 999
+	t.pv = 999
+	var rules := CombatRules.new(cfg)
+	a.pa = 3
+	rules.attack(a, t, [], [])
+	_check(int(a.mag["pistola"]) == 1, "tiro gasta 1 bala do carregador")
+	rules.attack(a, t, [], [])
+	_check(int(a.mag["pistola"]) == 0 and rules.needs_reload(a), "carregador vazio pede recarga")
+	_check(rules.attack_blocker(a, t, [], []) == "no_ammo", "sem balas o ataque é bloqueado (no_ammo)")
+	var e := cfg.make_enemy("cultista_teste", Vector2(300, 100))
+	_check(int(e.weapon["mag_size"]) == 0 and not rules.needs_reload(e), "arma sem carregador não usa munição")

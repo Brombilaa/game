@@ -28,10 +28,17 @@ func _action_slots() -> Array:
 	var data := room.cfg.game_data
 	var kit := data.get_entry("itens", "kit_primeiros_socorros")
 	var id := str(room.player.weapon["id"])
-	var slots := [[id, str(data.get_entry("armas", id).get("nome", id)), "Atacar · %d PA · clique no inimigo" % int(room.player.weapon["pa_cost"]), true]]
+	var ammo := room.ammo_of(room.player)  # [carregador, reserva] ou [] se a arma não usa munição
+	var attack := "Atacar · %d PA · clique no inimigo" % int(room.player.weapon["pa_cost"])
+	if not ammo.is_empty():
+		attack = "Atacar · %d PA · G recarrega (%d PA)" % [int(room.player.weapon["pa_cost"]), room.RELOAD_PA]
+	var slots := [[id, str(data.get_entry("armas", id).get("nome", id)), attack, true, ammo]]
 	var second := room._reserve_id()
 	if second != "":
-		slots.append([second, str(data.get_entry("armas", second).get("nome", second)), "Trocar arma · %d PA · tecla Q" % room.SWAP_PA, room.player.pa >= room.SWAP_PA])
+		var second_ammo := []
+		if int(room.cfg.weapon(second)["mag_size"]) > 0:
+			second_ammo = [int(room.player.mag.get(second, 0)), room.inventory.count(room.ammo_item(second))]
+		slots.append([second, str(data.get_entry("armas", second).get("nome", second)), "Trocar arma · %d PA · tecla Q" % room.SWAP_PA, room.player.pa >= room.SWAP_PA, second_ammo])
 	slots.append(["kit", "Kit de primeiros socorros", "Reanimar · %d PA · restam %d" % [int(kit["custo_pa_combate"]), room.inventory.count(room.KIT_ID)], room.inventory.count(room.KIT_ID) > 0])
 	slots.append(["atrasar", "Atrasar", "Age depois na rodada · tecla D", true])
 	return slots
@@ -77,7 +84,7 @@ func _draw_actions(font: Font, to_world: Transform2D) -> void:
 		var hover := screen.has_point(mouse)
 		if hover:
 			tip = k
-		_draw_slot(Rect2(to_world * screen.position, screen.size), slots[k], k == 0, hover)
+		_draw_slot(font, Rect2(to_world * screen.position, screen.size), slots[k], k == 0, hover)
 	var end := _end_turn_rect(n)
 	var er := Rect2(to_world * end.position, end.size)
 	var over_end := end.has_point(mouse)
@@ -113,7 +120,7 @@ func _draw_pa_strip(at: Vector2, total: int, left: int) -> void:
 
 # Casa de ação: fundo escuro, contorno preto, linha clara fina; a selecionada leva o anel branco
 # entre dois pretos (como os cartões do grupo); sob o mouse clareia; indisponível apaga o ícone.
-func _draw_slot(r: Rect2, slot: Array, selected: bool, hover: bool) -> void:
+func _draw_slot(font: Font, r: Rect2, slot: Array, selected: bool, hover: bool) -> void:
 	var enabled: bool = slot[3]
 	room.draw_rect(r, Color(0.075, 0.062, 0.052, 0.96))
 	room.draw_rect(Rect2(r.position + Vector2(0, r.size.y * 0.6), Vector2(r.size.x, r.size.y * 0.4)), Color(0, 0, 0, 0.22))
@@ -129,6 +136,21 @@ func _draw_slot(r: Rect2, slot: Array, selected: bool, hover: bool) -> void:
 		room.draw_rect(r.grow(-0.5), Color(1, 1, 1, 0.5 if hover else 0.2), false, 0.5)
 	if hover:
 		room.draw_rect(r, Color(1, 1, 1, 0.08))
+	if slot.size() > 4 and not slot[4].is_empty():
+		_draw_ammo_tag(font, r, int(slot[4][0]), int(slot[4][1]), int(room.cfg.weapon(str(slot[0]))["mag_size"]))
+
+
+# Etiqueta de munição no canto de baixo da casa da arma (modelo A do Léo): balas no carregador em
+# destaque e a reserva da mochila menor. Vermelha com 25% ou menos do carregador (mínimo 2).
+func _draw_ammo_tag(font: Font, r: Rect2, mag: int, reserve: int, mag_size: int) -> void:
+	var low := mag <= maxi(2, mag_size / 4)
+	var tag := Rect2(Vector2(r.end.x - 29.0 - 1.0, r.end.y - 12.0 - 1.0), Vector2(29.0, 12.0))
+	room.draw_rect(tag.grow(1.0), Color.BLACK)
+	room.draw_rect(tag, Color(0.075, 0.062, 0.052, 0.94))
+	room.draw_rect(tag.grow(-0.5), Color(1, 1, 1, 0.2), false, 0.5)
+	var ink := Color(0.91, 0.38, 0.33) if low else Color(0.94, 0.91, 0.84)
+	room.draw_string(font, tag.position + Vector2(3.0, 9.0), str(mag), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, ink)
+	room.draw_string(font, tag.position + Vector2(0, 9.0), "/%d" % reserve, HORIZONTAL_ALIGNMENT_RIGHT, tag.size.x - 2.5, 6, Color(0.67, 0.63, 0.56))
 
 
 # Fim do turno: botão carmesim chapado com a ampulheta. Estados: normal, sob o mouse (mais claro),

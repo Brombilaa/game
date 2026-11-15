@@ -39,6 +39,7 @@ const KIT_ID := "kit_primeiros_socorros"
 
 const RELOAD_SECONDS := 2.0  # recarga: 12 quadros a 6/s (AnimSheet.FPS["reload"])
 const SWAP_PA := 1  # trocar de arma em combate (GDD #18)
+const RELOAD_PA := 1  # recarregar em combate (1 PA, GDD #18; provisório)
 
 const POPUP_SECONDS := 1.2
 
@@ -385,9 +386,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_player_delay()
 		elif event.pressed and event.keycode == KEY_Q:
 			_swap_weapon()
-		elif event.pressed and event.keycode == KEY_G and use_3d and _sheet3d(player) != null and not fx.animating() and not _reloading(player):
-			nikolai_clock[player] = {"anim": "reload", "start": Time.get_ticks_msec()}  # teste da recarga (ainda não há munição no jogo)
-			queue_redraw()
+		elif event.pressed and event.keycode == KEY_G:
+			_reload()
 		elif event.pressed and event.keycode == KEY_V:
 			use_3d = not use_3d
 			_popup(player.pos, "Nikolai 3D" if use_3d else "Nikolai 2D")
@@ -668,6 +668,10 @@ func _check_detection() -> void:
 # Fora do alcance da arma, o personagem só anda até o alvo.
 func _stealth_attack(target: Combatant) -> void:
 	player.pa = int(player.weapon["pa_cost"])  # fora do combate não há PA; o custo é só formal
+	if rules.needs_reload(player):  # carregador vazio: recarrega sozinho; o ataque furtivo fica para o próximo clique
+		player.pa = 0
+		_reload()
+		return
 	var blocker := _attack_blocker(player, target)
 	if blocker == "out_of_range":
 		player.pa = 0
@@ -800,6 +804,9 @@ func _combat_click(click: Vector2) -> void:
 	if target:
 		if _reloading(player):
 			_reject("reloading")
+			return
+		if rules.needs_reload(player):  # carregador vazio: recarrega sozinho (Léo); fora disso só com a tecla G
+			_reload()
 			return
 		_show_attack(player, target, rules.attack(player, target, _sight_blockers(), covers))
 		_after_player_action()
@@ -938,6 +945,50 @@ func _swap_weapon() -> void:
 	queue_redraw()
 
 
+# Munição de uma arma na mochila compartilhada: item "municao_<id da arma>" (pilha de 30).
+func ammo_item(weapon_id: String) -> String:
+	return "municao_" + weapon_id
+
+
+# Balas no carregador e na mochila da arma em mãos de `u`: [carregador, reserva]; vazio se a arma não usa munição.
+func ammo_of(u: Combatant) -> Array:
+	if int(u.weapon.get("mag_size", 0)) <= 0:
+		return []
+	var wid := str(u.weapon["id"])
+	return [int(u.mag.get(wid, 0)), inventory.count(ammo_item(wid))]
+
+
+# Recarrega a arma em mãos: completa o carregador com a reserva da mochila. 1 PA em combate, grátis fora dele.
+func _reload() -> void:
+	if not player.is_alive() or _reloading(player):
+		return
+	var size := int(player.weapon.get("mag_size", 0))
+	if size <= 0:
+		return
+	var wid := str(player.weapon["id"])
+	var have := int(player.mag.get(wid, 0))
+	var stock := inventory.count(ammo_item(wid))
+	if have >= size:
+		_reject("mag_full")
+		return
+	if stock <= 0:
+		_reject("no_reserve")
+		return
+	if mode == Mode.COMBAT:
+		if not _player_ready():
+			return
+		if not turns.spend(player, RELOAD_PA):
+			_reject("no_pa")
+			return
+	var take := mini(size - have, stock)
+	inventory.remove(ammo_item(wid), take)
+	player.mag[wid] = have + take
+	if use_3d and _sheet3d(player) != null and not fx.animating():
+		nikolai_clock[player] = {"anim": "reload", "start": Time.get_ticks_msec()}
+	_popup(player.pos, "Recarregou")
+	queue_redraw()
+
+
 # --- Inventário e equipamento ---------------------------------------------------
 # A mochila (Inventory) e o equipamento de cada um (`gear`) mandam; o painel (InventoryPanel)
 # só desenha e chama estas funções. Cada uma devolve a mensagem para o painel ("" se nada a dizer).
@@ -1057,6 +1108,8 @@ func gear_use(m: Combatant, bag_index: int) -> String:
 	var id := str(inventory.slots[bag_index].get("id", ""))
 	var effect := str(cfg.game_data.get_entry("itens", id).get("efeito", ""))
 	var cures := {"remover_sangrando": "sangrando", "remover_envenenado": "envenenado"}
+	if effect == "municao":
+		return "Recarregue a arma com G"
 	if id == KIT_ID:
 		return "O kit reanima um aliado caído (barra de combate)"
 	if not cures.has(effect):
@@ -1082,9 +1135,14 @@ func _setup_gear() -> void:
 	inventory = Inventory.new(cfg.game_data)
 	for item in [[KIT_ID, 1], ["bandagem", 2], ["antidoto", 1], ["colete_leve", 1], ["colete_pesado", 1]]:
 		inventory.add(item[0], item[1])
+	for w in ["pistola", "escopeta", "fuzil_precisao"]:  # reservas iniciais (provisório do Claude)
+		inventory.add(ammo_item(w), 24 if w == "pistola" else 12)
 	for m in party:
 		var second = cfg.game_data.get_entry("personagens", m.name.to_lower()).get("arma_secundaria")
 		var main := str(m.weapon["id"])
+		for wid in [main, "" if second == null else str(second)]:  # cada arma com carregador começa cheia
+			if wid != "" and int(cfg.weapon(wid)["mag_size"]) > 0:
+				m.mag[wid] = int(cfg.weapon(wid)["mag_size"])
 		gear[m] = {"principal": main, "secundaria": "" if second == null or str(second) == main else str(second), "colete": "", "acessorio": ""}
 
 

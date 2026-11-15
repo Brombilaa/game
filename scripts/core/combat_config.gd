@@ -49,6 +49,7 @@ func weapon(id: String) -> Dictionary:
 		"damage_min": int(w["dano"][0]),
 		"damage_max": int(w["dano"][1]),
 		"crit_conditions": w["efeitos_criticos"],
+		"mag_size": int(w["carregador"]) if w["carregador"] != null else 0,  # 0 = sem limite (inimigos, corpo a corpo)
 	}
 
 
