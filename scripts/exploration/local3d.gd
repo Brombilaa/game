@@ -258,7 +258,7 @@ func _proximo_apos_vitoria() -> String:
 
 func _process(delta: float) -> void:
 	super(delta)
-	if mode == Mode.EXPLORATION and indo_para == "" and not dialog_layer.visible:
+	if mode == Mode.EXPLORATION and indo_para == "" and not _dialogo_aberto():
 		_zonas()
 
 
