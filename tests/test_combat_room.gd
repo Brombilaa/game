@@ -19,6 +19,7 @@ func _run() -> void:
 	await _test_small_upgrades()
 	await _test_enemy_roles()
 	await _test_focus_limit()
+	await _test_overwatch()
 	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
 	room.rules.rng.seed = 3
 	root.add_child(room)
@@ -335,6 +336,39 @@ func _test_focus_limit() -> void:
 	_check(room.ai.pick_target(e3) == b, "o terceiro inimigo procura outro alvo")
 	b.take_damage(999)
 	_check(room.ai.pick_target(e3) == a, "com só 1 de pé por perto, a regra não vale")
+	room.queue_free()
+	await process_frame
+
+
+func _test_overwatch() -> void:
+	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
+	room.rules.rng.seed = 5
+	root.add_child(room)
+	await process_frame
+	var a: Combatant = room.party[0]
+	for m in room.party:
+		if m != a:
+			m.pos = Vector2(80, 600)
+	a.pos = Vector2(200, 300)
+	var e: Combatant = room.cfg.make_enemy("atirador", Vector2(300, 300))
+	e.max_pv = 999
+	e.pv = 999
+	room.enemies.append(e)
+	room.mode = room.Mode.COMBAT
+	room.turns = TurnManager.new()
+	room.rules.units = [a, e]
+	_check(not room._overwatch_fire(e), "sem vigia, o inimigo anda em paz")
+	a.pa = 3
+	a.overwatch = true
+	_check(room._overwatch_fire(e), "inimigo que se move à vista leva o tiro de vigilância")
+	_check(not a.overwatch and room.fx.active(), "a vigilância gasta-se e o tiro é encenado")
+	_check(not room._overwatch_fire(e), "só o primeiro movimento é punido")
+	a.overwatch = true  # o cone e o olho são desenhados sem erro
+	room.queue_redraw()
+	await process_frame
+	await process_frame
+	_check(room.action_bar._action_slots().any(func(sl: Array) -> bool: return sl[0] == "vigilancia"), "a barra de ações tem o botão de vigilância")
+	room.mode = room.Mode.EXPLORATION
 	room.queue_free()
 	await process_frame
 

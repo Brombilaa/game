@@ -40,6 +40,7 @@ func _action_slots() -> Array:
 			second_ammo = [int(room.player.mag.get(second, 0)), room.inventory.count(room.ammo_item(second))]
 		slots.append([second, str(data.get_entry("armas", second).get("nome", second)), "Trocar arma · %d PA · tecla Q" % room.SWAP_PA, room.player.pa >= room.SWAP_PA, second_ammo])
 	slots.append(["kit", "Kit de primeiros socorros", "Reanimar · %d PA · restam %d" % [int(kit["custo_pa_combate"]), room.inventory.count(room.KIT_ID)], room.inventory.count(room.KIT_ID) > 0])
+	slots.append(["vigilancia", "Vigilância", "%d PA · tecla F · atira no 1º inimigo que se mover no cone" % int(room.player.weapon["pa_cost"]), room.rules.overwatch_blocker(room.player) == "" or room.player.overwatch])
 	slots.append(["atrasar", "Atrasar", "Age depois na rodada · tecla D", true])
 	return slots
 
