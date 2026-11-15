@@ -1,13 +1,13 @@
 extends SceneTree
 # Teste headless das cenas com roteiro (CenaRoteiro, data/cenas): todo roteiro usa passos e atores conhecidos, e a
-# morte do Caio toca no parque inteira (modo cinema, sem HUD), marca a morte, some com o Caio e devolve o controle.
+# morte do Caio toca no parque inteira antes do combate da árvore (modo cinema, sem HUD), marca a morte e abre o combate.
 # Rodar com:
 #   godot --headless --path . -s tests/test_cena_roteiro.gd
 
 var failures := 0
-const PASSOS := ["cinema", "camera", "andar", "olhar", "anim", "cair", "fala", "legenda", "esperar", "tremor", "flash",
+const PASSOS := ["cinema", "camera", "andar", "olhar", "anim", "cair", "fala", "legenda", "esperar", "tremor", "flash", "saltar", "choque",
 	"sangue", "poca", "surgir", "sumir", "marca"]
-const ATORES := ["caio", "leticia", "Fernando", "Nikolai", "Miguel", "lider"]
+const ATORES := ["caio", "leticia", "Fernando", "Nikolai", "Miguel", "lider", "inimigo:0", "inimigo:1"]
 
 
 func _initialize() -> void:
@@ -31,7 +31,7 @@ func _run() -> void:
 			_check(PASSOS.has(str(p.get("faz", ""))), "%s: passo conhecido (%s)" % [cid, p.get("faz", "")])
 			if p.get("faz", "") == "surgir":
 				surgidos.append(str(p["id"]))
-			for campo in ["quem", "em", "ate", "para"]:
+			for campo in ["quem", "em", "ate", "para", "sobre"]:
 				var v: Variant = p.get(campo)
 				if v is String and not (campo == "quem" and p.get("faz") in ["fala"]):
 					_check(ATORES.has(v) or surgidos.has(v), "%s: ator conhecido (%s)" % [cid, v])
@@ -39,30 +39,34 @@ func _run() -> void:
 	var room = load(Missao1.CENA_PARQUE).instantiate()
 	root.add_child(room)
 	await process_frame
-	room.cena_depois = "morte_caio"
 	_check(room.scenario.npcs.has("caio"), "o Caio está no parque")
-	Engine.time_scale = 4.0  # a cena tem cerca de 30 s; o CI dá 60 s para cada teste
-	var fim := [false]  # lambda captura por valor: o estado vai num array
-	room.tocar_cena("morte_caio")
-	var cena: CenaRoteiro = room.cena
-	cena.terminou.connect(func() -> void: fim[0] = true)
+	var gatilho: Dictionary = room.scenario.triggers_after("arvore_simbolo")[0]
+	_check(str(gatilho.get("cutscene_antes", "")) == "morte_caio", "a árvore abre o combate com a morte do Caio")
+	Engine.time_scale = 4.0  # a cena tem uns 15 s; o CI dá 60 s para cada teste
+	room.pista_gatilho = "arvore_simbolo"
+	room._run_trigger(gatilho)
 	await process_frame
-	_check(room.mode == room.Mode.CUTSCENE and room.busy, "a cena para o jogo")
+	_check(room.mode == room.Mode.CUTSCENE and room.busy, "a cena para o jogo antes do combate")
 	_check(not room.can_pause(), "sem pausa durante a cena")
+	_check(room.enemies.size() == 2, "as duas criaturas já estão no mapa durante a cena")
+	var criatura: Combatant = room.enemies[1]
+	var de: Vector2 = criatura.pos
+	var caio: Vector2 = room.scenario.npcs["caio"]
 	var cam0: Vector2 = room.camera.position
 	var moveu := false
 	for i in 60 * 60:
 		await process_frame
-		if room.camera.position.distance_to(cam0) > 200.0:
+		if room.camera.position.distance_to(cam0) > 40.0:
 			moveu = true
-		if fim[0]:
+		if room.mode != room.Mode.CUTSCENE:
 			break
-	_check(fim[0], "a cena chega ao fim")
+	_check(room.mode == room.Mode.COMBAT, "depois da cena começa o combate")
 	_check(moveu, "a câmera é conduzida pela cena")
-	await process_frame
+	_check(criatura.pos.distance_to(caio) < 30.0 and de.distance_to(caio) > 60.0, "a criatura salta de perto da van em cima do Caio")
 	_check(Missao1.tem("caio_morreu"), "a cena marca a morte do Caio")
 	_check(str(room.npc_pose.get("caio", {}).get("anim", "")) == "death", "o corpo do Caio fica no chão")
-	_check(room.mode == room.Mode.EXPLORATION and not room.busy, "o controle volta ao jogador")
+	_check(room.npc_choque.has("leticia"), "a Letícia fica em choque")
+	_check(room.scenario.npcs["leticia"].distance_to(Vector2(500, 630)) < 2.0, "a Letícia recua de costas")
 	_check(room.cena == null, "a cena sai da sala")
 	Engine.time_scale = 1.0
 	print("FAILURES: %d" % failures)

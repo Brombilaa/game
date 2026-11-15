@@ -71,8 +71,9 @@ func _ready() -> void:
 	for o in scenario.occluders:
 		occluder_textures[o["id"]] = load(o["arquivo"])
 	_load_layout()
-	if Missao1.tem("caio_morreu"):
-		npc_fora["caio"] = true  # voltando ao parque depois da cena: o Caio já não está lá
+	if Missao1.tem("caio_morreu"):  # voltando ao parque depois da cena: o Caio caído e a Letícia em choque
+		npc_pose["caio"] = {"anim": "death", "inicio": -100000, "dur": 3.0}
+		npc_choque["leticia"] = true
 	if USE_WORLD3D:
 		world3d = _criar_mundo3d()
 		add_child(world3d)
@@ -148,7 +149,7 @@ func _criar_mundo3d() -> Node3D:
 	return w
 
 
-# Depois do combate da árvore toca a cena do gatilho (a morte do Caio, `cutscene_depois`) e o grupo segue para a
+# Depois do combate da árvore toca a cena `cutscene_depois` do gatilho, se houver, e o grupo segue para a
 # delegacia (história #8).
 func _on_combat_ended(result: TurnManager.Result) -> void:
 	super(result)
@@ -174,7 +175,9 @@ var cena: CenaRoteiro  # cena com roteiro tocando agora
 var npc_pose := {}  # id do NPC -> {"anim", "inicio" (ms), "dur" (s)}: animação pedida pela cena
 var npc_dir := {}  # id do NPC -> CharacterSheet.Dir (a cena vira o NPC)
 var npc_andando := {}  # id do NPC -> true enquanto a cena o faz andar
-var npc_fora := {}  # NPCs que a cena tirou (o Caio depois de morrer)
+var npc_fora := {}  # NPCs que a cena tirou de vez
+var npc_choque := {}  # NPCs em choque: tremem no lugar (a Letícia depois da morte do Caio)
+var cena_criatura := {}  # criatura -> {"anim", "inicio" (ms), "dur" (s), "laco"}: animação pedida pela cena
 var indo_para := ""  # lugar para onde a transição está levando o grupo ("" = nenhuma em andamento)
 
 
@@ -257,7 +260,10 @@ func _enemy_variant(_i: int) -> String:
 # Os NPCs também bloqueiam o caminho.
 func _obstacles(mover: Combatant = null, with_units := true) -> Array[Rect2]:
 	var out := super(mover, with_units)
-	for npc in scenario.npcs.values():
+	for id in scenario.npcs:
+		if npc_fora.has(id) or str(npc_pose.get(id, {}).get("anim", "")) == "death":
+			continue  # corpo no chão não bloqueia (a criatura fica em cima do Caio)
+		var npc: Vector2 = scenario.npcs[id]
 		out.append(Rect2(npc - Vector2(NPC_RADIUS, NPC_RADIUS), Vector2(NPC_RADIUS, NPC_RADIUS) * 2.0))
 	return out
 
@@ -622,6 +628,7 @@ func tocar_cena(cena_id: String) -> void:
 	add_child(cena)
 	cena.iniciar(self, cena_id)
 	await cena.terminou
+	cena_criatura.clear()
 	cena.queue_free()
 	cena = null
 	mode = antes if antes != Mode.COMBAT else Mode.EXPLORATION
@@ -665,7 +672,13 @@ func cena_andando(quem: Variant, sim: bool) -> void:
 		npc_andando.erase(quem)
 
 
-func cena_anim(quem: Variant, anim: String, dur: float) -> void:
+func cena_anim(quem: Variant, anim: String, dur: float, laco := false) -> void:
+	if quem is Combatant and enemies.has(quem) and anim != "death":
+		if anim == "":
+			cena_criatura.erase(quem)
+		else:
+			cena_criatura[quem] = {"anim": anim, "inicio": Time.get_ticks_msec(), "dur": maxf(dur, 0.1), "laco": laco}
+		return
 	if quem is Combatant:
 		if anim == "death":
 			quem.pv = 0  # cai e fica no chão (a pose de morte do jogo)
@@ -721,6 +734,44 @@ static func _textura_poca() -> Texture2D:
 	return ImageTexture.create_from_image(img)
 
 
+# Animação da Criatura pedida pela cena (ataque, por exemplo); sem pedido, a escolha normal do jogo.
+func _draw_creature(u: Combatant, at: Vector2, walking: bool, dist: float) -> void:
+	var c: Dictionary = cena_criatura.get(u, {})
+	if c.is_empty() or not u.is_alive():
+		super(u, at, walking, dist)
+		return
+	var anim := str(c["anim"])
+	var n := creature.frame_count(anim)
+	var k := (Time.get_ticks_msec() - int(c["inicio"])) / 1000.0 / float(c["dur"])
+	var f := int(k * n) % n if c.get("laco", false) else mini(int(k * n), n - 1)
+	creature.draw(self, at, anim, f, facing8.get(u, CharacterSheet.Dir.SW))
+	queue_redraw()
+
+
+func cena_choque(quem: Variant, sim: bool) -> void:
+	if quem is Combatant:
+		return
+	if sim:
+		npc_choque[quem] = true
+	else:
+		npc_choque.erase(quem)
+
+
+# Salto: o corpo sobe em arco (altura em unidades 3D) enquanto a posição no chão vai até o destino.
+func cena_salto(quem: Variant, ate: Vector2, tempo: float, altura: float) -> void:
+	var de := cena_pos(quem)
+	if quem is Combatant:
+		cena_virar(quem, ate)
+	var tw := create_tween()
+	tw.tween_method(func(k: float) -> void:
+		cena_mover(quem, de.lerp(ate, k))
+		var ag: Agente3D = agentes.get(quem)
+		if ag and ag.modelo:
+			ag.modelo.position.y = 4.0 * altura * k * (1.0 - k)
+		queue_redraw(), 0.0, 1.0, tempo)
+	await tw.finished
+
+
 # Criatura que só existe na cena (não entra em combate): some quando a cena acaba.
 func cena_surgir(tipo: String, p: Vector2) -> Combatant:
 	var c: Combatant = cfg.make_enemy(tipo, p)
@@ -762,6 +813,10 @@ func _draw_npc(font: Font, npc_id: String) -> void:
 		return
 	var at := _iso(scenario.npcs[npc_id])
 	_draw_cast_shadow(at, 86.0, 22.0)
+	if npc_choque.has(npc_id):  # em choque: treme no lugar
+		var t := Time.get_ticks_msec() / 1000.0
+		at += Vector2(sin(t * 47.0) * 1.2, sin(t * 31.0) * 0.6)
+		queue_redraw()
 	if npc_id == "caio":
 		drawing_key = npc_id
 		var dir: CharacterSheet.Dir = npc_dir.get(npc_id, CharacterSheet.Dir.SE)
@@ -1121,6 +1176,17 @@ func _run_trigger(trigger: Dictionary) -> void:
 	for spec in trigger["inimigos"]:
 		var p: Array = spec["pos"]
 		enemies.append(cfg.make_enemy(spec["tipo"], Vector2(p[0], p[1])))
+	# Cena antes do combate (Léo, 15/11: a criatura perto da van já começa atacando o Caio pelas costas). Só toca uma
+	# vez: depois de carregar o autosave do combate a marca já existe e o combate começa direto.
+	var antes := str(trigger.get("cutscene_antes", ""))
+	var marca := str(trigger.get("marca_cena", ""))
+	if antes != "" and CenaRoteiro.existe(antes) and (marca == "" or not Missao1.tem(marca)):
+		var pista := pista_gatilho
+		await tocar_cena(antes)
+		pista_gatilho = pista  # o autosave do combate ainda não conta a pista como vista
+		_start_combat(Combatant.Side.ENEMY)
+		pista_gatilho = ""
+		return
 	_start_combat(Combatant.Side.ENEMY)  # emboscada: os inimigos agem todos primeiro
 
 

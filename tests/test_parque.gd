@@ -103,8 +103,15 @@ func _run() -> void:
 	room._inspect("arvore_simbolo")
 	_check(room.dialog_clue == "arvore_simbolo" and room.dialog_image.visible, "a árvore abre a inspeção com imagem")
 	room._close_dialog()
+	# A morte do Caio (cena com roteiro) toca antes do combate: acelera e espera ela acabar.
+	Engine.time_scale = 4.0
+	for i in 60 * 30:
+		if room.mode != room.Mode.CUTSCENE:
+			break
+		await process_frame
+	Engine.time_scale = 1.0
 	_check(room.mode == room.Mode.COMBAT, "depois da árvore o combate começa")
-	_check(room.enemies.size() == 2, "dois cultistas entram")
+	_check(room.enemies.size() == 2, "duas criaturas entram")
 	for e in room.enemies:
 		for w in room.walls:
 			_check(not w.has_point(e.pos), "cultista fora das paredes")
