@@ -57,6 +57,14 @@ func _run() -> void:
 	_check(fernando.max_san == san0, "tirar a pulseira devolve a SAN")
 	room.gear_equip(fernando, "secundaria", esc)
 	_check(int(fernando.mag.get("escopeta", -1)) == 0, "escopeta recém-achada começa com o carregador vazio")
+	# Pista perturbadora (Caio morto) tira SAN de quem leu.
+	var leitor: Combatant = room.player
+	var san_antes: int = leitor.san
+	room.dialog_clue = "caio"
+	room._close_dialog()
+	_check(leitor.san == san_antes - 3 and room.seen_clues.has("caio"), "pista do Caio tira 3 de SAN de quem leu")
+	room.seen_clues.erase("caio")
+	leitor.san = san_antes
 	# Inimigo abatido larga itens da ficha.
 	var cultista: Combatant = room.cfg.make_enemy("cultista", Vector2.ZERO)
 	cultista.drops = [{"item": "bandagem", "qtd": 1, "chance": 1.0}]

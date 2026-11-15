@@ -104,7 +104,11 @@ func _start_combat(surprise_side: int = -1) -> void:
 	for e in room.enemies:
 		if e.is_alive():
 			units.append(e)
+	room.san.start_combat(room.party, room.turns)
 	room.turns.start(units, surprise_side)
+	for e in room.enemies:  # o grupo vê quem entrou no combate: o primeiro de cada tipo assusta
+		if e.is_alive():
+			_san_report(room.san.enemy_seen(e, room.party), "vê %s" % e.name)
 	room.queue_redraw()
 
 
@@ -127,16 +131,22 @@ func _on_combat_ended(result: TurnManager.Result) -> void:
 	if result == TurnManager.Result.VICTORY:
 		room.mode = TestRoom.Mode.EXPLORATION
 		room.hud.on_combat_ended()
+		var died: Array = []
 		for m in room.party:
 			if not m.is_alive() and not m.dead:
 				m.dead = true  # Léo: caído sem reanimação até o fim do combate morre
 				_popup(m.pos, "Morreu")
+				died.append(m)
+		room.san.end_combat(room.party)
+		for m in died:
+			_san_report(room.san.ally_down(m, room.party, true), "perde %s" % m.name)
 		if room.player.dead:
 			for m in room.party:
 				if not m.dead:
 					room.player = m
 					break
 	else:
+		room.san.end_combat(room.party)
 		room.mode = TestRoom.Mode.GAME_OVER
 		_game_over_fade()
 	room.queue_redraw()
@@ -461,12 +471,39 @@ func _on_fx_impact(job: Dictionary) -> void:
 		room.hit_shake[target] = TestRoom.CRIT_SHAKE_SECONDS if r.crit else TestRoom.HIT_SHAKE_SECONDS
 		if target.is_alive() and room._sheet3d(target) != null and not room.enemies.has(target):
 			room.nikolai_clock[target] = {"anim": "hit", "start": Time.get_ticks_msec()}  # reação ao golpe (Nikolai 3D)
-	if not target.is_alive():
+	if not target.is_alive() and not target.insane:
 		_popup(target.pos, "ABATIDO" if target.side == Combatant.Side.ENEMY else "CAIU", "down")
 		if target.side == Combatant.Side.ENEMY and not target.looted:
 			target.looted = true
 			room._loot_enemy(target)
+	if room.party.has(target) and r.get("hit", false):
+		if r.get("crit", false) and target.is_alive():
+			_san_report({target: room.san.crit_taken(target)}, "leva o golpe")
+		if not target.is_alive() and not target.insane:
+			_san_report(room.san.ally_down(target, room.party), "vê %s cair" % target.name)
 	room.queue_redraw()
+
+
+# Mostra o que a SAN fez (resultado de SanRules por personagem): "-N SAN", ruptura, loucura, e a causa no registro.
+# Visual provisório (texto); o aviso escolhido pelo Léo entre os 3 modelos entra por cima disto.
+func _san_report(results: Dictionary, cause: String) -> void:
+	for m: Combatant in results:
+		var r: Dictionary = results[m]
+		if r.resisted:
+			_popup(m.pos, "Resistiu", "info")
+			continue
+		if r.lost > 0:
+			_popup(m.pos, "-%d SAN" % r.lost, "san")
+			_log("%s %s: -%d SAN" % [m.name, cause, r.lost])
+		if r.rupture:
+			_popup(m.pos, "RUPTURA", "san")
+			_log("%s entra em RUPTURA" % m.name)
+		if r.insane:
+			_popup(m.pos, "ENLOUQUECEU", "down")
+			_log("%s enlouqueceu" % m.name)
+			_san_report(room.san.ally_down(m, room.party, true), "perde %s" % m.name)
+			if room.turns and room.turns.current == m:
+				room.turns.end_turn.call_deferred()
 
 
 # `at` é um ponto da sala; o texto nasce na altura da cabeça e sobe enquanto some.
