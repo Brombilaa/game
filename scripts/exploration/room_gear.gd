@@ -184,6 +184,7 @@ func gear_use(m: Combatant, bag_index: int) -> String:
 			room._reject("no_pa")
 			return "PA insuficientes"
 	m.conditions.erase(cures[effect])
+	room.audio.play_sfx("item_use")
 	room.inventory.remove(id)
 	if room.use_3d and room._sheet3d(m) != null:
 		room.nikolai_clock[m] = {"anim": "pickup_object", "start": Time.get_ticks_msec()}  # gesto de usar o item

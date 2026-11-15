@@ -33,6 +33,32 @@ func _init() -> void:
 	audio.load_cues("{ quebrado")
 	_check(audio.sfx_cues.is_empty() and audio.music_cues.is_empty(), "JSON inválido deixa tudo mudo")
 
+	# Variações, armas, passos, ambiente e coração (com arquivos de teste temporários).
+	var wav := "res://assets/audio/musica_combate.ogg"
+	audio.load_cues(JSON.stringify({
+		"sfx": {"a": {"paths": [wav, "res://nao_existe.ogg"]}, "shot_pistol": {"path": wav}, "step_floor": {"path": wav}, "step_crouch": {"path": wav}, "heartbeat": {"path": wav, "volume_db": -6.0}},
+		"ambience": {"parque": {"path": wav}}, "areas": {"parque": "parque"},
+		"weapons": {"pistola": "shot_pistol", "faca": "melee_knife"}}))
+	_check(audio.has_sound(audio.sfx_cues, "a"), "variação que existe vale, a que falta é ignorada")
+	_check(audio.attack_cue({"id": "pistola"}) == "shot_pistol", "arma na tabela usa o seu evento")
+	_check(audio.attack_cue({"id": "x", "tipo": "corpo_a_corpo"}) == "melee_generic", "arma sem evento cai no padrão corpo a corpo")
+	_check(audio.attack_cue({"id": "x", "tipo": "distancia"}) == "shot_generic", "arma sem evento cai no padrão de tiro")
+	_check(audio.play_attack({"id": "pistola"}), "tiro da pistola toca")
+	_check(audio.play_step("floor", false), "passo no piso toca")
+	_check(audio.play_step("floor", true), "passo agachado usa o evento próprio")
+	_check(not audio.play_step("grass", false), "passo sem arquivo fica mudo")
+	_check(audio.play_area_ambience("parque"), "ambiente do cenário toca")
+	_check(audio.current_ambience == "parque", "ambiente fica registrado")
+	_check(not audio.play_area_ambience("sem_ambiente"), "cenário sem ambiente cala")
+	_check(audio.current_ambience == "", "ambiente sem cenário limpa o estado")
+	audio.update_heartbeat(0.2)
+	_check(audio.heart_player.stream != null, "SAN baixa carrega o batimento")
+	_check(audio.heart_player.volume_db > -18.0 and audio.heart_player.volume_db < -6.0, "volume do batimento fica abaixo do cheio com SAN a 20%")
+	audio.update_heartbeat(0.9)
+	_check(not audio.heart_player.playing, "SAN alta cala o coração")
+	audio.play_impact({"hit": false}, false, false)  # sem arquivos: não deve dar erro
+	audio.play_impact({"hit": true, "crit": true}, true, true)
+
 	audio.free()
 	print("Falhas: %d" % failures)
 	quit(1 if failures > 0 else 0)

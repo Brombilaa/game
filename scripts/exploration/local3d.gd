@@ -238,6 +238,11 @@ func _uniso(s: Vector2) -> Vector2:
 	return p if _altura(p) > 0.0 else chao
 
 
+# Fora de casa (fazenda) o passo é de terra e grama; delegacia, biblioteca e cripta são piso duro.
+func _step_surface() -> String:
+	return "grass" if local_id == "fazenda" else "floor"
+
+
 func _place_label() -> String:
 	return "%s · %dh" % [str(dados.get("rotulo", local_id.to_upper())), int(dados.get("hora", 0))]
 
@@ -410,6 +415,7 @@ func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void
 		turns.add_unit(dama)
 	_log(str(chefe["texto"]))
 	_popup(target.pos, "A DAMA DE SANGUE SURGE", "down")
+	audio.on_boss_appeared()
 	fx.shake_time = 0.5
 	fx.shake_px = 6.0
 	queue_redraw()

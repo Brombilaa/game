@@ -306,6 +306,7 @@ func _ready() -> void:
 	add_child(camera)
 	hud.end_turn_requested.connect(_player_pass)
 	audio.play_music("exploration")
+	audio.play_area_ambience(_area_id())
 	GameCursor.apply(GameCursor.Kind.ARROW)
 
 
@@ -571,6 +572,8 @@ func _process(delta: float) -> void:
 		combat_log = combat_log.filter(func(l: Dictionary) -> bool: return l.time > 0.0)
 		queue_redraw()
 	_update_perf(delta)
+	if player != null:
+		audio.update_heartbeat(_san_ratio())  # coração em laço com a SAN baixa
 	if _san_ratio() < 1.0 and player.max_san > 0 and player.san <= 0:
 		queue_redraw()  # a tela pulsa na ruptura
 	if not popups.is_empty():
@@ -607,7 +610,9 @@ func _process(delta: float) -> void:
 		facing8[moving_unit] = CharacterSheet.dir_from_vector(step)
 		var before := _iso(moving_unit.pos)
 		moving_unit.pos = moving_unit.pos.move_toward(path[0], SPEED * delta)
-		walk_dist[moving_unit] = walk_dist.get(moving_unit, 0.0) + before.distance_to(_iso(moving_unit.pos))
+		var stepped := before.distance_to(_iso(moving_unit.pos))
+		walk_dist[moving_unit] = walk_dist.get(moving_unit, 0.0) + stepped
+		_step_sound(moving_unit, stepped)
 		if moving_unit.pos.is_equal_approx(path[0]):
 			path.remove_at(0)
 		if mode == Mode.COMBAT and moving_unit.side == Combatant.Side.ENEMY and _overwatch_fire(moving_unit):
@@ -802,6 +807,30 @@ func _reloading(u: Combatant) -> bool:
 
 func _attack_blocker(attacker: Combatant, target: Combatant) -> String:
 	return room_combat._attack_blocker(attacker, target)
+
+
+# Passo a cada STEP_SOUND_PIXELS andados na tela; só o controlado soa (o grupo seguindo ficaria um coro).
+const STEP_SOUND_PIXELS := 38.0
+var _step_acc := 0.0
+
+
+func _step_sound(u: Combatant, stepped: float) -> void:
+	if u.side != Combatant.Side.PLAYER or u != player:
+		return
+	_step_acc += stepped
+	if _step_acc >= STEP_SOUND_PIXELS:
+		_step_acc = fmod(_step_acc, STEP_SOUND_PIXELS)
+		audio.play_step(_step_surface(), u.crouched)
+
+
+# Piso sob os pés: "floor" (madeira, interior) ou "grass" (terra e grama); os cenários de fora trocam.
+func _step_surface() -> String:
+	return "floor"
+
+
+# Id do cenário, para o som ambiente; a sala de teste não tem (os cenários trocam).
+func _area_id() -> String:
+	return ""
 
 
 func _check_detection() -> void:

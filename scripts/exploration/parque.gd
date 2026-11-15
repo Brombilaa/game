@@ -112,6 +112,10 @@ func _area_id() -> String:
 	return SCENARIO_ID
 
 
+func _step_surface() -> String:
+	return "grass"  # o parque é terra e grama
+
+
 var pista_gatilho := ""  # pista cujo gatilho está rodando agora (o combate que ela dispara a tira do autosave)
 
 
@@ -1163,6 +1167,7 @@ func _close_dialog() -> void:
 	if cid == "" or seen_clues.has(cid):
 		return
 	seen_clues.append(cid)
+	audio.play_sfx("clue_found")
 	collect_items(scenario.clues[cid]["da"])
 	pista_gatilho = cid
 	for trigger in scenario.triggers_after(cid):
