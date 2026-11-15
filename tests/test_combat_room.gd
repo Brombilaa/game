@@ -20,6 +20,7 @@ func _run() -> void:
 	await _test_enemy_roles()
 	await _test_focus_limit()
 	await _test_overwatch()
+	await _test_san()
 	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
 	room.rules.rng.seed = 3
 	root.add_child(room)
@@ -405,6 +406,37 @@ func _test_small_upgrades() -> void:
 	room.queue_free()
 	await process_frame
 	_check(is_equal_approx(Engine.time_scale, 1.0), "ao sair da sala o tempo volta a 1x")
+
+
+# SAN como medidor de terror: ver a Criatura no início do combate, ver um aliado cair e a loucura.
+func _test_san() -> void:
+	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
+	room.rules.rng.seed = 3
+	root.add_child(room)
+	await process_frame
+	room.enemies[0].kind = "criatura_sangue"
+	var terror := int(room.cfg.san("terror_ao_ver")["criatura_sangue"])
+	var before: Array = room.party.map(func(m: Combatant) -> int: return m.san)
+	room._start_combat()
+	var all_lost := true
+	for i in room.party.size():
+		all_lost = all_lost and room.party[i].san == before[i] - terror
+	_check(all_lost, "ver a Criatura no início do combate tira SAN do grupo")
+	_check(room.popups.any(func(p: Dictionary) -> bool: return p.kind == "san"), "perda de SAN aparece como texto flutuante")
+	var fallen: Combatant = room.party[1]
+	var other: Combatant = room.party[0]
+	var o_before: int = other.san
+	fallen.pv = 0
+	room._on_fx_impact({"target": fallen, "attacker": room.enemies[0], "r": {"hit": true, "crit": false, "damage": 5, "blocked": false}})
+	_check(other.san == o_before - int(room.cfg.san("perdas")["aliado_caido"]), "ver um aliado cair tira SAN dos outros")
+	var crazy: Combatant = room.party[2]
+	crazy.san = 1
+	room.san.lose(crazy, 1)
+	_check(crazy.ruptured and room.turns.turn_pa(crazy) == 2, "ruptura no combate: -1 PA no turno")
+	room.room_combat._san_report({crazy: room.san.lose(crazy, 1)}, "teste")
+	_check(crazy.insane and crazy.dead and not crazy.is_alive(), "segunda vez a 0 no mesmo combate: enlouquece")
+	room.queue_free()
+	await process_frame
 
 
 func _wait(cond: Callable, seconds: float) -> void:
