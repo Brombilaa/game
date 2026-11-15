@@ -282,6 +282,8 @@ func _draw() -> void:
 		for e in enemies:
 			if e.is_alive():
 				_draw_range(e.pos, rules.perception_range(e, player), Color(PlaceholderArt.color("sangue_claro"), 0.35))
+		if luz_dinamica and luz_dinamica.furtividade:
+			luz_dinamica.furtividade.desenhar(self)  # anel nos pés: escondido ou visível (modelo B, luz e furtividade)
 	_draw_overwatch()
 	var items: Array = []
 	for u in _drawn_units():

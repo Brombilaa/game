@@ -21,7 +21,7 @@ const ORIGEM_FRENTE := 1.0  # a luz nasce à frente do líder, para ele não ent
 const COR_LANTERNA := Color(1.0, 0.86, 0.62)
 
 var host: Node  # Parque (parque.gd)
-var ligada := true
+var ligada := true  # à noite começa apagada (modelo C: a lanterna denuncia; L acende)
 var noturno := false
 var intensidade := 1.0  # 0 desliga o tremor
 var _mundo: SubViewport
@@ -63,6 +63,7 @@ func _ready() -> void:
 	if noturno:
 		_criar_lanterna()
 		_escuro = 1.0
+		ligada = false  # Lanterna acesa na chegada faria o atirador da fazenda ver o grupo na hora (478 px < 675 px).
 		furtividade = LuzFurtividade.new()
 		furtividade.luz = self
 		add_child(furtividade)

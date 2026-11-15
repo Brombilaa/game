@@ -94,3 +94,36 @@ func _no_cone(p: Vector3) -> float:
 func estado_lider() -> Estado:
 	var lider: Combatant = luz.host.player
 	return estado_de(lider.iluminacao)
+
+
+# Indicador (modelo B, marca no chão): anel sob os pés de cada agente. Tracejado e frio na sombra,
+# cheio e âmbar com brilho na luz, intermediário na penumbra. O círculo vermelho de percepção dos
+# inimigos (parque.gd) já cresce e encolhe com a luz, pela própria regra.
+const ANEL_RAIO := 22.0  # px do mundo
+const COR_ESCONDIDO := Color(0.59, 0.67, 0.82)
+const COR_VISIVEL := Color(0.91, 0.64, 0.29)
+
+
+func desenhar(c: CanvasItem) -> void:
+	for m in luz.host.party:
+		var u := m as Combatant
+		if u.is_alive():
+			_anel(c, u)
+
+
+func _anel(c: CanvasItem, u: Combatant) -> void:
+	var e := estado_de(u.iluminacao)
+	if e == Estado.DIA:
+		return
+	var pts := PackedVector2Array()
+	for i in 49:
+		pts.append(luz.host._iso(u.pos + Vector2.from_angle(TAU * i / 48.0) * ANEL_RAIO))
+	match e:
+		Estado.ESCONDIDO:
+			for i in range(0, 48, 4):  # tracejado: 12 traços
+				c.draw_polyline(pts.slice(i, i + 3), Color(COR_ESCONDIDO, 0.8), 1.0)
+		Estado.PENUMBRA:
+			c.draw_polyline(pts, Color(COR_ESCONDIDO.lerp(COR_VISIVEL, 0.5), 0.7), 1.0)
+		Estado.VISIVEL:
+			c.draw_polyline(pts, Color(COR_VISIVEL, 0.18), 4.0)  # brilho
+			c.draw_polyline(pts, Color(COR_VISIVEL, 0.95), 1.5)

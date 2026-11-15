@@ -54,6 +54,10 @@ func _noite() -> void:
 	var room := await _abrir("fazenda")
 	var luz: LuzDinamica = room.luz_dinamica
 	_check(luz.furtividade != null, "fazenda 23h: furtividade ligada")
+	_check(not luz.ligada, "à noite a lanterna começa apagada")
+	_check(room.mode == TestRoom.Mode.EXPLORATION, "chegar à fazenda sem lanterna não acorda o atirador")
+	luz.alternar()
+	await process_frame
 	_check(is_equal_approx(room.player.iluminacao, 1.0), "lanterna acesa denuncia o líder")
 	luz.alternar()
 	room.player.pos = Vector2(-60.0, -60.0) * 64.0  # longe de qualquer luz do cenário
