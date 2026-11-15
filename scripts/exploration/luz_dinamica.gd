@@ -5,6 +5,8 @@ extends Node
 #    quente sai da frente do líder, virado para onde ele olha (o líder fica fora do cone; Léo, 14/11). Tecla L liga e desliga. Só atmosfera, sem efeito de regra.
 # B, luzes vivas: as luzes do cenário tremem (algumas com defeito, que caem de vez em quando) e cada disparo
 #    acende um clarão curto na arma. Valores provisórios do Claude, para o Léo calibrar.
+# C, luz e furtividade (15/11/2026): a luz passa a contar na percepção dos inimigos (luz_furtividade.gd). Com isso a
+#    noite fica escura também com a lanterna apagada: apagar esconde, mas o jogador enxerga menos.
 # Fica ao lado do Parque (parque.gd) e só mexe no mundo 3D (`host.world3d.mundo`).
 
 const HORA_NOITE := 20
@@ -36,6 +38,7 @@ var _alvo_dir := Vector3(0, 0, 1)
 var _dir := Vector3(0, 0, 1)
 var _claroes: Array[Dictionary] = []  # {"luz": OmniLight3D, "t": float}
 var _t := 0.0
+var furtividade: LuzFurtividade  # modelo C: mede a luz sobre cada agente (só à noite)
 var _pronto := false  # o _ready espera um quadro pelas luzes do cenário
 
 
@@ -60,6 +63,9 @@ func _ready() -> void:
 	if noturno:
 		_criar_lanterna()
 		_escuro = 1.0
+		furtividade = LuzFurtividade.new()
+		furtividade.luz = self
+		add_child(furtividade)
 	_pronto = true
 	if host.get("fx") != null:
 		var original: Callable = host.fx.muzzle_at
@@ -136,20 +142,20 @@ func _process(delta: float) -> void:
 	_claroes = _claroes.filter(func(c: Dictionary) -> bool: return c["t"] > 0.0)
 	if not noturno:
 		return
-	_escuro = move_toward(_escuro, 1.0 if ligada else 0.0, delta * 3.0)
+	_escuro = 1.0  # modelo C: a noite fica escura com ou sem lanterna
 	var k := lerpf(1.0, ESCURO, _escuro)
 	for e in _ambientes:
 		e.ambient_light_energy = _ambiente_base[e] * k
 	for d in _sois:
 		d.light_energy = _sol_base[d] * k
-	_spot.visible = _escuro > 0.01
+	_spot.visible = ligada
 	if not _spot.visible:
 		return
 	var lider: Combatant = host.player
 	var chao := Vector3(lider.pos.x / 64.0, host._altura(lider.pos) if host.has_method("_altura") else 0.0, lider.pos.y / 64.0)
 	_alvo_dir = _direcao(lider)
 	_dir = _dir.slerp(_alvo_dir, clampf(delta * 8.0, 0.0, 1.0)).normalized()
-	_spot.light_energy = SPOT_ENERGIA * _escuro
+	_spot.light_energy = SPOT_ENERGIA
 	_spot.position = chao + Vector3(0, 1.2, 0) + _dir * ORIGEM_FRENTE
 	_spot.look_at(chao + _dir * (ORIGEM_FRENTE + 2.4), Vector3.UP)
 

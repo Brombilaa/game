@@ -43,7 +43,7 @@ func _noite() -> void:
 	for i in 60:
 		await process_frame
 	_check(not luz._spot.visible, "L apaga a lanterna")
-	_check(is_equal_approx(amb.ambient_light_energy, base), "ambiente volta ao normal sem lanterna")
+	_check(amb.ambient_light_energy < base * 0.99, "modelo C: a noite continua escura sem lanterna")
 	luz.alternar()
 	for i in 60:
 		await process_frame

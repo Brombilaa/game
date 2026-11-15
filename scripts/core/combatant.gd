@@ -22,6 +22,7 @@ var pa := 0
 var moved_px := 0.0  # distância andada neste turno (os primeiros 5 m são grátis)
 var perception := 0.0  # alcance de percepção em pixels (inimigos)
 var crouched := false
+var iluminacao := -1.0  # luz sobre a unidade, 0 (sombra) a 1 (luz); -1 = a luz não conta (dia). Modelo C, luz_furtividade.gd
 var overwatch_dir := Vector2.RIGHT  # direção do cone da vigilância (plano da sala)
 var overwatch := false  # em vigilância: atira no primeiro inimigo que se mover à vista (dura até o próximo turno dele)
 var dead := false  # caído que não foi reanimado até o fim do combate (membro do grupo)  # agachado: inimigos percebem a metade da distância
