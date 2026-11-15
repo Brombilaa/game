@@ -446,8 +446,11 @@ func _toggle_crouch() -> void:
 	queue_redraw()
 
 
-# Recarga (tecla G, por enquanto só a animação): enquanto dura, o personagem não ataca (Léo, 13/11: "atira enquanto recarrega").
+# Recarga (tecla G): fora do combate a animação trava o ataque por RELOAD_SECONDS (Léo, 13/11: "atira enquanto recarrega");
+# em combate o custo é só o 1 PA e a animação não bloqueia nada.
 func _reloading(u: Combatant) -> bool:
+	if mode == Mode.COMBAT:  # em combate a recarga custa 1 PA e pronto: sem espera (escassez, sugestão 7)
+		return false
 	var c: Dictionary = nikolai_clock.get(u, {})
 	if c.get("anim", "") != "reload":
 		return false
@@ -1130,13 +1133,22 @@ func gear_use(m: Combatant, bag_index: int) -> String:
 	return "%s usou %s" % [m.name, cfg.game_data.get_entry("itens", id)["nome"]]
 
 
-# Mochila e equipamento iniciais da sala de teste (provisório do Claude).
+# Escassez (sugestão 7, 15/11): na missão a mochila começa magra e kit, bandagem, antídoto e munição
+# só vêm do cenário (pistas com "da"). A sala de teste segue com a mochila farta. Provisório do Claude.
+func _gear_scarce() -> bool:
+	return false
+
+
+# Mochila e equipamento iniciais (provisório do Claude).
 func _setup_gear() -> void:
 	inventory = Inventory.new(cfg.game_data)
-	for item in [[KIT_ID, 1], ["bandagem", 2], ["antidoto", 1], ["colete_leve", 1], ["colete_pesado", 1]]:
+	var scarce := _gear_scarce()
+	var items := [["colete_leve", 1], ["colete_pesado", 1]] if scarce else [[KIT_ID, 1], ["bandagem", 2], ["antidoto", 1], ["colete_leve", 1], ["colete_pesado", 1]]
+	for item in items:
 		inventory.add(item[0], item[1])
-	for w in ["pistola", "escopeta", "fuzil_precisao"]:  # reservas iniciais (provisório do Claude)
-		inventory.add(ammo_item(w), 24 if w == "pistola" else 12)
+	var reserves := {"pistola": 12, "escopeta": 5, "fuzil_precisao": 5} if scarce else {"pistola": 24, "escopeta": 12, "fuzil_precisao": 12}
+	for w in reserves:  # reservas iniciais
+		inventory.add(ammo_item(w), int(reserves[w]))
 	for m in party:
 		var second = cfg.game_data.get_entry("personagens", m.name.to_lower()).get("arma_secundaria")
 		var main := str(m.weapon["id"])
@@ -1144,6 +1156,27 @@ func _setup_gear() -> void:
 			if wid != "" and int(cfg.weapon(wid)["mag_size"]) > 0:
 				m.mag[wid] = int(cfg.weapon(wid)["mag_size"])
 		gear[m] = {"principal": main, "secundaria": "" if second == null or str(second) == main else str(second), "colete": "", "acessorio": ""}
+
+
+# Itens achados no cenário ao fechar uma pista: [{"item": id, "qtd": n}, ...]. Devolve o texto do aviso
+# ("" se nada coube ou não havia nada); o que não cabe na mochila fica perdido com aviso.
+func collect_items(found: Array) -> String:
+	var parts: Array[String] = []
+	var lost := false
+	for f in found:
+		var id := str(f["item"])
+		var qty := int(f.get("qtd", 1))
+		var left := inventory.add(id, qty)
+		lost = lost or left > 0
+		if qty - left > 0:
+			parts.append("%dx %s" % [qty - left, cfg.game_data.get_entry("itens", id).get("nome", id)])
+	if parts.is_empty() and not lost:
+		return ""
+	var msg := "Achou: " + ", ".join(parts) if not parts.is_empty() else ""
+	if lost:
+		msg += (" · " if msg != "" else "") + "Mochila cheia"
+	hud.show_notice(msg)
+	return msg
 
 
 func _player_delay() -> void:

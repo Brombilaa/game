@@ -259,12 +259,24 @@ func _test_crouch_and_reload() -> void:
 	room._toggle_crouch()
 	_check(not lider.crouched and seguidor.crouched, "em combate a tecla C troca só a postura de quem está na vez")
 	room.nikolai_clock[lider] = {"anim": "reload", "start": Time.get_ticks_msec()}
-	_check(room._reloading(lider) and room._attack_blocker(lider, room.enemies[0]) == "reloading", "recarregando: ataque bloqueado")
-	lider.pa = 3
-	room._combat_click(room.enemies[0].pos)
-	_check(lider.pa == 3 and room.fx.jobs.is_empty(), "recarregando: clicar no inimigo não atira nem gasta PA")
+	_check(not room._reloading(lider) and room._attack_blocker(lider, room.enemies[0]) != "reloading", "em combate a animação de recarga não bloqueia o ataque (custa só 1 PA)")
+	var modo_combate = room.mode
+	room.mode = room.Mode.EXPLORATION
+	_check(room._reloading(lider) and room._attack_blocker(lider, room.enemies[0]) == "reloading", "fora do combate a recarga em curso bloqueia o ataque")
 	room.nikolai_clock[lider] = {"anim": "reload", "start": Time.get_ticks_msec() - 3000}
 	_check(not room._reloading(lider), "terminada a recarga, o ataque volta")
+	room.mode = modo_combate
+	# Recarga em combate: 1 PA, sem espera, e depois já se atira.
+	room.nikolai_clock.erase(lider)
+	lider.mag["pistola"] = 2
+	room.turns.current = lider  # a vez é dele (o teste não espera a rodada)
+	room.busy = false
+	lider.pa = 3
+	var reserva: int = room.inventory.count("municao_pistola")
+	room._reload()
+	_check(lider.pa == 2 and int(lider.mag["pistola"]) == 12 and room.inventory.count("municao_pistola") == reserva - 10, "recarregar em combate: 1 PA, completa o carregador com a reserva")
+	room._combat_click(room.enemies[0].pos)
+	_check(lider.pa < 2, "logo depois de recarregar já dá para atirar")
 	room.queue_free()
 	await process_frame
 

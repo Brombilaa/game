@@ -32,6 +32,19 @@ func _run() -> void:
 	_check(room._dist_casco(Vector2(50, 25), casco) == 0.0, "dentro do contorno da pista conta como clique")
 	_check(is_equal_approx(room._dist_casco(Vector2(105, 25), casco), 5.0) and 5.0 <= room.MALHA_MARGEM, "logo fora do contorno ainda clica (folga)")
 	_check(room._dist_casco(Vector2(140, 25), casco) > room.MALHA_MARGEM, "longe do contorno não clica")
+	# Escassez (sugestão 7): a mochila da missão começa magra e kits, bandagens e munição vêm das pistas.
+	_check(room.inventory.count("kit_primeiros_socorros") == 0 and room.inventory.count("bandagem") == 0 and room.inventory.count("antidoto") == 0, "missão: começa sem kit, bandagem nem antídoto")
+	_check(room.inventory.count("municao_pistola") == 12 and room.inventory.count("municao_escopeta") == 5, "missão: reserva inicial curta de munição")
+	_check(room.scenario.clues["balanco"]["da"].size() == 1 and room.scenario.clues["marcas_pneu"]["da"].is_empty(), "o cenário diz o que cada pista dá")
+	var msg: String = room.collect_items(room.scenario.clues["balanco"]["da"])
+	_check(room.inventory.count("bandagem") == 1 and msg == "Achou: 1x Bandagem", "pegar a pista dá a bandagem e avisa")
+	var cheia := Inventory.new(room.cfg.game_data)
+	var antes: Inventory = room.inventory
+	for i in cheia.SIZE:
+		cheia.slots[i] = {"id": "colete_leve", "qty": 1}
+	room.inventory = cheia
+	_check(room.collect_items([{"item": "bandagem", "qtd": 1}]) == "Mochila cheia" and cheia.count("bandagem") == 0, "mochila cheia: o item não entra e avisa")
+	room.inventory = antes
 	var z0: float = room.camera.zoom.x
 	room._zoom_by(100.0)
 	_check(room.camera.zoom.x == room.ZOOM_MAX and z0 < room.ZOOM_MAX, "a roda aproxima até o zoom máximo")

@@ -8015,7 +8015,7 @@
  ],
  "pistas": [
   {
-   "id": "poco",
+   "id": "poco", "da": [{"item": "kit_primeiros_socorros", "qtd": 1}, {"item": "bandagem", "qtd": 1}, {"item": "municao_pistola", "qtd": 6}],
    "pos": [
     780.8,
     710.4
