@@ -592,6 +592,7 @@ func _draw_hud(font: Font) -> void:
 	room.party_hud._draw_links(font, to_world)
 	room.minimap._draw_minimap(font, to_world)
 	room.objectives_hud._draw_objectives(font, to_world, room._objectives())
+	room.dicas_hud._draw_dica(font, to_world)
 	if room.mode == TestRoom.Mode.COMBAT and room.turns:
 		room.party_hud._draw_turn_order(font, to_world)
 		if room._player_ready():

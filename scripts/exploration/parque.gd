@@ -1167,6 +1167,7 @@ func _close_dialog() -> void:
 	if cid == "" or seen_clues.has(cid):
 		return
 	seen_clues.append(cid)
+	Dicas.marcar("examinar")
 	audio.play_sfx("clue_found")
 	collect_items(scenario.clues[cid]["da"])
 	pista_gatilho = cid

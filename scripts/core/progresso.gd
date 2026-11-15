@@ -20,6 +20,7 @@ static var autosave_ativo := true
 # Novo jogo: missão do começo, sem save pendente, no parque.
 static func novo_jogo(tree: SceneTree) -> bool:
 	Missao1.reiniciar()
+	Dicas.reiniciar()
 	pendente = {}
 	return Scenes.go(tree, CENA_PARQUE)
 
@@ -82,6 +83,7 @@ static func capturar(room: Node, area: String, rotulo: String, pista_do_combate 
 		"grupo": grupo,
 		"lider": maxi(room.party.find(room.player), 0),
 		"mochila": mochila,
+		"dicas": Dicas.para_save(),
 	}
 
 
@@ -126,6 +128,8 @@ static func aplicar(room: Node, data: Dictionary) -> void:
 			m.weapon = room.cfg.weapon(main if _arma_existe(room, main) else "soco")
 			var colete: String = room.gear[m]["colete"]
 			m.defense = float(room.cfg.game_data.get_entry("itens", colete).get("valor", 0.0)) if colete != "" else 0.0
+	if data.has("dicas"):  # save antigo sem o campo: as dicas ficam como estão
+		Dicas.do_save(data["dicas"])
 	var mochila = data.get("mochila")
 	if mochila is Array:
 		for i in room.inventory.slots.size():
