@@ -26,6 +26,7 @@ var niveis: Array = []  # áreas elevadas: {"h", "rampa", "ret": Rect2 + "dir"} 
 var adormecidos := {}  # trecho -> fichas dos inimigos que esperam o trecho ser revelado
 var ficha_de := {}  # inimigo -> a ficha dele nos dados (grupo, trecho)
 var chefe_virou := false  # a Dama de Sangue já surgiu
+var chefe_dama: ChefeDama  # a luta da Dama (fases, Maré avisada, Chamado, símbolos); nulo até ela surgir
 const PX_ALTURA := 62.855  # px do desenho por unidade de altura (PX_UNIT * cos(elevação da câmera))
 const FLASH_SOBE := 0.06  # flashbang: segundos até a tela ficar branca (provisório)
 const FLASH_SEGURA := 0.45  # segundos de tela branca (provisório)
@@ -139,6 +140,8 @@ func _por_inimigo(spec: Dictionary) -> Combatant:
 		tipo = str(chefe["vira"])  # save feito depois de a Dama surgir: ela já está no lugar dele
 		chefe_virou = true
 	var u := cfg.make_enemy(tipo, Vector2(p[0], p[1]))
+	if chefe_virou and tipo == str(chefe.get("vira", "")):
+		chefe_dama = ChefeDama.new(self, u, chefe.get("simbolos", []))
 	u.perception *= float(spec.get("percepcao_fator", 1.0))
 	if spec.has("olha"):
 		var o: Array = spec["olha"]
@@ -354,6 +357,8 @@ func _invasao(inv: Dictionary) -> void:
 
 
 func _on_combat_ended(result: TurnManager.Result) -> void:
+	if result == TurnManager.Result.VICTORY and chefe_dama != null:
+		chefe_dama.encerrar()  # os símbolos que sobraram e o círculo da Maré somem
 	super(result)
 	var inv: Dictionary = dados.get("invasao", {})
 	if result == TurnManager.Result.VICTORY and not inv.is_empty():
@@ -404,6 +409,7 @@ func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void
 	Missao1.marcar(str(chefe["marca"]))
 	if mode == Mode.COMBAT and turns != null:
 		turns.add_unit(dama)
+	chefe_dama = ChefeDama.new(self, dama, chefe.get("simbolos", []))  # os símbolos surgem com ela
 	_log(str(chefe["texto"]))
 	_popup(target.pos, "A DAMA DE SANGUE SURGE", "down")
 	fx.shake_time = 0.5
@@ -442,3 +448,35 @@ func _known_rects() -> Array[Rect2]:
 		for r in trechos[t]:
 			out.append(Rect2(r[0], r[1], r[2], r[3]))
 	return out
+
+
+# --- Dama de Sangue (ChefeDama) ----------------------------------------------------------------
+
+# O turno da Dama é do controle dela; os outros seguem a IA comum.
+func _run_enemy_turn(unit: Combatant) -> void:
+	if chefe_dama != null and unit == chefe_dama.dama:
+		await chefe_dama.run_turn()
+		return
+	await super(unit)
+
+
+# Cada impacto pode mudar a fase da Dama (vida abaixo do limite) ou quebrar um símbolo.
+func _on_fx_impact(job: Dictionary) -> void:
+	super(job)
+	if chefe_dama != null:
+		chefe_dama.ao_impacto(job["target"])
+
+
+# Símbolo: o objeto 3D é do ChefeDama; aqui só a barra de vida (para o jogador ver que dá para quebrar).
+func _draw_unit(u: Combatant) -> void:
+	if not u.objeto:
+		super(u)
+		return
+	if mode != Mode.EXPLORATION and u.is_alive():
+		_draw_health_bar(u, _iso(u.pos))
+
+
+func _draw_fx() -> void:
+	super()
+	if chefe_dama != null:
+		chefe_dama.desenhar_2d(self)

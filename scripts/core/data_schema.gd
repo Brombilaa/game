@@ -116,7 +116,8 @@ const FIELDS := {
 		"resistencias": {"t": "lista", "nulo": false},
 		"fraquezas": {"t": "lista", "nulo": false},
 		"chefe": {"t": "bool", "nulo": false},
-		"fases": {"t": "dict_lista", "nulo": false},
+		"fases": {"t": "dict_lista", "nulo": false},  # chefe: fases por % de vida (ChefeDama)
+		"habilidades": {"t": "dict_lista", "nulo": false},  # chefe: ações especiais (ChefeDama)
 	},
 	"arvores": {
 		"id": {"t": "texto", "nulo": false},

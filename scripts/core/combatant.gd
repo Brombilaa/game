@@ -22,6 +22,8 @@ var moved_px := 0.0  # distância andada neste turno (os primeiros 5 m são grá
 var perception := 0.0  # alcance de percepção em pixels (inimigos)
 var crouched := false
 var dead := false  # caído que não foi reanimado até o fim do combate (membro do grupo)  # agachado: inimigos percebem a metade da distância
+var objeto := false  # alvo sem turno (símbolo da Dama de Sangue): pode ser atacado, não age nem conta para a vitória
+var resists: Array = []  # condições que não pegam (resistencias da ficha; a Dama é imune a atordoar)
 var behavior := "agressivo"  # papel do inimigo (M3): agressivo, cerca ou atirador
 var pa_per_turn := -1
 var conditions: Dictionary = {}  # id -> {"stacks": int, "rounds": int (-1 = até remover)}  # PA da ficha; -1 usa o padrão do combate (3 para protagonistas)

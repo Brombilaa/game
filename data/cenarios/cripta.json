@@ -10755,7 +10755,8 @@
   "vira": "dama_sangue",
   "marca": "dama_surgiu",
   "texto": "Roberto Ghular crava a adaga no próprio peito. Do sangue dele se ergue a Dama de Sangue.",
-  "provisorio": true
+  "provisorio": true,
+  "simbolos": [[2933.2, 1017.2], [2092.8, 1068.2], [2428.3, 413.7]]
  },
  "grupos": {
   "corredor": {

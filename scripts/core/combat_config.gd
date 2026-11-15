@@ -94,6 +94,7 @@ func make_enemy(enemy_id: String, pos: Vector2) -> Combatant:
 	u.weapon = weapon(sheet["ataques"][0])
 	u.perception = float(sheet["percepcao_px"]) if sheet["percepcao_px"] != null else value("enemy_perception_px")
 	u.radius = value("enemy_radius")
+	u.resists = (sheet["resistencias"] as Array).duplicate()
 	if sheet["comportamento"] != null:
 		u.behavior = str(sheet["comportamento"])
 	u.pos = pos

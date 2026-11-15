@@ -133,7 +133,7 @@ func flanker(attacker: Combatant, target: Combatant) -> Combatant:
 	if to_attacker.length() < 0.001:
 		return null
 	for u: Combatant in units:
-		if u == attacker or u == target or not u.is_alive() or u.side != attacker.side:
+		if u == attacker or u == target or not u.is_alive() or u.side != attacker.side or u.objeto:
 			continue
 		var to_ally := u.pos - target.pos
 		if to_ally.length() > reach or to_ally.length() < 0.001:
@@ -225,6 +225,8 @@ func perception_range(observer: Combatant, target: Combatant) -> float:
 # Léo: sangrando, atordoado, em chamas e envenenado. Percentuais e durações em condicoes.json.
 
 func apply_condition(unit: Combatant, id: String) -> void:
+	if unit.resists.has(id):
+		return  # imune (a Dama de Sangue não fica atordoada)
 	var c := cfg.condition(id)
 	var rounds := -1
 	if c["duracao"] == "rodadas":

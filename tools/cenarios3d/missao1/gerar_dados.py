@@ -199,7 +199,9 @@ def cripta(d, p, ret):
     d["inimigos"].append({"tipo": "roberto_ghular", "pos": p(*P["roberto"]), "trecho": 4, "grupo": "salao"})
     # Roberto se mata com pouca vida e a Dama de Sangue surge dele (Léo). O limite de 25% é provisório.
     d["chefe"] = {"tipo": "roberto_ghular", "limite": 0.25, "vira": "dama_sangue", "marca": "dama_surgiu",
-                  "texto": "Roberto Ghular crava a adaga no próprio peito. Do sangue dele se ergue a Dama de Sangue.", "provisorio": True}
+                  "texto": "Roberto Ghular crava a adaga no próprio peito. Do sangue dele se ergue a Dama de Sangue.", "provisorio": True,
+                  # Símbolos de Sangue (ChefeDama): fora do fosso, entre as três pontes, a 7,6 x 6,6 m do centro do altar.
+                  "simbolos": [p(31 + 7.6 * math.cos(math.radians(a)), 15 + 6.6 * math.sin(math.radians(a))) for a in (26, 146, 262)]}
     d["grupos"] = {"corredor": {"marca": "cripta_corredor_limpo"}, "salao": {"marca": "cripta_vencida", "requer": "dama_surgiu"}}
     # Letícia ferida e desmaiada no altar: só acorda ao interagir depois do combate com a Dama (Léo). Textos provisórios.
     alt = [g for g in P["gatilhos"] if g["nome"].startswith("altar")][0]["ret"]

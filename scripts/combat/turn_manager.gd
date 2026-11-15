@@ -74,7 +74,7 @@ func _round_order(number: int) -> Array[Combatant]:
 	var foes: Array[Combatant] = []
 	var allies: Array[Combatant] = []
 	for u in _by_initiative:
-		if u.is_alive():
+		if u.is_alive() and not u.objeto:  # símbolos da Dama não têm turno
 			(foes if u.side == Combatant.Side.ENEMY else allies).append(u)
 	var seq: Array[Combatant] = []
 	if number == 1 and surprise >= 0:
@@ -195,7 +195,7 @@ func _check_end() -> bool:
 	var players := false
 	var enemies := false
 	for u in _by_initiative:
-		if u.is_alive():
+		if u.is_alive() and not u.objeto:  # símbolo de pé não segura o combate
 			if u.side == Combatant.Side.PLAYER:
 				players = true
 			else:

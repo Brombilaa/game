@@ -16,7 +16,8 @@
     "resistencias": [],
     "fraquezas": [],
     "chefe": false,
-    "fases": []
+    "fases": [],
+    "habilidades": []
   },
   {
     "id": "atirador_teste",
@@ -35,7 +36,8 @@
     "resistencias": [],
     "fraquezas": [],
     "chefe": false,
-    "fases": []
+    "fases": [],
+    "habilidades": []
   },
   {
     "id": "cultista",
@@ -54,7 +56,8 @@
     "resistencias": [],
     "fraquezas": [],
     "chefe": false,
-    "fases": []
+    "fases": [],
+    "habilidades": []
   },
   {
     "id": "atirador",
@@ -73,7 +76,8 @@
     "resistencias": [],
     "fraquezas": [],
     "chefe": false,
-    "fases": []
+    "fases": [],
+    "habilidades": []
   },
   {
     "id": "criatura_sangue",
@@ -92,7 +96,8 @@
     "resistencias": [],
     "fraquezas": [],
     "chefe": false,
-    "fases": []
+    "fases": [],
+    "habilidades": []
   },
   {
     "id": "roberto_ghular",
@@ -111,7 +116,8 @@
     "resistencias": [],
     "fraquezas": [],
     "chefe": true,
-    "fases": []
+    "fases": [],
+    "habilidades": []
   },
   {
     "id": "dama_sangue",
@@ -124,12 +130,74 @@
     "precisao": 0,
     "defesa": 0.1,
     "ataques": [
-      "garra_dama"
+      "garra_dama",
+      "lanca_dama"
     ],
     "comportamento": "cerca",
-    "resistencias": [],
+    "resistencias": [
+      "atordoado"
+    ],
     "fraquezas": [],
     "chefe": true,
-    "fases": []
+    "fases": [
+      {
+        "fase": 1,
+        "abaixo_de": 1.0,
+        "dano_mult": 1.0,
+        "mare_intervalo": 3,
+        "texto": null,
+        "registro": null
+      },
+      {
+        "fase": 2,
+        "abaixo_de": 0.5,
+        "dano_mult": 1.25,
+        "mare_intervalo": 2,
+        "texto": "A DAMA DE SANGUE SE ENFURECE",
+        "registro": "A Dama de Sangue se enfurece: agora bate 25% mais forte."
+      }
+    ],
+    "habilidades": [
+      {
+        "id": "garra",
+        "arma": "garra_dama",
+        "condicao": "sangrando"
+      },
+      {
+        "id": "lanca",
+        "arma": "lanca_dama"
+      },
+      {
+        "id": "chamado",
+        "nome": "Chamado de Sangue",
+        "pa": 3,
+        "invoca": "cultista",
+        "quantos": 2,
+        "intervalo": 3,
+        "primeiro": 2,
+        "max_em_campo": 4,
+        "requer_simbolo": true
+      },
+      {
+        "id": "mare",
+        "nome": "Maré de Sangue",
+        "pa_carregar": 3,
+        "pa_soltar": 2,
+        "raio_m": 2.5,
+        "dano": [
+          12,
+          18
+        ],
+        "condicao": "sangrando",
+        "primeiro": 1,
+        "aviso": "A Dama de Sangue concentra o sangue"
+      },
+      {
+        "id": "simbolos",
+        "nome": "Símbolo de Sangue",
+        "pv": 10,
+        "defesa_por_simbolo": 0.1
+      }
+    ]
   }
 ]
