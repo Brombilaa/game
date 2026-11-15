@@ -26,6 +26,11 @@ func value(key: String) -> float:
 	return float(data[key])
 
 
+# Bloco "sanidade" de combat.json (perda, ruptura e loucura).
+func san(key: String):
+	return data["sanidade"][key]
+
+
 func cover(kind: String) -> Dictionary:
 	return data["cover"][kind]
 
@@ -115,6 +120,7 @@ func make_enemy(enemy_id: String, pos: Vector2) -> Combatant:
 	assert(not sheet.is_empty(), "inimigo inexistente: " + enemy_id)
 	var u := Combatant.new()
 	u.name = sheet["nome"]
+	u.kind = enemy_id
 	u.side = Combatant.Side.ENEMY
 	u.max_pv = int(sheet["pv"])
 	u.pv = u.max_pv

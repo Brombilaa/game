@@ -7,6 +7,7 @@ enum Side { PLAYER, ENEMY }
 var name := ""
 var personagem := ""  # id em personagens.json (agentes); vazio para inimigos
 var atributos: Dictionary = {}  # VIG, FOR, INT, AGI, PRE da ficha (Ficha); vazio para inimigos
+var kind := ""  # id da ficha em inimigos.json (inimigos); usado pelo terror ao ver
 var side := Side.PLAYER
 var max_pv := 1
 var pv := 1
@@ -30,6 +31,9 @@ var looted := false
 var drops: Array = []  # itens que larga ao morrer (inimigos): {item, qtd, chance}
 var behavior := "agressivo"  # papel do inimigo (M3): agressivo, cerca ou atirador
 var pa_per_turn := -1
+var ruptured := false  # SAN chegou a 0: debuffs até ritual de cura, perk ou zona segura (GDD #11)
+var ruptures_in_combat := 0  # vezes que chegou a 0 neste combate; 2 = loucura
+var insane := false  # enlouqueceu: morte do personagem (GDD #11)
 var conditions: Dictionary = {}  # id -> {"stacks": int, "rounds": int (-1 = até remover)}  # PA da ficha; -1 usa o padrão do combate (3 para protagonistas)
 
 

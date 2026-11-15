@@ -117,6 +117,8 @@ func hit_chance(attacker: Combatant, target: Combatant, covers: Array = [], stea
 	if flanker(attacker, target) != null:
 		chance += cfg.value("flank_hit_bonus")
 	chance += maxi(attacker.initiative - 1, 0) * cfg.value("agi_hit_bonus")  # initiative = AGI
+	if attacker.ruptured:
+		chance -= float(cfg.san("ruptura_acerto"))  # ruptura de SAN (GDD #11)
 	chance -= _range_penalty(w, gap(attacker, target))
 	var c := cover_between(attacker.pos, target, covers)
 	if c and c.kind == "partial":
@@ -203,6 +205,8 @@ func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers:
 		dmg *= cfg.value("crit_multiplier")
 	if stealth:
 		dmg *= cfg.value("stealth_damage_multiplier")
+	if attacker.ruptured:
+		dmg *= 1.0 - float(cfg.san("ruptura_dano"))
 	result.damage = damage_after_defense(dmg, target.defense)
 	target.take_damage(result.damage)
 	if result.crit and target.is_alive():
