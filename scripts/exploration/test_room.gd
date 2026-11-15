@@ -19,7 +19,7 @@ extends Node2D
 # O agente usa a folha real do Nikolai, do Miguel ou do Fernando (CharacterSheet, 128 px; só o visual
 # muda); o atirador ainda é arte provisória (PlaceholderArt ampliada).
 
-enum Mode { EXPLORATION, COMBAT, GAME_OVER }
+enum Mode { EXPLORATION, COMBAT, GAME_OVER, CUTSCENE }  # CUTSCENE: cena do fim da missão 1 (CenaTentaculo)
 
 
 signal move_finished

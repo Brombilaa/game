@@ -1,0 +1,21 @@
+{
+	"_nota": "Modelo C, Ferido no combate (provisório do Claude, 15/11/2026): a criatura que veio por trás feriu o Caio durante a luta; depois da vitória ele cai, diz as últimas palavras e morre com a Letícia ao lado. Textos e tempos provisórios.",
+	"passos": [
+		{"faz": "cinema", "estado": "entrar"},
+		{"faz": "camera", "em": "caio", "zoom": 1.4, "tempo": 0.8},
+		{"faz": "anim", "quem": "caio", "anim": "hit", "tempo": 2.6},
+		{"faz": "sangue", "em": "caio", "qtd": 14},
+		{"faz": "fala", "quem": "Caio", "texto": "Ela... me pegou. Durante a luta.", "tempo": 1.8},
+		{"faz": "anim", "quem": "caio", "anim": "death", "tempo": 3.0},
+		{"faz": "andar", "quem": "leticia", "ate": "caio", "perto": 30, "correr": true, "junto": true},
+		{"faz": "andar", "quem": "lider", "ate": "caio", "perto": 70, "junto": true},
+		{"faz": "esperar", "tempo": 1.8},
+		{"faz": "poca", "em": "caio", "tamanho": 2.0},
+		{"faz": "camera", "em": "caio", "zoom": 1.2, "altura": 30, "tempo": 1.0},
+		{"faz": "fala", "quem": "Caio", "texto": "O símbolo... não é o fim. É uma porta.", "tempo": 2.2},
+		{"faz": "fala", "quem": "Letícia", "texto": "Fica comigo, Caio. Fica comigo!", "tempo": 1.8},
+		{"faz": "esperar", "tempo": 0.8},
+		{"faz": "legenda", "texto": "Caio se foi.", "tempo": 2.2},
+		{"faz": "marca", "id": "caio_morreu"}
+	]
+}
