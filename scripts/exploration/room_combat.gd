@@ -498,12 +498,14 @@ func _san_report(results: Dictionary, cause: String) -> void:
 			_popup(m.pos, "Resistiu", "info")
 			continue
 		if r.lost > 0:
+			room.san_fx.scare(r.rupture)
 			_popup(m.pos, "-%d SAN" % r.lost, "san")
 			_log("%s %s: -%d SAN" % [m.name, cause, r.lost])
 		if r.rupture:
 			_popup(m.pos, "RUPTURA", "san")
 			_log("%s entra em RUPTURA" % m.name)
 		if r.insane:
+			room.san_fx.madness()
 			_popup(m.pos, "ENLOUQUECEU", "down")
 			_log("%s enlouqueceu" % m.name)
 			_san_report(room.san.ally_down(m, room.party, true), "perde %s" % m.name)

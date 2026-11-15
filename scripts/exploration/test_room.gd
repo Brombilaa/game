@@ -56,6 +56,7 @@ const POPUP_STYLES := {
 	"heal": {"size": 15, "color": Color(0.5, 0.9, 0.55)},
 	"info": {"size": 13, "color": Color(1.0, 1.0, 0.75)},
 	"san": {"size": 22, "color": Color(0.49, 0.65, 0.93)},
+	"fala": {"size": 14, "color": Color(0.9, 0.9, 0.95)},
 }
 
 # Quadro da caminhada avança por distância percorrida na tela (não por tempo): os pés não deslizam,
@@ -224,6 +225,7 @@ var party_hud := RoomPartyHud.new(self)
 var action_bar := RoomActionBar.new(self)
 var minimap := RoomMinimap.new(self)
 var hud_blur := HudBlur.new(self)
+var san_fx := SanFx.new(self)  # aviso de SAN na tela (modelo C com B)
 var objectives_hud := RoomObjectivesHud.new(self)
 
 # Módulos da sala (separados de test_room.gd): a sala guarda o estado e repassa para eles; as funções
@@ -278,6 +280,7 @@ func _ready() -> void:
 	hud.room_draws_hud = true  # a sala desenha modo, PA e fim do turno na moldura A
 	add_child(hud)
 	add_child(audio)
+	add_child(san_fx)  # antes do HudBlur: os dois leem a tela, e as placas do HUD ficam por cima
 	add_child(hud_blur)
 	for path in AGENT_SHEETS:
 		agent_sheets.append(CharacterSheet.new(path))

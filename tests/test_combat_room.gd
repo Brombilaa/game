@@ -435,6 +435,21 @@ func _test_san() -> void:
 	_check(crazy.ruptured and room.turns.turn_pa(crazy) == 2, "ruptura no combate: -1 PA no turno")
 	room.room_combat._san_report({crazy: room.san.lose(crazy, 1)}, "teste")
 	_check(crazy.insane and crazy.dead and not crazy.is_alive(), "segunda vez a 0 no mesmo combate: enlouquece")
+	_check(room.san_fx.madness_t < 0.1 and room.san_fx.params([]).red > 0.5, "loucura: tela vermelha")
+	room.san_fx.madness_t = 99.0
+	room.san_fx.scare_t = 99.0
+	_check(room.san_fx.params([]).vignette == 0.0 and room.san_fx.params([]).aberr == 0.0, "sem susto nem ruptura: sem efeito")
+	room.san_fx.scare()
+	var p0: Dictionary = room.san_fx.params([])
+	_check(p0.vignette > 0.8 and p0.aberr > 0.0, "susto: borda escura e cores separadas")
+	room.san_fx.scare_t = 5.0
+	other.ruptured = true
+	other.san = 0
+	var p1: Dictionary = room.san_fx.params(room.san_fx.ruptured())
+	_check(p1.ghost > 0.4 and p1.vignette >= 0.2 and room.san_fx.ruptured().has(other), "ruptura: fantasma e borda pulsando")
+	room.san_fx.talk_in = 0.0
+	room.san_fx._process(0.016)
+	_check(room.popups.any(func(p: Dictionary) -> bool: return p.kind == "fala" and p.get("dur", 0.0) == 3.0), "ruptura: fala sozinho")
 	room.queue_free()
 	await process_frame
 
