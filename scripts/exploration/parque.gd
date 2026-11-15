@@ -16,6 +16,7 @@ const NPC_COLORS := {"caio": Color("#46628a"), "leticia": Color("#885050")}  # f
 var caio3d := IdleSheet.new("caio3d", "caio3d")  # Caio: só a animação de parado (morre no primeiro mapa)
 
 const DOT_RADIUS := 6.0  # bolinha da pista, em px do desenho
+const MALHA_MARGEM := 9.0  # folga em volta do contorno da pista, em px da tela de 960x540 (Léo, 15/11: área clicável junto ao contorno e maior)
 const DOT_HIT := 14.0  # raio em que o clique na bolinha vale (px do desenho)
 const CLUE_NEAR := 260.0  # a bolinha ganha um anel quando o controlado chega perto
 const STAND_FACTOR := 0.85  # distância de parada, em fração do raio da pista
@@ -727,6 +728,9 @@ func _clue_under(mouse: Vector2) -> String:
 			best_d = d
 	if best != "":
 		return best
+	var por_malha := _clue_under_malha(mouse)
+	if por_malha != "":
+		return por_malha
 	# Objetos grandes (a árvore) também respondem ao clique no desenho todo: elipses [cx, cy, rx, ry]
 	# em px do desenho, relativas ao pé da pista (Léo, 01/11/2026: clicar "bem na árvore").
 	for cid in scenario.clues:
@@ -738,6 +742,139 @@ func _clue_under(mouse: Vector2) -> String:
 			if (rel.x * rel.x) / (float(a[2]) * float(a[2])) + (rel.y * rel.y) / (float(a[3]) * float(a[3])) <= 1.0:
 				return cid
 	return ""
+
+
+# Pistas com malha 3D respondem ao clique no contorno que as destaca: o casco, na tela, dos pontos da malha mais uma folga.
+func _clue_under_malha(mouse: Vector2) -> String:
+	if world3d == null or world3d.camera == null or world3d.mundo.size.x < 64:  # sem render (testes headless) não há projeção
+		return ""
+	var tela := get_canvas_transform() * mouse
+	var best := ""
+	var best_d := INF
+	for cid in scenario.clues:
+		if seen_clues.has(cid) or _malhas_pista(cid).is_empty():
+			continue
+		var dec: Dictionary = scenario.clues[cid].get("destaque", {}).get("decalque", {})
+		if not dec.is_empty():  # marca pintada no chão: vale o traço do contorno, não o retângulo todo
+			if _clique_no_decalque(dec, tela) and best_d > 0.0:
+				best = cid
+				best_d = 0.0
+			continue
+		var casco := _casco_pista(cid)
+		if casco.is_empty():
+			continue
+		var d := _dist_casco(tela, casco)
+		if d <= MALHA_MARGEM and d < best_d:
+			best = cid
+			best_d = d
+	return best
+
+
+var _decalque_img := {}  # png -> Image
+
+
+# O ponto da tela cai no chão (plano do decalque); acerta se há traço do contorno a até ~MALHA_MARGEM px dali.
+func _clique_no_decalque(dec: Dictionary, tela: Vector2) -> bool:
+	var png := str(dec["png"])
+	if not _decalque_img.has(png):
+		var tex := load(png) as Texture2D
+		_decalque_img[png] = tex.get_image() if tex != null else null
+	var img: Image = _decalque_img[png]
+	if img == null:
+		return false
+	var cam: Camera3D = world3d.camera
+	var vp := tela * (Vector2(world3d.mundo.size) / get_viewport_rect().size)
+	var o := cam.project_ray_origin(vp)
+	var n := cam.project_ray_normal(vp)
+	var y := float(dec.get("y", 0.03))
+	if absf(n.y) < 0.0001:
+		return false
+	var hit := o + n * ((y - o.y) / n.y)
+	var lo: Array = dec["min"]
+	var hi: Array = dec["max"]
+	var u := (hit.x - float(lo[0])) / (float(hi[0]) - float(lo[0]))
+	var v := (hit.z - float(lo[1])) / (float(hi[1]) - float(lo[1]))
+	# folga em px da textura: MALHA_MARGEM px de tela ~ metros pela escala da câmera
+	var m_por_px := cam.size / float(world3d.mundo.size.y) * (float(world3d.mundo.size.y) / get_viewport_rect().size.y)
+	var folga := MALHA_MARGEM * m_por_px
+	var rx := int(ceil(folga / (float(hi[0]) - float(lo[0])) * img.get_width()))
+	var ry := int(ceil(folga / (float(hi[1]) - float(lo[1])) * img.get_height()))
+	var cx := int(u * img.get_width())
+	var cy := int(v * img.get_height())
+	for dy in range(-ry, ry + 1, 2):
+		for dx in range(-rx, rx + 1, 2):
+			var px := cx + dx
+			var py := cy + dy
+			if px >= 0 and py >= 0 and px < img.get_width() and py < img.get_height() and img.get_pixel(px, py).a > 0.2:
+				if Vector2(dx / float(maxi(rx, 1)), dy / float(maxi(ry, 1))).length() <= 1.0:
+					return true
+	return false
+
+
+var _pista_cascos := {}  # id -> casco na tela; refeito quando a câmera anda
+var _pista_cascos_chave: Variant = null
+
+
+func _casco_pista(cid: String) -> PackedVector2Array:
+	var cam: Camera3D = world3d.camera
+	var chave: Variant = [cam.global_transform, cam.size, get_canvas_transform()]
+	if chave != _pista_cascos_chave:
+		_pista_cascos_chave = chave
+		_pista_cascos.clear()
+	if not _pista_cascos.has(cid):
+		_pista_cascos[cid] = _casco(_para_tela(_pontos_pista(cid)))
+	return _pista_cascos[cid]
+
+
+var _pista_pontos := {}  # id -> PackedVector3Array (amostra dos vértices da malha, no mundo 3D)
+
+
+func _pontos_pista(cid: String) -> PackedVector3Array:
+	if _pista_pontos.has(cid):
+		return _pista_pontos[cid]
+	var out := PackedVector3Array()
+	for m in _malhas_pista(cid):
+		var mi := m as MeshInstance3D
+		if mi == null or mi.mesh == null:
+			continue
+		var xf := mi.global_transform
+		var bb := mi.get_aabb()
+		for k in 8:  # os cantos da caixa garantem o contorno mesmo em malhas finas
+			out.append(xf * (bb.position + bb.size * Vector3(k & 1, (k >> 1) & 1, (k >> 2) & 1)))
+		for sf in mi.mesh.get_surface_count():
+			var arr := mi.mesh.surface_get_arrays(sf)
+			var vs: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			var passo := maxi(1, vs.size() / 300)
+			for i in range(0, vs.size(), passo):
+				out.append(xf * vs[i])
+	_pista_pontos[cid] = out
+	return out
+
+
+func _para_tela(pts: PackedVector3Array) -> PackedVector2Array:
+	var cam: Camera3D = world3d.camera
+	var k := get_viewport_rect().size / Vector2(world3d.mundo.size)
+	var out := PackedVector2Array()
+	for p in pts:
+		if not cam.is_position_behind(p):
+			out.append(cam.unproject_position(p) * k)
+	return out
+
+
+func _casco(pts: PackedVector2Array) -> PackedVector2Array:
+	return Geometry2D.convex_hull(pts) if pts.size() >= 3 else pts
+
+
+# 0 dentro do casco; fora, a distância até a borda.
+func _dist_casco(p: Vector2, casco: PackedVector2Array) -> float:
+	if casco.size() >= 3 and Geometry2D.is_point_in_polygon(p, casco):
+		return 0.0
+	var best := INF
+	for i in casco.size():
+		var a := casco[i]
+		var b := casco[(i + 1) % casco.size()]
+		best = minf(best, p.distance_to(Geometry2D.get_closest_point_to_segment(p, a, b)))
+	return best
 
 
 # Já está perto: examina. Senão anda até o ponto livre mais próximo do objeto e examina ao chegar.

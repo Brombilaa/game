@@ -27,6 +27,11 @@ func _run() -> void:
 	_check(room._clue_under(tree_foot + Vector2(29, -250)) == "arvore_simbolo", "clicar na copa da árvore escolhe a pista")
 	_check(room._clue_under(tree_foot + Vector2(20, -70)) == "arvore_simbolo", "clicar no tronco escolhe a pista")
 	_check(room._clue_under(tree_foot + Vector2(400, -70)) == "", "longe da árvore não é pista")
+	# Área clicável pelo contorno da malha: dentro do casco = 0, fora = distância até a borda (vale se <= MALHA_MARGEM).
+	var casco: PackedVector2Array = room._casco(PackedVector2Array([Vector2(0, 0), Vector2(100, 0), Vector2(100, 50), Vector2(0, 50), Vector2(50, 25)]))
+	_check(room._dist_casco(Vector2(50, 25), casco) == 0.0, "dentro do contorno da pista conta como clique")
+	_check(is_equal_approx(room._dist_casco(Vector2(105, 25), casco), 5.0) and 5.0 <= room.MALHA_MARGEM, "logo fora do contorno ainda clica (folga)")
+	_check(room._dist_casco(Vector2(140, 25), casco) > room.MALHA_MARGEM, "longe do contorno não clica")
 	var z0: float = room.camera.zoom.x
 	room._zoom_by(100.0)
 	_check(room.camera.zoom.x == room.ZOOM_MAX and z0 < room.ZOOM_MAX, "a roda aproxima até o zoom máximo")
