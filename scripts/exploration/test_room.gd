@@ -421,6 +421,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_player_pass()
 			elif _reserve_id() != "" and action_bar._action_rect(1, n).has_point(screen):
 				_swap_weapon()
+			elif action_bar._action_rect(action_bar.kit_index() + 1, n).has_point(screen):
+				_overwatch()
 			elif action_bar._action_rect(action_bar.kit_index(), n).has_point(screen):
 				_use_kit_button()
 			return
@@ -1167,13 +1169,52 @@ func _overwatch() -> void:
 	if _reloading(player):
 		_reject("reloading")
 		return
-	var reason := rules.start_overwatch(player)
+	var reason := rules.start_overwatch(player, _overwatch_aim())
 	if reason != "":
 		_reject(reason)
 		return
+	facing8[player] = CharacterSheet.dir_from_vector(_iso(player.pos + player.overwatch_dir) - _iso(player.pos))
 	_popup(player.pos, "Vigilância")
 	_log("%s vigia" % player.name)
 	_after_player_action()
+
+
+# Direção do cone: para o mouse, se ele está no cenário (não no rodapé); senão para o inimigo vivo mais perto.
+func _overwatch_aim() -> Vector2:
+	if not _mouse_on_hud(get_viewport().get_mouse_position()):
+		var aim := _resolve_click(get_global_mouse_position()) - player.pos
+		if aim.length() > player.radius * 2.0:
+			return aim
+	var best := Vector2.ZERO
+	var best_d := INF
+	for e in enemies:
+		if e.is_alive() and e.pos.distance_to(player.pos) < best_d:
+			best_d = e.pos.distance_to(player.pos)
+			best = e.pos - player.pos
+	return best
+
+
+# Cone de visão da vigilância (modelo A, Léo 15/11): leque vermelho no chão com o alcance da arma e um olho
+# sobre a cabeça de quem vigia. Some quando o tiro dispara ou no próximo turno de quem vigia.
+func _draw_overwatch() -> void:
+	if mode != Mode.COMBAT:
+		return
+	for u in party:
+		if not u.overwatch or not u.is_alive():
+			continue
+		var reach: float = float(u.weapon["max_range"]) + u.radius
+		var half := deg_to_rad(cfg.value("overwatch_half_angle_deg"))
+		var rim := PackedVector2Array()
+		rim.append(_iso(u.pos))
+		for i in 25:
+			rim.append(_iso(u.pos + u.overwatch_dir.rotated(lerpf(-half, half, i / 24.0)) * reach))
+		var blood := PlaceholderArt.color("sangue_claro")
+		draw_colored_polygon(rim, Color(blood, 0.13))
+		var edge := rim.duplicate()
+		edge.append(rim[0])
+		draw_polyline(edge, Color(blood, 0.55), 1.0)
+		var eye := _iso(u.pos) + Vector2(0, -CharacterSheet.HEIGHT - 16)
+		ItemIcons.draw_rows(self, Rect2(eye - Vector2(8, 8), Vector2(16, 16)), ItemIcons.PIXEL_ROWS["vigilancia"], true)
 
 
 # Chamado a cada passo de um inimigo em combate: se um vigia o enxerga ao alcance, o tiro de reação sai na hora
@@ -1317,6 +1358,7 @@ func _draw() -> void:
 		for e in enemies:
 			if e.is_alive() and _visible(e.pos):
 				_draw_range(e.pos, rules.perception_range(e, player), Color(PlaceholderArt.color("sangue_claro"), 0.35))
+	_draw_overwatch()
 	# Peças ordenadas por profundidade: quanto maior x + y, mais perto da câmera.
 	var items: Array = []
 	for w in walls:

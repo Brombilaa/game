@@ -110,6 +110,16 @@ const PIXEL_ROWS := {
 		"..obbbbbbbbbbo..",
 		"..oooooooooooo..",
 	],
+	"vigilancia": [
+		"................",
+		"....oooooooo....",
+		"..ooaaaaaaaaoo..",
+		".oaaabbrrbbaaao.",
+		"oaabbrrooorrbbao",
+		".oaaabbrrbbaaao.",
+		"..ooaaaaaaaaoo..",
+		"....oooooooo....",
+	],
 	"atrasar": [
 		"...gggggggggg...",
 		"...oooooooooo...",

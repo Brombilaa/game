@@ -386,6 +386,11 @@ func _test_overwatch() -> void:
 	_check(rules.overwatch_watcher(e, [], []) == a, "inimigo à vista e ao alcance é visto pelo vigia")
 	var walls: Array[Rect2] = [Rect2(140, 0, 20, 300)]
 	_check(rules.overwatch_watcher(e, walls, []) == null, "parede entre os dois: sem tiro")
+	a.overwatch_dir = Vector2.DOWN
+	_check(rules.overwatch_watcher(e, [], []) == null, "inimigo fora do cone apontado não é visto")
+	a.overwatch_dir = Vector2(1, 0.5).normalized()
+	_check(rules.overwatch_watcher(e, [], []) == a, "dentro do cone (ângulo menor que a metade) é visto")
+	a.overwatch_dir = Vector2.RIGHT
 	var far := cfg.make_enemy("cultista_teste", Vector2(5000, 100))
 	_check(rules.overwatch_watcher(far, [], []) == null, "fora do alcance: sem tiro")
 	var before := a.pa

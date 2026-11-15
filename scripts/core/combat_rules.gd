@@ -231,23 +231,28 @@ func overwatch_blocker(u: Combatant) -> String:
 
 
 # Entra em vigilância: paga o tiro e marca a unidade. Retorna o motivo da recusa ou "" se entrou.
-func start_overwatch(u: Combatant) -> String:
+func start_overwatch(u: Combatant, dir := Vector2.ZERO) -> String:
 	var reason := overwatch_blocker(u)
 	if reason != "":
 		return reason
+	if dir.length() > 0.001:
+		u.overwatch_dir = dir.normalized()
 	u.pa -= int(u.weapon["pa_cost"])
 	u.overwatch = true
 	return ""
 
 
 # Primeiro vigia (do lado oposto) que pode atirar em `mover` onde ele está agora: alcance, linha de visão
-# e munição valem como num ataque comum (os PA já foram pagos). Null se nenhum.
+# e munição valem como num ataque comum, e o alvo precisa estar dentro do cone apontado (os PA já foram pagos). Null se nenhum.
 func overwatch_watcher(mover: Combatant, walls: Array[Rect2], covers: Array = []) -> Combatant:
 	if not mover.is_alive():
 		return null
 	for u: Combatant in units:
 		if u == mover or not u.is_alive() or not u.overwatch or u.side == mover.side:
 			continue
+		var to_mover := mover.pos - u.pos
+		if to_mover.length() > 0.001 and absf(u.overwatch_dir.angle_to(to_mover)) > deg_to_rad(cfg.value("overwatch_half_angle_deg")):
+			continue  # fora do cone
 		var credit := int(u.weapon["pa_cost"])
 		u.pa += credit  # o blocker confere PA; aqui já estão pagos
 		var reason := attack_blocker(u, mover, walls, covers)

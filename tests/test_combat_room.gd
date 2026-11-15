@@ -343,6 +343,7 @@ func _test_overwatch() -> void:
 	e.pv = 999
 	room.enemies.append(e)
 	room.mode = room.Mode.COMBAT
+	room.turns = TurnManager.new()
 	room.rules.units = [a, e]
 	_check(not room._overwatch_fire(e), "sem vigia, o inimigo anda em paz")
 	a.pa = 3
@@ -350,6 +351,11 @@ func _test_overwatch() -> void:
 	_check(room._overwatch_fire(e), "inimigo que se move à vista leva o tiro de vigilância")
 	_check(not a.overwatch and room.fx.active(), "a vigilância gasta-se e o tiro é encenado")
 	_check(not room._overwatch_fire(e), "só o primeiro movimento é punido")
+	a.overwatch = true  # o cone e o olho são desenhados sem erro
+	room.queue_redraw()
+	await process_frame
+	await process_frame
+	_check(room.action_bar._action_slots().any(func(sl: Array) -> bool: return sl[0] == "vigilancia"), "a barra de ações tem o botão de vigilância")
 	room.mode = room.Mode.EXPLORATION
 	room.queue_free()
 	await process_frame
