@@ -200,6 +200,9 @@ def cripta(d, p, ret):
     # Roberto se mata com pouca vida e a Dama de Sangue surge dele (Léo). O limite de 25% é provisório.
     d["chefe"] = {"tipo": "roberto_ghular", "limite": 0.25, "vira": "dama_sangue", "marca": "dama_surgiu",
                   "texto": "Roberto Ghular crava a adaga no próprio peito. Do sangue dele se ergue a Dama de Sangue.", "provisorio": True}
+    # Fim da missão 1 (Léo, 15/11): com a Dama em ~30% de vida toca a cutscene do tentáculo que atravessa o Fernando,
+    # e a morte dele; o combate continua (Dama, Letícia, celeiro e cutscene de fim de capítulo vêm depois). Limite e legenda são provisórios do Claude.
+    d["fim"] = {"limite": 0.30, "legenda": "Fernando não se levanta.", "provisorio": True}
     d["grupos"] = {"corredor": {"marca": "cripta_corredor_limpo"}, "salao": {"marca": "cripta_vencida", "requer": "dama_surgiu"}}
     # Letícia ferida e desmaiada no altar: só acorda ao interagir depois do combate com a Dama (Léo). Textos provisórios.
     alt = [g for g in P["gatilhos"] if g["nome"].startswith("altar")][0]["ret"]

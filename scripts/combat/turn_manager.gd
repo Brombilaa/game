@@ -176,6 +176,7 @@ func _advance() -> void:
 			current = unit
 			unit.pa = turn_pa(unit)
 			unit.moved_px = 0.0
+			unit.overwatch = false  # a vigilância dura só até o próximo turno de quem vigia
 			turn_started.emit(unit)
 			return
 

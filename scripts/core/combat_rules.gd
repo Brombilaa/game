@@ -215,6 +215,67 @@ func damage_after_defense(dmg: float, defense: float) -> int:
 	return maxi(floori(dmg * (1.0 - defense) + 0.0001), int(cfg.value("min_damage")))
 
 
+# --- Vigilância ----------------------------------------------------------------
+# Léo (15/11): gastar PA para atirar no primeiro inimigo que se mover na linha de visão. Os PA de um tiro
+# são pagos ao entrar em vigilância; ela dispara uma vez e acaba, ou termina no próximo turno de quem vigia.
+
+# Motivo pelo qual `u` não pode entrar em vigilância, ou "" se pode (mesmos códigos do HUD).
+func overwatch_blocker(u: Combatant) -> String:
+	if not u.is_alive() or u.overwatch or u.weapon.is_empty() or u.weapon.get("melee", false):
+		return "requirement"
+	if u.pa < int(u.weapon["pa_cost"]):
+		return "no_pa"
+	if needs_reload(u):
+		return "no_ammo"
+	return ""
+
+
+# Entra em vigilância: paga o tiro e marca a unidade. Retorna o motivo da recusa ou "" se entrou.
+func start_overwatch(u: Combatant, dir := Vector2.ZERO) -> String:
+	var reason := overwatch_blocker(u)
+	if reason != "":
+		return reason
+	if dir.length() > 0.001:
+		u.overwatch_dir = dir.normalized()
+	u.pa -= int(u.weapon["pa_cost"])
+	u.overwatch = true
+	return ""
+
+
+# Primeiro vigia (do lado oposto) que pode atirar em `mover` onde ele está agora: alcance, linha de visão
+# e munição valem como num ataque comum, e o alvo precisa estar dentro do cone apontado (os PA já foram pagos). Null se nenhum.
+func overwatch_watcher(mover: Combatant, walls: Array[Rect2], covers: Array = []) -> Combatant:
+	if not mover.is_alive():
+		return null
+	for u: Combatant in units:
+		if u == mover or not u.is_alive() or not u.overwatch or u.side == mover.side:
+			continue
+		var to_mover := mover.pos - u.pos
+		if to_mover.length() > 0.001 and absf(u.overwatch_dir.angle_to(to_mover)) > deg_to_rad(cfg.value("overwatch_half_angle_deg")):
+			continue  # fora do cone
+		var credit := int(u.weapon["pa_cost"])
+		u.pa += credit  # o blocker confere PA; aqui já estão pagos
+		var reason := attack_blocker(u, mover, walls, covers)
+		u.pa -= credit
+		if reason == "":
+			return u
+	return null
+
+
+# Tiro de reação do vigia: consome a vigilância, vale o PA já pago e leva a penalidade de acerto.
+func overwatch_shot(watcher: Combatant, target: Combatant, walls: Array[Rect2], covers: Array = []) -> Dictionary:
+	var credit := int(watcher.weapon["pa_cost"])
+	var kept := watcher.hit_bonus
+	watcher.overwatch = false
+	watcher.pa += credit
+	watcher.hit_bonus -= cfg.value("overwatch_hit_penalty")
+	var r := attack(watcher, target, walls, covers)
+	watcher.hit_bonus = kept
+	if not r.ok:
+		watcher.pa -= credit
+	return r
+
+
 # Alcance com que `observer` percebe `target`: o da ficha, pela metade se o alvo está agachado.
 func perception_range(observer: Combatant, target: Combatant) -> float:
 	return observer.perception * (cfg.value("crouch_perception_factor") if target.crouched else 1.0)

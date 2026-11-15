@@ -21,7 +21,11 @@ var pa := 0
 var moved_px := 0.0  # distância andada neste turno (os primeiros 5 m são grátis)
 var perception := 0.0  # alcance de percepção em pixels (inimigos)
 var crouched := false
+var overwatch_dir := Vector2.RIGHT  # direção do cone da vigilância (plano da sala)
+var overwatch := false  # em vigilância: atira no primeiro inimigo que se mover à vista (dura até o próximo turno dele)
 var dead := false  # caído que não foi reanimado até o fim do combate (membro do grupo)  # agachado: inimigos percebem a metade da distância
+var looted := false
+var drops: Array = []  # itens que larga ao morrer (inimigos): {item, qtd, chance}
 var behavior := "agressivo"  # papel do inimigo (M3): agressivo, cerca ou atirador
 var pa_per_turn := -1
 var conditions: Dictionary = {}  # id -> {"stacks": int, "rounds": int (-1 = até remover)}  # PA da ficha; -1 usa o padrão do combate (3 para protagonistas)

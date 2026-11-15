@@ -11,6 +11,7 @@ extends "res://scripts/exploration/parque.gd"
 #   - visao: o que barra a visão quando é menos do que o que barra o passo (parapeito, fosso, altar);
 #   - niveis: áreas elevadas; só mudam a altura em que cada um é desenhado (e o clique acha o piso certo);
 #   - chefe: Roberto Ghular se mata com pouca vida e a Dama de Sangue surge dele, no mesmo combate;
+#   - fim: com a Dama em ~30% de vida toca a cutscene da morte do Fernando pelo tentáculo (cena_tentaculo.gd);
 #   - grupos: marca gravada quando todos os inimigos de um grupo caem (não voltam ao carregar o save).
 # O lugar aberto vem de Missao1.local (ou de `local_id`, para abrir a cena direto no editor).
 
@@ -26,6 +27,7 @@ var niveis: Array = []  # áreas elevadas: {"h", "rampa", "ret": Rect2 + "dir"} 
 var adormecidos := {}  # trecho -> fichas dos inimigos que esperam o trecho ser revelado
 var ficha_de := {}  # inimigo -> a ficha dele nos dados (grupo, trecho)
 var chefe_virou := false  # a Dama de Sangue já surgiu
+var fim_tocou := false  # a cutscene do tentáculo (fim da missão 1) já começou
 const PX_ALTURA := 62.855  # px do desenho por unidade de altura (PX_UNIT * cos(elevação da câmera))
 const FLASH_SOBE := 0.06  # flashbang: segundos até a tela ficar branca (provisório)
 const FLASH_SEGURA := 0.45  # segundos de tela branca (provisório)
@@ -388,6 +390,8 @@ func _marcar_grupos() -> void:
 # foi resolvido pelas regras quando chega aqui, então a troca acontece antes de o combate conferir se acabou.
 func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void:
 	super(attacker, target, r)
+	if _e_a_dama(target) and not target.is_alive() and not dados.get("fim", {}).is_empty() and not fim_tocou:
+		target.pv = 1  # a Dama não morre antes da cutscene do fim (Léo, 15/11): um golpe que a mataria a deixa por um fio
 	var chefe: Dictionary = dados.get("chefe", {})
 	if chefe.is_empty() or chefe_virou or not enemies.has(target):
 		return
@@ -409,6 +413,54 @@ func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void
 	fx.shake_time = 0.5
 	fx.shake_px = 6.0
 	queue_redraw()
+
+
+func _e_a_dama(u: Combatant) -> bool:
+	return enemies.has(u) and u.name == "Dama de Sangue"  # surgida de Roberto ou já no lugar dele (save)
+
+
+# Fim da missão 1 (Léo, 15/11): quando o golpe acerta e a Dama fica com ~30% de vida ou menos, o combate para e toca a
+# cutscene do tentáculo (CenaTentaculo). Roda no impacto, quando a barra de vida já mostra o valor novo.
+func _on_fx_impact(job: Dictionary) -> void:
+	super(job)
+	var fim: Dictionary = dados.get("fim", {})
+	var alvo: Combatant = job["target"]
+	if fim.is_empty() or fim_tocou or mode != Mode.COMBAT or not _e_a_dama(alvo) or not alvo.is_alive():
+		return
+	if float(alvo.pv) > float(fim["limite"]) * float(alvo.max_pv):
+		return
+	iniciar_fim(alvo)
+
+
+func iniciar_fim(dama: Combatant) -> void:
+	fim_tocou = true
+	var cena := CenaTentaculo.new()
+	add_child(cena)
+	cena.iniciar(self, dama, dados["fim"])
+
+
+# Durante a cutscene não há HUD, barras de vida nem pausa.
+func _draw_hud(font: Font) -> void:
+	if mode != Mode.CUTSCENE:
+		super(font)
+
+
+func _draw_health_bar(u: Combatant, at: Vector2) -> void:
+	if mode != Mode.CUTSCENE and not u.dead:
+		super(u, at)
+
+
+# O Fernando morto (cutscene do tentáculo) continua deitado na cena.
+func _drawn_units() -> Array[Combatant]:
+	var out := super()
+	for m in party:
+		if m.dead and m.name == "Fernando" and Missao1.tem("fernando_morreu") and not out.has(m):
+			out.append(m)
+	return out
+
+
+func can_pause() -> bool:
+	return mode != Mode.CUTSCENE and super()
 
 
 # Objetivos do HUD vêm dos dados: cada um feito ao ver a pista ou ao ganhar a marca; "requer" só mostra depois de outra marca.

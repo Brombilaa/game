@@ -306,6 +306,7 @@ func _draw() -> void:
 		for e in enemies:
 			if e.is_alive():
 				_draw_range(e.pos, rules.perception_range(e, player), Color(PlaceholderArt.color("sangue_claro"), 0.35))
+	_draw_overwatch()
 	var items: Array = []
 	for u in _drawn_units():
 		items.append({"pos": u.pos, "unit": u})
@@ -1162,11 +1163,16 @@ func _close_dialog() -> void:
 	if cid == "" or seen_clues.has(cid):
 		return
 	seen_clues.append(cid)
+	collect_items(scenario.clues[cid]["da"])
 	pista_gatilho = cid
 	for trigger in scenario.triggers_after(cid):
 		_run_trigger(trigger)
 	pista_gatilho = ""
 	queue_redraw()
+
+
+func _gear_scarce() -> bool:
+	return true  # a missão tem escassez de recursos (sugestão 7)
 
 
 func _run_trigger(trigger: Dictionary) -> void:

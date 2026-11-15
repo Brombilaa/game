@@ -22,6 +22,8 @@ func run_turn(unit: Combatant) -> void:
 	_gap_jumped = false
 	while room.mode == room.Mode.COMBAT and room.turns.is_turn_of(unit):
 		await room.get_tree().create_timer(room.cfg.value("enemy_step_seconds")).timeout
+		while room.fx.blocking() and room.mode == room.Mode.COMBAT:
+			await room.get_tree().process_frame  # tiro de vigilância em cena: espera o golpe acabar
 		if not room.turns.is_turn_of(unit):
 			break
 		var target := pick_target(unit)

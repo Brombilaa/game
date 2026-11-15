@@ -96,5 +96,6 @@ func make_enemy(enemy_id: String, pos: Vector2) -> Combatant:
 	u.radius = value("enemy_radius")
 	if sheet["comportamento"] != null:
 		u.behavior = str(sheet["comportamento"])
+	u.drops = sheet.get("drops", [])
 	u.pos = pos
 	return u

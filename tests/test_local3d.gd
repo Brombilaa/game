@@ -1,7 +1,8 @@
 extends SceneTree
 # Teste headless dos lugares 3D da missão 1 (delegacia 17h e 21h, subsolo, biblioteca, Fazenda Ghular):
 # dados válidos, grupo começa livre, saídas alcançáveis, tapete revela o alçapão, invasão na volta do subsolo,
-# inimigos do celeiro, o caminho em grade e a cripta (trechos revelados, área elevada, Roberto Ghular e a Dama de Sangue).
+# inimigos do celeiro, o caminho em grade, a cripta (trechos revelados, área elevada, Roberto Ghular e a Dama de Sangue)
+# e o fim da missão 1 (a Dama a 30%: cutscene do tentáculo, modo cinema).
 # Rodar com:
 #   godot --headless --path . -s tests/test_local3d.gd
 
@@ -26,6 +27,8 @@ func _run() -> void:
 	await _invasao()
 	await _celeiro()
 	await _cripta()
+	_cinema_e_tentaculo()
+	await _fim_da_missao()
 	print("Falhas: %d" % failures if failures > 0 else "OK: test_local3d")
 	quit(1 if failures > 0 else 0)
 
@@ -235,6 +238,71 @@ func _cripta() -> void:
 		nomes.append(e.name)
 	_check(nomes.has("Dama de Sangue") and not nomes.has("Roberto Ghular"), "cripta: save feito depois de a Dama surgir volta com ela")
 	await _fechar(room)
+
+
+# Modo cinema e curva do tentáculo (sem cena).
+func _cinema_e_tentaculo() -> void:
+	var tela := Vector2(1920, 1080)
+	var faixas := Cinema.janela(Cinema.Modo.FAIXAS, tela)
+	_check(absf(faixas.size.x / faixas.size.y - 2.39) < 0.01 and faixas.size.x == tela.x and absf(faixas.get_center().y - 540.0) < 0.5, "cinema: faixas 2,39:1 centradas, de borda a borda")
+	var vertical := Cinema.janela(Cinema.Modo.VERTICAL, tela)
+	_check(absf(vertical.size.x / vertical.size.y - 9.0 / 16.0) < 0.01 and vertical.size.y == tela.y, "cinema: janela vertical 9:16")
+	var quadro := Cinema.janela(Cinema.Modo.QUADRO, tela)
+	_check(absf(quadro.size.x / quadro.size.y - 16.0 / 9.0) < 0.01 and quadro.size.x < tela.x, "cinema: quadro 16:9 menor que a tela")
+	var t := Tentaculo3D.new()
+	var pts: Array[Vector3] = [Vector3(0, 2, 0), Vector3(1, 4, 0), Vector3(3, 0.1, 1), Vector3(5, 1.5, 2)]
+	t.definir(pts)
+	_check(t.comprimento > 6.0, "tentáculo: a curva tem comprimento (%.1f)" % t.comprimento)
+	_check(t.fracao_em(0) == 0.0 and t.fracao_em(1) < t.fracao_em(2) and t.fracao_em(2) < t.fracao_em(3) and absf(t.fracao_em(3) - 1.0) < 0.001, "tentáculo: as frações dos pontos de controle crescem até 1")
+	t.crescimento = 1.0
+	_check(t.ponta().distance_to(pts[3]) < 0.01, "tentáculo: com tudo crescido a ponta está no último ponto")
+	t.free()
+
+
+# Fim da missão 1 (Léo, 15/11): a Dama não morre antes da cena; a cena só começa no impacto que a deixa em ~30% ou menos.
+func _fim_da_missao() -> void:
+	Missao1.reiniciar()
+	for m in ["cripta_trecho2", "cripta_trecho3", "cripta_trecho4", "dama_surgiu"]:
+		Missao1.marcar(m)
+	var room = await _abrir("cripta")
+	var dama: Combatant = null
+	for e in room.enemies:
+		if e.name == "Dama de Sangue":
+			dama = e
+	_check(dama != null and not room.dados.get("fim", {}).is_empty(), "fim: a Dama está na cripta e os dados trazem o fim")
+	room._start_combat()
+	var acerto := {"ok": true, "hit": true, "damage": 3, "crit": false, "blocked": false}
+	# Acima de 30%: o combate segue.
+	dama.pv = int(dama.max_pv * 0.6)
+	room._on_fx_impact({"attacker": room.player, "target": dama, "r": acerto, "from_pv": dama.pv + 3})
+	_check(not room.fim_tocou and room.mode == room.Mode.COMBAT, "fim: com a Dama acima de 30% a cena não toca")
+	# Um golpe que a mataria a deixa por um fio.
+	dama.pv = 0
+	room._show_attack(room.player, dama, acerto)
+	_check(dama.pv == 1, "fim: a Dama não morre antes da cena")
+	# No impacto com ~30% ou menos, a cena começa e congela o combate.
+	room._on_fx_impact({"attacker": room.player, "target": dama, "r": acerto, "from_pv": 4})
+	_check(room.fim_tocou and room.mode == room.Mode.CUTSCENE, "fim: abaixo de 30% a cutscene começa")
+	_check(room.turns.state == TurnManager.State.ENDED, "fim: o combate fica congelado")
+	_check(not room.can_pause(), "fim: não se pausa durante a cutscene")
+	# Só toca uma vez.
+	var filhos := room.get_child_count()
+	room._on_fx_impact({"attacker": room.player, "target": dama, "r": acerto, "from_pv": 4})
+	_check(room.get_child_count() == filhos, "fim: a cutscene não recomeça")
+	# A cena acaba e o combate continua sem o Fernando (Léo: depois dele a Dama morre, a Letícia é salva...).
+	var cena: CenaTentaculo = null
+	for c in room.get_children():
+		if c is CenaTentaculo:
+			cena = c
+	Engine.time_scale = 8.0  # a cena dura ~20 s de jogo
+	await cena.terminou
+	Engine.time_scale = 1.0
+	var fernando: Combatant = room.party[0]
+	_check(room.mode == room.Mode.COMBAT and room.turns.state == TurnManager.State.ACTIVE, "fim: depois da cena o combate volta")
+	_check(fernando.name == "Fernando" and fernando.dead and not fernando.is_alive() and Missao1.tem("fernando_morreu"), "fim: o Fernando morre de vez")
+	_check(room.player != fernando and room.player.is_alive(), "fim: o controle passa a alguém de pé")
+	_check(room._drawn_units().has(fernando), "fim: o corpo do Fernando continua na cena")
+	_check(not Missao1.tem("capitulo1_fim") and dama.is_alive(), "fim: o capítulo não acaba aqui e a Dama segue viva")
 
 
 func _entrar_na_zona(room, id: String) -> void:

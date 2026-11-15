@@ -149,6 +149,7 @@ var follow_offsets := {}  # seguidor -> posição relativa ao líder
 var unlinked := {}  # seguidores soltos da corrente do grupo: não acompanham o líder
 
 var follow_rng := RandomNumberGenerator.new()
+var loot_rng := RandomNumberGenerator.new()  # sorteio dos itens largados pelos inimigos
 
 var inventory: Inventory  # mochila compartilhada do grupo (20 espaços)
 
@@ -388,6 +389,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_swap_weapon()
 		elif event.pressed and event.keycode == KEY_G:
 			_reload()
+		elif event.pressed and event.keycode == KEY_F:
+			_overwatch()
 		elif event.pressed and event.keycode == KEY_V:
 			use_3d = not use_3d
 			_popup(player.pos, "Nikolai 3D" if use_3d else "Nikolai 2D")
@@ -419,6 +422,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_player_pass()
 			elif _reserve_id() != "" and action_bar._action_rect(1, n).has_point(screen):
 				_swap_weapon()
+			elif action_bar._action_rect(action_bar.kit_index() + 1, n).has_point(screen):
+				_overwatch()
 			elif action_bar._action_rect(action_bar.kit_index(), n).has_point(screen):
 				_use_kit_button()
 			return
@@ -446,8 +451,11 @@ func _toggle_crouch() -> void:
 	queue_redraw()
 
 
-# Recarga (tecla G, por enquanto só a animação): enquanto dura, o personagem não ataca (Léo, 13/11: "atira enquanto recarrega").
+# Recarga (tecla G): fora do combate a animação trava o ataque por RELOAD_SECONDS (Léo, 13/11: "atira enquanto recarrega");
+# em combate o custo é só o 1 PA e a animação não bloqueia nada.
 func _reloading(u: Combatant) -> bool:
+	if mode == Mode.COMBAT:  # em combate a recarga custa 1 PA e pronto: sem espera (escassez, sugestão 7)
+		return false
 	var c: Dictionary = nikolai_clock.get(u, {})
 	if c.get("anim", "") != "reload":
 		return false
@@ -626,6 +634,8 @@ func _process(delta: float) -> void:
 		walk_dist[moving_unit] = walk_dist.get(moving_unit, 0.0) + before.distance_to(_iso(moving_unit.pos))
 		if moving_unit.pos.is_equal_approx(path[0]):
 			path.remove_at(0)
+		if mode == Mode.COMBAT and moving_unit.side == Combatant.Side.ENEMY and _overwatch_fire(moving_unit):
+			path = PackedVector2Array()  # o inimigo é detido pelo tiro de vigilância
 		if path.is_empty():
 			moving_unit = null
 			move_finished.emit()
@@ -1003,9 +1013,27 @@ func inventory_can_open() -> bool:
 func gear_item_kind(id: String) -> String:
 	if cfg.game_data.has_entry("armas", id):
 		return "arma"
-	if cfg.game_data.get_entry("itens", id).get("efeito") == "defesa":
+	var efeito = cfg.game_data.get_entry("itens", id).get("efeito")
+	if efeito == "defesa":
 		return "colete"
+	if efeito == "san_max":
+		return "acessorio"
 	return "item"
+
+
+# Acessório de SAN (pulseira da amizade, Léo 15/11): soma ou tira o bônus de SAN máxima de `m`.
+func _apply_accessory(m: Combatant, id: String, sign: int) -> void:
+	if id == "" or str(cfg.game_data.get_entry("itens", id).get("efeito", "")) != "san_max":
+		return
+	var v := int(cfg.game_data.get_entry("itens", id).get("valor", 0)) * sign
+	m.max_san = maxi(m.max_san + v, 0)
+	m.san = clampi(m.san + maxi(v, 0), 0, m.max_san)
+
+
+# Arma com carregador que ainda não passou pela mão de `m` começa vazia (recarrega da mochila).
+func _ensure_mag(m: Combatant, weapon_id: String) -> void:
+	if weapon_id != "" and int(cfg.weapon(weapon_id)["mag_size"]) > 0 and not m.mag.has(weapon_id):
+		m.mag[weapon_id] = 0
 
 
 func gear_is_equippable(id: String) -> bool:
@@ -1034,9 +1062,9 @@ func gear_equip(m: Combatant, slot: String, bag_index: int) -> String:
 		return ""
 	var id := str(entry["id"])
 	var kind := gear_item_kind(id)
-	if kind == "item" or slot == "acessorio":
+	if kind == "item":
 		return "Esse item não vai aí"
-	if (kind == "colete") != (slot == "colete"):
+	if (kind == "colete") != (slot == "colete") or (kind == "acessorio") != (slot == "acessorio"):
 		return "Esse item não vai aí"
 	var cost = _gear_change_cost(m, kind)
 	if cost is String:
@@ -1047,6 +1075,11 @@ func gear_equip(m: Combatant, slot: String, bag_index: int) -> String:
 	var old := str(gear[m][slot])
 	inventory.slots[bag_index] = {"id": old, "qty": 1} if old != "" else {}
 	gear[m][slot] = id
+	if slot == "acessorio":
+		_apply_accessory(m, old, -1)
+		_apply_accessory(m, id, 1)
+	if slot in ["principal", "secundaria"]:
+		_ensure_mag(m, id)
 	if slot == "principal":
 		m.weapon = cfg.weapon(id)
 	elif slot == "colete":
@@ -1069,6 +1102,7 @@ func gear_swap_weapons(m: Combatant) -> String:
 	var main: String = g["principal"]
 	g["principal"] = g["secundaria"]
 	g["secundaria"] = main
+	_ensure_mag(m, str(g["principal"]))
 	m.weapon = cfg.weapon(g["principal"]) if g["principal"] != "" else cfg.weapon("soco")
 	queue_redraw()
 	return "%s empunha %s" % [m.name, cfg.game_data.get_entry("armas", g["principal"]).get("nome", "o soco")]
@@ -1089,6 +1123,8 @@ func gear_unequip(m: Combatant, slot: String) -> String:
 		return "PA insuficientes"
 	inventory.add(id)
 	gear[m][slot] = ""
+	if slot == "acessorio":
+		_apply_accessory(m, id, -1)
 	if slot == "principal":
 		m.weapon = cfg.weapon("soco")
 	elif slot == "colete":
@@ -1130,20 +1166,66 @@ func gear_use(m: Combatant, bag_index: int) -> String:
 	return "%s usou %s" % [m.name, cfg.game_data.get_entry("itens", id)["nome"]]
 
 
-# Mochila e equipamento iniciais da sala de teste (provisório do Claude).
+# Escassez (sugestão 7, 15/11): na missão a mochila começa magra e kit, bandagem, antídoto e munição
+# só vêm do cenário (pistas com "da"). A sala de teste segue com a mochila farta. Provisório do Claude.
+func _gear_scarce() -> bool:
+	return false
+
+
+# Mochila e equipamento iniciais (provisório do Claude).
 func _setup_gear() -> void:
 	inventory = Inventory.new(cfg.game_data)
-	for item in [[KIT_ID, 1], ["bandagem", 2], ["antidoto", 1], ["colete_leve", 1], ["colete_pesado", 1]]:
+	var scarce := _gear_scarce()
+	var items := [[KIT_ID, 1], ["colete_leve", 1], ["colete_pesado", 1]] if scarce else [[KIT_ID, 1], ["bandagem", 2], ["antidoto", 1], ["colete_leve", 1], ["colete_pesado", 1]]
+	for item in items:
 		inventory.add(item[0], item[1])
-	for w in ["pistola", "escopeta", "fuzil_precisao"]:  # reservas iniciais (provisório do Claude)
-		inventory.add(ammo_item(w), 24 if w == "pistola" else 12)
+	var reserves := {"pistola": 12, "escopeta": 0, "fuzil_precisao": 5} if scarce else {"pistola": 24, "escopeta": 12, "fuzil_precisao": 12}
+	for w in reserves:  # reservas iniciais
+		inventory.add(ammo_item(w), int(reserves[w]))
 	for m in party:
 		var second = cfg.game_data.get_entry("personagens", m.name.to_lower()).get("arma_secundaria")
+		if scarce and second == "escopeta":  # a escopeta só vem do Caio (Léo, 15/11)
+			second = null
 		var main := str(m.weapon["id"])
 		for wid in [main, "" if second == null else str(second)]:  # cada arma com carregador começa cheia
 			if wid != "" and int(cfg.weapon(wid)["mag_size"]) > 0:
 				m.mag[wid] = int(cfg.weapon(wid)["mag_size"])
 		gear[m] = {"principal": main, "secundaria": "" if second == null or str(second) == main else str(second), "colete": "", "acessorio": ""}
+
+
+func _item_name(id: String) -> String:
+	return str(cfg.game_data.get_entry("itens", id).get("nome", cfg.game_data.get_entry("armas", id).get("nome", id)))
+
+
+# Inimigo abatido larga o que a ficha (drops) sorteia direto na mochila, com aviso. Provisório do Claude.
+func _loot_enemy(e: Combatant) -> void:
+	var found: Array = []
+	for d in e.drops:
+		if loot_rng.randf() < float(d.get("chance", 1.0)):
+			found.append({"item": str(d["item"]), "qtd": int(d.get("qtd", 1))})
+	if not found.is_empty():
+		collect_items(found)
+
+
+# Itens achados no cenário ao fechar uma pista: [{"item": id, "qtd": n}, ...]. Devolve o texto do aviso
+# ("" se nada coube ou não havia nada); o que não cabe na mochila fica perdido com aviso.
+func collect_items(found: Array) -> String:
+	var parts: Array[String] = []
+	var lost := false
+	for f in found:
+		var id := str(f["item"])
+		var qty := int(f.get("qtd", 1))
+		var left := inventory.add(id, qty)
+		lost = lost or left > 0
+		if qty - left > 0:
+			parts.append("%dx %s" % [qty - left, _item_name(id)])
+	if parts.is_empty() and not lost:
+		return ""
+	var msg := "Achou: " + ", ".join(parts) if not parts.is_empty() else ""
+	if lost:
+		msg += (" · " if msg != "" else "") + "Mochila cheia"
+	hud.show_notice(msg)
+	return msg
 
 
 func _player_delay() -> void:
@@ -1153,6 +1235,74 @@ func _player_delay() -> void:
 		_reject("requirement")
 	else:
 		hud.show_notice("Atrasou")
+
+
+# Vigilância (tecla F, Léo 15/11): paga os PA de um tiro e, no turno dos inimigos, atira no primeiro que se
+# mover à vista e ao alcance. Só em combate, na vez do controlado; dura até o próximo turno dele.
+func _overwatch() -> void:
+	if not _player_ready():
+		return
+	if _reloading(player):
+		_reject("reloading")
+		return
+	var reason := rules.start_overwatch(player, _overwatch_aim())
+	if reason != "":
+		_reject(reason)
+		return
+	facing8[player] = CharacterSheet.dir_from_vector(_iso(player.pos + player.overwatch_dir) - _iso(player.pos))
+	_popup(player.pos, "Vigilância")
+	_log("%s vigia" % player.name)
+	_after_player_action()
+
+
+# Direção do cone: para o mouse, se ele está no cenário (não no rodapé); senão para o inimigo vivo mais perto.
+func _overwatch_aim() -> Vector2:
+	if not _mouse_on_hud(get_viewport().get_mouse_position()):
+		var aim := _resolve_click(get_global_mouse_position()) - player.pos
+		if aim.length() > player.radius * 2.0:
+			return aim
+	var best := Vector2.ZERO
+	var best_d := INF
+	for e in enemies:
+		if e.is_alive() and e.pos.distance_to(player.pos) < best_d:
+			best_d = e.pos.distance_to(player.pos)
+			best = e.pos - player.pos
+	return best
+
+
+# Cone de visão da vigilância (modelo A, Léo 15/11): leque vermelho no chão com o alcance da arma e um olho
+# sobre a cabeça de quem vigia. Some quando o tiro dispara ou no próximo turno de quem vigia.
+func _draw_overwatch() -> void:
+	if mode != Mode.COMBAT:
+		return
+	for u in party:
+		if not u.overwatch or not u.is_alive():
+			continue
+		var reach: float = float(u.weapon["max_range"]) + u.radius
+		var half := deg_to_rad(cfg.value("overwatch_half_angle_deg"))
+		var rim := PackedVector2Array()
+		rim.append(_iso(u.pos))
+		for i in 25:
+			rim.append(_iso(u.pos + u.overwatch_dir.rotated(lerpf(-half, half, i / 24.0)) * reach))
+		var blood := PlaceholderArt.color("sangue_claro")
+		draw_colored_polygon(rim, Color(blood, 0.13))
+		var edge := rim.duplicate()
+		edge.append(rim[0])
+		draw_polyline(edge, Color(blood, 0.55), 1.0)
+		var eye := _iso(u.pos) + Vector2(0, -CharacterSheet.HEIGHT - 16)
+		ItemIcons.draw_rows(self, Rect2(eye - Vector2(8, 8), Vector2(16, 16)), ItemIcons.PIXEL_ROWS["vigilancia"], true)
+
+
+# Chamado a cada passo de um inimigo em combate: se um vigia o enxerga ao alcance, o tiro de reação sai na hora
+# (e o inimigo para onde está). Retorna true quando houve tiro.
+func _overwatch_fire(mover: Combatant) -> bool:
+	rules.units = _living_units()
+	var watcher := rules.overwatch_watcher(mover, _sight_blockers(), covers)
+	if watcher == null:
+		return false
+	_popup(watcher.pos, "Vigilância")
+	_show_attack(watcher, mover, rules.overwatch_shot(watcher, mover, _sight_blockers(), covers))
+	return true
 
 
 func _reject(reason: String) -> void:
@@ -1266,6 +1416,9 @@ func _on_fx_impact(job: Dictionary) -> void:
 			nikolai_clock[target] = {"anim": "hit", "start": Time.get_ticks_msec()}  # reação ao golpe (Nikolai 3D)
 	if not target.is_alive():
 		_popup(target.pos, "ABATIDO" if target.side == Combatant.Side.ENEMY else "CAIU", "down")
+		if target.side == Combatant.Side.ENEMY and not target.looted:
+			target.looted = true
+			_loot_enemy(target)
 	queue_redraw()
 
 
@@ -1284,6 +1437,7 @@ func _draw() -> void:
 		for e in enemies:
 			if e.is_alive() and _visible(e.pos):
 				_draw_range(e.pos, rules.perception_range(e, player), Color(PlaceholderArt.color("sangue_claro"), 0.35))
+	_draw_overwatch()
 	# Peças ordenadas por profundidade: quanto maior x + y, mais perto da câmera.
 	var items: Array = []
 	for w in walls:
@@ -1538,7 +1692,7 @@ func _draw_unit(u: Combatant) -> void:
 			var frames: Array = CharacterSheet.WALK_FRAMES if walking else CharacterSheet.IDLE_FRAMES
 			var n := walk_n % frames.size() if walking else idle_frame
 			agent_sheets[looks.get(u, 0)].draw(self, at, frames[n], facing8.get(u, CharacterSheet.Dir.SE))
-		if not u.is_alive():
+		if not u.is_alive() and not u.dead:
 			draw_string(ThemeDB.fallback_font, at + Vector2(-22, -CharacterSheet.HEIGHT - 14), "CAÍDO", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(1, 0.4, 0.4))
 	else:
 		var variant := _enemy_variant(i)
