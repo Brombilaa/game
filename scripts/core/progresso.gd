@@ -11,18 +11,20 @@ extends RefCounted
 # pista sai da lista, para o combate acontecer de novo ao examiná-la (Game Over volta para antes dele).
 
 const CENA_PARQUE := "res://scenes/exploration/parque.tscn"
+const CENA_FICHAS := "res://scenes/menu/fichas.tscn"
 
 static var pendente := {}  # save lido no menu, à espera de a cena do lugar abrir e aplicá-lo
 static var dir := SaveSlots.DIR  # pasta dos saves (os testes usam outra)
 static var autosave_ativo := true
 
 
-# Novo jogo: missão do começo, sem save pendente, no parque. As fichas escolhidas antes (tela das
-# fichas) ficam em Ficha.escolhas; sem escolha, valem as sugeridas.
+# Novo jogo: missão do começo, sem save pendente. Abre a tela das fichas (4 pontos por agente, GDD #11);
+# ela grava Ficha.escolhas e segue para o parque.
 static func novo_jogo(tree: SceneTree) -> bool:
 	Missao1.reiniciar()
+	Ficha.reiniciar()
 	pendente = {}
-	return Scenes.go(tree, CENA_PARQUE)
+	return Scenes.go(tree, CENA_FICHAS)
 
 
 # Lê o slot e abre o lugar salvo; a cena aplica o resto em _ready (tomar_pendente). false se não deu.
