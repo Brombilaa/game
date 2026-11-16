@@ -14,6 +14,7 @@ func _init(owner_room: TestRoom) -> void:
 # seguidores presos na corrente; quem foi solto da corrente (`unlinked`) mantém a postura própria. Em combate
 # a postura continua valendo e a tecla C troca a de quem está na vez (grátis, sem PA; provisório).
 func _toggle_crouch() -> void:
+	Dicas.marcar("agachar")
 	var stance := not room.player.crouched
 	room.player.crouched = stance
 	if room.mode == TestRoom.Mode.EXPLORATION:

@@ -425,6 +425,8 @@ func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void
 	if not r.ok:
 		_reject(r.reason)
 		return
+	if room.party.has(attacker):
+		Dicas.marcar("atacar")
 	var before := mini(target.pv + int(r.get("damage", 0)), target.max_pv) if r.get("hit", false) else target.pv
 	# Quem ataca vira para o alvo (antes atirava para onde estivesse olhando: Léo, 08/11, "combate dessincronizado").
 	if target.pos != attacker.pos:

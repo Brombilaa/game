@@ -227,6 +227,7 @@ var minimap := RoomMinimap.new(self)
 var hud_blur := HudBlur.new(self)
 var san_fx := SanFx.new(self)  # aviso de SAN na tela (modelo C com B)
 var objectives_hud := RoomObjectivesHud.new(self)
+var dicas_hud := RoomDicasHud.new(self)
 
 # Módulos da sala (separados de test_room.gd): a sala guarda o estado e repassa para eles; as funções
 # que o parque e o local3d trocam continuam aqui (seção "Repasses", no fim do arquivo).
@@ -559,6 +560,8 @@ func _living_units() -> Array[Combatant]:
 
 
 func _start_move(unit: Combatant, new_path: PackedVector2Array) -> void:
+	if unit == player and mode == Mode.EXPLORATION:
+		Dicas.marcar("andar")
 	moving_unit = unit
 	path = new_path
 	path.remove_at(0)

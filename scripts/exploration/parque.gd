@@ -1178,6 +1178,7 @@ func _close_dialog() -> void:
 	if cid == "" or seen_clues.has(cid):
 		return
 	seen_clues.append(cid)
+	Dicas.marcar("examinar")
 	audio.play_sfx("clue_found")
 	var c: Dictionary = scenario.clues[cid]
 	Diario.anotar(_diario_lugar(), cid, c["texto"], c["inspecao"])
