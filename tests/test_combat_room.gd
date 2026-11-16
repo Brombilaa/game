@@ -27,6 +27,7 @@ func _run() -> void:
 	await process_frame
 
 	# Porta aberta e agente à vista da criatura: o combate começa na hora.
+	room.player.initiative = 9  # fichas do GDD: o Nikolai (AGI 3) agiria antes; aqui o Fernando é o primeiro do grupo
 	room.door_open = true
 	room.player.pos = Vector2(650, 360)
 	await process_frame
@@ -160,6 +161,16 @@ func _test_gear() -> void:
 	var f: Combatant = room.party[0]
 	_check(room.gear[f]["principal"] == "pistola" and room.gear[f]["secundaria"] == "escopeta", "Fernando começa com pistola e escopeta")
 	_check(room.inventory.count("colete_leve") == 1, "mochila inicial tem um colete leve")
+	var fichas: Array = room.party.map(func(m: Combatant) -> Array: return [m.personagem, m.max_pv, m.max_san, m.initiative])
+	_check(fichas == [["fernando", 23, 12, 2], ["nikolai", 18, 16, 3], ["miguel", 14, 22, 1]], "grupo nasce das fichas do GDD (classe + atributos sugeridos)")
+	_check(room.party[2].weapon["id"] == "espada", "Miguel começa com a espada (arma inicial da ficha)")
+	_check(room.inventory.size == int(room.cfg.regra("inventario_espacos")), "mochila com os espaços de regras.json")
+	f.pv = 10
+	room.inventory.add("curativo", 1)
+	var cur: int = room.inventory.slots.find(room.inventory.slots.filter(func(x): return x.get("id", "") == "curativo")[0])
+	room.gear_use(f, cur)
+	_check(f.pv == 10 + floori(23 * 0.3) and room.inventory.count("curativo") == 0, "curativo recupera 30% do PV máximo")
+	f.pv = f.max_pv
 
 	var vest: int = 0
 	for i in 20:
@@ -194,6 +205,7 @@ func _test_party() -> void:
 	await process_frame
 	var lider: Combatant = room.party[0]
 	var seguidor: Combatant = room.party[1]
+	lider.initiative = 9  # fichas do GDD: o Nikolai (AGI 3) agiria antes; aqui o líder age primeiro
 	room._order_move(Vector2(400, 360))
 	await _wait(func() -> bool: return room.moving_unit == null and room.follow_paths.is_empty(), 6.0)
 	var d: float = seguidor.pos.distance_to(lider.pos)

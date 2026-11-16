@@ -1,18 +1,21 @@
 class_name Inventory
 extends RefCounted
-# Mochila compartilhada do grupo (GDD #18): 20 espaços, cada pilha ocupa 1 espaço.
+# Mochila compartilhada do grupo (GDD #18): espaços de regras.json (inventario_espacos, 20), cada pilha ocupa 1 espaço.
 # Limite da pilha vem de data/itens.json (`pilha_max`); armas, coletes e itens sem limite
 # não empilham. Cada espaço é {} (vazio) ou {"id": String, "qty": int}.
 
-const SIZE := 20
+const SIZE := 20  # padrão quando regras.json não define inventario_espacos
 
 var slots: Array[Dictionary] = []
+var size := SIZE
 var _data: GameData
 
 
 func _init(data: GameData) -> void:
 	_data = data
-	for i in SIZE:
+	var n = data.rule("inventario_espacos")
+	size = int(n) if n != null else SIZE
+	for i in size:
 		slots.append({})
 
 
@@ -31,7 +34,7 @@ func add(id: String, qty := 1) -> int:
 			var put := mini(cap - int(s["qty"]), qty)
 			s["qty"] = int(s["qty"]) + put
 			qty -= put
-	for i in SIZE:
+	for i in size:
 		if qty <= 0:
 			return 0
 		if slots[i].is_empty():
@@ -53,7 +56,7 @@ func count(id: String) -> int:
 func remove(id: String, qty := 1) -> bool:
 	if count(id) < qty:
 		return false
-	for i in range(SIZE - 1, -1, -1):
+	for i in range(size - 1, -1, -1):
 		if qty <= 0:
 			break
 		if not slots[i].is_empty() and slots[i]["id"] == id:
@@ -81,7 +84,7 @@ func used() -> int:
 
 
 func free_slot() -> int:
-	for i in SIZE:
+	for i in size:
 		if slots[i].is_empty():
 			return i
 	return -1

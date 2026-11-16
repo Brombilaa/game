@@ -38,8 +38,6 @@ const REVIVE_REACH := 16.0  # borda a borda: "adjacente" para reanimar
 const KIT_ID := "kit_primeiros_socorros"
 
 const RELOAD_SECONDS := 2.0  # recarga: 12 quadros a 6/s (AnimSheet.FPS["reload"])
-const SWAP_PA := 1  # trocar de arma em combate (GDD #18)
-const RELOAD_PA := 1  # recarregar em combate (1 PA, GDD #18; provisório)
 
 const POPUP_SECONDS := 1.2
 
@@ -133,11 +131,11 @@ var cfg := CombatConfig.load_file()
 var rules := CombatRules.new(cfg)
 var san := SanRules.new(cfg)  # SAN como medidor de terror: perda, ruptura e loucura (GDD #11)
 
-# Grupo de teste: Fernando, Nikolai e Miguel (só para exercitar grupo, troca e reanimação).
+# Grupo: Fernando, Nikolai e Miguel pelas fichas do GDD (classe e atributos; Ficha e personagens.json).
 var party: Array[Combatant] = [
-	cfg.make_unit("agente", "Fernando", Vector2(160, 360)),
-	cfg.make_unit("agente", "Nikolai", Vector2(110, 320)),
-	cfg.make_unit("agente", "Miguel", Vector2(110, 400)),
+	cfg.make_agent("fernando", Vector2(160, 360)),
+	cfg.make_agent("nikolai", Vector2(110, 320)),
+	cfg.make_agent("miguel", Vector2(110, 400)),
 ]
 
 var player: Combatant = party[0]  # personagem controlado (no combate, o do turno)
@@ -283,12 +281,7 @@ func _ready() -> void:
 		agent_sheets.append(CharacterSheet.new(path))
 	looks[party[0]] = 0
 	looks[party[1]] = 1
-	party[1].max_san = 16  # Nikolai é Especialista (SAN inicial 16); a ficha de teste é a mesma
-	party[1].san = 16
 	looks[party[2]] = 2
-	party[2].max_san = 20  # Miguel é Ocultista (SAN inicial 20) e luta com a espada (GDD #16)
-	party[2].san = 20
-	party[2].weapon = cfg.weapon("espada")
 	_setup_gear()
 	inv_panel = InventoryPanel.new()
 	inv_panel.room = self
