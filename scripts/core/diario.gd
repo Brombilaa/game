@@ -28,11 +28,11 @@ static func titulo(id: String) -> String:
 
 
 # Anota uma pista examinada. Devolve false se o diário já tinha essa pista (mesmo lugar e id).
-static func anotar(lugar: String, id: String, texto: String, imagem := "") -> bool:
+static func anotar(lugar: String, id: String, texto: String, imagem := "", titulo_proprio := "") -> bool:
 	for e in Missao1.diario:
 		if e["id"] == id and e["lugar"] == lugar:
 			return false
-	Missao1.diario.append({"id": id, "lugar": lugar, "titulo": titulo(id), "texto": texto, "imagem": imagem})
+	Missao1.diario.append({"id": id, "lugar": lugar, "titulo": titulo_proprio if titulo_proprio != "" else titulo(id), "texto": texto, "imagem": imagem})
 	return true
 
 
