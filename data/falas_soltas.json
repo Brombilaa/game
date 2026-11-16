@@ -1,0 +1,45 @@
+{
+	"_comentario": "Falas soltas do grupo na exploração (banter), na CaixaFala em modo solta. Cada fala toca uma vez por jogo, na ordem do arquivo, dentro do seu lugar (area = id do cenário). 'requer' = marca que precisa existir antes. Cada item tem 1 a 2 linhas, texto até 100 letras. Textos provisórios do Claude, para o Léo revisar.",
+	"falas": [
+		{"id": "parque_1", "area": "parque", "falas": [
+			{"quem": "fernando", "texto": "Esse parque devia estar cheio a essa hora."}
+		]},
+		{"id": "parque_2", "area": "parque", "falas": [
+			{"quem": "nikolai", "texto": "Nenhum pássaro. Percebeu?"},
+			{"quem": "miguel", "texto": "Percebi desde o portão."}
+		]},
+		{"id": "parque_3", "area": "parque", "falas": [
+			{"quem": "caio", "texto": "Se isso for pegadinha, eu vou rir por último."}
+		]},
+		{"id": "delegacia17_1", "area": "delegacia_17h", "falas": [
+			{"quem": "nikolai", "texto": "Delegacia vazia e luz acesa. Mau sinal."}
+		]},
+		{"id": "delegacia17_2", "area": "delegacia_17h", "falas": [
+			{"quem": "fernando", "texto": "Procurem o arquivo. Quero saber quem estava de plantão."}
+		]},
+		{"id": "biblioteca_1", "area": "biblioteca", "falas": [
+			{"quem": "miguel", "texto": "Cheiro de papel velho. Estranhamente reconfortante."},
+			{"quem": "nikolai", "texto": "Não se acostume."}
+		]},
+		{"id": "biblioteca_2", "area": "biblioteca", "falas": [
+			{"quem": "leticia", "texto": "Alguém mexeu nessas prateleiras há pouco."}
+		]},
+		{"id": "delegacia21_1", "area": "delegacia_21h", "falas": [
+			{"quem": "fernando", "texto": "Voltamos ao ponto de partida, e agora é noite."}
+		]},
+		{"id": "subsolo_1", "area": "subsolo", "falas": [
+			{"quem": "nikolai", "texto": "Cuidado onde pisam. Isso aqui não é piso de delegacia."}
+		]},
+		{"id": "fazenda_1", "area": "fazenda", "falas": [
+			{"quem": "miguel", "texto": "O ar mudou. Sentem isso?"},
+			{"quem": "fernando", "texto": "Sentimos. Mantenham a formação."}
+		]},
+		{"id": "fazenda_2", "area": "fazenda", "falas": [
+			{"quem": "nikolai", "texto": "Fazenda abandonada, mas o portão está engraxado."}
+		]},
+		{"id": "cripta_1", "area": "cripta", "falas": [
+			{"quem": "leticia", "texto": "Eu não deveria estar aqui embaixo."},
+			{"quem": "fernando", "texto": "Fique perto de mim."}
+		]}
+	]
+}

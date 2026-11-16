@@ -47,6 +47,7 @@ var pista_malhas := {}
 var pending_clue := ""
 var dialog_layer: CanvasLayer
 var dialog_clue := ""
+var falas: FalasSoltas  # quando o grupo fala sozinho na exploração (Léo, 15/11)
 var caixa: CaixaFala  # falas curtas com retrato depois das pistas (Léo, modelo C, 15/11)
 var dialog_text: Label
 var dialog_image: TextureRect
@@ -117,6 +118,8 @@ var pista_gatilho := ""  # pista cujo gatilho está rodando agora (o combate que
 
 # Autosave no início do combate, com o grupo como estava antes dele.
 func _start_combat(surprise_side: int = -1) -> void:
+	if caixa != null and caixa.ocupada:  # uma fala solta no ar não atravessa o combate
+		caixa.parar()
 	Progresso.autosalvar(self, _area_id(), _place_label(), pista_gatilho)
 	super(surprise_side)
 
@@ -902,12 +905,23 @@ func _go_to_clue(cid: String) -> void:
 
 func _process(delta: float) -> void:
 	super(delta)
+	_falas_soltas(delta)
 	if mode != Mode.EXPLORATION:
 		pending_clue = ""
 	elif pending_clue != "" and path.is_empty() and moving_unit == null:
 		var cid := pending_clue
 		pending_clue = ""
 		_inspect(cid)
+
+
+# Falas soltas do grupo (Léo, 15/11): só com o jogador livre (sem combate, cena, transição, diálogo ou ação em curso).
+func _falas_soltas(delta: float) -> void:
+	if falas == null:
+		falas = FalasSoltas.new(_area_id())
+	var livre := mode == Mode.EXPLORATION and not busy and indo_para == "" and not _dialogo_aberto()
+	var f := falas.tick(delta, livre)
+	if not f.is_empty():
+		caixa.sequencia(f["falas"], true)
 
 
 func _inspect(cid: String) -> void:
