@@ -33,12 +33,12 @@ func _unit(id: String, n: String, init: int, pos := Vector2.ZERO) -> Combatant:
 
 func _test_data_sources() -> void:
 	var ppm := cfg.value("pixels_per_meter")
-	var w := cfg.weapon("pistola_teste")
-	var src := cfg.game_data.get_entry("armas", "pistola_teste")
+	var w := cfg.weapon("tiro_atirador")
+	var src := cfg.game_data.get_entry("armas", "tiro_atirador")
 	_check(w.base_chance == src["precisao_base"] and w.damage_min == src["dano"][0], "arma lida de armas.json")
 	_check(is_equal_approx(w.max_range, src["alcance_maximo"] * ppm), "alcance convertido de metros para pixels")
-	var e := cfg.make_enemy("cultista_teste", Vector2.ZERO)
-	var sheet := cfg.game_data.get_entry("inimigos", "cultista_teste")
+	var e := cfg.make_enemy("cultista", Vector2.ZERO)
+	var sheet := cfg.game_data.get_entry("inimigos", "cultista")
 	_check(e.max_pv == sheet["pv"] and e.initiative == sheet["agi"] and e.side == Combatant.Side.ENEMY, "inimigo lido de inimigos.json")
 	e.pa_per_turn = 2
 	var a := _unit("agente", "A", 0)
@@ -50,7 +50,7 @@ func _test_data_sources() -> void:
 func _test_initiative_and_pa() -> void:
 	var a := _unit("agente", "A", 12)
 	var b := _unit("agente", "B", 15)
-	var e := _unit("cultista_teste", "E", 13)
+	var e := _unit("cultista", "E", 13)
 	var tm := TurnManager.new(int(cfg.value("pa_per_turn")))
 	tm.start([a, b, e] as Array[Combatant])
 	_check(tm.order[0] == e and tm.order[1] == b and tm.order[2] == a, "intercala inimigo e aliado, cada lado pela iniciativa")
@@ -68,9 +68,9 @@ func _test_initiative_and_pa() -> void:
 	_check(tm.round_number == 2 and tm.current == e and e.pa == 3, "nova rodada recomeça com 3 PA, sem acúmulo")
 	_check(a.pa == 0, "PA restantes de quem encerrou o turno são perdidos")
 
-	var e1 := _unit("cultista_teste", "E1", 1)
-	var e2 := _unit("cultista_teste", "E2", 2)
-	var e3 := _unit("cultista_teste", "E3", 1)
+	var e1 := _unit("cultista", "E1", 1)
+	var e2 := _unit("cultista", "E2", 2)
+	var e3 := _unit("cultista", "E3", 1)
 	var p1 := _unit("agente", "P1", 1)
 	var p2 := _unit("agente", "P2", 3)
 	var p3 := _unit("agente", "P3", 2)
@@ -83,7 +83,7 @@ func _test_initiative_and_pa() -> void:
 	for i in 6:
 		tm3.end_turn()
 	_check(tm3.round_number == 2 and tm3.order == ([e2, p2, e1, p3, e3, p1] as Array[Combatant]), "da rodada 2 em diante volta a intercalar")
-	var x1 := _unit("cultista_teste", "X1", 1)
+	var x1 := _unit("cultista", "X1", 1)
 	var y1 := _unit("agente", "Y1", 1)
 	var y2 := _unit("agente", "Y2", 1)
 	var y3 := _unit("agente", "Y3", 1)
@@ -95,7 +95,7 @@ func _test_initiative_and_pa() -> void:
 func _test_delay_and_pass() -> void:
 	var a := _unit("agente", "A", 15)
 	var b := _unit("agente", "B", 12)
-	var e := _unit("cultista_teste", "E", 10)
+	var e := _unit("cultista", "E", 10)
 	var tm := TurnManager.new()
 	tm.start([a, b, e] as Array[Combatant])
 	tm.end_turn()  # rodada: E, A, B
@@ -117,7 +117,7 @@ func _test_delay_and_pass() -> void:
 
 func _test_combat_end() -> void:
 	var a := _unit("agente", "A", 15)
-	var e := _unit("cultista_teste", "E", 10)
+	var e := _unit("cultista", "E", 10)
 	var tm := TurnManager.new()
 	var ended := []
 	tm.combat_ended.connect(func(r): ended.append(r))
@@ -129,7 +129,7 @@ func _test_combat_end() -> void:
 	_check(ended.size() == 1 and tm.current == null, "combate termina sem rodada extra")
 
 	var a2 := _unit("agente", "A", 5)
-	var e2 := _unit("cultista_teste", "E", 10)
+	var e2 := _unit("cultista", "E", 10)
 	var tm2 := TurnManager.new()
 	tm2.start([a2, e2] as Array[Combatant])
 	a2.take_damage(999)
@@ -355,7 +355,7 @@ func _test_ammo() -> void:
 	a.weapon = cfg.weapon("pistola")
 	_check(int(a.weapon["mag_size"]) == 12, "pistola tem carregador de 12 em armas.json")
 	a.mag["pistola"] = 2
-	var t := _unit("cultista_teste", "C", 1, Vector2(140, 100))
+	var t := _unit("cultista", "C", 1, Vector2(140, 100))
 	t.max_pv = 999
 	t.pv = 999
 	var rules := CombatRules.new(cfg)
@@ -365,7 +365,7 @@ func _test_ammo() -> void:
 	rules.attack(a, t, [], [])
 	_check(int(a.mag["pistola"]) == 0 and rules.needs_reload(a), "carregador vazio pede recarga")
 	_check(rules.attack_blocker(a, t, [], []) == "no_ammo", "sem balas o ataque é bloqueado (no_ammo)")
-	var e := cfg.make_enemy("cultista_teste", Vector2(300, 100))
+	var e := cfg.make_enemy("cultista", Vector2(300, 100))
 	_check(int(e.weapon["mag_size"]) == 0 and not rules.needs_reload(e), "arma sem carregador não usa munição")
 
 
@@ -374,7 +374,7 @@ func _test_overwatch() -> void:
 	var a := _unit("agente", "A", 5, Vector2(100, 100))
 	a.weapon = cfg.weapon("pistola")
 	a.mag["pistola"] = 5
-	var e := cfg.make_enemy("cultista_teste", Vector2(200, 100))
+	var e := cfg.make_enemy("cultista", Vector2(200, 100))
 	e.max_pv = 999
 	e.pv = 999
 	rules.units = [a, e]
@@ -391,7 +391,7 @@ func _test_overwatch() -> void:
 	a.overwatch_dir = Vector2(1, 0.5).normalized()
 	_check(rules.overwatch_watcher(e, [], []) == a, "dentro do cone (ângulo menor que a metade) é visto")
 	a.overwatch_dir = Vector2.RIGHT
-	var far := cfg.make_enemy("cultista_teste", Vector2(5000, 100))
+	var far := cfg.make_enemy("cultista", Vector2(5000, 100))
 	_check(rules.overwatch_watcher(far, [], []) == null, "fora do alcance: sem tiro")
 	var before := a.pa
 	var r := rules.overwatch_shot(a, e, [], [])
@@ -412,7 +412,7 @@ func _test_overwatch() -> void:
 	a.hit_bonus = 0.0
 	# a vigilância acaba no próximo turno de quem vigia
 	var c := _unit("agente", "C", 9, Vector2.ZERO)
-	var foe := _unit("cultista_teste", "F", 1, Vector2(50, 0))
+	var foe := _unit("cultista", "F", 1, Vector2(50, 0))
 	c.overwatch = true
 	var tm := TurnManager.new(3)
 	tm.start([c, foe] as Array[Combatant])

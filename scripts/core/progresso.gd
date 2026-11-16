@@ -11,17 +11,20 @@ extends RefCounted
 # pista sai da lista, para o combate acontecer de novo ao examiná-la (Game Over volta para antes dele).
 
 const CENA_PARQUE := "res://scenes/exploration/parque.tscn"
+const CENA_FICHAS := "res://scenes/menu/fichas.tscn"
 
 static var pendente := {}  # save lido no menu, à espera de a cena do lugar abrir e aplicá-lo
 static var dir := SaveSlots.DIR  # pasta dos saves (os testes usam outra)
 static var autosave_ativo := true
 
 
-# Novo jogo: missão do começo, sem save pendente, no parque.
+# Novo jogo: missão do começo, sem save pendente. Abre a tela das fichas (4 pontos por agente, GDD #11);
+# ela grava Ficha.escolhas e segue para o parque.
 static func novo_jogo(tree: SceneTree) -> bool:
 	Missao1.reiniciar()
+	Ficha.reiniciar()
 	pendente = {}
-	return Scenes.go(tree, CENA_PARQUE)
+	return Scenes.go(tree, CENA_FICHAS)
 
 
 # Lê o slot e abre o lugar salvo; a cena aplica o resto em _ready (tomar_pendente). false se não deu.
@@ -69,6 +72,7 @@ static func capturar(room: Node, area: String, rotulo: String, pista_do_combate 
 			"ruptura": m.ruptured,
 			"louco": m.insane,
 			"morto": m.dead,
+			"atributos": m.atributos.duplicate(),
 			"equip": (room.gear.get(m, {}) as Dictionary).duplicate(),
 		})
 	var mochila: Array = []
@@ -82,6 +86,7 @@ static func capturar(room: Node, area: String, rotulo: String, pista_do_combate 
 		"grupo": grupo,
 		"lider": maxi(room.party.find(room.player), 0),
 		"mochila": mochila,
+		"fichas": Ficha.escolhas.duplicate(true),
 	}
 
 
@@ -92,6 +97,7 @@ static func preparar_missao(data: Dictionary) -> String:
 		return ""
 	var m: Dictionary = data["missao"]
 	Missao1.reiniciar()
+	Ficha.escolhas = (data.get("fichas", {}) as Dictionary).duplicate(true) if data.get("fichas") is Dictionary else {}
 	Missao1.local = str(m.get("local", ""))
 	Missao1.chegada = str(m.get("chegada", ""))
 	for marca in m.get("marcas", []):
@@ -116,6 +122,9 @@ static func aplicar(room: Node, data: Dictionary) -> void:
 		m.max_san = int(g.get("max_san", m.max_san))
 		m.san = clampi(int(g.get("san", m.san)), 0, m.max_san)
 		m.dead = bool(g.get("morto", false))
+		if g.get("atributos") is Dictionary and not (g["atributos"] as Dictionary).is_empty():
+			m.atributos = (g["atributos"] as Dictionary).duplicate()
+			m.initiative = int(m.atributos.get("AGI", m.initiative))
 		m.ruptured = bool(g.get("ruptura", false))
 		m.insane = bool(g.get("louco", false))
 		var equip = g.get("equip")

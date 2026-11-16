@@ -73,7 +73,8 @@ func lose(unit: Combatant, amount: int, scare := true) -> Dictionary:
 
 
 func resist_chance(unit: Combatant) -> float:
-	return maxi(int(pre.get(unit, 1)) - 1, 0) * float(cfg.san("resistir_por_pre"))
+	var p := int(pre.get(unit, unit.atributos.get("PRE", 1)))  # PRE da ficha (Ficha); `pre` sobrepõe (testes)
+	return maxi(p - 1, 0) * float(cfg.san("resistir_por_pre"))
 
 
 func _go_insane(unit: Combatant) -> void:
