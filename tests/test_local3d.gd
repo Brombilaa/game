@@ -23,6 +23,7 @@ func _run() -> void:
 		_check(s.ok(), id + ": dados válidos " + ", ".join(s.errors))
 	for id in LOCAIS:
 		await _local(id)
+	await _investigacao()
 	await _tapete_e_alcapao()
 	await _invasao()
 	await _celeiro()
@@ -80,6 +81,26 @@ func _local(id: String) -> void:
 		_check(room.indo_para == str(z["para"]), id + ": a zona %s leva a %s" % [z["id"], z["para"]])
 		break
 	await _fechar(room)
+
+
+func _investigacao() -> void:
+	# Delegacia das 17h e biblioteca têm pistas: documentos, itens no chão e gavetas (textos provisórios).
+	for id in ["delegacia_17h", "biblioteca"]:
+		Missao1.reiniciar()
+		var room = await _abrir(id)
+		_check(room.scenario.clues.size() >= 5, id + ": tem pelo menos 5 pistas")
+		for cid in room.scenario.clues:
+			var c: Dictionary = room.scenario.clues[cid]
+			_check(str(c.texto).length() > 20, id + ": a pista %s tem texto" % cid)
+			_check(Pathfinder.is_free(c.pos, room._obstacles(room.player), room.player.radius), id + ": a pista %s fica em ponto livre" % cid)
+		var antes: int = room.inventory.count("kit_primeiros_socorros") + room.inventory.count("municao_pistola") + room.inventory.count("curativo")
+		for cid in room.scenario.clues:
+			room._inspect(cid)
+			room._close_dialog()
+		_check(room.seen_clues.size() == room.scenario.clues.size(), id + ": todas as pistas podem ser lidas")
+		var depois: int = room.inventory.count("kit_primeiros_socorros") + room.inventory.count("municao_pistola") + room.inventory.count("curativo")
+		_check(depois > antes, id + ": achar itens nas pistas enche a mochila")
+		await _fechar(room)
 
 
 func _tapete_e_alcapao() -> void:

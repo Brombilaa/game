@@ -1316,11 +1316,11 @@
     0,
     -20
    ],
-   "texto": "O tapete do canto está torto, como se alguém o tivesse puxado às pressas. Embaixo dele há um alçapão.",
-   "provisorio": true,
    "destaque": {
     "estado": "tapete"
-   }
+   },
+   "texto": "O tapete do canto está torto, como se alguém o tivesse puxado às pressas. Embaixo dele há um alçapão.",
+   "provisorio": true
   }
  ],
  "gatilhos": [

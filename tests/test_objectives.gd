@@ -18,6 +18,28 @@ func _init() -> void:
 	_check(o[1]["atual"] and o[1]["texto"] != Objectives.LOCKED_TEXT, "símbolo liberado e atual")
 	o = Objectives.build(clues, ["a", "b", "t"], true)
 	_check(o[1]["feito"] and o[2]["texto"] == Objectives.COMBAT_TEXT and o[2]["atual"], "combate vira o atual")
+	# Formato único dos dados (parque.json e os outros lugares).
+	var marcas := {"alcapao": true}
+	var tem := func(m: String) -> bool: return marcas.has(m)
+	var lista := [
+		{"texto": "Investigar", "pistas": ["a", "b"]},
+		{"texto": "Símbolo", "pista": "t", "trancado": true},
+		{"texto": "Descer", "marca": "desceu", "requer": "alcapao"},
+		{"texto": "Escondido", "requer": "nunca"},
+	]
+	o = Objectives.from_data(lista, ["a"], tem, false)
+	_check(o.size() == 3 and o[0]["detalhe"] == "1/2" and o[0]["atual"], "pistas contam x/y; requer sem a marca esconde")
+	_check(o[1]["texto"] == Objectives.LOCKED_TEXT, "trancado mostra ??? até os anteriores")
+	o = Objectives.from_data(lista, ["a", "b"], tem, false)
+	_check(o[1]["texto"] == "Símbolo" and o[1]["atual"], "trancado abre depois dos anteriores")
+	marcas["desceu"] = true
+	o = Objectives.from_data(lista, ["a", "b", "t"], tem, true)
+	_check(o[2]["feito"] and o[3]["texto"] == Objectives.COMBAT_TEXT and o[3]["atual"], "marca conclui; em combate o atual é sobreviver")
+	var parque := Scenario.load_id("parque")
+	_check(parque.objetivos.size() == 2, "parque.json tem os objetivos no formato comum")
+	var antigo := Objectives.build(parque.clues, ["caio"], false)
+	var novo := Objectives.from_data(parque.objetivos, ["caio"], tem, false)
+	_check(antigo == novo, "objetivos do parque iguais aos de antes (%s)" % str(novo))
 	print("Falhas: %d" % failures)
 	quit(1 if failures > 0 else 0)
 

@@ -189,7 +189,7 @@ func _click(p: Vector2) -> void:
 		if _tab_rect(k).has_point(p):
 			tab = k
 			return
-	for i in Inventory.SIZE:
+	for i in room.inventory.size:
 		if _grid_rect(i).has_point(p):
 			if not room.inventory.slots[i].is_empty():
 				# clicar de novo no item já escolhido equipa ou usa (atalho do E)
@@ -331,7 +331,7 @@ func _draw() -> void:
 	var o := _origin()
 	_backdrop(_frame_rect())
 	var f := _frame_rect()
-	draw_string(font, Vector2(f.position.x, f.position.y + 36), "%d / %d" % [room.inventory.used(), Inventory.SIZE], HORIZONTAL_ALIGNMENT_RIGHT, FRAME_SIZE.x - 62, 12, MUTED)
+	draw_string(font, Vector2(f.position.x, f.position.y + 36), "%d / %d" % [room.inventory.used(), room.inventory.size], HORIZONTAL_ALIGNMENT_RIGHT, FRAME_SIZE.x - 62, 12, MUTED)
 	_draw_close()
 	for i in room.party.size():
 		_draw_portrait(font, i)
@@ -472,7 +472,7 @@ func _slot(font: Font, r: Rect2, id: String, qty: int, selected: bool, dim: bool
 
 
 func _draw_grid(font: Font) -> void:
-	for i in Inventory.SIZE:
+	for i in room.inventory.size:
 		var s: Dictionary = room.inventory.slots[i]
 		var id := "" if s.is_empty() else str(s["id"])
 		_slot(font, _grid_rect(i), id, 0 if s.is_empty() else int(s["qty"]), sel.get("kind") == "bag" and sel.get("i") == i, not _tab_match(id))
