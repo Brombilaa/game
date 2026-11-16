@@ -282,9 +282,18 @@ func overwatch_shot(watcher: Combatant, target: Combatant, walls: Array[Rect2], 
 	return r
 
 
-# Alcance com que `observer` percebe `target`: o da ficha, pela metade se o alvo está agachado.
+# Alcance com que `observer` percebe `target`: o da ficha, pela metade se o alvo está agachado e, à noite
+# (modelo C, luz e furtividade), menor na sombra e maior na luz ou com a lanterna acesa.
 func perception_range(observer: Combatant, target: Combatant) -> float:
-	return observer.perception * (cfg.value("crouch_perception_factor") if target.crouched else 1.0)
+	var r := observer.perception * (cfg.value("crouch_perception_factor") if target.crouched else 1.0)
+	return r * light_factor(target)
+
+
+# Fator da luz sobre a percepção: de dark_perception_factor (sombra total) a lit_perception_factor (luz cheia).
+func light_factor(target: Combatant) -> float:
+	if target.iluminacao < 0.0:
+		return 1.0
+	return lerpf(cfg.value("dark_perception_factor"), cfg.value("lit_perception_factor"), clampf(target.iluminacao, 0.0, 1.0))
 
 
 

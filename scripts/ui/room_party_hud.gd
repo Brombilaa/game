@@ -125,6 +125,10 @@ func _draw_sheet(font: Font, m: Combatant, i: int, to_world: Transform2D) -> voi
 	if status[0] != "":
 		room.draw_rect(pill, Color(0, 0, 0, 0.7))
 		room.draw_string(font, pill.position + Vector2(0, 7.0), status[0], HORIZONTAL_ALIGNMENT_CENTER, pill.size.x, 7, status[1])
+	if m.iluminacao >= 0.0 and m.is_alive() and room.mode == room.Mode.EXPLORATION:  # luz e furtividade: olho (modelo A)
+		var olho := Vector2(r.end.x - 6.0, face.end.y - 18.0)
+		room.draw_circle(olho, 5.5, Color(0, 0, 0, 0.72))
+		LuzFurtividade.desenhar_olho(room, olho, 4.0, LuzFurtividade.estado_de(m.iluminacao))
 
 
 # Olho rachado (modelo B): personagem em ruptura de SAN.
