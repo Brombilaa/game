@@ -428,6 +428,8 @@ func _test_san() -> void:
 	await process_frame
 	room.enemies[0].kind = "criatura_sangue"
 	var terror := int(room.cfg.san("terror_ao_ver")["criatura_sangue"])
+	for m in room.party:
+		room.san.pre[m] = 1  # sem chance de resistir (a PRE das fichas daria 10% por ponto)
 	var before: Array = room.party.map(func(m: Combatant) -> int: return m.san)
 	room._start_combat()
 	var all_lost := true
