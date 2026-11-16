@@ -6,6 +6,7 @@ var failures := 0
 
 
 func _init() -> void:
+	CaixaFala.pular = false  # aqui a caixa roda de verdade, mesmo sem janela
 	_check(CaixaFala.nome_de("leticia") == "Letícia", "id vira nome com acento")
 	_check(CaixaFala.nome_de("Letícia") == "Letícia", "nome também serve")
 	_check(CaixaFala.tem_retrato("fernando"), "Fernando tem retrato")

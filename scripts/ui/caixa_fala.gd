@@ -28,6 +28,8 @@ const NOMES := {
 const ARQUIVO_FALAS := "res://data/falas.json"
 
 static var _falas_cache: Dictionary = {}
+# Sem janela (testes headless) as falas passam direto: quem chama continua no mesmo quadro, sem esperar clique.
+static var pular := DisplayServer.get_name() == "headless"
 
 var ocupada := false  # há uma fala na tela
 var _fundo: TextureRect
@@ -124,6 +126,8 @@ static func falas_da_pista(cenario: String, pista: String) -> Array:
 
 
 func falar(quem: String, texto: String, solta := false) -> void:
+	if pular:
+		return
 	ocupada = true
 	_solta = solta
 	_avancou = false
