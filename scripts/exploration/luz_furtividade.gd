@@ -96,34 +96,41 @@ func estado_lider() -> Estado:
 	return estado_de(lider.iluminacao)
 
 
-# Indicador (modelo B, marca no chão): anel sob os pés de cada agente. Tracejado e frio na sombra,
-# cheio e âmbar com brilho na luz, intermediário na penumbra. O círculo vermelho de percepção dos
-# inimigos (parque.gd) já cresce e encolhe com a luz, pela própria regra.
-const ANEL_RAIO := 22.0  # px do mundo
+
+# Indicador (modelo A, olho no retrato; Léo escolheu em 15/11/2026): cada cartão do grupo ganha um olho,
+# fechado e frio quando o agente está escondido, aberto e âmbar quando está visível (room_party_hud.gd);
+# um selo maior abaixo dos objetivos resume o líder (room_objectives_hud.gd).
 const COR_ESCONDIDO := Color(0.59, 0.67, 0.82)
 const COR_VISIVEL := Color(0.91, 0.64, 0.29)
+const TEXTO := {Estado.ESCONDIDO: "ESCONDIDO", Estado.PENUMBRA: "PENUMBRA", Estado.VISIVEL: "VISÍVEL"}
 
 
-func desenhar(c: CanvasItem) -> void:
-	for m in luz.host.party:
-		var u := m as Combatant
-		if u.is_alive():
-			_anel(c, u)
-
-
-func _anel(c: CanvasItem, u: Combatant) -> void:
-	var e := estado_de(u.iluminacao)
-	if e == Estado.DIA:
-		return
-	var pts := PackedVector2Array()
-	for i in 49:
-		pts.append(luz.host._iso(u.pos + Vector2.from_angle(TAU * i / 48.0) * ANEL_RAIO))
+static func cor_de(e: Estado) -> Color:
 	match e:
-		Estado.ESCONDIDO:
-			for i in range(0, 48, 4):  # tracejado: 12 traços
-				c.draw_polyline(pts.slice(i, i + 3), Color(COR_ESCONDIDO, 0.8), 1.0)
-		Estado.PENUMBRA:
-			c.draw_polyline(pts, Color(COR_ESCONDIDO.lerp(COR_VISIVEL, 0.5), 0.7), 1.0)
 		Estado.VISIVEL:
-			c.draw_polyline(pts, Color(COR_VISIVEL, 0.18), 4.0)  # brilho
-			c.draw_polyline(pts, Color(COR_VISIVEL, 0.95), 1.5)
+			return COR_VISIVEL
+		Estado.PENUMBRA:
+			return COR_ESCONDIDO.lerp(COR_VISIVEL, 0.5)
+	return COR_ESCONDIDO
+
+
+# Olho de largura 2·w: fechado (pálpebra com cílios) escondido, meio aberto na penumbra, aberto com pupila visível.
+static func desenhar_olho(c: CanvasItem, centro: Vector2, w: float, e: Estado) -> void:
+	var cor := cor_de(e)
+	var abertura := {Estado.ESCONDIDO: 0.0, Estado.PENUMBRA: 0.35}.get(e, 0.7) as float
+	var cima := PackedVector2Array()
+	var baixo := PackedVector2Array()
+	for k in 13:
+		var t := -1.0 + 2.0 * k / 12.0
+		var y := (1.0 - t * t) * w
+		cima.append(centro + Vector2(t * w, -y * abertura))
+		baixo.append(centro + Vector2(t * w, y * maxf(abertura, 0.45)))
+	var espessura := maxf(w * 0.18, 0.8)
+	c.draw_polyline(baixo, cor, espessura)
+	if abertura <= 0.0:  # fechado: só a pálpebra, com três cílios
+		for t in [-0.5, 0.0, 0.5]:
+			var p := centro + Vector2(t * w, (1.0 - t * t) * w * 0.45)
+			c.draw_line(p, p + Vector2(t * w * 0.3, w * 0.35), cor, espessura * 0.8)
+		return
+	c.draw_polyline(cima, cor, espessura)
+	c.draw_circle(centro, w * 0.3 * (0.6 + abertura * 0.6), cor)
