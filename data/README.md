@@ -8,15 +8,15 @@ var data := GameData.new()
 if not data.load_dir():        # lê res://data
 	push_error("\n".join(data.errors))
 data.rule("turnos_chefe_por_rodada_max")  # 2
-data.get_entry("armas", "pistola_teste")["dano"]  # [8, 12]
+data.get_entry("armas", "pistola")["dano"]  # [3, 5]
 ```
 
 ## Convenções
 
 - **`null` = PENDENTE.** O GDD ainda não definiu o valor. O carregador aceita e lista em
   `data.pending`. Campos que não podem ficar pendentes (ids, nomes, tipos) dão erro se forem null.
-- **`"provisorio": true`** marca entradas inventadas só para testar sistemas (`pistola_teste`,
-  `cultista_teste`, as três classes). Ficam listadas em `data.provisional` e devem ser
+- **`"provisorio": true`** marca entradas inventadas só para testar sistemas (quase todas as armas e inimigos,
+  a distribuição sugerida de atributos). Ficam listadas em `data.provisional` e devem ser
   substituídas pelo conteúdo real.
 - **Chaves começando com `_`** são comentários e são ignoradas.
 - Campos desconhecidos dão erro, para pegar erro de digitação.
@@ -30,12 +30,13 @@ data.get_entry("armas", "pistola_teste")["dano"]  # [8, 12]
 | --- | --- |
 | `regras.json` | Constantes globais: atrasar, turnos de chefe, custos de ação (recarga, corpo a corpo, item, troca de arma, reanimar, mira), atributos iniciais, espaços do inventário, altura, descanso, ganho de PV/SAN por nível. O custo de ataque de cada arma fica em `armas.json` (`custo_pa`). |
 | `atributos.json` | FOR, AGI, INT, PRE, VIG. |
-| `classes.json` | PV, SAN e iniciativa base por classe. |
-| `personagens.json` | Fernando, Rafael, Miguel, Nikolai: classe, atributos, arma inicial, árvores exclusivas. |
+| `classes.json` | PV e SAN base e por nível de cada classe. O código monta a ficha em `scripts/core/ficha.gd` (`Ficha`). |
+| `personagens.json` | Fernando, Rafael, Miguel, Nikolai: classe, atributos sugeridos (o jogador redistribui antes da campanha), arma inicial, árvores exclusivas. |
 | `condicoes.json` | As seis condições aprovadas: duração, efeito, acúmulo, remoção. |
 | `armas.json` | Tipo, dano, precisão base, alcance, distância ideal, carregador, reserva, efeitos críticos. |
 | `itens.json` | Categoria, tamanho na grade, pilha, custo em PA no combate, efeito e valor. |
 | `inimigos.json` | PV, PA, iniciativa, precisão, defesa, ataques, comportamento, resistências, fraquezas, fases de chefe. |
+| `rituais.json` | Os quatro rituais do Miguel (Armadura de Sangue, Amaldiçoar Arma, Eletrocussão, Cicatrização): classe, alvo, custo de PA e SAN, alcance, efeito, duração. Regras em `scripts/core/ritual_rules.gd`; INT soma por `Ficha.bonus_ritual`. Todos provisórios. |
 | `arvores.json` | Cinco árvores compartilhadas (uma por atributo) e uma exclusiva por personagem do trio. |
 
 Estado de execução (PV atual, munição no carregador, condições ativas) não fica aqui: estes

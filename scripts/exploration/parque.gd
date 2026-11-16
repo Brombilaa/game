@@ -257,6 +257,11 @@ func _place_label() -> String:
 	return "PARQUE"
 
 
+# Lugar e hora como aparecem no diário de pistas.
+func _diario_lugar() -> String:
+	return "PARQUE · 16h"
+
+
 func _enemy_variant(_i: int) -> String:
 	return CREATURE_VARIANT  # Criatura de Sangue no lugar dos cultistas (Léo, 5/11)
 
@@ -807,9 +812,15 @@ func can_pause() -> bool:
 	return mode != Mode.CUTSCENE and super()
 
 
-# Objetivos do HUD: investigar o parque, depois o símbolo da árvore; em combate, sobreviver.
+func diario_pode_abrir() -> bool:
+	return mode != Mode.CUTSCENE and not dialog_layer.visible and super()
+
+
+# Objetivos do HUD: os "objetivos" de parque.json, no mesmo formato dos outros lugares (Objectives.from_data).
 func _objectives() -> Array[Dictionary]:
-	return Objectives.build(scenario.clues, seen_clues, mode == Mode.COMBAT)
+	if scenario.objetivos.is_empty():
+		return Objectives.build(scenario.clues, seen_clues, mode == Mode.COMBAT)
+	return Objectives.from_data(scenario.objetivos, seen_clues, Missao1.tem, mode == Mode.COMBAT)
 
 
 # Caio tem a folha de parado em 3D; a Letícia ainda é figura provisória (corpo, cabeça e nome).
@@ -1169,7 +1180,11 @@ func _close_dialog() -> void:
 	seen_clues.append(cid)
 	Dicas.marcar("examinar")
 	audio.play_sfx("clue_found")
-	collect_items(scenario.clues[cid]["da"])
+	var c: Dictionary = scenario.clues[cid]
+	Diario.anotar(_diario_lugar(), cid, c["texto"], c["inspecao"])
+	if c["perda_san"] > 0 or c["perturbadora"]:  # pista que perturba: quem leu (o líder) perde SAN
+		room_combat._san_report({player: san.clue_read(player, {"perda_san": c["perda_san"]} if c["perda_san"] > 0 else c)}, "lê a pista")
+	collect_items(c["da"])
 	pista_gatilho = cid
 	for trigger in scenario.triggers_after(cid):
 		_run_trigger(trigger)

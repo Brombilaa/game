@@ -98,6 +98,7 @@ func _san_ratio() -> float:
 # P4 (modelo B, Léo 02/11/2026): quanto menos SAN, mais a cor some (cinza por cima do mundo, antes do
 # HUD) e, na ruptura, a tela pulsa devagar em escuro. Só aviso visual: a regra da ruptura é outra tarefa.
 func _draw_san_tint() -> void:
+	_draw_ground_phrases()
 	var ratio := _san_ratio()
 	if ratio >= 1.0:
 		return
@@ -107,6 +108,26 @@ func _draw_san_tint() -> void:
 	if room.player.san <= 0:
 		var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 1000.0 * 2.2)
 		room.draw_rect(screen, Color(0, 0, 0, 0.12 + 0.18 * pulse))
+
+
+# Modelo C (Léo, 15/11): em ruptura, frases vermelhas aparecem escritas no chão em volta de quem rompeu,
+# somem e voltam em outro lugar. Posições e textos sorteados por personagem e por ciclo de 4 s.
+func _draw_ground_phrases() -> void:
+	var t := Time.get_ticks_msec() / 1000.0
+	for m: Combatant in room.san_fx.ruptured():
+		var cycle := int(t / 4.0)
+		var fade := sin(fmod(t, 4.0) / 4.0 * PI)
+		for i in 2:
+			var h := absi(hash([m.name, cycle, i]))
+			var ang := float(h % 628) / 100.0
+			var dist := 70.0 + float((h / 7) % 80)
+			var text: String = SanFx.FRASES_CHAO[(absi(hash([m.name, cycle])) + i * 3) % SanFx.FRASES_CHAO.size()]  # duas frases diferentes por vez
+			var at := room._iso(m.pos + Vector2(cos(ang), sin(ang)) * dist)
+			var size := 22
+			var w := TestRoom.POPUP_FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+			room.draw_set_transform(at, (float((h / 3) % 20) - 10.0) / 100.0, Vector2(1.0, 0.6))
+			room.draw_string(TestRoom.POPUP_FONT, Vector2(-w * 0.5, 0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(0.78, 0.07, 0.07, 0.85 * fade))
+	room.draw_set_transform(Vector2.ZERO)
 
 
 # P3 (modelo A): até 4 linhas no canto inferior esquerdo, esmaecendo com o tempo.
@@ -149,13 +170,14 @@ func _draw_perf(font: Font) -> void:
 # in game"): levemente tortos, contorno escuro fino, sem placa nem etiqueta; o crítico é maior, dourado e torto para o outro lado.
 func _draw_popup(_font: Font, p: Dictionary) -> void:
 	var style: Dictionary = TestRoom.POPUP_STYLES.get(p.kind, TestRoom.POPUP_STYLES.info)
-	var age: float = 1.0 - p.time / TestRoom.POPUP_SECONDS
-	var alpha: float = clampf(p.time / TestRoom.POPUP_SECONDS * 2.5, 0.0, 1.0)
+	var dur: float = p.get("dur", TestRoom.POPUP_SECONDS)  # falas sozinho em ruptura duram mais
+	var age: float = 1.0 - p.time / dur
+	var alpha: float = clampf(p.time / dur * 2.5, 0.0, 1.0)
 	var size: int = style.size
 	if p.kind == "crit" and age < 0.15:
 		size = int(size * (1.5 - age * 3.3))  # o crítico cresce e assenta no primeiro instante
 	var width := TestRoom.POPUP_FONT.get_string_size(p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-	var at: Vector2 = p.pos + Vector2(0, -28.0 * age)
+	var at: Vector2 = p.pos + Vector2(0, -28.0 * age * (0.3 if p.kind == "fala" else 1.0))
 	var color: Color = style.color
 	room.draw_set_transform(at, -0.06 if p.kind != "crit" else 0.05, Vector2.ONE)
 	room.draw_string_outline(TestRoom.POPUP_FONT, Vector2(-width * 0.5, 0), p.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 4, Color(0.05, 0.03, 0.02, alpha))

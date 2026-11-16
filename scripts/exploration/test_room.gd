@@ -38,8 +38,6 @@ const REVIVE_REACH := 16.0  # borda a borda: "adjacente" para reanimar
 const KIT_ID := "kit_primeiros_socorros"
 
 const RELOAD_SECONDS := 2.0  # recarga: 12 quadros a 6/s (AnimSheet.FPS["reload"])
-const SWAP_PA := 1  # trocar de arma em combate (GDD #18)
-const RELOAD_PA := 1  # recarregar em combate (1 PA, GDD #18; provisório)
 
 const POPUP_SECONDS := 1.2
 
@@ -55,6 +53,8 @@ const POPUP_STYLES := {
 	"down": {"size": 14, "color": Color(0.95, 0.3, 0.25)},
 	"heal": {"size": 15, "color": Color(0.5, 0.9, 0.55)},
 	"info": {"size": 13, "color": Color(1.0, 1.0, 0.75)},
+	"san": {"size": 22, "color": Color(0.49, 0.65, 0.93)},
+	"fala": {"size": 14, "color": Color(0.9, 0.9, 0.95)},
 }
 
 # Quadro da caminhada avança por distância percorrida na tela (não por tempo): os pés não deslizam,
@@ -130,12 +130,14 @@ var covers: Array = [
 var cfg := CombatConfig.load_file()
 
 var rules := CombatRules.new(cfg)
+var san := SanRules.new(cfg)  # SAN como medidor de terror: perda, ruptura e loucura (GDD #11)
+var rituals := RitualRules.new(cfg, rules, san)  # rituais do Ocultista (Miguel): custo de PA e SAN
 
-# Grupo de teste: Fernando, Nikolai e Miguel (só para exercitar grupo, troca e reanimação).
+# Grupo: Fernando, Nikolai e Miguel pelas fichas do GDD (classe e atributos; Ficha e personagens.json).
 var party: Array[Combatant] = [
-	cfg.make_unit("agente", "Fernando", Vector2(160, 360)),
-	cfg.make_unit("agente", "Nikolai", Vector2(110, 320)),
-	cfg.make_unit("agente", "Miguel", Vector2(110, 400)),
+	cfg.make_agent("fernando", Vector2(160, 360)),
+	cfg.make_agent("nikolai", Vector2(110, 320)),
+	cfg.make_agent("miguel", Vector2(110, 400)),
 ]
 
 var player: Combatant = party[0]  # personagem controlado (no combate, o do turno)
@@ -156,6 +158,7 @@ var inventory: Inventory  # mochila compartilhada do grupo (20 espaços)
 var gear := {}  # membro -> {"principal", "secundaria", "colete", "acessorio"}: ids ("" = vazio)
 
 var inv_panel: InventoryPanel
+var diario_panel: DiarioPanel
 
 var enemies: Array[Combatant] = [
 	cfg.make_enemy("cultista", Vector2(800, 360)),
@@ -222,6 +225,7 @@ var party_hud := RoomPartyHud.new(self)
 var action_bar := RoomActionBar.new(self)
 var minimap := RoomMinimap.new(self)
 var hud_blur := HudBlur.new(self)
+var san_fx := SanFx.new(self)  # aviso de SAN na tela (modelo C com B)
 var objectives_hud := RoomObjectivesHud.new(self)
 var dicas_hud := RoomDicasHud.new(self)
 
@@ -229,6 +233,7 @@ var dicas_hud := RoomDicasHud.new(self)
 # que o parque e o local3d trocam continuam aqui (seção "Repasses", no fim do arquivo).
 var room_combat := RoomCombat.new(self)
 var room_gear := RoomGear.new(self)
+var room_ritual := RoomRitual.new(self)
 var room_party := RoomParty.new(self)
 var room_drawing := RoomDrawing.new(self)
 
@@ -277,17 +282,13 @@ func _ready() -> void:
 	hud.room_draws_hud = true  # a sala desenha modo, PA e fim do turno na moldura A
 	add_child(hud)
 	add_child(audio)
+	add_child(san_fx)  # antes do HudBlur: os dois leem a tela, e as placas do HUD ficam por cima
 	add_child(hud_blur)
 	for path in AGENT_SHEETS:
 		agent_sheets.append(CharacterSheet.new(path))
 	looks[party[0]] = 0
 	looks[party[1]] = 1
-	party[1].max_san = 16  # Nikolai é Especialista (SAN inicial 16); a ficha de teste é a mesma
-	party[1].san = 16
 	looks[party[2]] = 2
-	party[2].max_san = 20  # Miguel é Ocultista (SAN inicial 20) e luta com a espada (GDD #16)
-	party[2].san = 20
-	party[2].weapon = cfg.weapon("espada")
 	_setup_gear()
 	inv_panel = InventoryPanel.new()
 	inv_panel.room = self
@@ -295,6 +296,9 @@ func _ready() -> void:
 	inv_layer.layer = 20
 	inv_layer.add_child(inv_panel)
 	add_child(inv_layer)
+	diario_panel = DiarioPanel.new()  # tecla J; o tempo também para com ele aberto
+	diario_panel.room = self
+	add_child(diario_panel)
 	_reset_follow_offsets(Vector2.RIGHT)
 	for variant in ENEMY_SHEETS:
 		enemy_sheets[variant] = CharacterSheet.new(ENEMY_SHEETS[variant])
@@ -400,6 +404,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_reload()
 		elif event.pressed and event.keycode == KEY_F:
 			_overwatch()
+		elif event.pressed and not event.echo and room_ritual.handle_key(event.keycode):
+			pass  # rituais do Miguel (Z, X, T, Y)
 		elif event.pressed and event.keycode == KEY_V:
 			use_3d = not use_3d
 			_popup(player.pos, "Nikolai 3D" if use_3d else "Nikolai 2D")
@@ -427,7 +433,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if _mouse_on_hud(screen):  # rodapé: o fim do turno passa a vez; os ícones não movem o personagem
 			var n := action_bar._action_slots().size()
-			if action_bar._end_turn_rect(n).has_point(screen):
+			var ritual_id := ""
+			for k in n:
+				if action_bar.ritual_at(k, n) != "" and action_bar._action_rect(k, n).has_point(screen):
+					ritual_id = action_bar.ritual_at(k, n)
+			if ritual_id != "":
+				room_ritual.cast(ritual_id)
+			elif action_bar._end_turn_rect(n).has_point(screen):
 				_player_pass()
 			elif _reserve_id() != "" and action_bar._action_rect(1, n).has_point(screen):
 				_swap_weapon()
@@ -556,8 +568,8 @@ func _start_move(unit: Combatant, new_path: PackedVector2Array) -> void:
 
 
 func _process(delta: float) -> void:
-	if inv_panel and inv_panel.open:
-		return  # inventário aberto: o tempo para (GDD #23)
+	if (inv_panel and inv_panel.open) or (diario_panel and diario_panel.open):
+		return  # inventário ou diário aberto: o tempo para (GDD #23)
 	minimap._update_discovered()
 	fx.update(delta)
 	_apply_zoom_pulse()
@@ -648,6 +660,11 @@ func _exit_tree() -> void:
 
 
 # A sala de teste não tem save: recomeça. O parque e os outros lugares voltam ao autosave.
+# O diário abre quando nada mais ocupa a tela (inventário, caixa de pista) e o jogo não está parado por outro motivo.
+func diario_pode_abrir() -> bool:
+	return not (inv_panel and inv_panel.open) and mode != Mode.GAME_OVER and not get_tree().paused and not Scenes.busy(get_tree())
+
+
 func can_pause() -> bool:
 	return mode != Mode.GAME_OVER and not get_tree().paused and not Scenes.busy(get_tree())
 

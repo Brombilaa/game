@@ -105,7 +105,11 @@ func _start_combat(surprise_side: int = -1) -> void:
 	for e in room.enemies:
 		if e.is_alive():
 			units.append(e)
+	room.san.start_combat(room.party, room.turns)
 	room.turns.start(units, surprise_side)
+	for e in room.enemies:  # o grupo vê quem entrou no combate: o primeiro de cada tipo assusta
+		if e.is_alive():
+			_san_report(room.san.enemy_seen(e, room.party), "vê %s" % e.name)
 	room.queue_redraw()
 
 
@@ -125,19 +129,26 @@ func _on_combat_ended(result: TurnManager.Result) -> void:
 	Engine.time_scale = 1.0
 	room.hud.on_turn_ended()
 	room.audio.on_combat_ended()
+	RitualRules.clear_buffs(room.party)  # Armadura de Sangue e Amaldiçoar Arma acabam com o combate
 	if result == TurnManager.Result.VICTORY:
 		room.mode = TestRoom.Mode.EXPLORATION
 		room.hud.on_combat_ended()
+		var died: Array = []
 		for m in room.party:
 			if not m.is_alive() and not m.dead:
 				m.dead = true  # Léo: caído sem reanimação até o fim do combate morre
 				_popup(m.pos, "Morreu")
+				died.append(m)
+		room.san.end_combat(room.party)
+		for m in died:
+			_san_report(room.san.ally_down(m, room.party, true), "perde %s" % m.name)
 		if room.player.dead:
 			for m in room.party:
 				if not m.dead:
 					room.player = m
 					break
 	else:
+		room.san.end_combat(room.party)
 		room.mode = TestRoom.Mode.GAME_OVER
 		_game_over_fade()
 	room.queue_redraw()
@@ -186,7 +197,7 @@ func _combat_click(click: Vector2) -> void:
 # um uso por kit.
 func _revive(fallen: Combatant) -> void:
 	var kit := room.cfg.game_data.get_entry("itens", "kit_primeiros_socorros")
-	var cost := int(kit["custo_pa_combate"])
+	var cost := int(room.cfg.regra("custo_reanimar_pa", kit["custo_pa_combate"]))  # regras.json (GDD #12)
 	if room.inventory.count(TestRoom.KIT_ID) <= 0:
 		_reject("requirement")
 		room.hud.show_notice("Sem kit de primeiros socorros")
@@ -197,7 +208,7 @@ func _revive(fallen: Combatant) -> void:
 		_reject("no_pa")
 	else:
 		room.inventory.remove(TestRoom.KIT_ID)
-		fallen.pv = maxi(floori(fallen.max_pv * float(kit["valor"])), 1)
+		fallen.pv = maxi(floori(fallen.max_pv * float(room.cfg.regra("reanimar_pv_percentual", kit["valor"]))), 1)
 		room.audio.play_sfx("item_use")
 		_popup(fallen.pos, "REANIMADO", "heal")
 	_after_player_action()
@@ -293,7 +304,7 @@ func _swap_weapon() -> void:
 	if room.mode == TestRoom.Mode.COMBAT:
 		if not room._player_ready():
 			return
-		if not room.turns.spend(room.player, TestRoom.SWAP_PA):
+		if not room.turns.spend(room.player, int(room.cfg.regra("custo_trocar_arma_pa", 1))):
 			_reject("no_pa")
 			return
 	room.gear[room.player]["secundaria"] = room.gear[room.player]["principal"]
@@ -322,7 +333,7 @@ func _reload() -> void:
 	if room.mode == TestRoom.Mode.COMBAT:
 		if not room._player_ready():
 			return
-		if not room.turns.spend(room.player, TestRoom.RELOAD_PA):
+		if not room.turns.spend(room.player, int(room.cfg.regra("custo_recarga_pa", 1))):
 			_reject("no_pa")
 			return
 	var take := mini(size - have, stock)
@@ -468,12 +479,41 @@ func _on_fx_impact(job: Dictionary) -> void:
 		room.hit_shake[target] = TestRoom.CRIT_SHAKE_SECONDS if r.crit else TestRoom.HIT_SHAKE_SECONDS
 		if target.is_alive() and room._sheet3d(target) != null and not room.enemies.has(target):
 			room.nikolai_clock[target] = {"anim": "hit", "start": Time.get_ticks_msec()}  # reação ao golpe (Nikolai 3D)
-	if not target.is_alive():
+	if not target.is_alive() and not target.insane:
 		_popup(target.pos, "ABATIDO" if target.side == Combatant.Side.ENEMY else "CAIU", "down")
 		if target.side == Combatant.Side.ENEMY and not target.looted:
 			target.looted = true
 			room._loot_enemy(target)
+	if room.party.has(target) and r.get("hit", false):
+		if r.get("crit", false) and target.is_alive():
+			_san_report({target: room.san.crit_taken(target)}, "leva o golpe")
+		if not target.is_alive() and not target.insane:
+			_san_report(room.san.ally_down(target, room.party), "vê %s cair" % target.name)
 	room.queue_redraw()
+
+
+# Mostra o que a SAN fez (resultado de SanRules por personagem): "-N SAN", ruptura, loucura, e a causa no registro.
+# Visual provisório (texto); o aviso escolhido pelo Léo entre os 3 modelos entra por cima disto.
+func _san_report(results: Dictionary, cause: String) -> void:
+	for m: Combatant in results:
+		var r: Dictionary = results[m]
+		if r.resisted:
+			_popup(m.pos, "Resistiu", "info")
+			continue
+		if r.lost > 0:
+			room.san_fx.scare(r.rupture)
+			_popup(m.pos, "-%d SAN" % r.lost, "san")
+			_log("%s %s: -%d SAN" % [m.name, cause, r.lost])
+		if r.rupture:
+			_popup(m.pos, "RUPTURA", "san")
+			_log("%s entra em RUPTURA" % m.name)
+		if r.insane:
+			room.san_fx.madness()
+			_popup(m.pos, "ENLOUQUECEU", "down")
+			_log("%s enlouqueceu" % m.name)
+			_san_report(room.san.ally_down(m, room.party, true), "perde %s" % m.name)
+			if room.turns and room.turns.current == m:
+				room.turns.end_turn.call_deferred()
 
 
 # `at` é um ponto da sala; o texto nasce na altura da cabeça e sobe enquanto some.

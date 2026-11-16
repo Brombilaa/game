@@ -199,6 +199,8 @@ func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers:
 		return result
 	result.hit = true
 	var dmg := float(rng.randi_range(int(attacker.weapon["damage_min"]), int(attacker.weapon["damage_max"])))
+	dmg += Ficha.bonus_dano(cfg.game_data, attacker.atributos, attacker.weapon)  # Força (provisório, GDD #11)
+	dmg += attacker.damage_bonus()  # Amaldiçoar Arma de Sangue (ritual)
 	if rng.randf() < cfg.value("crit_chance"):
 		result.crit = true
 		dmg *= cfg.value("crit_multiplier")
@@ -206,7 +208,7 @@ func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers:
 		dmg *= cfg.value("stealth_damage_multiplier")
 	if attacker.ruptured:
 		dmg *= 1.0 - float(cfg.san("ruptura_dano"))
-	result.damage = damage_after_defense(dmg, target.defense)
+	result.damage = damage_after_defense(dmg, target.defense_total())
 	target.take_damage(result.damage)
 	if result.crit and target.is_alive():
 		for id in attacker.weapon.get("crit_conditions", []):
@@ -280,9 +282,18 @@ func overwatch_shot(watcher: Combatant, target: Combatant, walls: Array[Rect2], 
 	return r
 
 
-# Alcance com que `observer` percebe `target`: o da ficha, pela metade se o alvo está agachado.
+# Alcance com que `observer` percebe `target`: o da ficha, pela metade se o alvo está agachado e, à noite
+# (modelo C, luz e furtividade), menor na sombra e maior na luz ou com a lanterna acesa.
 func perception_range(observer: Combatant, target: Combatant) -> float:
-	return observer.perception * (cfg.value("crouch_perception_factor") if target.crouched else 1.0)
+	var r := observer.perception * (cfg.value("crouch_perception_factor") if target.crouched else 1.0)
+	return r * light_factor(target)
+
+
+# Fator da luz sobre a percepção: de dark_perception_factor (sombra total) a lit_perception_factor (luz cheia).
+func light_factor(target: Combatant) -> float:
+	if target.iluminacao < 0.0:
+		return 1.0
+	return lerpf(cfg.value("dark_perception_factor"), cfg.value("lit_perception_factor"), clampf(target.iluminacao, 0.0, 1.0))
 
 
 
@@ -313,6 +324,10 @@ func remove_condition(unit: Combatant, id: String) -> bool:
 # Retorna {damage, skip}: skip = a unidade perde este turno (atordoado).
 func start_turn_effects(unit: Combatant) -> Dictionary:
 	var out := {"damage": 0, "skip": false}
+	for id in unit.buffs.keys():  # rituais: contam os turnos do próprio conjurador
+		unit.buffs[id].rounds -= 1
+		if unit.buffs[id].rounds <= 0:
+			unit.buffs.erase(id)
 	for id in unit.conditions.keys():
 		var c := cfg.condition(id)
 		var state: Dictionary = unit.conditions[id]

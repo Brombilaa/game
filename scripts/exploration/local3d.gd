@@ -247,6 +247,10 @@ func _place_label() -> String:
 	return "%s · %dh" % [str(dados.get("rotulo", local_id.to_upper())), int(dados.get("hora", 0))]
 
 
+func _diario_lugar() -> String:
+	return _place_label()
+
+
 # Variante pelo nome da ficha (Léo, 13/11: todos atiradores); o atirador usa a figura do cultista e o retrato próprio.
 # A Dama de Sangue usa a figura da Criatura de Sangue e Roberto Ghular a do atirador, até os modelos deles existirem.
 func _enemy_variant(i: int) -> String:
@@ -471,20 +475,7 @@ func can_pause() -> bool:
 
 # Objetivos do HUD vêm dos dados: cada um feito ao ver a pista ou ao ganhar a marca; "requer" só mostra depois de outra marca.
 func _objectives() -> Array[Dictionary]:
-	var out: Array[Dictionary] = []
-	for o in dados.get("objetivos", []):
-		if o.has("requer") and not Missao1.tem(str(o["requer"])):
-			continue
-		var feito: bool = (o.has("pista") and seen_clues.has(str(o["pista"]))) or (o.has("marca") and Missao1.tem(str(o["marca"])))
-		out.append({"texto": str(o["texto"]), "feito": feito, "atual": false, "detalhe": ""})
-	if mode == Mode.COMBAT:
-		out.append({"texto": Objectives.COMBAT_TEXT, "feito": false, "atual": true, "detalhe": ""})
-		return out
-	for item in out:
-		if not item["feito"]:
-			item["atual"] = true
-			break
-	return out
+	return Objectives.from_data(dados.get("objetivos", []), seen_clues, Missao1.tem, mode == Mode.COMBAT)
 
 
 # Minimapa: o lugar inteiro conta como visto (como no parque); na cripta, só os trechos já revelados.

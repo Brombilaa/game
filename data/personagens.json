@@ -1,9 +1,10 @@
 [
   {
+    "_atributos": "Distribuição sugerida (provisória do Claude, 15/11/2026): todos começam com 1 e recebem 4 pontos, máximo 3 por atributo (GDD #11). O jogador pode redistribuir na tela de fichas antes da campanha.",
     "id": "fernando", "nome": "Fernando",
     "papel": "Participa só da primeira missão; morte obrigatória e roteirizada no fim dela.",
     "classe": "combatente", "arma_inicial": "pistola", "arma_secundaria": "escopeta",
-    "atributos": { "FOR": null, "AGI": null, "INT": null, "PRE": null, "VIG": null },
+    "atributos": { "FOR": 2, "AGI": 2, "INT": 1, "PRE": 1, "VIG": 3 },
     "arvores_exclusivas": [], "morte_roteirizada": true, "trio_final": false
   },
   {
@@ -17,14 +18,14 @@
     "id": "miguel", "nome": "Miguel",
     "papel": "Ocultista / glass cannon: defesa baixa e dano alto, principalmente corpo a corpo.",
     "classe": "ocultista", "arma_inicial": "espada", "arma_secundaria": "pistola",
-    "atributos": { "FOR": null, "AGI": null, "INT": null, "PRE": null, "VIG": null },
+    "atributos": { "FOR": 1, "AGI": 1, "INT": 3, "PRE": 2, "VIG": 2 },
     "arvores_exclusivas": ["exclusiva_miguel"], "morte_roteirizada": false, "trio_final": true
   },
   {
     "id": "nikolai", "nome": "Nikolai",
     "papel": "Atirador: distância, cobertura e furtividade.",
     "classe": "especialista", "arma_inicial": "pistola", "arma_secundaria": "fuzil_precisao",
-    "atributos": { "FOR": null, "AGI": null, "INT": null, "PRE": null, "VIG": null },
+    "atributos": { "FOR": 1, "AGI": 3, "INT": 2, "PRE": 1, "VIG": 2 },
     "arvores_exclusivas": ["exclusiva_nikolai"], "morte_roteirizada": false, "trio_final": true
   }
 ]
