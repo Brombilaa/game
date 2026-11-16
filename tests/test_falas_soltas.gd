@@ -20,6 +20,7 @@ func _init() -> void:
 		for l in f["falas"]:
 			_check(str(l["texto"]).length() > 0 and str(l["texto"]).length() <= 100, "%s: texto curto" % id)
 			_check(CaixaFala.NOMES.has(str(l["quem"])), "%s: personagem %s conhecido" % [id, l["quem"]])
+			_check(str(l["quem"]) in ["fernando", "nikolai", "miguel"], "%s: só os agentes conversam (sem Caio e Letícia)" % id)
 	# Relógio: não anda com o jogador ocupado; a primeira fala vem depois da espera inicial.
 	var fs := FalasSoltas.new("parque")
 	_check(fs.tick(100.0, false).is_empty(), "ocupado: não fala e não gasta o relógio")
