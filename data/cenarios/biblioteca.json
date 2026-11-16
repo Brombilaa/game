@@ -1146,7 +1146,89 @@
    ]
   }
  ],
- "pistas": [],
+ "pistas": [
+  {
+   "id": "fichario",
+   "pos": [
+    825.6,
+    499.2
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "No fichário, a gaveta \"G\" está vazia. A ficha \"Ghular, R.\" foi arrancada, e só sobrou um pedaço de papel com a palavra \"poço\".",
+   "provisorio": true
+  },
+  {
+   "id": "mesa_leitura",
+   "pos": [
+    262.4,
+    454.4
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Um livro de história de Aurora ficou aberto na mesa de leitura, com um parágrafo sublinhado: antes da cidade, a fazenda era terra de um culto que oferecia sangue à terra.",
+   "provisorio": true
+  },
+  {
+   "id": "mapa_antigo",
+   "pos": [
+    908.8,
+    492.8
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Um mapa antigo da região. A Fazenda Ghular está circulada a tinta vermelha, e uma cruz marca o antigo poço atrás do celeiro.",
+   "provisorio": true
+  },
+  {
+   "id": "diario_bibliotecaria",
+   "pos": [
+    1075.2,
+    313.6
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "O diário da bibliotecária termina de repente: \"Ele pediu os livros sobre o pacto de novo. Disse que a Letícia ainda estava viva lá embaixo.\"",
+   "provisorio": true
+  },
+  {
+   "id": "caixa_arquivo",
+   "pos": [
+    1196.8,
+    505.6
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Uma caixa de arquivo morto foi deixada no canto. Dentro, escondido sob relatórios velhos, há um kit de primeiros socorros.",
+   "provisorio": true,
+   "da": [
+    {
+     "item": "kit_primeiros_socorros",
+     "qtd": 1
+    }
+   ]
+  }
+ ],
  "gatilhos": [],
  "zonas": [
   {
@@ -1165,6 +1247,11 @@
  ],
  "inimigos": [],
  "objetivos": [
+  {
+   "texto": "Descobrir o que o Ghular pesquisava",
+   "pista": "fichario",
+   "provisorio": true
+  },
   {
    "texto": "Voltar para a delegacia",
    "provisorio": true

@@ -1,8 +1,6 @@
 [
-  {"id": "colete", "nome": "Colete", "categoria": "equipamento", "consumivel": false, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": "defesa", "valor": null},
   {"id": "kit_primeiros_socorros", "nome": "Kit de primeiros socorros", "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": 5, "custo_pa_combate": 2, "efeito": "reanimar", "valor": 0.5, "provisorio": true},
-  {"id": "curativo", "nome": "Curativo", "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": "curar_pv", "valor": null},
-  {"id": "componente_ritual", "nome": "Componente de ritual", "categoria": "recurso", "consumivel": true, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": "ritual", "valor": null},
+  {"id": "curativo", "nome": "Curativo", "provisorio": true, "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": 5, "custo_pa_combate": 1, "efeito": "curar_pv", "valor": 0.3},
   {"id": "bandagem", "nome": "Bandagem", "provisorio": true, "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": 5, "custo_pa_combate": 1, "efeito": "remover_sangrando", "valor": null},
   {"id": "antidoto", "nome": "Antídoto", "provisorio": true, "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": 5, "custo_pa_combate": 1, "efeito": "remover_envenenado", "valor": null},
   {"id": "colete_leve", "nome": "Colete leve", "provisorio": true, "categoria": "equipamento", "consumivel": false, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": "defesa", "valor": 0.1},
@@ -10,5 +8,6 @@
   {"id": "municao_pistola", "nome": "Munição de pistola", "provisorio": true, "categoria": "recurso", "consumivel": true, "tamanho": null, "pilha_max": 30, "custo_pa_combate": null, "efeito": "municao", "valor": null},
   {"id": "municao_escopeta", "nome": "Munição de escopeta", "provisorio": true, "categoria": "recurso", "consumivel": true, "tamanho": null, "pilha_max": 30, "custo_pa_combate": null, "efeito": "municao", "valor": null},
   {"id": "municao_fuzil_precisao", "nome": "Munição de fuzil de precisão", "provisorio": true, "categoria": "recurso", "consumivel": true, "tamanho": null, "pilha_max": 30, "custo_pa_combate": null, "efeito": "municao", "valor": null},
-  {"id": "pulseira_amizade", "nome": "Pulseira da amizade", "provisorio": true, "categoria": "equipamento", "consumivel": false, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": "san_max", "valor": 2}
+  {"id": "pulseira_amizade", "nome": "Pulseira da amizade", "provisorio": true, "categoria": "equipamento", "consumivel": false, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": "san_max", "valor": 2},
+  {"id": "chave_escritorio", "nome": "Chave do escritório do Ghular", "provisorio": true, "categoria": "missao", "consumivel": false, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": null, "valor": null}
 ]

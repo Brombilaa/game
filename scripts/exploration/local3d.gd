@@ -27,6 +27,8 @@ var niveis: Array = []  # áreas elevadas: {"h", "rampa", "ret": Rect2 + "dir"} 
 var adormecidos := {}  # trecho -> fichas dos inimigos que esperam o trecho ser revelado
 var ficha_de := {}  # inimigo -> a ficha dele nos dados (grupo, trecho)
 var chefe_virou := false  # a Dama de Sangue já surgiu
+var portas := {}  # id -> {"rect": Rect2, "chave": item, "no": MeshInstance3D}: portas trancadas que ainda não abriram
+var porta_avisada := ""  # a porta cujo aviso "Trancada" já apareceu nesta aproximação
 var fim_tocou := false  # a cutscene do tentáculo (fim da missão 1) já começou
 const PX_ALTURA := 62.855  # px do desenho por unidade de altura (PX_UNIT * cos(elevação da câmera))
 const FLASH_SOBE := 0.06  # flashbang: segundos até a tela ficar branca (provisório)
@@ -60,6 +62,7 @@ func _criar_mundo3d() -> Node3D:
 		var estados: Dictionary = c.get("estados", {})
 		for e in estados:
 			w.estado(e, estados[e])
+		_portas_visual(w)
 		if Missao1.tem("alcapao"):
 			w.estado("tapete", false)
 			w.estado("alcapao", true)
@@ -68,6 +71,54 @@ func _criar_mundo3d() -> Node3D:
 				for e in z["estados"]:
 					w.estado(e, z["estados"][e]))
 	return w
+
+
+# Porta trancada: uma folha de madeira simples no vão (provisório, até o Léo escolher o modelo).
+func _portas_visual(w: Node3D) -> void:
+	for id in portas:
+		var r: Rect2 = portas[id]["rect"]
+		var m := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = Vector3(r.size.x / 64.0, 2.1, r.size.y / 64.0)
+		m.mesh = box
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = Color(0.32, 0.2, 0.11)
+		m.material_override = mat
+		var c := r.get_center()
+		m.position = Vector3(c.x / 64.0, 1.05, c.y / 64.0)
+		w.mundo.add_child(m)
+		portas[id]["no"] = m
+
+
+# Com a chave na mochila e alguém perto, a porta abre sozinha; sem a chave, aparece "Trancada" uma vez por aproximação.
+func _portas() -> void:
+	var perto_de := ""
+	for id in portas.keys():
+		var pt: Dictionary = portas[id]
+		var r: Rect2 = pt["rect"]
+		var alcance := r.grow(48.0)
+		var alguem := false
+		for m in party:
+			if alcance.has_point(m.pos):
+				alguem = true
+		if not alguem:
+			continue
+		perto_de = id
+		if inventory.count(str(pt["chave"])) > 0:
+			walls.erase(r)
+			(pathfinder as PathfinderGrade).configurar(walls, scenario.size)
+			if pt["no"] != null and is_instance_valid(pt["no"]):
+				pt["no"].queue_free()
+			Missao1.marcar("porta_" + id)
+			portas.erase(id)
+			_show_dialog("", "A chave serve. A porta se abre.", "")
+			return
+		if porta_avisada != id:
+			porta_avisada = id
+			_show_dialog("", str(pt["texto"]), "")
+			return
+	if perto_de == "":
+		porta_avisada = ""
 
 
 func _ready() -> void:
@@ -102,6 +153,14 @@ func _load_layout() -> void:
 	covers.clear()
 	door = Rect2(-1000, -1000, 1, 1)
 	door_open = true
+	portas.clear()
+	porta_avisada = ""
+	for pt in dados.get("portas", []):
+		if Missao1.tem("porta_" + str(pt["id"])):
+			continue
+		var pr := _ret(pt)
+		walls.append(pr)
+		portas[str(pt["id"])] = {"rect": pr, "chave": str(pt["chave"]), "texto": str(pt.get("texto", "Trancada.")), "no": null}
 	(pathfinder as PathfinderGrade).configurar(walls, size)
 	visao.clear()
 	for r in dados.get("visao", []):
@@ -238,8 +297,17 @@ func _uniso(s: Vector2) -> Vector2:
 	return p if _altura(p) > 0.0 else chao
 
 
+# Fora de casa (fazenda) o passo é de terra e grama; delegacia, biblioteca e cripta são piso duro.
+func _step_surface() -> String:
+	return "grass" if local_id == "fazenda" else "floor"
+
+
 func _place_label() -> String:
 	return "%s · %dh" % [str(dados.get("rotulo", local_id.to_upper())), int(dados.get("hora", 0))]
+
+
+func _diario_lugar() -> String:
+	return _place_label()
 
 
 # Variante pelo nome da ficha (Léo, 13/11: todos atiradores); o atirador usa a figura do cultista e o retrato próprio.
@@ -258,8 +326,9 @@ func _proximo_apos_vitoria() -> String:
 
 func _process(delta: float) -> void:
 	super(delta)
-	if mode == Mode.EXPLORATION and indo_para == "" and not dialog_layer.visible:
+	if mode == Mode.EXPLORATION and indo_para == "" and not _dialogo_aberto():
 		_zonas()
+		_portas()
 
 
 # Zona: dispara quando o líder entra (quem nasce dentro precisa sair e voltar).
@@ -410,6 +479,7 @@ func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void
 		turns.add_unit(dama)
 	_log(str(chefe["texto"]))
 	_popup(target.pos, "A DAMA DE SANGUE SURGE", "down")
+	audio.on_boss_appeared()
 	fx.shake_time = 0.5
 	fx.shake_px = 6.0
 	queue_redraw()
@@ -465,20 +535,7 @@ func can_pause() -> bool:
 
 # Objetivos do HUD vêm dos dados: cada um feito ao ver a pista ou ao ganhar a marca; "requer" só mostra depois de outra marca.
 func _objectives() -> Array[Dictionary]:
-	var out: Array[Dictionary] = []
-	for o in dados.get("objetivos", []):
-		if o.has("requer") and not Missao1.tem(str(o["requer"])):
-			continue
-		var feito: bool = (o.has("pista") and seen_clues.has(str(o["pista"]))) or (o.has("marca") and Missao1.tem(str(o["marca"])))
-		out.append({"texto": str(o["texto"]), "feito": feito, "atual": false, "detalhe": ""})
-	if mode == Mode.COMBAT:
-		out.append({"texto": Objectives.COMBAT_TEXT, "feito": false, "atual": true, "detalhe": ""})
-		return out
-	for item in out:
-		if not item["feito"]:
-			item["atual"] = true
-			break
-	return out
+	return Objectives.from_data(dados.get("objetivos", []), seen_clues, Missao1.tem, mode == Mode.COMBAT)
 
 
 # Minimapa: o lugar inteiro conta como visto (como no parque); na cripta, só os trechos já revelados.

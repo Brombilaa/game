@@ -291,6 +291,17 @@ func _process(delta: float) -> void:
 		background.parallax = Vector2(mouse.x / size.x - 0.5, mouse.y / size.y - 0.5)
 
 
+# Clique de menu (evento ui_click do AudioDirector; sem arquivo fica mudo). O AudioDirector nasce no primeiro clique.
+var ui_audio: AudioDirector
+
+
+func click() -> void:
+	if ui_audio == null:
+		ui_audio = AudioDirector.new()
+		add_child(ui_audio)
+	ui_audio.play_sfx("ui_click")
+
+
 func intro_done() -> bool:
 	return t >= INTRO_END
 
@@ -630,6 +641,7 @@ class MenuRow:
 				var bar := _bar()
 				menu.set_volume(id, (event.position.x - bar.position.x) / bar.size.x)
 			else:
+				menu.click()
 				activated.emit(id)
 			queue_redraw()
 		elif event is InputEventMouseMotion and kind == Kind.VOLUME and event.button_mask & MOUSE_BUTTON_MASK_LEFT:
@@ -640,6 +652,7 @@ class MenuRow:
 		elif event.is_action_pressed("ui_accept"):
 			accept_event()
 			if kind != Kind.VOLUME:
+				menu.click()
 				activated.emit(id)
 			queue_redraw()
 		elif kind == Kind.VOLUME and (event.is_action_pressed("ui_left", true) or event.is_action_pressed("ui_right", true)):

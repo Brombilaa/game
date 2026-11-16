@@ -1,0 +1,95 @@
+{
+	"_comentario": "Falas curtas por pista (2 a 4, sem escolhas), tocadas na caixa com retrato (CaixaFala) logo depois do texto da pista. Chave: <cenario>/<pista>. só o grupo (Fernando, Nikolai, Miguel) fala, entre si (Léo, 15/11); quem = id do personagem (retrato em assets/sprites/retratos). Textos provisórios do Claude, para o Léo revisar.",
+	"parque/marcas_pneu": [
+		{
+			"quem": "nikolai",
+			"texto": "Algo pesado foi arrastado por aqui. E não faz muito tempo."
+		},
+		{
+			"quem": "fernando",
+			"texto": "Foi até a entrada. Quem fez isso queria que a gente visse."
+		}
+	],
+	"parque/balanco": [
+		{
+			"quem": "nikolai",
+			"texto": "Arranhões fundos num balanço. Criança não faz isso."
+		},
+		{
+			"quem": "miguel",
+			"texto": "Bicho também não. As marcas estão altas demais."
+		},
+		{
+			"quem": "fernando",
+			"texto": "Fiquem juntos. Ninguém se afasta."
+		}
+	],
+	"parque/banco_quebrado": [
+		{
+			"quem": "nikolai",
+			"texto": "Sangue seco. Uns dois dias, pelo cheiro."
+		},
+		{
+			"quem": "fernando",
+			"texto": "Dois dias, e ninguém limpou? Ninguém avisou?"
+		},
+		{
+			"quem": "miguel",
+			"texto": "Esta cidade parou de olhar para o parque."
+		}
+	],
+	"parque/arvore_simbolo": [
+		{
+			"quem": "miguel",
+			"texto": "Conheço esse símbolo. Ninguém devia ter pintado isso aqui."
+		},
+		{
+			"quem": "nikolai",
+			"texto": "Parece estar sangrando de verdade."
+		},
+		{
+			"quem": "fernando",
+			"texto": "Armas em punho. Agora."
+		}
+	],
+	"delegacia_21h/tapete": [
+		{
+			"quem": "nikolai",
+			"texto": "Puxado às pressas. Alguém não queria que achássemos isso."
+		},
+		{
+			"quem": "fernando",
+			"texto": "Vamos ver o que há embaixo."
+		}
+	],
+	"subsolo/livro_faltando": [
+		{
+			"quem": "nikolai",
+			"texto": "Sem poeira no retângulo. Levaram o livro há pouco."
+		},
+		{
+			"quem": "miguel",
+			"texto": "Então quem levou ainda pode estar por perto."
+		}
+	],
+	"fazenda/poco": [
+		{
+			"quem": "nikolai",
+			"texto": "A corda some no escuro. Não gosto disso."
+		},
+		{
+			"quem": "miguel",
+			"texto": "Tem algo lá embaixo. Dá para sentir daqui."
+		}
+	],
+	"cripta/leticia": [
+		{
+			"quem": "fernando",
+			"texto": "Ela está respirando. Está ferida, mas viva."
+		},
+		{
+			"quem": "nikolai",
+			"texto": "Então ela viu o que aconteceu aqui embaixo."
+		}
+	]
+}

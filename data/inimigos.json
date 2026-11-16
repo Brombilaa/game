@@ -1,72 +1,5 @@
 [
   {
-    "id": "cultista_teste",
-    "nome": "Cultista (teste)",
-    "provisorio": true,
-    "pv": 20,
-    "pa": 3,
-    "agi": 1,
-    "percepcao_px": 300,
-    "precisao": 0,
-    "defesa": 0.0,
-    "ataques": [
-      "faca_teste"
-    ],
-    "comportamento": "agressivo",
-    "resistencias": [],
-    "fraquezas": [],
-    "chefe": false,
-    "fases": [],
-    "drops": [
-      {
-        "item": "municao_pistola",
-        "qtd": 4,
-        "chance": 0.5
-      },
-      {
-        "item": "bandagem",
-        "qtd": 1,
-        "chance": 0.2
-      }
-    ]
-  },
-  {
-    "id": "atirador_teste",
-    "nome": "Atirador (teste)",
-    "provisorio": true,
-    "pv": 16,
-    "pa": 3,
-    "agi": 2,
-    "percepcao_px": 450,
-    "precisao": 0,
-    "defesa": 0.0,
-    "ataques": [
-      "pistola_teste"
-    ],
-    "comportamento": "agressivo",
-    "resistencias": [],
-    "fraquezas": [],
-    "chefe": false,
-    "fases": [],
-    "drops": [
-      {
-        "item": "municao_pistola",
-        "qtd": 5,
-        "chance": 0.6
-      },
-      {
-        "item": "bandagem",
-        "qtd": 1,
-        "chance": 0.3
-      },
-      {
-        "item": "antidoto",
-        "qtd": 1,
-        "chance": 0.15
-      }
-    ]
-  },
-  {
     "id": "cultista",
     "nome": "Cultista",
     "provisorio": true,
@@ -204,7 +137,7 @@
       "garra_dama"
     ],
     "comportamento": "cerca",
-    "resistencias": [],
+    "resistencias": ["atordoado"],
     "fraquezas": [],
     "chefe": true,
     "fases": [],

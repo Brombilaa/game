@@ -85,6 +85,13 @@ func _combate_autosave() -> void:
 	room.party[0].pv = 11
 	room._show_dialog("", "teste", "arvore_simbolo")
 	room._close_dialog()
+	# A morte do Caio (cena com roteiro) toca antes do combate: acelera e espera ela acabar.
+	Engine.time_scale = 4.0
+	for i in 60 * 30:
+		if room.mode != room.Mode.CUTSCENE:
+			break
+		await process_frame
+	Engine.time_scale = 1.0
 	_check(room.mode == room.Mode.COMBAT, "a árvore começa o combate")
 	var auto := SaveSlots.load_slot(SaveSlots.AUTO, DIR)
 	_check(not auto.get("pistas", []).has("arvore_simbolo"), "o autosave do combate tira a pista que o disparou")
