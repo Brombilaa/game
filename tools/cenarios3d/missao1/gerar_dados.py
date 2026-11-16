@@ -85,10 +85,34 @@ def _ret4(ret, r):  # [x0, z0, x1, z1] em metros -> retângulo da sala
     return ret(r[0], r[1], r[2] - r[0], r[3] - r[1])
 
 
+def _pista(d, p, cid, x, z, texto, da=None, raio=75, bolinha=(0, -30)):
+    """Pista de investigação (documento, gaveta, item no chão). Textos, posições e itens são provisórios (Claude, 15/11)."""
+    c = {"id": cid, "pos": p(x, z), "raio": raio, "ordem": 1, "bolinha": list(bolinha), "texto": texto, "provisorio": True}
+    if da:
+        c["da"] = [{"item": i, "qtd": q} for i, q in da]
+    d["pistas"].append(c)
+
+
 def delegacia17(d, p, ret):
     P = _pt(d)
-    d["objetivos"] = [{"texto": "Seguir para a biblioteca", "provisorio": True}]
+    d["objetivos"] = [{"texto": "Ler o livro de ocorrências", "pista": "livro_ocorrencias", "provisorio": True},
+                      {"texto": "Procurar pistas no escritório do Ghular", "pista": "agenda_ghular", "provisorio": True},
+                      {"texto": "Seguir para a biblioteca", "provisorio": True}]
     d["cena3d"]["estados"] = {"tapete": True, "alcapao": False}
+    _pista(d, p, "livro_ocorrencias", 12.6, 14.6,
+           "O livro de ocorrências está aberto no balcão. Nas últimas três semanas, a mesma anotação: \"Barulho na Fazenda Ghular\". Nenhuma viatura foi enviada. A última página foi arrancada.")
+    _pista(d, p, "agenda_ghular", 14.0, 3.4,
+           "Na agenda do delegado Ghular, as datas estão riscadas. Só uma linha sobrou legível: \"Roberto voltou da fazenda. Não parece mais ele.\"")
+    _pista(d, p, "gaveta_provas", 14.8, 9.8,
+           "A gaveta da sala de provas foi forçada. Dentro, entre papéis manchados, ainda restam algumas balas soltas.",
+           da=[("municao_pistola", 6)])
+    _pista(d, p, "ficha_desaparecidos", 2.7, 4.8,
+           "No arquivo, uma pasta cheia de fichas de desaparecidos de Aurora. Todas têm a mesma anotação a lápis: \"visto pela última vez perto da fazenda\".")
+    _pista(d, p, "cela_arranhoes", 1.5, 8.2,
+           "As paredes da cela estão marcadas por arranhões fundos, feitos de dentro para fora. Desenhado com o que parece sangue, o mesmo símbolo da árvore do parque.")
+    _pista(d, p, "kit_recepcao", 3.0, 15.0,
+           "Debaixo de um banco da recepção, esquecido por alguém com pressa, há um kit com curativos e uma bandagem.",
+           da=[("curativo", 1), ("bandagem", 1)])
     d["zonas"].append({"id": "saida", "ret": _ret4(ret, P["saida"]), "acao": "ir", "para": "biblioteca",
                        "texto": "O grupo segue para a biblioteca.", "provisorio": True})
 
@@ -130,7 +154,19 @@ def subsolo(d, p, ret):
 
 
 def biblioteca(d, p, ret):
-    d["objetivos"] = [{"texto": "Voltar para a delegacia", "provisorio": True}]
+    d["objetivos"] = [{"texto": "Descobrir o que o Ghular pesquisava", "pista": "fichario", "provisorio": True},
+                      {"texto": "Voltar para a delegacia", "provisorio": True}]
+    _pista(d, p, "fichario", 11.4, 6.3,
+           "No fichário, a gaveta \"G\" está vazia. A ficha \"Ghular, R.\" foi arrancada, e só sobrou um pedaço de papel com a palavra \"poço\".")
+    _pista(d, p, "mesa_leitura", 2.6, 5.6,
+           "Um livro de história de Aurora ficou aberto na mesa de leitura, com um parágrafo sublinhado: antes da cidade, a fazenda era terra de um culto que oferecia sangue à terra.")
+    _pista(d, p, "mapa_antigo", 12.7, 6.2,
+           "Um mapa antigo da região. A Fazenda Ghular está circulada a tinta vermelha, e uma cruz marca o antigo poço atrás do celeiro.")
+    _pista(d, p, "diario_bibliotecaria", 15.3, 3.4,
+           "O diário da bibliotecária termina de repente: \"Ele pediu os livros sobre o pacto de novo. Disse que a Letícia ainda estava viva lá embaixo.\"")
+    _pista(d, p, "caixa_arquivo", 17.2, 6.4,
+           "Uma caixa de arquivo morto foi deixada no canto. Dentro, escondido sob relatórios velhos, há um kit de primeiros socorros.",
+           da=[("kit_primeiros_socorros", 1)])
     d["zonas"].append({"id": "saida", "ret": ret(-1.5, 12.4, 22.5, 2.1), "acao": "ir", "para": "delegacia_21h",
                        "texto": "O grupo volta para a delegacia.", "provisorio": True})
 

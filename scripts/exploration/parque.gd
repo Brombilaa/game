@@ -4,8 +4,8 @@ extends "res://scripts/exploration/test_room.gd"
 # colisões, as pistas e o gatilho do combate vêm de `data/cenarios/parque.json` (Scenario).
 # O fundo tem projeção própria (48 × 18,13 px por unidade), por isso `_iso` e `_uniso` mudam.
 # Pistas: clique no objeto, o grupo anda até perto e o texto aparece; a árvore só depois das
-# outras. Depois da árvore, dois cultistas (provisórios) atacam. A cutscene da morte do Caio
-# e os diálogos dos NPCs ainda não existem.
+# outras. Depois da árvore, duas Criaturas de Sangue atacam; na vitória toca a cena da morte do Caio (CenaRoteiro,
+# data/cenas). Os diálogos dos NPCs ainda não existem.
 
 const SCENARIO_ID := "parque"
 const BOUNDS_PAD := 64.0  # espessura das paredes invisíveis na borda do plano
@@ -73,6 +73,9 @@ func _ready() -> void:
 	for o in scenario.occluders:
 		occluder_textures[o["id"]] = load(o["arquivo"])
 	_load_layout()
+	if Missao1.tem("caio_morreu"):  # voltando ao parque depois da cena: o Caio caído e a Letícia em choque
+		npc_pose["caio"] = {"anim": "death", "inicio": -100000, "dur": 3.0}
+		npc_choque["leticia"] = true
 	if USE_WORLD3D:
 		world3d = _criar_mundo3d()
 		add_child(world3d)
@@ -111,6 +114,10 @@ func _ready() -> void:
 # Id do lugar no save (o mesmo dos dados em data/cenarios).
 func _area_id() -> String:
 	return SCENARIO_ID
+
+
+func _step_surface() -> String:
+	return "grass"  # o parque é terra e grama
 
 
 var pista_gatilho := ""  # pista cujo gatilho está rodando agora (o combate que ela dispara a tira do autosave)
@@ -152,17 +159,35 @@ func _criar_mundo3d() -> Node3D:
 	return w
 
 
-# Depois do combate da árvore o grupo segue para a delegacia (história #8). A cutscene da morte do Caio ainda não existe.
+# Depois do combate da árvore toca a cena `cutscene_depois` do gatilho, se houver, e o grupo segue para a
+# delegacia (história #8).
 func _on_combat_ended(result: TurnManager.Result) -> void:
 	super(result)
-	if result == TurnManager.Result.VICTORY and _proximo_apos_vitoria() != "":
-		_ir_para(_proximo_apos_vitoria(), "", "O grupo segue para a delegacia.", 2.5)
+	if result != TurnManager.Result.VICTORY:
+		return
+	var espera := 2.5
+	if cena_depois != "" and CenaRoteiro.existe(cena_depois):
+		var c := cena_depois
+		cena_depois = ""
+		await get_tree().create_timer(1.0).timeout  # o último golpe termina antes de a cena começar
+		await tocar_cena(c)
+		espera = 0.0
+	if _proximo_apos_vitoria() != "":
+		_ir_para(_proximo_apos_vitoria(), "", "O grupo segue para a delegacia.", espera)
 
 
 func _proximo_apos_vitoria() -> String:
 	return Missao1.DEPOIS_DO_PARQUE
 
 
+var cena_depois := ""  # cena (data/cenas) que toca quando o combate do gatilho termina em vitória
+var cena: CenaRoteiro  # cena com roteiro tocando agora
+var npc_pose := {}  # id do NPC -> {"anim", "inicio" (ms), "dur" (s)}: animação pedida pela cena
+var npc_dir := {}  # id do NPC -> CharacterSheet.Dir (a cena vira o NPC)
+var npc_andando := {}  # id do NPC -> true enquanto a cena o faz andar
+var npc_fora := {}  # NPCs que a cena tirou de vez
+var npc_choque := {}  # NPCs em choque: tremem no lugar (a Letícia depois da morte do Caio)
+var cena_criatura := {}  # criatura -> {"anim", "inicio" (ms), "dur" (s), "laco"}: animação pedida pela cena
 var indo_para := ""  # lugar para onde a transição está levando o grupo ("" = nenhuma em andamento)
 
 
@@ -238,6 +263,11 @@ func _place_label() -> String:
 	return "PARQUE"
 
 
+# Lugar e hora como aparecem no diário de pistas.
+func _diario_lugar() -> String:
+	return "PARQUE · 16h"
+
+
 func _enemy_variant(_i: int) -> String:
 	return CREATURE_VARIANT  # Criatura de Sangue no lugar dos cultistas (Léo, 5/11)
 
@@ -245,7 +275,10 @@ func _enemy_variant(_i: int) -> String:
 # Os NPCs também bloqueiam o caminho.
 func _obstacles(mover: Combatant = null, with_units := true) -> Array[Rect2]:
 	var out := super(mover, with_units)
-	for npc in scenario.npcs.values():
+	for id in scenario.npcs:
+		if npc_fora.has(id) or str(npc_pose.get(id, {}).get("anim", "")) == "death":
+			continue  # corpo no chão não bloqueia (a criatura fica em cima do Caio)
+		var npc: Vector2 = scenario.npcs[id]
 		out.append(Rect2(npc - Vector2(NPC_RADIUS, NPC_RADIUS), Vector2(NPC_RADIUS, NPC_RADIUS) * 2.0))
 	return out
 
@@ -355,6 +388,8 @@ func _zoom_min() -> float:
 
 
 func _draw_hud(font: Font) -> void:
+	if mode == Mode.CUTSCENE:
+		return  # durante a cena com roteiro não há HUD
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE / camera.zoom.x)
 	super(font)
 	draw_set_transform(Vector2.ZERO)
@@ -592,18 +627,230 @@ func _draw_cast_shadow(at: Vector2, height: float, radius: float) -> void:
 		super(at, height, radius)
 
 
-# Objetivos do HUD: investigar o parque, depois o símbolo da árvore; em combate, sobreviver.
+# --- Cenas com roteiro (CenaRoteiro) ----------------------------------------------------------------
+
+# Toca a cena data/cenas/<id>.json: o jogo para (sem HUD, sem clique), a cena conduz câmera e personagens e, no fim,
+# o modo volta ao que era.
+func tocar_cena(cena_id: String) -> void:
+	var antes := mode
+	mode = Mode.CUTSCENE
+	busy = true
+	path = PackedVector2Array()
+	moving_unit = null
+	follow_paths.clear()
+	popups.clear()
+	combat_log.clear()
+	cena = CenaRoteiro.new()
+	add_child(cena)
+	cena.iniciar(self, cena_id)
+	await cena.terminou
+	cena_criatura.clear()
+	cena.queue_free()
+	cena = null
+	mode = antes if antes != Mode.COMBAT else Mode.EXPLORATION
+	busy = false
+	queue_redraw()
+
+
+func cena_pos(quem: Variant) -> Vector2:
+	return quem.pos if quem is Combatant else scenario.npcs[quem]
+
+
+func cena_mover(quem: Variant, p: Vector2) -> void:
+	if quem is Combatant:
+		walk_dist[quem] = walk_dist.get(quem, 0.0) + _iso(quem.pos).distance_to(_iso(p))
+		quem.pos = p
+	else:
+		scenario.npcs[quem] = p
+
+
+func cena_virar(quem: Variant, para: Vector2) -> void:
+	var d := _iso(para) - _iso(cena_pos(quem))
+	if d.length() < 0.5:
+		return
+	if quem is Combatant:
+		facing8[quem] = CharacterSheet.dir_from_vector(d)
+		facing[quem] = PlaceholderArt.dir_from_vector(d)
+	else:
+		npc_dir[quem] = CharacterSheet.dir_from_vector(d)
+
+
+# Andar: no grupo, uma rota de mentira em follow_paths faz o desenho escolher a caminhada (_draw_unit).
+func cena_andando(quem: Variant, sim: bool) -> void:
+	if quem is Combatant:
+		if sim:
+			follow_paths[quem] = PackedVector2Array([quem.pos])
+		else:
+			follow_paths.erase(quem)
+	elif sim:
+		npc_andando[quem] = true
+	else:
+		npc_andando.erase(quem)
+
+
+func cena_anim(quem: Variant, anim: String, dur: float, laco := false) -> void:
+	if quem is Combatant and enemies.has(quem) and anim != "death":
+		if anim == "":
+			cena_criatura.erase(quem)
+		else:
+			cena_criatura[quem] = {"anim": anim, "inicio": Time.get_ticks_msec(), "dur": maxf(dur, 0.1), "laco": laco}
+		return
+	if quem is Combatant:
+		if anim == "death":
+			quem.pv = 0  # cai e fica no chão (a pose de morte do jogo)
+		elif anim != "":
+			nikolai_clock[quem] = {"anim": anim, "start": Time.get_ticks_msec()}
+		return
+	if anim == "":
+		npc_pose.erase(quem)
+	else:
+		npc_pose[quem] = {"anim": anim, "inicio": Time.get_ticks_msec(), "dur": maxf(dur, 0.1)}
+
+
+# Poça de sangue que cresce no chão do mundo 3D.
+func cena_poca(p: Vector2, tamanho: float) -> void:
+	if world3d == null:
+		return
+	var q := QuadMesh.new()
+	q.size = Vector2(tamanho, tamanho)
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.albedo_color = Color(0.32, 0.015, 0.04, 0.88)
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.albedo_texture = _textura_poca()
+	var mi := MeshInstance3D.new()
+	mi.mesh = q
+	mi.material_override = m
+	mi.rotation_degrees = Vector3(-90, 0, 0)
+	mi.position = Vector3(p.x / 64.0, _altura(p) + 0.05, p.y / 64.0)
+	mi.scale = Vector3(0.1, 0.1, 0.1)
+	mi.name = "poca_cena"
+	world3d.mundo.add_child(mi)
+	create_tween().tween_property(mi, "scale", Vector3.ONE, 3.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+
+# Mancha redonda de borda irregular (a poça não é um quadrado).
+static func _textura_poca() -> Texture2D:
+	var n := 64
+	var img := Image.create(n, n, false, Image.FORMAT_RGBA8)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	var ondas: Array[float] = []
+	for k in 5:
+		ondas.append(rng.randf_range(0.04, 0.09))
+	for y in n:
+		for x in n:
+			var v := Vector2(x - n * 0.5 + 0.5, y - n * 0.5 + 0.5) / (n * 0.5)
+			var ang := v.angle()
+			var borda := 0.78
+			for k in ondas.size():
+				borda += ondas[k] * sin(ang * (k + 2) + k * 1.7)
+			var a := 1.0 - smoothstep(borda - 0.08, borda, v.length())
+			img.set_pixel(x, y, Color(1, 1, 1, a))
+	return ImageTexture.create_from_image(img)
+
+
+# Animação da Criatura pedida pela cena (ataque, por exemplo); sem pedido, a escolha normal do jogo.
+func _draw_creature(u: Combatant, at: Vector2, walking: bool, dist: float) -> void:
+	var c: Dictionary = cena_criatura.get(u, {})
+	if c.is_empty() or not u.is_alive():
+		super(u, at, walking, dist)
+		return
+	var anim := str(c["anim"])
+	var n := creature.frame_count(anim)
+	var k := (Time.get_ticks_msec() - int(c["inicio"])) / 1000.0 / float(c["dur"])
+	var f := int(k * n) % n if c.get("laco", false) else mini(int(k * n), n - 1)
+	creature.draw(self, at, anim, f, facing8.get(u, CharacterSheet.Dir.SW))
+	queue_redraw()
+
+
+func cena_choque(quem: Variant, sim: bool) -> void:
+	if quem is Combatant:
+		return
+	if sim:
+		npc_choque[quem] = true
+	else:
+		npc_choque.erase(quem)
+
+
+# Salto: o corpo sobe em arco (altura em unidades 3D) enquanto a posição no chão vai até o destino.
+func cena_salto(quem: Variant, ate: Vector2, tempo: float, altura: float) -> void:
+	var de := cena_pos(quem)
+	if quem is Combatant:
+		cena_virar(quem, ate)
+	var tw := create_tween()
+	tw.tween_method(func(k: float) -> void:
+		cena_mover(quem, de.lerp(ate, k))
+		var ag: Agente3D = agentes.get(quem)
+		if ag and ag.modelo:
+			ag.modelo.position.y = 4.0 * altura * k * (1.0 - k)
+		queue_redraw(), 0.0, 1.0, tempo)
+	await tw.finished
+
+
+# Criatura que só existe na cena (não entra em combate): some quando a cena acaba.
+func cena_surgir(tipo: String, p: Vector2) -> Combatant:
+	var c: Combatant = cfg.make_enemy(tipo, p)
+	enemies.append(c)
+	return c
+
+
+func cena_sumir(quem: Variant) -> void:
+	if quem is Combatant:
+		enemies.erase(quem)
+		if agentes.has(quem):
+			agentes[quem].queue_free()
+			agentes.erase(quem)
+	else:
+		npc_fora[quem] = true
+		npc_pose.erase(quem)
+		if agentes.has(quem):
+			agentes[quem].visible = false
+
+
+# Durante a cena não há HUD, barras de vida nem pausa.
+func _draw_health_bar(u: Combatant, at: Vector2) -> void:
+	if mode != Mode.CUTSCENE:
+		super(u, at)
+
+
+func can_pause() -> bool:
+	return mode != Mode.CUTSCENE and super()
+
+
+func diario_pode_abrir() -> bool:
+	return mode != Mode.CUTSCENE and not dialog_layer.visible and super()
+
+
+# Objetivos do HUD: os "objetivos" de parque.json, no mesmo formato dos outros lugares (Objectives.from_data).
 func _objectives() -> Array[Dictionary]:
-	return Objectives.build(scenario.clues, seen_clues, mode == Mode.COMBAT)
+	if scenario.objetivos.is_empty():
+		return Objectives.build(scenario.clues, seen_clues, mode == Mode.COMBAT)
+	return Objectives.from_data(scenario.objetivos, seen_clues, Missao1.tem, mode == Mode.COMBAT)
 
 
 # Caio tem a folha de parado em 3D; a Letícia ainda é figura provisória (corpo, cabeça e nome).
 func _draw_npc(font: Font, npc_id: String) -> void:
+	if npc_fora.has(npc_id):
+		return
 	var at := _iso(scenario.npcs[npc_id])
 	_draw_cast_shadow(at, 86.0, 22.0)
+	if npc_choque.has(npc_id):  # em choque: treme no lugar
+		var t := Time.get_ticks_msec() / 1000.0
+		at += Vector2(sin(t * 47.0) * 1.2, sin(t * 31.0) * 0.6)
+		queue_redraw()
 	if npc_id == "caio":
 		drawing_key = npc_id
-		caio3d.draw(self, at, caio3d.frame_at(Time.get_ticks_msec()), CharacterSheet.Dir.SE)
+		var dir: CharacterSheet.Dir = npc_dir.get(npc_id, CharacterSheet.Dir.SE)
+		var pose: Dictionary = npc_pose.get(npc_id, {})
+		if not pose.is_empty():  # animação pedida pela cena (morte, dano...): toca uma vez e para no fim
+			var f := clampf((Time.get_ticks_msec() - int(pose["inicio"])) / 1000.0 / float(pose["dur"]), 0.0, 0.999)
+			if not _model3d("caio3d", at, str(pose["anim"]), f, dir):
+				caio3d.draw(self, at, caio3d.frame_at(Time.get_ticks_msec()), dir)
+		elif npc_andando.has(npc_id) and _model3d("caio3d", at, "walk", 0.0, dir):
+			pass
+		else:
+			caio3d.draw(self, at, caio3d.frame_at(Time.get_ticks_msec()), dir)
 		drawing_key = null
 		queue_redraw()  # a respiração anima
 		return
@@ -952,9 +1199,15 @@ func _close_dialog() -> void:
 	if cid == "" or seen_clues.has(cid):
 		return
 	seen_clues.append(cid)
-	collect_items(scenario.clues[cid]["da"])
+	Dicas.marcar("examinar")
+	audio.play_sfx("clue_found")
+	var c: Dictionary = scenario.clues[cid]
+	Diario.anotar(_diario_lugar(), cid, c["texto"], c["inspecao"])
+	if c["perda_san"] > 0 or c["perturbadora"]:  # pista que perturba: quem leu (o líder) perde SAN
+		room_combat._san_report({player: san.clue_read(player, {"perda_san": c["perda_san"]} if c["perda_san"] > 0 else c)}, "lê a pista")
+	collect_items(c["da"])
 	var falas := CaixaFala.falas_da_pista(scenario.id, cid)
-	if not falas.is_empty():  # 2 a 4 falas com retrato reagindo à pista, antes do que vem depois dela
+	if not falas.is_empty():  # 2 a 4 falas do grupo reagindo à pista, antes do que vem depois dela
 		await caixa.sequencia(falas)
 	pista_gatilho = cid
 	for trigger in scenario.triggers_after(cid):
@@ -970,9 +1223,21 @@ func _gear_scarce() -> bool:
 func _run_trigger(trigger: Dictionary) -> void:
 	if trigger["tipo"] != "combate":
 		return
+	cena_depois = str(trigger.get("cutscene_depois", ""))
 	for spec in trigger["inimigos"]:
 		var p: Array = spec["pos"]
 		enemies.append(cfg.make_enemy(spec["tipo"], Vector2(p[0], p[1])))
+	# Cena antes do combate (Léo, 15/11: a criatura perto da van já começa atacando o Caio pelas costas). Só toca uma
+	# vez: depois de carregar o autosave do combate a marca já existe e o combate começa direto.
+	var antes := str(trigger.get("cutscene_antes", ""))
+	var marca := str(trigger.get("marca_cena", ""))
+	if antes != "" and CenaRoteiro.existe(antes) and (marca == "" or not Missao1.tem(marca)):
+		var pista := pista_gatilho
+		await tocar_cena(antes)
+		pista_gatilho = pista  # o autosave do combate ainda não conta a pista como vista
+		_start_combat(Combatant.Side.ENEMY)
+		pista_gatilho = ""
+		return
 	_start_combat(Combatant.Side.ENEMY)  # emboscada: os inimigos agem todos primeiro
 
 

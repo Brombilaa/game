@@ -33,21 +33,20 @@ func _noite() -> void:
 	var room := await _abrir("delegacia_21h")
 	var luz: LuzDinamica = room.luz_dinamica
 	_check(luz != null and luz.noturno, "21h: cena noturna com luz dinâmica")
-	_check(luz._spot != null and luz._spot.visible, "21h: lanterna acesa no início")
+	_check(luz._spot != null and not luz._spot.visible, "21h: lanterna apagada na chegada (modelo C)")
 	var amb: Environment = luz._ambientes[0]
 	var base: float = luz._ambiente_base[amb]
 	for i in 10:
 		await process_frame
-	_check(amb.ambient_light_energy < base * 0.99, "21h: ambiente escurece com a lanterna")
+	_check(amb.ambient_light_energy < base * 0.99, "21h: a noite escurece o ambiente, mesmo sem lanterna")
 	luz.alternar()
-	for i in 60:
+	for i in 10:
 		await process_frame
-	_check(not luz._spot.visible, "L apaga a lanterna")
-	_check(is_equal_approx(amb.ambient_light_energy, base), "ambiente volta ao normal sem lanterna")
+	_check(luz._spot.visible, "L acende a lanterna")
 	luz.alternar()
-	for i in 60:
+	for i in 10:
 		await process_frame
-	_check(luz._spot.visible, "L acende de novo")
+	_check(not luz._spot.visible, "L apaga de novo")
 	var o: OmniLight3D = luz._omnis[0]
 	var vistos := {}
 	for i in 30:

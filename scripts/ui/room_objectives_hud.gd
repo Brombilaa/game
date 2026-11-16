@@ -53,3 +53,19 @@ func _draw_objectives(font: Font, to_world: Transform2D, items: Array[Dictionary
 		if done:  # risco sobre o texto concluído
 			var w := minf(font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT).x, WIDTH - 13.0)
 			room.draw_line(Vector2(pos.x + WIDTH - 13.0 - w, y + 6.5), Vector2(pos.x + WIDTH - 13.0, y + 6.5), DIM, 0.5)
+	_draw_selo_luz(font, pos + Vector2(0, 16 + items.size() * ROW_H + 4.0))
+
+
+# Selo da luz e furtividade (modelo A, Léo 15/11/2026): à noite, na exploração, diz se o líder está
+# ESCONDIDO, na PENUMBRA ou VISÍVEL, com o mesmo olho dos cartões.
+func _draw_selo_luz(font: Font, at: Vector2) -> void:
+	var lider: Combatant = room.player
+	if lider == null or lider.iluminacao < 0.0 or room.mode != room.Mode.EXPLORATION:
+		return
+	var e := LuzFurtividade.estado_de(lider.iluminacao)
+	var texto: String = LuzFurtividade.TEXTO[e]
+	var w := font.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT + 2).x
+	var caixa := Rect2(Vector2(at.x + WIDTH - w - 30.0, at.y), Vector2(w + 30.0, 17.0))
+	room.draw_rect(caixa, Color(0.04, 0.03, 0.03, 0.78))
+	LuzFurtividade.desenhar_olho(room, caixa.position + Vector2(11.0, 8.5), 6.0, e)
+	room.draw_string(font, caixa.position + Vector2(22.0, 13.0), texto, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT + 2, LuzFurtividade.cor_de(e))

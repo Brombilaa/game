@@ -6,6 +6,7 @@ extends RefCounted
 # alcance ou requisito). Textos provisórios até a etapa de UI/UX.
 const REJECTION_MESSAGES := {
 	"no_pa": "PA insuficientes",
+	"no_san": "SAN insuficiente",
 	"out_of_range": "Fora de alcance",
 	"no_line_of_sight": "Sem linha de visão",
 	"reloading": "Recarregando",
