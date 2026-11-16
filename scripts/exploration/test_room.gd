@@ -130,6 +130,7 @@ var cfg := CombatConfig.load_file()
 
 var rules := CombatRules.new(cfg)
 var san := SanRules.new(cfg)  # SAN como medidor de terror: perda, ruptura e loucura (GDD #11)
+var rituals := RitualRules.new(cfg, rules, san)  # rituais do Ocultista (Miguel): custo de PA e SAN
 
 # Grupo: Fernando, Nikolai e Miguel pelas fichas do GDD (classe e atributos; Ficha e personagens.json).
 var party: Array[Combatant] = [
@@ -228,6 +229,7 @@ var objectives_hud := RoomObjectivesHud.new(self)
 # que o parque e o local3d trocam continuam aqui (seção "Repasses", no fim do arquivo).
 var room_combat := RoomCombat.new(self)
 var room_gear := RoomGear.new(self)
+var room_ritual := RoomRitual.new(self)
 var room_party := RoomParty.new(self)
 var room_drawing := RoomDrawing.new(self)
 
@@ -394,6 +396,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_reload()
 		elif event.pressed and event.keycode == KEY_F:
 			_overwatch()
+		elif event.pressed and not event.echo and room_ritual.handle_key(event.keycode):
+			pass  # rituais do Miguel (Z, X, T, Y)
 		elif event.pressed and event.keycode == KEY_V:
 			use_3d = not use_3d
 			_popup(player.pos, "Nikolai 3D" if use_3d else "Nikolai 2D")

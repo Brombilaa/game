@@ -137,7 +137,7 @@
       "garra_dama"
     ],
     "comportamento": "cerca",
-    "resistencias": [],
+    "resistencias": ["atordoado"],
     "fraquezas": [],
     "chefe": true,
     "fases": [],

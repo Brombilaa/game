@@ -8,7 +8,7 @@ extends RefCounted
 #   valores: lista de textos aceitos.        ref: tabela onde o id (ou cada id da lista) existe.
 #   min / max: limites numéricos.             inteiro: faixa de inteiros.
 
-const TABLES := ["regras", "atributos", "classes", "personagens", "condicoes", "armas", "itens", "inimigos", "arvores"]
+const TABLES := ["regras", "atributos", "classes", "personagens", "condicoes", "armas", "itens", "inimigos", "arvores", "rituais"]
 
 const PERCENT := {"t": "num", "nulo": true, "min": 0.0, "max": 1.0}
 const PA := {"t": "int", "nulo": true, "min": 0}
@@ -122,6 +122,23 @@ const FIELDS := {
 		"chefe": {"t": "bool", "nulo": false},
 		"fases": {"t": "dict_lista", "nulo": false},
 		"drops": {"t": "dict_lista", "nulo": false},  # itens que larga ao morrer: {item, qtd, chance} (provisório do Claude)
+	},
+	"rituais": {
+		"id": {"t": "texto", "nulo": false},
+		"nome": {"t": "texto", "nulo": false},
+		"descricao": {"t": "texto", "nulo": false},
+		"classe": {"t": "texto", "nulo": false, "ref": "classes"},  # só essa classe conhece o ritual
+		"alvo": {"t": "texto", "nulo": false, "valores": ["si", "inimigo", "aliado"]},  # aliado inclui o próprio conjurador
+		"tipo": {"t": "texto", "nulo": false, "valores": ["defesa", "dano_arma", "dano", "cura"]},
+		"custo_pa": PA,
+		"custo_san": {"t": "int", "nulo": true, "min": 0},
+		"alcance_m": {"t": "num", "nulo": true, "min": 0.0},  # borda a borda; null = só em si
+		"valor": {"t": "num", "nulo": true, "min": 0.0},  # defesa: fração de redução; dano_arma: dano extra por ataque
+		"dano": {"t": "faixa", "nulo": true, "inteiro": true},  # tipo dano: sorteio na faixa (+ INT)
+		"cura_percentual": PERCENT,  # tipo cura: fração do PV máximo do alvo (+ INT)
+		"rodadas": {"t": "int", "nulo": true, "min": 1},  # duração do efeito, em turnos do conjurador
+		"chance_atordoar": PERCENT,
+		"limpa_ruptura": {"t": "bool", "nulo": false},  # sai da ruptura de SAN (GDD #11: ritual de cura)
 	},
 	"arvores": {
 		"id": {"t": "texto", "nulo": false},

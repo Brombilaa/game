@@ -129,6 +129,7 @@ func _on_combat_ended(result: TurnManager.Result) -> void:
 	Engine.time_scale = 1.0
 	room.hud.on_turn_ended()
 	room.audio.on_combat_ended()
+	RitualRules.clear_buffs(room.party)  # Armadura de Sangue e Amaldiçoar Arma acabam com o combate
 	if result == TurnManager.Result.VICTORY:
 		room.mode = TestRoom.Mode.EXPLORATION
 		room.hud.on_combat_ended()
