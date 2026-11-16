@@ -432,7 +432,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if _mouse_on_hud(screen):  # rodapé: o fim do turno passa a vez; os ícones não movem o personagem
 			var n := action_bar._action_slots().size()
-			if action_bar._end_turn_rect(n).has_point(screen):
+			var ritual_id := ""
+			for k in n:
+				if action_bar.ritual_at(k, n) != "" and action_bar._action_rect(k, n).has_point(screen):
+					ritual_id = action_bar.ritual_at(k, n)
+			if ritual_id != "":
+				room_ritual.cast(ritual_id)
+			elif action_bar._end_turn_rect(n).has_point(screen):
 				_player_pass()
 			elif _reserve_id() != "" and action_bar._action_rect(1, n).has_point(screen):
 				_swap_weapon()
