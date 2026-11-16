@@ -36,6 +36,7 @@ data.get_entry("armas", "pistola")["dano"]  # [3, 5]
 | `armas.json` | Tipo, dano, precisão base, alcance, distância ideal, carregador, reserva, efeitos críticos. |
 | `itens.json` | Categoria, tamanho na grade, pilha, custo em PA no combate, efeito e valor. |
 | `inimigos.json` | PV, PA, iniciativa, precisão, defesa, ataques, comportamento, resistências, fraquezas, fases de chefe. |
+| `rituais.json` | Os quatro rituais do Miguel (Armadura de Sangue, Amaldiçoar Arma, Eletrocussão, Cicatrização): classe, alvo, custo de PA e SAN, alcance, efeito, duração. Regras em `scripts/core/ritual_rules.gd`; INT soma por `Ficha.bonus_ritual`. Todos provisórios. |
 | `arvores.json` | Cinco árvores compartilhadas (uma por atributo) e uma exclusiva por personagem do trio. |
 
 Estado de execução (PV atual, munição no carregador, condições ativas) não fica aqui: estes

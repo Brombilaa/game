@@ -35,6 +35,7 @@ var ruptured := false  # SAN chegou a 0: debuffs até ritual de cura, perk ou zo
 var ruptures_in_combat := 0  # vezes que chegou a 0 neste combate; 2 = loucura
 var insane := false  # enlouqueceu: morte do personagem (GDD #11)
 var conditions: Dictionary = {}  # id -> {"stacks": int, "rounds": int (-1 = até remover)}  # PA da ficha; -1 usa o padrão do combate (3 para protagonistas)
+var buffs: Dictionary = {}  # id do ritual -> {"rounds": turnos restantes, "defesa": fração, "dano": extra por ataque}
 
 
 func is_alive() -> bool:
@@ -47,3 +48,19 @@ func take_damage(amount: int) -> void:
 
 func has_condition(id: String) -> bool:
 	return conditions.has(id)
+
+
+# Redução de dano total: colete + rituais ativos (Armadura de Sangue). Nunca passa de 90%.
+func defense_total() -> float:
+	var d := defense
+	for b: Dictionary in buffs.values():
+		d += float(b.get("defesa", 0.0))
+	return clampf(d, 0.0, 0.9)
+
+
+# Dano extra por ataque dos rituais ativos (Amaldiçoar Arma de Sangue).
+func damage_bonus() -> int:
+	var d := 0
+	for b: Dictionary in buffs.values():
+		d += int(b.get("dano", 0))
+	return d

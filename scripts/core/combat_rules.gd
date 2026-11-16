@@ -200,6 +200,7 @@ func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers:
 	result.hit = true
 	var dmg := float(rng.randi_range(int(attacker.weapon["damage_min"]), int(attacker.weapon["damage_max"])))
 	dmg += Ficha.bonus_dano(cfg.game_data, attacker.atributos, attacker.weapon)  # Força (provisório, GDD #11)
+	dmg += attacker.damage_bonus()  # Amaldiçoar Arma de Sangue (ritual)
 	if rng.randf() < cfg.value("crit_chance"):
 		result.crit = true
 		dmg *= cfg.value("crit_multiplier")
@@ -207,7 +208,7 @@ func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers:
 		dmg *= cfg.value("stealth_damage_multiplier")
 	if attacker.ruptured:
 		dmg *= 1.0 - float(cfg.san("ruptura_dano"))
-	result.damage = damage_after_defense(dmg, target.defense)
+	result.damage = damage_after_defense(dmg, target.defense_total())
 	target.take_damage(result.damage)
 	if result.crit and target.is_alive():
 		for id in attacker.weapon.get("crit_conditions", []):
@@ -314,6 +315,10 @@ func remove_condition(unit: Combatant, id: String) -> bool:
 # Retorna {damage, skip}: skip = a unidade perde este turno (atordoado).
 func start_turn_effects(unit: Combatant) -> Dictionary:
 	var out := {"damage": 0, "skip": false}
+	for id in unit.buffs.keys():  # rituais: contam os turnos do próprio conjurador
+		unit.buffs[id].rounds -= 1
+		if unit.buffs[id].rounds <= 0:
+			unit.buffs.erase(id)
 	for id in unit.conditions.keys():
 		var c := cfg.condition(id)
 		var state: Dictionary = unit.conditions[id]
