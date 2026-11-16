@@ -24,6 +24,7 @@ func _run() -> void:
 	for id in LOCAIS:
 		await _local(id)
 	await _investigacao()
+	await _porta_com_chave()
 	await _tapete_e_alcapao()
 	await _invasao()
 	await _celeiro()
@@ -50,6 +51,7 @@ func _fechar(room: Node) -> void:
 
 func _local(id: String) -> void:
 	Missao1.reiniciar()
+	Missao1.marcar("porta_escritorio_ghular")  # aqui o teste é de alcance; a porta trancada tem teste próprio
 	var room = await _abrir(id)
 	_check(room.scenario.id == id and room.world3d != null, id + ": abre com o cenário 3D")
 	_check(room.world3d.mundo.get_node_or_null("cenario") != null, id + ": malhas carregadas")
@@ -101,6 +103,32 @@ func _investigacao() -> void:
 		var depois: int = room.inventory.count("kit_primeiros_socorros") + room.inventory.count("municao_pistola") + room.inventory.count("curativo")
 		_check(depois > antes, id + ": achar itens nas pistas enche a mochila")
 		await _fechar(room)
+
+
+func _porta_com_chave() -> void:
+	Missao1.reiniciar()
+	var room = await _abrir("delegacia_17h")
+	var pt: Dictionary = room.portas["escritorio_ghular"]
+	var r: Rect2 = pt["rect"]
+	_check(room.walls.has(r), "17h: a porta do escritório começa trancada (sólida)")
+	_check(pt["no"] != null, "17h: a porta trancada aparece no cenário")
+	var pista: Vector2 = room.scenario.clues["agenda_ghular"].pos
+	_check(room.pathfinder.find_path(room.player.pos, pista, room._obstacles(room.player), room.player.radius).size() < 2, "17h: sem a chave não dá para chegar ao escritório")
+	for i in room.party.size():
+		room.party[i].pos = r.get_center() + Vector2(-40.0 + 40.0 * i, 40)
+	room._portas()
+	_check(room.dialog_layer.visible and room.walls.has(r), "17h: sem a chave aparece o aviso de porta trancada")
+	room.dialog_layer.visible = false
+	room._inspect("chaveiro_recepcao")
+	room._close_dialog()
+	_check(room.inventory.count("chave_escritorio") == 1, "17h: o chaveiro dá a chave")
+	room._portas()
+	_check(not room.walls.has(r) and Missao1.tem("porta_escritorio_ghular"), "17h: com a chave a porta abre sozinha e fica marcada")
+	_check(room.pathfinder.find_path(room.player.pos, pista, room._obstacles(room.player), room.player.radius).size() > 1, "17h: com a porta aberta dá para chegar ao escritório")
+	await _fechar(room)
+	var room2 = await _abrir("delegacia_17h")
+	_check(not room2.walls.has(r) and room2.portas.is_empty(), "17h: porta aberta continua aberta ao voltar")
+	await _fechar(room2)
 
 
 func _tapete_e_alcapao() -> void:

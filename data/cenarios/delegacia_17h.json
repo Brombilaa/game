@@ -1377,6 +1377,27 @@
    "provisorio": true
   },
   {
+   "id": "chaveiro_recepcao",
+   "pos": [
+    569.6,
+    1056.0
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "O chaveiro da recepção está quase vazio. Sobrou uma chave presa com uma etiqueta: \"Escritório do Delegado\".",
+   "provisorio": true,
+   "da": [
+    {
+     "item": "chave_escritorio",
+     "qtd": 1
+    }
+   ]
+  },
+  {
    "id": "kit_recepcao",
    "pos": [
     288.0,
@@ -1426,12 +1447,31 @@
    "provisorio": true
   },
   {
+   "texto": "Achar a chave do escritório",
+   "pista": "chaveiro_recepcao",
+   "provisorio": true
+  },
+  {
    "texto": "Procurar pistas no escritório do Ghular",
    "pista": "agenda_ghular",
    "provisorio": true
   },
   {
    "texto": "Seguir para a biblioteca",
+   "provisorio": true
+  }
+ ],
+ "portas": [
+  {
+   "id": "escritorio_ghular",
+   "ret": [
+    844.8,
+    460.8,
+    108.7,
+    28.8
+   ],
+   "chave": "chave_escritorio",
+   "texto": "Trancada. A porta do escritório do Ghular precisa de uma chave.",
    "provisorio": true
   }
  ]

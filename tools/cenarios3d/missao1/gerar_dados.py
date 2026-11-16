@@ -110,6 +110,13 @@ def delegacia17(d, p, ret):
            "No arquivo, uma pasta cheia de fichas de desaparecidos de Aurora. Todas têm a mesma anotação a lápis: \"visto pela última vez perto da fazenda\".")
     _pista(d, p, "cela_arranhoes", 1.5, 8.2,
            "As paredes da cela estão marcadas por arranhões fundos, feitos de dentro para fora. Desenhado com o que parece sangue, o mesmo símbolo da árvore do parque.")
+    # Porta trancada (GDD #19: só abre com a chave achada no cenário; com a chave no grupo abre sozinha ao chegar).
+    d["portas"] = [{"id": "escritorio_ghular", "ret": ret(11.7, 5.7, 1.7, 0.45), "chave": "chave_escritorio",
+                    "texto": "Trancada. A porta do escritório do Ghular precisa de uma chave.", "provisorio": True}]
+    _pista(d, p, "chaveiro_recepcao", 7.4, 15.0,
+           "O chaveiro da recepção está quase vazio. Sobrou uma chave presa com uma etiqueta: \"Escritório do Delegado\".",
+           da=[("chave_escritorio", 1)])
+    d["objetivos"].insert(1, {"texto": "Achar a chave do escritório", "pista": "chaveiro_recepcao", "provisorio": True})
     _pista(d, p, "kit_recepcao", 3.0, 15.0,
            "Debaixo de um banco da recepção, esquecido por alguém com pressa, há um kit com curativos e uma bandagem.",
            da=[("curativo", 1), ("bandagem", 1)])
