@@ -2,7 +2,7 @@ class_name Progresso
 extends RefCounted
 # O que vai dentro do save (o "data" do SaveGame) e como volta para o jogo.
 #   current_area: id do cenário (parque, delegacia_17h...); rotulo: nome do lugar para o menu.
-#   missao: Missao1 (local, chegada, marcas); pistas: pistas já vistas no lugar atual.
+#   missao: Missao1 (local, chegada, marcas, diario de pistas); pistas: pistas já vistas no lugar atual.
 #   grupo: PV, SAN, caído/morto e equipamento de cada membro, pelo nome; lider: índice do controlado.
 #   mochila: os 20 espaços do inventário compartilhado.
 # O save guarda o lugar como ele estava ao chegar (ou no início do combate): carregar abre o lugar pela
@@ -81,7 +81,7 @@ static func capturar(room: Node, area: String, rotulo: String, pista_do_combate 
 	return {
 		"current_area": area,
 		"rotulo": rotulo,
-		"missao": {"local": Missao1.local, "chegada": Missao1.chegada, "marcas": Missao1.marcas.keys()},
+		"missao": {"local": Missao1.local, "chegada": Missao1.chegada, "marcas": Missao1.marcas.keys(), "diario": Missao1.diario.duplicate(true)},
 		"pistas": pistas,
 		"grupo": grupo,
 		"lider": maxi(room.party.find(room.player), 0),
@@ -102,6 +102,7 @@ static func preparar_missao(data: Dictionary) -> String:
 	Missao1.chegada = str(m.get("chegada", ""))
 	for marca in m.get("marcas", []):
 		Missao1.marcar(str(marca))
+	Missao1.diario = Diario.ler(m.get("diario"))
 	return CENA_PARQUE if Missao1.local == "" else Missao1.CENA_LOCAL
 
 

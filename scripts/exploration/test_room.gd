@@ -156,6 +156,7 @@ var inventory: Inventory  # mochila compartilhada do grupo (20 espaços)
 var gear := {}  # membro -> {"principal", "secundaria", "colete", "acessorio"}: ids ("" = vazio)
 
 var inv_panel: InventoryPanel
+var diario_panel: DiarioPanel
 
 var enemies: Array[Combatant] = [
 	cfg.make_enemy("cultista", Vector2(800, 360)),
@@ -289,6 +290,9 @@ func _ready() -> void:
 	inv_layer.layer = 20
 	inv_layer.add_child(inv_panel)
 	add_child(inv_layer)
+	diario_panel = DiarioPanel.new()  # tecla J; o tempo também para com ele aberto
+	diario_panel.room = self
+	add_child(diario_panel)
 	_reset_follow_offsets(Vector2.RIGHT)
 	for variant in ENEMY_SHEETS:
 		enemy_sheets[variant] = CharacterSheet.new(ENEMY_SHEETS[variant])
@@ -548,8 +552,8 @@ func _start_move(unit: Combatant, new_path: PackedVector2Array) -> void:
 
 
 func _process(delta: float) -> void:
-	if inv_panel and inv_panel.open:
-		return  # inventário aberto: o tempo para (GDD #23)
+	if (inv_panel and inv_panel.open) or (diario_panel and diario_panel.open):
+		return  # inventário ou diário aberto: o tempo para (GDD #23)
 	minimap._update_discovered()
 	fx.update(delta)
 	_apply_zoom_pulse()
@@ -640,6 +644,11 @@ func _exit_tree() -> void:
 
 
 # A sala de teste não tem save: recomeça. O parque e os outros lugares voltam ao autosave.
+# O diário abre quando nada mais ocupa a tela (inventário, caixa de pista) e o jogo não está parado por outro motivo.
+func diario_pode_abrir() -> bool:
+	return not (inv_panel and inv_panel.open) and mode != Mode.GAME_OVER and not get_tree().paused and not Scenes.busy(get_tree())
+
+
 func can_pause() -> bool:
 	return mode != Mode.GAME_OVER and not get_tree().paused and not Scenes.busy(get_tree())
 

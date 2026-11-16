@@ -247,6 +247,10 @@ func _place_label() -> String:
 	return "%s · %dh" % [str(dados.get("rotulo", local_id.to_upper())), int(dados.get("hora", 0))]
 
 
+func _diario_lugar() -> String:
+	return _place_label()
+
+
 # Variante pelo nome da ficha (Léo, 13/11: todos atiradores); o atirador usa a figura do cultista e o retrato próprio.
 # A Dama de Sangue usa a figura da Criatura de Sangue e Roberto Ghular a do atirador, até os modelos deles existirem.
 func _enemy_variant(i: int) -> String:
