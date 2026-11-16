@@ -12,12 +12,14 @@ const DEPOIS_DO_PARQUE := "delegacia_17h"
 static var local := ""  # id do cenário em data/cenarios que a cena local3d abre
 static var chegada := ""  # por onde o grupo chega ("" = início do cenário)
 static var marcas := {}  # o que já aconteceu: "alcapao", "invasao_vencida"...
+static var diario: Array[Dictionary] = []  # pistas examinadas em todos os lugares (Diario); vai no save
 
 
 static func reiniciar() -> void:
 	local = ""
 	chegada = ""
 	marcas.clear()
+	diario.clear()
 
 
 static func marcar(nome: String) -> void:

@@ -257,6 +257,11 @@ func _place_label() -> String:
 	return "PARQUE"
 
 
+# Lugar e hora como aparecem no diário de pistas.
+func _diario_lugar() -> String:
+	return "PARQUE · 16h"
+
+
 func _enemy_variant(_i: int) -> String:
 	return CREATURE_VARIANT  # Criatura de Sangue no lugar dos cultistas (Léo, 5/11)
 
@@ -807,6 +812,10 @@ func can_pause() -> bool:
 	return mode != Mode.CUTSCENE and super()
 
 
+func diario_pode_abrir() -> bool:
+	return mode != Mode.CUTSCENE and not dialog_layer.visible and super()
+
+
 # Objetivos do HUD: os "objetivos" de parque.json, no mesmo formato dos outros lugares (Objectives.from_data).
 func _objectives() -> Array[Dictionary]:
 	if scenario.objetivos.is_empty():
@@ -1171,6 +1180,7 @@ func _close_dialog() -> void:
 	seen_clues.append(cid)
 	audio.play_sfx("clue_found")
 	var c: Dictionary = scenario.clues[cid]
+	Diario.anotar(_diario_lugar(), cid, c["texto"], c["inspecao"])
 	if c["perda_san"] > 0 or c["perturbadora"]:  # pista que perturba: quem leu (o líder) perde SAN
 		room_combat._san_report({player: san.clue_read(player, {"perda_san": c["perda_san"]} if c["perda_san"] > 0 else c)}, "lê a pista")
 	collect_items(c["da"])
