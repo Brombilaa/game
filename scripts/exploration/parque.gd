@@ -47,6 +47,7 @@ var pista_malhas := {}
 var pending_clue := ""
 var dialog_layer: CanvasLayer
 var dialog_clue := ""
+var caixa: CaixaFala  # falas curtas com retrato depois das pistas (Léo, modelo C, 15/11)
 var dialog_text: Label
 var dialog_image: TextureRect
 var vignette: Texture2D
@@ -93,6 +94,8 @@ func _ready() -> void:
 		camera.limit_bottom = int(corners[3].y) + 16
 	vignette = _make_vignette()
 	_build_dialog()
+	caixa = CaixaFala.new()
+	add_child(caixa)
 	if world3d:
 		fx.muzzle_at = _arma3d
 		luz_dinamica = LuzDinamica.new()
@@ -866,7 +869,7 @@ func _dot_pos(cid: String) -> Vector2:
 func _draw_clue_hints() -> void:
 	var available := scenario.available_clues(seen_clues)
 	var pulse := 0.65 + 0.35 * sin(Time.get_ticks_msec() / 260.0)
-	var hover: String = hover_forcado if hover_forcado != "" else (_clue_under(get_global_mouse_position()) if not dialog_layer.visible else "")
+	var hover: String = hover_forcado if hover_forcado != "" else (_clue_under(get_global_mouse_position()) if not _dialogo_aberto() else "")
 	for cid in scenario.clues:
 		if seen_clues.has(cid):
 			if pista_malhas.has(cid) and not pista_malhas[cid].is_empty():
@@ -931,7 +934,7 @@ func _pista_brilho(cid: String, malhas: Array, at: Vector2, ativa: bool, locked:
 # --- Pistas ---------------------------------------------------------------------------------------
 
 func _order_move(click: Vector2) -> void:
-	if dialog_layer.visible:
+	if _dialogo_aberto():
 		return
 	pending_clue = ""
 	var cid := _clue_under(get_global_mouse_position()) if mode == Mode.EXPLORATION else ""
@@ -1171,6 +1174,10 @@ func _show_dialog(image_path: String, text: String, cid: String) -> void:
 
 
 # Fecha a caixa de texto. Se era uma pista nova, registra e dispara o que vem depois dela.
+func _dialogo_aberto() -> bool:
+	return dialog_layer.visible or (caixa != null and caixa.ocupada)
+
+
 func _close_dialog() -> void:
 	dialog_layer.visible = false
 	var cid := dialog_clue
@@ -1185,6 +1192,9 @@ func _close_dialog() -> void:
 	if c["perda_san"] > 0 or c["perturbadora"]:  # pista que perturba: quem leu (o líder) perde SAN
 		room_combat._san_report({player: san.clue_read(player, {"perda_san": c["perda_san"]} if c["perda_san"] > 0 else c)}, "lê a pista")
 	collect_items(c["da"])
+	var falas := CaixaFala.falas_da_pista(scenario.id, cid)
+	if not falas.is_empty():  # 2 a 4 falas do grupo reagindo à pista, antes do que vem depois dela
+		await caixa.sequencia(falas)
 	pista_gatilho = cid
 	for trigger in scenario.triggers_after(cid):
 		_run_trigger(trigger)
