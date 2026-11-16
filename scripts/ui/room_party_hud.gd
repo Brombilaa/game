@@ -115,6 +115,8 @@ func _draw_sheet(font: Font, m: Combatant, i: int, to_world: Transform2D) -> voi
 		if m.has_condition(id):
 			_draw_condition(Rect2(face.position + Vector2(2 + k * 12.0, 2), Vector2(11, 11)), id)
 			k += 1
+	if m.ruptured and m.is_alive():
+		_draw_broken_eye(face.position + Vector2(face.size.x - 9.0, 8.0))
 	var y := face.end.y + 3.0
 	_draw_flat_bar(font, Rect2(Vector2(r.position.x, y), Vector2(r.size.x, 8.0)), m.pv, m.max_pv, BAR_PV)
 	_draw_flat_bar(font, Rect2(Vector2(r.position.x, y + 10.0), Vector2(r.size.x, 7.0)), m.san, m.max_san, BAR_SAN)
@@ -125,8 +127,23 @@ func _draw_sheet(font: Font, m: Combatant, i: int, to_world: Transform2D) -> voi
 		room.draw_string(font, pill.position + Vector2(0, 7.0), status[0], HORIZONTAL_ALIGNMENT_CENTER, pill.size.x, 7, status[1])
 
 
+# Olho rachado (modelo B): personagem em ruptura de SAN.
+func _draw_broken_eye(c: Vector2) -> void:
+	var blue := Color(0.49, 0.65, 0.93)
+	var pts := PackedVector2Array()
+	for i in 17:
+		var a := PI * 2.0 * i / 16.0
+		pts.append(c + Vector2(cos(a) * 7.0, sin(a) * 4.0))
+	room.draw_colored_polygon(pts, Color(0.04, 0.08, 0.2))
+	room.draw_polyline(pts, blue, 1.0)
+	room.draw_circle(c, 2.2, blue)
+	room.draw_polyline(PackedVector2Array([c + Vector2(-1, -6), c + Vector2(1, -1), c + Vector2(-1, 1.5), c + Vector2(1.5, 6)]), Color(0.9, 0.94, 1.0), 1.0)
+
+
 # Texto e cor da etiqueta de baixo do cartão.
 func _status_text(m: Combatant) -> Array:
+	if m.insane:
+		return ["LOUCO", Color(1, 0.45, 0.45)]
 	if m.dead:
 		return ["MORTO", Color(1, 0.45, 0.45)]
 	if not m.is_alive():
