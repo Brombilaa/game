@@ -1,8 +1,7 @@
 class_name Dicas
 extends RefCounted
 # Dicas da primeira vez (modelo A, Léo, 15/11/2026): uma faixa no rodapé mostra uma dica por vez e cada dica
-# some para sempre depois que o jogador faz a ação. A ordem é a da lista; em combate a dica de atacar passa
-# na frente. Só a lógica fica aqui (sem nós, para testar em modo headless); o desenho é de RoomDicasHud.
+# some para sempre depois que o jogador faz a ação. A ordem é a da lista. Só a lógica fica aqui (sem nós, para testar em modo headless); o desenho é de RoomDicasHud.
 # As dicas feitas vão no save (campo "dicas") e voltam ao novo jogo.
 
 # id, texto antes da tecla, tecla (vazia = sem tecla), texto depois. Textos provisórios.
@@ -28,13 +27,28 @@ static func feita(id: String) -> bool:
 	return feitas.has(id)
 
 
-# A dica a mostrar agora, ou {} se não há. Em exploração só as de exploração; em combate só a de atacar.
-static func atual(em_combate: bool) -> Dictionary:
+# A dica a mostrar agora, ou {} se não há. Só aparece no momento de usar a habilidade (Léo, 16/11):
+# `ctx` diz o que a cena vive agora: "combate" (na vez do jogador), "pista" (perto de uma pista nova) e
+# "inimigo" (perto de um inimigo que ainda não percebeu o grupo). Andar vale em qualquer momento de exploração.
+static func atual(ctx: Dictionary) -> Dictionary:
+	var em_combate: bool = ctx.get("combate", false)
 	for p in PASSOS:
-		if feitas.has(p["id"]):
+		var id: String = p["id"]
+		if feitas.has(id):
 			continue
-		if (p["id"] == "atacar") == em_combate:
-			return p
+		match id:
+			"andar":
+				if not em_combate:
+					return p
+			"examinar":
+				if not em_combate and ctx.get("pista", false):
+					return p
+			"agachar":
+				if not em_combate and ctx.get("inimigo", false):
+					return p
+			"atacar":
+				if em_combate:
+					return p
 	return {}
 
 

@@ -8,6 +8,8 @@ const HEIGHT := 34.0
 const BOTTOM := 524.0  # borda de baixo na exploração
 const BOTTOM_COMBAT := 462.0  # acima da barra de ações
 const FONT := 10
+const PISTA_PERTO := 260.0  # mesma distância em que a bolinha da pista ganha o anel
+const INIMIGO_FATOR := 1.6  # a dica de agachar aparece um pouco antes de o inimigo perceber (provisório)
 const INK := Color(0.96, 0.94, 0.9)
 const DIM := Color(0.58, 0.57, 0.55)
 
@@ -30,8 +32,27 @@ func visivel() -> bool:
 	return true
 
 
+# O que a cena vive agora, para a dica aparecer só quando a habilidade serve (Léo, 16/11).
+func contexto() -> Dictionary:
+	var ctx := {"combate": room.mode == TestRoom.Mode.COMBAT, "pista": false, "inimigo": false}
+	if ctx["combate"]:
+		return ctx
+	var cena = room.get("scenario")
+	if cena != null:
+		for cid in cena.clues:
+			if not room.seen_clues.has(cid) and room.player.pos.distance_to(cena.clues[cid].pos) <= PISTA_PERTO:
+				ctx["pista"] = true
+				break
+	if not room.player.crouched:
+		for e in room.enemies:
+			if e.is_alive() and room.player.pos.distance_to(e.pos) <= e.perception * INIMIGO_FATOR:
+				ctx["inimigo"] = true
+				break
+	return ctx
+
+
 func _draw_dica(font: Font, to_world: Transform2D) -> void:
-	var p := Dicas.atual(room.mode == TestRoom.Mode.COMBAT)
+	var p := Dicas.atual(contexto())
 	if p.is_empty() or not visivel():
 		return
 	var bottom := BOTTOM_COMBAT if room.mode == TestRoom.Mode.COMBAT else BOTTOM
