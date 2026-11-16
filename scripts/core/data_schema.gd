@@ -35,6 +35,10 @@ const FIELDS := {
 		"bonus_altura": {"t": "num", "nulo": true, "min": 0.0},
 		"pv_ganho_por_nivel_por_vig": {"t": "num", "nulo": true, "min": 0.0},
 		"san_ganho_por_nivel_por_pre": {"t": "num", "nulo": true, "min": 0.0},
+		"for_dano_por_ponto": {"t": "int", "nulo": true, "min": 0},
+		"for_dano_armas": {"t": "lista", "nulo": false, "ref": "armas"},  # armas à distância que também ganham o bônus de FOR
+		"int_ritual_por_ponto": {"t": "int", "nulo": true, "min": 0},
+		"pre_san_por_ponto": {"t": "int", "nulo": true, "min": 0},
 		"descanso_normal_percentual": PERCENT,
 		"descanso_completo_percentual": PERCENT,
 	},

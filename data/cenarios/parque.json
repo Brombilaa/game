@@ -55,6 +55,10 @@
 	"recortes": [
 		{"min": [16.2, 0.0, 1.5], "max": [19.2, 1.8, 4.5], "excluir": ["Mesh3", "Mesh4", "Mesh10", "Mesh11", "Mesh12", "Mesh13", "Mesh22", "Mesh23"]}
 	],
+	"objetivos": [
+		{ "texto": "Investigar o parque", "pistas": ["caio", "marcas_pneu", "balanco", "banco_quebrado", "banco_velho"], "provisorio": true },
+		{ "texto": "Examinar o símbolo", "pista": "arvore_simbolo", "trancado": true, "provisorio": true }
+	],
 	"gatilhos": [
 		{"id": "combate_arvore", "apos": "arvore_simbolo", "tipo": "combate",
 			"inimigos": [{"tipo": "criatura_sangue", "pos": [1100, 300], "origem": "salta da mata e cai na frente da árvore"}, {"tipo": "criatura_sangue", "pos": [250, 690], "origem": "perto da van, atrás do Caio: abre o combate saltando em cima dele (Léo, 15/11)"}],
