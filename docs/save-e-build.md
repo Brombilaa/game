@@ -7,7 +7,7 @@ os gatilhos de autosave às cenas.
 ## 1. Formato do save
 
 - Um arquivo JSON por slot em `user://saves/` (no Windows:
-  `%APPDATA%\Godot\app_userdata\Ordem Paranormal\saves\`).
+  `%APPDATA%\PactoCarmesim\saves\`, pasta própria do jogo desde a PR #153).
 - Envelope com versão: `{ "version": 1, "saved_at": <unix>, "data": {...} }`.
   Save de versão mais nova que o jogo é recusado; versões antigas passam por
   migração (`SaveGame._migrate`), uma versão por vez.
@@ -73,7 +73,7 @@ o save, e a decisão pendente vira só "gravar ou não em disco".
   - Toda PR e execução manual pela aba Actions: roda testes e build, gera só
     o artifact, sem release.
 - Builds nunca entram no Git (`build/`, `*.exe`, `*.pck` já ignorados).
-- Build local: `godot --headless --path . --export-release "Windows Desktop" build/windows/OrdemParanormal.exe`
+- Build local: `godot --headless --path . --export-release "Windows Desktop" build/windows/PactoCarmesim.exe`
   (precisa do export template 4.3 instalado no editor).
 
 ## 5. Decisões

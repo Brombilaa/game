@@ -34,6 +34,9 @@ func _init() -> void:
 	_check(listed[1]["empty"] and listed[3]["empty"], "manuais 1 e 3 seguem vazios")
 	_check(listed[2]["area"] == "roma", "lista mostra a área do manual 2")
 
+	_check(listed[0]["status"] == SaveGame.OK_STATUS and listed[1]["status"] == SaveGame.EMPTY, "estado do slot: ok e vazio")
+	_check(SaveSlots.latest(DIR) != "", "há um slot mais recente para o Continuar")
+
 	# Novo autosave substitui o anterior.
 	SaveSlots.save(SaveSlots.AUTO, {"current_area": "bunker"}, DIR)
 	_check(SaveSlots.load_slot(SaveSlots.AUTO, DIR).get("current_area") == "bunker", "autosave novo substitui")

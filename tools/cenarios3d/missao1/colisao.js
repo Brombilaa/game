@@ -8,9 +8,18 @@ export function colisao(K,{area,inicio,piso=0,raio=.3,px=.1,gatilhos=[],baixo=.1
     if(o.isMesh){const ms=Array.isArray(o.material)?o.material:[o.material];if(ms.every(m=>m.transparent||m.alphaTest>0||m.blending===THREE.AdditiveBlending||m.colorWrite===false))hide=true}
     if(hide&&o.visible){o.visible=false;esc.push(o)}});
   const cam=new THREE.OrthographicCamera(-(x1-x0)/2,(x1-x0)/2,(z1-z0)/2,-(z1-z0)/2,0,1.75-baixo);cam.position.set((x0+x1)/2,piso+1.75,(z0+z1)/2);cam.up.set(0,0,-1);cam.lookAt((x0+x1)/2,piso,(z0+z1)/2);
-  const rt=new THREE.WebGLRenderTarget(W,H);const bg=sc.background,fog=sc.fog;sc.background=new THREE.Color(0xffffff);sc.fog=null;sc.overrideMaterial=new THREE.MeshBasicMaterial({color:0,side:THREE.DoubleSide});
+  const rt=new THREE.WebGLRenderTarget(W,H);const bg=sc.background,fog=sc.fog;sc.background=new THREE.Color(0xffffff);sc.fog=null;
+  // Paredes inteiras, colunas e móveis altos atravessam a câmera do corte: de cima só se veem as faces laterais, de perfil,
+  // e eles sumiam do mapa (13/11: paredes do fundo da delegacia e da biblioteca não bloqueavam). Caixas e cilindros em pé
+  // que cruzam o topo do corte são achatados para dentro da faixa, então o topo deles aparece com a seção exata.
+  const PRETO=new THREE.MeshBasicMaterial({color:0,side:THREE.DoubleSide}),lo=piso+baixo,hi=piso+1.74;
+  const ACHATA=new THREE.ShaderMaterial({side:THREE.DoubleSide,uniforms:{lo:{value:lo},hi:{value:hi}},vertexShader:'uniform float lo,hi;void main(){vec4 w=modelMatrix*vec4(position,1.);w.y=clamp(w.y,lo,hi);gl_Position=projectionMatrix*viewMatrix*w;}',fragmentShader:'void main(){gl_FragColor=vec4(0.,0.,0.,1.);}'});
+  const troca=[],bb=new THREE.Box3(),up=new THREE.Vector3();sc.updateMatrixWorld(true);
+  sc.traverse(o=>{if(!o.isMesh)return;troca.push([o,o.material]);const t=o.geometry&&o.geometry.type;let m=PRETO;
+    if(t==='BoxGeometry'||t==='CylinderGeometry'){bb.setFromObject(o);up.set(0,1,0).transformDirection(o.matrixWorld);if(bb.max.y>hi&&bb.min.y<hi&&Math.abs(up.y)>.999)m=ACHATA}
+    o.material=m});
   K.rr.setRenderTarget(rt);K.rr.render(sc,cam);const buf=new Uint8Array(W*H*4);K.rr.readRenderTargetPixels(rt,0,0,W,H,buf);K.rr.setRenderTarget(null);
-  sc.overrideMaterial=null;sc.background=bg;sc.fog=fog;esc.forEach(o=>o.visible=true);
+  troca.forEach(([o,m])=>o.material=m);sc.background=bg;sc.fog=fog;esc.forEach(o=>o.visible=true);
   // grade: linha 0 = z0 (a leitura do GL vem de baixo para cima)
   const B=new Uint8Array(W*H);for(let y=0;y<H;y++)for(let x=0;x<W;x++)B[y*W+x]=buf[((H-1-y)*W+x)*4]<128?1:0;
   const r=Math.round(raio/px),M=new Uint8Array(W*H);for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(!B[y*W+x])continue;for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){if(dx*dx+dy*dy>r*r)continue;const xx=x+dx,yy=y+dy;if(xx>=0&&yy>=0&&xx<W&&yy<H)M[yy*W+xx]=1}}

@@ -6,7 +6,7 @@ extends RefCounted
 #   var data := GameData.new()
 #   if not data.load_dir():
 #       push_error("\n".join(data.errors))
-#   var pistola := data.get_entry("armas", "pistola_teste")
+#   var pistola := data.get_entry("armas", "pistola")
 
 const Schema := preload("res://scripts/core/data_schema.gd")
 

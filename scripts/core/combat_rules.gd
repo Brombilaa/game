@@ -117,6 +117,8 @@ func hit_chance(attacker: Combatant, target: Combatant, covers: Array = [], stea
 	if flanker(attacker, target) != null:
 		chance += cfg.value("flank_hit_bonus")
 	chance += maxi(attacker.initiative - 1, 0) * cfg.value("agi_hit_bonus")  # initiative = AGI
+	if attacker.ruptured:
+		chance -= float(cfg.san("ruptura_acerto"))  # ruptura de SAN (GDD #11)
 	chance -= _range_penalty(w, gap(attacker, target))
 	var c := cover_between(attacker.pos, target, covers)
 	if c and c.kind == "partial":
@@ -157,6 +159,8 @@ func attack_blocker(attacker: Combatant, target: Combatant, walls: Array[Rect2],
 		return "requirement"
 	if attacker.pa < int(attacker.weapon["pa_cost"]):
 		return "no_pa"
+	if needs_reload(attacker):
+		return "no_ammo"
 	if gap(attacker, target) > float(attacker.weapon["max_range"]):
 		return "out_of_range"
 	if not Pathfinder.has_line_of_sight(attacker.pos, target.pos, walls):
@@ -166,6 +170,12 @@ func attack_blocker(attacker: Combatant, target: Combatant, walls: Array[Rect2],
 			if c.kind == "full" and Pathfinder.segment_crosses_rect(attacker.pos, target.pos, c.rect):
 				return "no_line_of_sight"
 	return ""
+
+
+# Arma com carregador (mag_size > 0) que a unidade controla (u.mag) e carregador vazio.
+# Quem não tem o carregador registrado (inimigos) atira sem limite.
+func needs_reload(u: Combatant) -> bool:
+	return int(u.weapon.get("mag_size", 0)) > 0 and u.mag.has(u.weapon["id"]) and int(u.mag[u.weapon["id"]]) <= 0
 
 
 # Resolve o ataque, gasta PA e aplica dano. Coberturas não são destruídas (Léo: ainda não).
@@ -178,6 +188,8 @@ func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers:
 		return result
 	result.ok = true
 	attacker.pa -= int(attacker.weapon["pa_cost"])
+	if int(attacker.weapon.get("mag_size", 0)) > 0 and attacker.mag.has(attacker.weapon["id"]):
+		attacker.mag[attacker.weapon["id"]] = int(attacker.mag[attacker.weapon["id"]]) - 1  # cada tiro gasta 1 bala
 	var c := cover_between(attacker.pos, target, covers)
 	if c:
 		result.cover = c.kind
@@ -187,12 +199,16 @@ func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers:
 		return result
 	result.hit = true
 	var dmg := float(rng.randi_range(int(attacker.weapon["damage_min"]), int(attacker.weapon["damage_max"])))
+	dmg += Ficha.bonus_dano(cfg.game_data, attacker.atributos, attacker.weapon)  # Força (provisório, GDD #11)
+	dmg += attacker.damage_bonus()  # Amaldiçoar Arma de Sangue (ritual)
 	if rng.randf() < cfg.value("crit_chance"):
 		result.crit = true
 		dmg *= cfg.value("crit_multiplier")
 	if stealth:
 		dmg *= cfg.value("stealth_damage_multiplier")
-	result.damage = damage_after_defense(dmg, target.defense)
+	if attacker.ruptured:
+		dmg *= 1.0 - float(cfg.san("ruptura_dano"))
+	result.damage = damage_after_defense(dmg, target.defense_total())
 	target.take_damage(result.damage)
 	if result.crit and target.is_alive():
 		for id in attacker.weapon.get("crit_conditions", []):
@@ -205,9 +221,79 @@ func damage_after_defense(dmg: float, defense: float) -> int:
 	return maxi(floori(dmg * (1.0 - defense) + 0.0001), int(cfg.value("min_damage")))
 
 
-# Alcance com que `observer` percebe `target`: o da ficha, pela metade se o alvo está agachado.
+# --- Vigilância ----------------------------------------------------------------
+# Léo (15/11): gastar PA para atirar no primeiro inimigo que se mover na linha de visão. Os PA de um tiro
+# são pagos ao entrar em vigilância; ela dispara uma vez e acaba, ou termina no próximo turno de quem vigia.
+
+# Motivo pelo qual `u` não pode entrar em vigilância, ou "" se pode (mesmos códigos do HUD).
+func overwatch_blocker(u: Combatant) -> String:
+	if not u.is_alive() or u.overwatch or u.weapon.is_empty() or u.weapon.get("melee", false):
+		return "requirement"
+	if u.pa < int(u.weapon["pa_cost"]):
+		return "no_pa"
+	if needs_reload(u):
+		return "no_ammo"
+	return ""
+
+
+# Entra em vigilância: paga o tiro e marca a unidade. Retorna o motivo da recusa ou "" se entrou.
+func start_overwatch(u: Combatant, dir := Vector2.ZERO) -> String:
+	var reason := overwatch_blocker(u)
+	if reason != "":
+		return reason
+	if dir.length() > 0.001:
+		u.overwatch_dir = dir.normalized()
+	u.pa -= int(u.weapon["pa_cost"])
+	u.overwatch = true
+	return ""
+
+
+# Primeiro vigia (do lado oposto) que pode atirar em `mover` onde ele está agora: alcance, linha de visão
+# e munição valem como num ataque comum, e o alvo precisa estar dentro do cone apontado (os PA já foram pagos). Null se nenhum.
+func overwatch_watcher(mover: Combatant, walls: Array[Rect2], covers: Array = []) -> Combatant:
+	if not mover.is_alive():
+		return null
+	for u: Combatant in units:
+		if u == mover or not u.is_alive() or not u.overwatch or u.side == mover.side:
+			continue
+		var to_mover := mover.pos - u.pos
+		if to_mover.length() > 0.001 and absf(u.overwatch_dir.angle_to(to_mover)) > deg_to_rad(cfg.value("overwatch_half_angle_deg")):
+			continue  # fora do cone
+		var credit := int(u.weapon["pa_cost"])
+		u.pa += credit  # o blocker confere PA; aqui já estão pagos
+		var reason := attack_blocker(u, mover, walls, covers)
+		u.pa -= credit
+		if reason == "":
+			return u
+	return null
+
+
+# Tiro de reação do vigia: consome a vigilância, vale o PA já pago e leva a penalidade de acerto.
+func overwatch_shot(watcher: Combatant, target: Combatant, walls: Array[Rect2], covers: Array = []) -> Dictionary:
+	var credit := int(watcher.weapon["pa_cost"])
+	var kept := watcher.hit_bonus
+	watcher.overwatch = false
+	watcher.pa += credit
+	watcher.hit_bonus -= cfg.value("overwatch_hit_penalty")
+	var r := attack(watcher, target, walls, covers)
+	watcher.hit_bonus = kept
+	if not r.ok:
+		watcher.pa -= credit
+	return r
+
+
+# Alcance com que `observer` percebe `target`: o da ficha, pela metade se o alvo está agachado e, à noite
+# (modelo C, luz e furtividade), menor na sombra e maior na luz ou com a lanterna acesa.
 func perception_range(observer: Combatant, target: Combatant) -> float:
-	return observer.perception * (cfg.value("crouch_perception_factor") if target.crouched else 1.0)
+	var r := observer.perception * (cfg.value("crouch_perception_factor") if target.crouched else 1.0)
+	return r * light_factor(target)
+
+
+# Fator da luz sobre a percepção: de dark_perception_factor (sombra total) a lit_perception_factor (luz cheia).
+func light_factor(target: Combatant) -> float:
+	if target.iluminacao < 0.0:
+		return 1.0
+	return lerpf(cfg.value("dark_perception_factor"), cfg.value("lit_perception_factor"), clampf(target.iluminacao, 0.0, 1.0))
 
 
 
@@ -238,6 +324,10 @@ func remove_condition(unit: Combatant, id: String) -> bool:
 # Retorna {damage, skip}: skip = a unidade perde este turno (atordoado).
 func start_turn_effects(unit: Combatant) -> Dictionary:
 	var out := {"damage": 0, "skip": false}
+	for id in unit.buffs.keys():  # rituais: contam os turnos do próprio conjurador
+		unit.buffs[id].rounds -= 1
+		if unit.buffs[id].rounds <= 0:
+			unit.buffs.erase(id)
 	for id in unit.conditions.keys():
 		var c := cfg.condition(id)
 		var state: Dictionary = unit.conditions[id]

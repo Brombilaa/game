@@ -11,6 +11,7 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	Progresso.autosave_ativo = false  # não mexe nos saves de quem roda os testes
 	var room = load("res://scenes/exploration/parque.tscn").instantiate()
 	root.add_child(room)
 	await process_frame
@@ -26,6 +27,57 @@ func _run() -> void:
 	_check(room._clue_under(tree_foot + Vector2(29, -250)) == "arvore_simbolo", "clicar na copa da árvore escolhe a pista")
 	_check(room._clue_under(tree_foot + Vector2(20, -70)) == "arvore_simbolo", "clicar no tronco escolhe a pista")
 	_check(room._clue_under(tree_foot + Vector2(400, -70)) == "", "longe da árvore não é pista")
+	# Área clicável pelo contorno da malha: dentro do casco = 0, fora = distância até a borda (vale se <= MALHA_MARGEM).
+	var casco: PackedVector2Array = room._casco(PackedVector2Array([Vector2(0, 0), Vector2(100, 0), Vector2(100, 50), Vector2(0, 50), Vector2(50, 25)]))
+	_check(room._dist_casco(Vector2(50, 25), casco) == 0.0, "dentro do contorno da pista conta como clique")
+	_check(is_equal_approx(room._dist_casco(Vector2(105, 25), casco), 5.0) and 5.0 <= room.MALHA_MARGEM, "logo fora do contorno ainda clica (folga)")
+	_check(room._dist_casco(Vector2(140, 25), casco) > room.MALHA_MARGEM, "longe do contorno não clica")
+	# Escassez (sugestão 7): mochila magra; itens só do Caio e dos inimigos (Léo, 15/11).
+	_check(room.inventory.count("kit_primeiros_socorros") == 1 and room.inventory.count("bandagem") == 0 and room.inventory.count("antidoto") == 0, "missão: começa só com 1 kit, sem bandagem nem antídoto")
+	_check(room.inventory.count("municao_pistola") == 12 and room.inventory.count("municao_escopeta") == 0, "missão: reserva curta de pistola e nenhuma bala de escopeta")
+	var fernando: Combatant = room.party[0]
+	_check(room.gear[fernando]["secundaria"] == "" and not fernando.mag.has("escopeta"), "missão: o Fernando ainda não tem a escopeta")
+	_check(room.scenario.clues["balanco"]["da"].is_empty() and room.scenario.clues["marcas_pneu"]["da"].is_empty(), "as pistas que já existiam não dão nada")
+	var msg: String = room.collect_items(room.scenario.clues["caio"]["da"])
+	_check(room.inventory.count("escopeta") == 1 and room.inventory.count("municao_escopeta") == 6 and room.inventory.count("bandagem") == 2 and room.inventory.count("pulseira_amizade") == 1, "inspecionar o Caio dá escopeta, balas, bandagens e a pulseira")
+	_check(msg.begins_with("Achou: 1x Escopeta"), "o aviso nomeia a escopeta")
+	# Pulseira: +2 de SAN máxima no acessório; escopeta equipada começa vazia e recarrega da mochila.
+	var san0 := fernando.max_san
+	var pul := -1
+	var esc := -1
+	for i in room.inventory.slots.size():
+		if not room.inventory.slots[i].is_empty():
+			if room.inventory.slots[i]["id"] == "pulseira_amizade":
+				pul = i
+			elif room.inventory.slots[i]["id"] == "escopeta":
+				esc = i
+	room.gear_equip(fernando, "acessorio", pul)
+	_check(fernando.max_san == san0 + 2 and fernando.san == fernando.max_san, "a pulseira dá 2 de SAN máxima")
+	room.gear_unequip(fernando, "acessorio")
+	_check(fernando.max_san == san0, "tirar a pulseira devolve a SAN")
+	room.gear_equip(fernando, "secundaria", esc)
+	_check(int(fernando.mag.get("escopeta", -1)) == 0, "escopeta recém-achada começa com o carregador vazio")
+	# Pista perturbadora (Caio morto) tira SAN de quem leu.
+	var leitor: Combatant = room.player
+	var san_antes: int = leitor.san
+	room.dialog_clue = "caio"
+	room._close_dialog()
+	_check(leitor.san == san_antes - 3 and room.seen_clues.has("caio"), "pista do Caio tira 3 de SAN de quem leu")
+	room.seen_clues.erase("caio")
+	leitor.san = san_antes
+	# Inimigo abatido larga itens da ficha.
+	var cultista: Combatant = room.cfg.make_enemy("cultista", Vector2.ZERO)
+	cultista.drops = [{"item": "bandagem", "qtd": 1, "chance": 1.0}]
+	var antes: int = room.inventory.count("bandagem")
+	room._loot_enemy(cultista)
+	_check(room.inventory.count("bandagem") == antes + 1, "inimigo abatido larga o item da ficha")
+	var cheia := Inventory.new(room.cfg.game_data)
+	var inv: Inventory = room.inventory
+	for i in cheia.SIZE:
+		cheia.slots[i] = {"id": "colete_leve", "qty": 1}
+	room.inventory = cheia
+	_check(room.collect_items([{"item": "bandagem", "qtd": 1}]) == "Mochila cheia" and cheia.count("bandagem") == 0, "mochila cheia: o item não entra e avisa")
+	room.inventory = inv
 	var z0: float = room.camera.zoom.x
 	room._zoom_by(100.0)
 	_check(room.camera.zoom.x == room.ZOOM_MAX and z0 < room.ZOOM_MAX, "a roda aproxima até o zoom máximo")
@@ -97,8 +149,15 @@ func _run() -> void:
 	room._inspect("arvore_simbolo")
 	_check(room.dialog_clue == "arvore_simbolo" and room.dialog_image.visible, "a árvore abre a inspeção com imagem")
 	room._close_dialog()
+	# A morte do Caio (cena com roteiro) toca antes do combate: acelera e espera ela acabar.
+	Engine.time_scale = 4.0
+	for i in 60 * 30:
+		if room.mode != room.Mode.CUTSCENE:
+			break
+		await process_frame
+	Engine.time_scale = 1.0
 	_check(room.mode == room.Mode.COMBAT, "depois da árvore o combate começa")
-	_check(room.enemies.size() == 2, "dois cultistas entram")
+	_check(room.enemies.size() == 2, "duas criaturas entram")
 	for e in room.enemies:
 		for w in room.walls:
 			_check(not w.has_point(e.pos), "cultista fora das paredes")

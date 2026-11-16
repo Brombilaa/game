@@ -5,6 +5,9 @@ extends RefCounted
 enum Side { PLAYER, ENEMY }
 
 var name := ""
+var personagem := ""  # id em personagens.json (agentes); vazio para inimigos
+var atributos: Dictionary = {}  # VIG, FOR, INT, AGI, PRE da ficha (Ficha); vazio para inimigos
+var kind := ""  # id da ficha em inimigos.json (inimigos); usado pelo terror ao ver
 var side := Side.PLAYER
 var max_pv := 1
 var pv := 1
@@ -14,16 +17,26 @@ var initiative := 0  # = AGI: define a ordem dos turnos (maior primeiro)
 var defense := 0.0  # redução percentual do dano recebido (colete; 0.1 = 10%)
 var hit_bonus := 0.0  # bônus temporário de acerto (ex.: mira), somado à chance
 var weapon: Dictionary = {}
+var mag: Dictionary = {}  # id da arma -> balas no carregador (só armas com mag_size > 0)
 var radius := 10.0
 var pos := Vector2.ZERO
 var pa := 0
 var moved_px := 0.0  # distância andada neste turno (os primeiros 5 m são grátis)
 var perception := 0.0  # alcance de percepção em pixels (inimigos)
 var crouched := false
+var iluminacao := -1.0  # luz sobre a unidade, 0 (sombra) a 1 (luz); -1 = a luz não conta (dia). Modelo C, luz_furtividade.gd
+var overwatch_dir := Vector2.RIGHT  # direção do cone da vigilância (plano da sala)
+var overwatch := false  # em vigilância: atira no primeiro inimigo que se mover à vista (dura até o próximo turno dele)
 var dead := false  # caído que não foi reanimado até o fim do combate (membro do grupo)  # agachado: inimigos percebem a metade da distância
+var looted := false
+var drops: Array = []  # itens que larga ao morrer (inimigos): {item, qtd, chance}
 var behavior := "agressivo"  # papel do inimigo (M3): agressivo, cerca ou atirador
 var pa_per_turn := -1
+var ruptured := false  # SAN chegou a 0: debuffs até ritual de cura, perk ou zona segura (GDD #11)
+var ruptures_in_combat := 0  # vezes que chegou a 0 neste combate; 2 = loucura
+var insane := false  # enlouqueceu: morte do personagem (GDD #11)
 var conditions: Dictionary = {}  # id -> {"stacks": int, "rounds": int (-1 = até remover)}  # PA da ficha; -1 usa o padrão do combate (3 para protagonistas)
+var buffs: Dictionary = {}  # id do ritual -> {"rounds": turnos restantes, "defesa": fração, "dano": extra por ataque}
 
 
 func is_alive() -> bool:
@@ -36,3 +49,19 @@ func take_damage(amount: int) -> void:
 
 func has_condition(id: String) -> bool:
 	return conditions.has(id)
+
+
+# Redução de dano total: colete + rituais ativos (Armadura de Sangue). Nunca passa de 90%.
+func defense_total() -> float:
+	var d := defense
+	for b: Dictionary in buffs.values():
+		d += float(b.get("defesa", 0.0))
+	return clampf(d, 0.0, 0.9)
+
+
+# Dano extra por ataque dos rituais ativos (Amaldiçoar Arma de Sangue).
+func damage_bonus() -> int:
+	var d := 0
+	for b: Dictionary in buffs.values():
+		d += int(b.get("dano", 0))
+	return d

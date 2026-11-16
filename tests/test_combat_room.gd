@@ -18,18 +18,30 @@ func _run() -> void:
 	await _test_gear()
 	await _test_small_upgrades()
 	await _test_enemy_roles()
+	await _test_focus_limit()
+	await _test_overwatch()
+	await _test_san()
 	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
 	room.rules.rng.seed = 3
 	root.add_child(room)
 	await process_frame
 
 	# Porta aberta e agente à vista da criatura: o combate começa na hora.
+	room.player.initiative = 9  # fichas do GDD: o Nikolai (AGI 3) agiria antes; aqui o Fernando é o primeiro do grupo
 	room.door_open = true
 	room.player.pos = Vector2(650, 360)
 	await process_frame
 	_check(room.mode == room.Mode.COMBAT, "detecção inicia o combate")
 	_check(room.turns.order.size() == room.party.size() + 2, "o grupo e todos os inimigos vivos entram no combate")
-	_check(room.turns.current == room.player and room.player.pa == 3, "agente age primeiro (empate de AGI favorece o grupo) com 3 PA")
+	_check(room.turns.current.side == Combatant.Side.ENEMY, "quem percebe pega o grupo desprevenido: inimigo age primeiro")
+	for m in room.party:
+		m.pv = 999
+		m.max_pv = 999
+	await _wait(func() -> bool: return room.turns.current != null and room.turns.current.side == Combatant.Side.PLAYER and not room.busy, 20.0)
+	var enemies_first: bool = room.turns.order.slice(0, room.enemies.size()).all(func(u: Combatant) -> bool: return u.side == Combatant.Side.ENEMY)
+	_check(enemies_first and room.turns.round_number == 1, "surpresa: todos os inimigos agem antes do grupo na rodada 1")
+	room.player.pos = Vector2(650, 360)
+	_check(room.turns.current == room.player and room.player.pa == 3, "depois da surpresa, o agente age com 3 PA")
 
 	# Ataque fora do turno do inimigo: clique em lugar nenhum não gasta PA.
 	room._combat_click(Vector2(-50, -50))
@@ -149,6 +161,16 @@ func _test_gear() -> void:
 	var f: Combatant = room.party[0]
 	_check(room.gear[f]["principal"] == "pistola" and room.gear[f]["secundaria"] == "escopeta", "Fernando começa com pistola e escopeta")
 	_check(room.inventory.count("colete_leve") == 1, "mochila inicial tem um colete leve")
+	var fichas: Array = room.party.map(func(m: Combatant) -> Array: return [m.personagem, m.max_pv, m.max_san, m.initiative])
+	_check(fichas == [["fernando", 23, 12, 2], ["nikolai", 18, 16, 3], ["miguel", 14, 22, 1]], "grupo nasce das fichas do GDD (classe + atributos sugeridos)")
+	_check(room.party[2].weapon["id"] == "espada", "Miguel começa com a espada (arma inicial da ficha)")
+	_check(room.inventory.size == int(room.cfg.regra("inventario_espacos")), "mochila com os espaços de regras.json")
+	f.pv = 10
+	room.inventory.add("curativo", 1)
+	var cur: int = room.inventory.slots.find(room.inventory.slots.filter(func(x): return x.get("id", "") == "curativo")[0])
+	room.gear_use(f, cur)
+	_check(f.pv == 10 + floori(23 * 0.3) and room.inventory.count("curativo") == 0, "curativo recupera 30% do PV máximo")
+	f.pv = f.max_pv
 
 	var vest: int = 0
 	for i in 20:
@@ -183,6 +205,7 @@ func _test_party() -> void:
 	await process_frame
 	var lider: Combatant = room.party[0]
 	var seguidor: Combatant = room.party[1]
+	lider.initiative = 9  # fichas do GDD: o Nikolai (AGI 3) agiria antes; aqui o líder age primeiro
 	room._order_move(Vector2(400, 360))
 	await _wait(func() -> bool: return room.moving_unit == null and room.follow_paths.is_empty(), 6.0)
 	var d: float = seguidor.pos.distance_to(lider.pos)
@@ -200,6 +223,9 @@ func _test_party() -> void:
 	seguidor.pos = Vector2(650, 384)
 	await process_frame
 	_check(room.mode == room.Mode.COMBAT, "combate começa com o grupo")
+	lider.pv = 999
+	lider.max_pv = 999
+	await _wait(func() -> bool: return room.turns.current == lider and not room.busy, 20.0)
 	seguidor.take_damage(999)
 	room.player = lider
 	lider.pa = 3
@@ -247,12 +273,24 @@ func _test_crouch_and_reload() -> void:
 	room._toggle_crouch()
 	_check(not lider.crouched and seguidor.crouched, "em combate a tecla C troca só a postura de quem está na vez")
 	room.nikolai_clock[lider] = {"anim": "reload", "start": Time.get_ticks_msec()}
-	_check(room._reloading(lider) and room._attack_blocker(lider, room.enemies[0]) == "reloading", "recarregando: ataque bloqueado")
-	lider.pa = 3
-	room._combat_click(room.enemies[0].pos)
-	_check(lider.pa == 3 and room.fx.jobs.is_empty(), "recarregando: clicar no inimigo não atira nem gasta PA")
+	_check(not room._reloading(lider) and room._attack_blocker(lider, room.enemies[0]) != "reloading", "em combate a animação de recarga não bloqueia o ataque (custa só 1 PA)")
+	var modo_combate = room.mode
+	room.mode = room.Mode.EXPLORATION
+	_check(room._reloading(lider) and room._attack_blocker(lider, room.enemies[0]) == "reloading", "fora do combate a recarga em curso bloqueia o ataque")
 	room.nikolai_clock[lider] = {"anim": "reload", "start": Time.get_ticks_msec() - 3000}
 	_check(not room._reloading(lider), "terminada a recarga, o ataque volta")
+	room.mode = modo_combate
+	# Recarga em combate: 1 PA, sem espera, e depois já se atira.
+	room.nikolai_clock.erase(lider)
+	lider.mag["pistola"] = 2
+	room.turns.current = lider  # a vez é dele (o teste não espera a rodada)
+	room.busy = false
+	lider.pa = 3
+	var reserva: int = room.inventory.count("municao_pistola")
+	room._reload()
+	_check(lider.pa == 2 and int(lider.mag["pistola"]) == 12 and room.inventory.count("municao_pistola") == reserva - 10, "recarregar em combate: 1 PA, completa o carregador com a reserva")
+	room._combat_click(room.enemies[0].pos)
+	_check(lider.pa < 2, "logo depois de recarregar já dá para atirar")
 	room.queue_free()
 	await process_frame
 
@@ -290,6 +328,64 @@ func _test_enemy_roles() -> void:
 	await process_frame
 
 
+# Léo, 13/11: nunca 3 inimigos no mesmo personagem enquanto houver 2 ou mais do grupo de pé por perto.
+func _test_focus_limit() -> void:
+	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
+	root.add_child(room)
+	await process_frame
+	var a: Combatant = room.party[0]
+	var b: Combatant = room.party[1]
+	for m in room.party:
+		m.pos = Vector2(900, 900) if m != a and m != b else m.pos
+	a.pos = Vector2(200, 300)
+	b.pos = Vector2(200, 400)
+	var e1: Combatant = room.cfg.make_enemy("atirador", Vector2(300, 300))
+	var e2: Combatant = room.cfg.make_enemy("atirador", Vector2(300, 310))
+	var e3: Combatant = room.cfg.make_enemy("atirador", Vector2(300, 320))
+	_check(room.ai.pick_target(e3) == a, "sem ataques na rodada, o terceiro também prefere o mais perto")
+	room.ai._note_attack(e1, a)
+	room.ai._note_attack(e2, a)
+	_check(room.ai.pick_target(e1) == a, "quem já atacou o alvo pode seguir nele")
+	_check(room.ai.pick_target(e3) == b, "o terceiro inimigo procura outro alvo")
+	b.take_damage(999)
+	_check(room.ai.pick_target(e3) == a, "com só 1 de pé por perto, a regra não vale")
+	room.queue_free()
+	await process_frame
+
+
+func _test_overwatch() -> void:
+	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
+	room.rules.rng.seed = 5
+	root.add_child(room)
+	await process_frame
+	var a: Combatant = room.party[0]
+	for m in room.party:
+		if m != a:
+			m.pos = Vector2(80, 600)
+	a.pos = Vector2(200, 300)
+	var e: Combatant = room.cfg.make_enemy("atirador", Vector2(300, 300))
+	e.max_pv = 999
+	e.pv = 999
+	room.enemies.append(e)
+	room.mode = room.Mode.COMBAT
+	room.turns = TurnManager.new()
+	room.rules.units = [a, e]
+	_check(not room._overwatch_fire(e), "sem vigia, o inimigo anda em paz")
+	a.pa = 3
+	a.overwatch = true
+	_check(room._overwatch_fire(e), "inimigo que se move à vista leva o tiro de vigilância")
+	_check(not a.overwatch and room.fx.active(), "a vigilância gasta-se e o tiro é encenado")
+	_check(not room._overwatch_fire(e), "só o primeiro movimento é punido")
+	a.overwatch = true  # o cone e o olho são desenhados sem erro
+	room.queue_redraw()
+	await process_frame
+	await process_frame
+	_check(room.action_bar._action_slots().any(func(sl: Array) -> bool: return sl[0] == "vigilancia"), "a barra de ações tem o botão de vigilância")
+	room.mode = room.Mode.EXPLORATION
+	room.queue_free()
+	await process_frame
+
+
 func _test_small_upgrades() -> void:
 	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
 	root.add_child(room)
@@ -322,6 +418,54 @@ func _test_small_upgrades() -> void:
 	room.queue_free()
 	await process_frame
 	_check(is_equal_approx(Engine.time_scale, 1.0), "ao sair da sala o tempo volta a 1x")
+
+
+# SAN como medidor de terror: ver a Criatura no início do combate, ver um aliado cair e a loucura.
+func _test_san() -> void:
+	var room = load("res://scenes/exploration/test_room.tscn").instantiate()
+	room.rules.rng.seed = 3
+	root.add_child(room)
+	await process_frame
+	room.enemies[0].kind = "criatura_sangue"
+	var terror := int(room.cfg.san("terror_ao_ver")["criatura_sangue"])
+	for m in room.party:
+		room.san.pre[m] = 1  # sem chance de resistir (a PRE das fichas daria 10% por ponto)
+	var before: Array = room.party.map(func(m: Combatant) -> int: return m.san)
+	room._start_combat()
+	var all_lost := true
+	for i in room.party.size():
+		all_lost = all_lost and room.party[i].san == before[i] - terror
+	_check(all_lost, "ver a Criatura no início do combate tira SAN do grupo")
+	_check(room.popups.any(func(p: Dictionary) -> bool: return p.kind == "san"), "perda de SAN aparece como texto flutuante")
+	var fallen: Combatant = room.party[1]
+	var other: Combatant = room.party[0]
+	var o_before: int = other.san
+	fallen.pv = 0
+	room._on_fx_impact({"target": fallen, "attacker": room.enemies[0], "r": {"hit": true, "crit": false, "damage": 5, "blocked": false}})
+	_check(other.san == o_before - int(room.cfg.san("perdas")["aliado_caido"]), "ver um aliado cair tira SAN dos outros")
+	var crazy: Combatant = room.party[2]
+	crazy.san = 1
+	room.san.lose(crazy, 1)
+	_check(crazy.ruptured and room.turns.turn_pa(crazy) == 2, "ruptura no combate: -1 PA no turno")
+	room.room_combat._san_report({crazy: room.san.lose(crazy, 1)}, "teste")
+	_check(crazy.insane and crazy.dead and not crazy.is_alive(), "segunda vez a 0 no mesmo combate: enlouquece")
+	_check(room.san_fx.madness_t < 0.1 and room.san_fx.params([]).red > 0.5, "loucura: tela vermelha")
+	room.san_fx.madness_t = 99.0
+	room.san_fx.scare_t = 99.0
+	_check(room.san_fx.params([]).vignette == 0.0 and room.san_fx.params([]).aberr == 0.0, "sem susto nem ruptura: sem efeito")
+	room.san_fx.scare()
+	var p0: Dictionary = room.san_fx.params([])
+	_check(p0.vignette > 0.8 and p0.aberr > 0.0, "susto: borda escura e cores separadas")
+	room.san_fx.scare_t = 5.0
+	other.ruptured = true
+	other.san = 0
+	var p1: Dictionary = room.san_fx.params(room.san_fx.ruptured())
+	_check(p1.ghost > 0.4 and p1.vignette >= 0.2 and room.san_fx.ruptured().has(other), "ruptura: fantasma e borda pulsando")
+	room.san_fx.talk_in = 0.0
+	room.san_fx._process(0.016)
+	_check(room.popups.any(func(p: Dictionary) -> bool: return p.kind == "fala" and p.get("dur", 0.0) == 3.0), "ruptura: fala sozinho")
+	room.queue_free()
+	await process_frame
 
 
 func _wait(cond: Callable, seconds: float) -> void:

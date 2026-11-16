@@ -1,43 +1,5 @@
 [
   {
-    "id": "cultista_teste",
-    "nome": "Cultista (teste)",
-    "provisorio": true,
-    "pv": 20,
-    "pa": 3,
-    "agi": 1,
-    "percepcao_px": 300,
-    "precisao": 0,
-    "defesa": 0.0,
-    "ataques": [
-      "faca_teste"
-    ],
-    "comportamento": "agressivo",
-    "resistencias": [],
-    "fraquezas": [],
-    "chefe": false,
-    "fases": []
-  },
-  {
-    "id": "atirador_teste",
-    "nome": "Atirador (teste)",
-    "provisorio": true,
-    "pv": 16,
-    "pa": 3,
-    "agi": 2,
-    "percepcao_px": 450,
-    "precisao": 0,
-    "defesa": 0.0,
-    "ataques": [
-      "pistola_teste"
-    ],
-    "comportamento": "agressivo",
-    "resistencias": [],
-    "fraquezas": [],
-    "chefe": false,
-    "fases": []
-  },
-  {
     "id": "cultista",
     "nome": "Cultista",
     "provisorio": true,
@@ -54,7 +16,19 @@
     "resistencias": [],
     "fraquezas": [],
     "chefe": false,
-    "fases": []
+    "fases": [],
+    "drops": [
+      {
+        "item": "municao_pistola",
+        "qtd": 4,
+        "chance": 0.5
+      },
+      {
+        "item": "bandagem",
+        "qtd": 1,
+        "chance": 0.2
+      }
+    ]
   },
   {
     "id": "atirador",
@@ -73,7 +47,24 @@
     "resistencias": [],
     "fraquezas": [],
     "chefe": false,
-    "fases": []
+    "fases": [],
+    "drops": [
+      {
+        "item": "municao_pistola",
+        "qtd": 5,
+        "chance": 0.6
+      },
+      {
+        "item": "bandagem",
+        "qtd": 1,
+        "chance": 0.3
+      },
+      {
+        "item": "antidoto",
+        "qtd": 1,
+        "chance": 0.15
+      }
+    ]
   },
   {
     "id": "criatura_sangue",
@@ -92,6 +83,64 @@
     "resistencias": [],
     "fraquezas": [],
     "chefe": false,
-    "fases": []
+    "fases": [],
+    "drops": [
+      {
+        "item": "bandagem",
+        "qtd": 1,
+        "chance": 0.15
+      }
+    ]
+  },
+  {
+    "id": "roberto_ghular",
+    "nome": "Roberto Ghular",
+    "provisorio": true,
+    "pv": 40,
+    "pa": 3,
+    "agi": 2,
+    "percepcao_px": 450,
+    "precisao": 0,
+    "defesa": 0.1,
+    "ataques": [
+      "tiro_atirador"
+    ],
+    "comportamento": "atirador",
+    "resistencias": [],
+    "fraquezas": [],
+    "chefe": true,
+    "fases": [],
+    "drops": [
+      {
+        "item": "kit_primeiros_socorros",
+        "qtd": 1,
+        "chance": 1.0
+      },
+      {
+        "item": "municao_pistola",
+        "qtd": 6,
+        "chance": 1.0
+      }
+    ]
+  },
+  {
+    "id": "dama_sangue",
+    "nome": "Dama de Sangue",
+    "provisorio": true,
+    "pv": 120,
+    "pa": 3,
+    "agi": 2,
+    "percepcao_px": 450,
+    "precisao": 0,
+    "defesa": 0.1,
+    "ataques": [
+      "garra_dama"
+    ],
+    "comportamento": "cerca",
+    "resistencias": ["atordoado"],
+    "fraquezas": [],
+    "chefe": true,
+    "fases": [],
+    "drops": []
   }
 ]

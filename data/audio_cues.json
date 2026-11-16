@@ -1,13 +1,196 @@
 {
-	"_nota": "Eventos sonoros do jogo. Caminho vazio = som ainda não existe e o evento fica mudo. Volumes em dB, provisórios.",
+	"_nota": "Eventos sonoros do jogo. Caminho vazio = som ainda não existe e o evento fica mudo. Um evento aceita \"path\" (um arquivo) ou \"paths\" (variações sorteadas). Volumes em dB, provisórios. \"weapons\" liga o id da arma ao evento de tiro/golpe; \"ambience\" são laços por lugar.",
 	"sfx": {
-		"combat_start": { "path": "", "volume_db": 0.0 },
-		"turn_start": { "path": "", "volume_db": -4.0 },
-		"action_rejected": { "path": "", "volume_db": -6.0 },
-		"door_open": { "path": "", "volume_db": -4.0 }
+		"combat_start": {
+			"path": "",
+			"volume_db": 0.0
+		},
+		"turn_start": {
+			"path": "",
+			"volume_db": -4.0
+		},
+		"action_rejected": {
+			"path": "",
+			"volume_db": -6.0
+		},
+		"door_open": {
+			"path": "",
+			"volume_db": -4.0
+		},
+		"door_open_iron": {
+			"path": "",
+			"volume_db": -4.0
+		},
+		"key_turn": {
+			"path": "",
+			"volume_db": -4.0
+		},
+		"clue_found": {
+			"path": "",
+			"volume_db": -6.0
+		},
+		"clue_close": {
+			"path": "",
+			"volume_db": -8.0
+		},
+		"enemy_spotted": {
+			"path": "",
+			"volume_db": -2.0
+		},
+		"shot_generic": {
+			"path": "",
+			"volume_db": -2.0
+		},
+		"shot_pistol": {
+			"path": "",
+			"volume_db": -2.0
+		},
+		"shot_shotgun": {
+			"path": "",
+			"volume_db": 0.0
+		},
+		"shot_rifle": {
+			"path": "",
+			"volume_db": 0.0
+		},
+		"shot_blocked": {
+			"path": "",
+			"volume_db": -6.0
+		},
+		"melee_generic": {
+			"path": "",
+			"volume_db": -4.0
+		},
+		"melee_punch": {
+			"path": "",
+			"volume_db": -4.0
+		},
+		"melee_knife": {
+			"path": "",
+			"volume_db": -4.0
+		},
+		"miss": {
+			"path": "",
+			"volume_db": -8.0
+		},
+		"hit_flesh": {
+			"path": "",
+			"volume_db": -4.0
+		},
+		"hit_crit": {
+			"path": "",
+			"volume_db": -2.0
+		},
+		"hit_vest": {
+			"path": "",
+			"volume_db": -6.0
+		},
+		"pain": {
+			"path": "",
+			"volume_db": -6.0
+		},
+		"body_fall": {
+			"path": "",
+			"volume_db": -4.0
+		},
+		"reload": {
+			"path": "",
+			"volume_db": -4.0
+		},
+		"blood_call": {
+			"path": "",
+			"volume_db": -2.0
+		},
+		"item_use": {
+			"path": "",
+			"volume_db": -6.0
+		},
+		"step_floor": {
+			"path": "",
+			"volume_db": -12.0
+		},
+		"step_grass": {
+			"path": "",
+			"volume_db": -12.0
+		},
+		"step_crouch": {
+			"path": "",
+			"volume_db": -18.0
+		},
+		"heartbeat": {
+			"path": "",
+			"volume_db": -6.0
+		},
+		"ui_click": {
+			"path": "",
+			"volume_db": -10.0
+		},
+		"ui_back": {
+			"path": "",
+			"volume_db": -10.0
+		},
+		"ui_confirm": {
+			"path": "",
+			"volume_db": -8.0
+		}
 	},
 	"music": {
-		"exploration": { "path": "", "volume_db": -10.0 },
-		"combat": { "path": "", "volume_db": -8.0 }
+		"exploration": {
+			"path": "res://assets/audio/musica_investigacao.ogg",
+			"volume_db": -10.0
+		},
+		"combat": {
+			"path": "res://assets/audio/musica_combate.ogg",
+			"volume_db": -8.0
+		},
+		"combat_boss": {
+			"path": "",
+			"volume_db": -8.0
+		}
+	},
+	"ambience": {
+		"delegacia": {
+			"path": "",
+			"volume_db": -14.0
+		},
+		"parque": {
+			"path": "",
+			"volume_db": -14.0
+		},
+		"biblioteca": {
+			"path": "",
+			"volume_db": -14.0
+		},
+		"fazenda": {
+			"path": "",
+			"volume_db": -14.0
+		},
+		"cripta": {
+			"path": "",
+			"volume_db": -14.0
+		}
+	},
+	"weapons": {
+		"pistola": "shot_pistol",
+		"pistola_teste": "shot_pistol",
+		"tiro_atirador": "shot_pistol",
+		"escopeta": "shot_shotgun",
+		"fuzil_precisao": "shot_rifle",
+		"rifle_teste": "shot_rifle",
+		"soco": "melee_punch",
+		"faca_cultista": "melee_knife",
+		"faca_teste": "melee_knife",
+		"espada": "melee_knife",
+		"garra_criatura": "melee_knife",
+		"garra_dama": "melee_knife"
+	},
+	"areas": {
+		"parque": "parque",
+		"delegacia_17h": "delegacia",
+		"delegacia_21h": "delegacia",
+		"subsolo": "delegacia",
+		"biblioteca": "biblioteca",
+		"fazenda": "fazenda",
+		"cripta": "cripta"
 	}
 }

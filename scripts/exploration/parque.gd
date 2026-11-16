@@ -4,8 +4,8 @@ extends "res://scripts/exploration/test_room.gd"
 # colisões, as pistas e o gatilho do combate vêm de `data/cenarios/parque.json` (Scenario).
 # O fundo tem projeção própria (48 × 18,13 px por unidade), por isso `_iso` e `_uniso` mudam.
 # Pistas: clique no objeto, o grupo anda até perto e o texto aparece; a árvore só depois das
-# outras. Depois da árvore, dois cultistas (provisórios) atacam. A cutscene da morte do Caio
-# e os diálogos dos NPCs ainda não existem.
+# outras. Depois da árvore, duas Criaturas de Sangue atacam; na vitória toca a cena da morte do Caio (CenaRoteiro,
+# data/cenas). Os diálogos dos NPCs ainda não existem.
 
 const SCENARIO_ID := "parque"
 const BOUNDS_PAD := 64.0  # espessura das paredes invisíveis na borda do plano
@@ -16,6 +16,7 @@ const NPC_COLORS := {"caio": Color("#46628a"), "leticia": Color("#885050")}  # f
 var caio3d := IdleSheet.new("caio3d", "caio3d")  # Caio: só a animação de parado (morre no primeiro mapa)
 
 const DOT_RADIUS := 6.0  # bolinha da pista, em px do desenho
+const MALHA_MARGEM := 9.0  # folga em volta do contorno da pista, em px da tela de 960x540 (Léo, 15/11: área clicável junto ao contorno e maior)
 const DOT_HIT := 14.0  # raio em que o clique na bolinha vale (px do desenho)
 const CLUE_NEAR := 260.0  # a bolinha ganha um anel quando o controlado chega perto
 const STAND_FACTOR := 0.85  # distância de parada, em fração do raio da pista
@@ -41,13 +42,17 @@ var backdrop: Texture2D
 var extended: Texture2D  # fundo com terreno e lago além do mapa
 var occluder_textures := {}  # id -> recorte do fundo
 var seen_clues: Array[String] = []
+var hover_forcado := ""  # só para capturas
+var pista_malhas := {}
 var pending_clue := ""
 var dialog_layer: CanvasLayer
 var dialog_clue := ""
+var caixa: CaixaFala  # falas curtas com retrato depois das pistas (Léo, modelo C, 15/11)
 var dialog_text: Label
 var dialog_image: TextureRect
 var vignette: Texture2D
 var world3d: Node3D  # parque3d.gd embutido
+var luz_dinamica: LuzDinamica  # lanterna do líder e luzes vivas (luz_dinamica.gd)
 var cards: Array[MeshInstance3D] = []  # cartões dos personagens no 3D, reaproveitados a cada quadro
 var blobs: Array[MeshInstance3D] = []  # sombra de contato sob cada cartão
 var cards_used := 0
@@ -67,6 +72,9 @@ func _ready() -> void:
 	for o in scenario.occluders:
 		occluder_textures[o["id"]] = load(o["arquivo"])
 	_load_layout()
+	if Missao1.tem("caio_morreu"):  # voltando ao parque depois da cena: o Caio caído e a Letícia em choque
+		npc_pose["caio"] = {"anim": "death", "inicio": -100000, "dur": 3.0}
+		npc_choque["leticia"] = true
 	if USE_WORLD3D:
 		world3d = _criar_mundo3d()
 		add_child(world3d)
@@ -86,9 +94,44 @@ func _ready() -> void:
 		camera.limit_bottom = int(corners[3].y) + 16
 	vignette = _make_vignette()
 	_build_dialog()
+	caixa = CaixaFala.new()
+	add_child(caixa)
 	if world3d:
 		fx.muzzle_at = _arma3d
+		luz_dinamica = LuzDinamica.new()
+		luz_dinamica.host = self
+		add_child(luz_dinamica)
 	fx.chest_px = _chest_px
+	var salvo := Progresso.tomar_pendente()
+	if not salvo.is_empty():  # veio de Continuar, Carregar ou do Game Over
+		Progresso.aplicar(self, salvo)
+		_reset_follow_offsets(Vector2.RIGHT)
+		camera.position = _iso(player.pos)
+	Progresso.autosalvar(self, _area_id(), _place_label())
+
+
+# Id do lugar no save (o mesmo dos dados em data/cenarios).
+func _area_id() -> String:
+	return SCENARIO_ID
+
+
+func _step_surface() -> String:
+	return "grass"  # o parque é terra e grama
+
+
+var pista_gatilho := ""  # pista cujo gatilho está rodando agora (o combate que ela dispara a tira do autosave)
+
+
+# Autosave no início do combate, com o grupo como estava antes dele.
+func _start_combat(surprise_side: int = -1) -> void:
+	Progresso.autosalvar(self, _area_id(), _place_label(), pista_gatilho)
+	super(surprise_side)
+
+
+# Game Over volta ao último autosave; sem save utilizável, recomeça o lugar.
+func _voltar_ao_save() -> void:
+	if not Progresso.carregar(get_tree(), SaveSlots.AUTO):
+		super()
 
 
 # Pontos de extensão para os outros lugares da missão (local3d.gd herda o parque inteiro).
@@ -105,6 +148,7 @@ func _criar_mundo3d() -> Node3D:
 	w.embutido = true
 	w.nevoa_forca = NEVOA_FORCA
 	w.nevoa_baixa = NEVOA_BAIXA
+	w.recortes = scenario.recortes
 	if OS.get_environment("NEVOA") != "":  # comparação de modelos de névoa: "forca,baixa"
 		var v := OS.get_environment("NEVOA").split(",")
 		w.nevoa_forca = float(v[0])
@@ -112,17 +156,35 @@ func _criar_mundo3d() -> Node3D:
 	return w
 
 
-# Depois do combate da árvore o grupo segue para a delegacia (história #8). A cutscene da morte do Caio ainda não existe.
+# Depois do combate da árvore toca a cena `cutscene_depois` do gatilho, se houver, e o grupo segue para a
+# delegacia (história #8).
 func _on_combat_ended(result: TurnManager.Result) -> void:
 	super(result)
-	if result == TurnManager.Result.VICTORY and _proximo_apos_vitoria() != "":
-		_ir_para(_proximo_apos_vitoria(), "", "O grupo segue para a delegacia.", 2.5)
+	if result != TurnManager.Result.VICTORY:
+		return
+	var espera := 2.5
+	if cena_depois != "" and CenaRoteiro.existe(cena_depois):
+		var c := cena_depois
+		cena_depois = ""
+		await get_tree().create_timer(1.0).timeout  # o último golpe termina antes de a cena começar
+		await tocar_cena(c)
+		espera = 0.0
+	if _proximo_apos_vitoria() != "":
+		_ir_para(_proximo_apos_vitoria(), "", "O grupo segue para a delegacia.", espera)
 
 
 func _proximo_apos_vitoria() -> String:
 	return Missao1.DEPOIS_DO_PARQUE
 
 
+var cena_depois := ""  # cena (data/cenas) que toca quando o combate do gatilho termina em vitória
+var cena: CenaRoteiro  # cena com roteiro tocando agora
+var npc_pose := {}  # id do NPC -> {"anim", "inicio" (ms), "dur" (s)}: animação pedida pela cena
+var npc_dir := {}  # id do NPC -> CharacterSheet.Dir (a cena vira o NPC)
+var npc_andando := {}  # id do NPC -> true enquanto a cena o faz andar
+var npc_fora := {}  # NPCs que a cena tirou de vez
+var npc_choque := {}  # NPCs em choque: tremem no lugar (a Letícia depois da morte do Caio)
+var cena_criatura := {}  # criatura -> {"anim", "inicio" (ms), "dur" (s), "laco"}: animação pedida pela cena
 var indo_para := ""  # lugar para onde a transição está levando o grupo ("" = nenhuma em andamento)
 
 
@@ -159,7 +221,7 @@ func _ir_para(local: String, chegada: String, texto: String, espera := 0.0) -> v
 	Missao1.local = local
 	Missao1.chegada = chegada
 	if is_inside_tree() and get_tree().current_scene == self:
-		get_tree().change_scene_to_file(Missao1.CENA_LOCAL)
+		Scenes.go(get_tree(), Missao1.CENA_LOCAL)
 
 
 # Paredes e coberturas a partir das colisões do cenário; o grupo começa na entrada.
@@ -198,6 +260,11 @@ func _place_label() -> String:
 	return "PARQUE"
 
 
+# Lugar e hora como aparecem no diário de pistas.
+func _diario_lugar() -> String:
+	return "PARQUE · 16h"
+
+
 func _enemy_variant(_i: int) -> String:
 	return CREATURE_VARIANT  # Criatura de Sangue no lugar dos cultistas (Léo, 5/11)
 
@@ -205,7 +272,10 @@ func _enemy_variant(_i: int) -> String:
 # Os NPCs também bloqueiam o caminho.
 func _obstacles(mover: Combatant = null, with_units := true) -> Array[Rect2]:
 	var out := super(mover, with_units)
-	for npc in scenario.npcs.values():
+	for id in scenario.npcs:
+		if npc_fora.has(id) or str(npc_pose.get(id, {}).get("anim", "")) == "death":
+			continue  # corpo no chão não bloqueia (a criatura fica em cima do Caio)
+		var npc: Vector2 = scenario.npcs[id]
 		out.append(Rect2(npc - Vector2(NPC_RADIUS, NPC_RADIUS), Vector2(NPC_RADIUS, NPC_RADIUS) * 2.0))
 	return out
 
@@ -248,6 +318,7 @@ func _draw() -> void:
 		for e in enemies:
 			if e.is_alive():
 				_draw_range(e.pos, rules.perception_range(e, player), Color(PlaceholderArt.color("sangue_claro"), 0.35))
+	_draw_overwatch()
 	var items: Array = []
 	for u in _drawn_units():
 		items.append({"pos": u.pos, "unit": u})
@@ -279,6 +350,7 @@ func _draw() -> void:
 	if mode == Mode.EXPLORATION:
 		_draw_clue_hints()  # por cima dos recortes: a bolinha da árvore ficava escondida atrás da copa
 	if mode == Mode.COMBAT:
+		_apagar_destaques()
 		_draw_preview(font)
 	_draw_fx()
 	_draw_san_tint()
@@ -313,6 +385,8 @@ func _zoom_min() -> float:
 
 
 func _draw_hud(font: Font) -> void:
+	if mode == Mode.CUTSCENE:
+		return  # durante a cena com roteiro não há HUD
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE / camera.zoom.x)
 	super(font)
 	draw_set_transform(Vector2.ZERO)
@@ -325,11 +399,16 @@ func _sync_camera3d() -> void:
 	var cam: Camera3D = world3d.camera
 	var view := get_viewport_rect().size
 	var xf := get_canvas_transform()
-	var center := _uniso(xf.affine_inverse() * (view * 0.5))
+	var center := scenario.from_backdrop(xf.affine_inverse() * (view * 0.5) + scenario.backdrop_origin)  # sempre no nível do chão
 	var target := Vector3(center.x / 64.0, 0.0, center.y / 64.0)
 	cam.size = view.y / (xf.get_scale().y * PX_UNIT)
 	cam.position = target + _to_camera() * P3D.DIST
 	cam.look_at(target, Vector3.UP)
+
+
+# Altura do piso (em unidades 3D) no ponto `p` da sala. O parque é plano; a cripta tem área elevada (local3d.gd).
+func _altura(_p: Vector2) -> float:
+	return 0.0
 
 
 # Direção do chão para a câmera (azimute de 45°, elevação ELEV do parque3d).
@@ -357,7 +436,7 @@ func _sprite3d(tex: Texture2D, src: Rect2, pivot: Vector2, scale: float, flip: b
 	m.set_shader_parameter("regiao", Vector4(src.position.x / ts.x, src.position.y / ts.y, src.size.x / ts.x, src.size.y / ts.y))
 	m.set_shader_parameter("espelhar", flip)
 	var g := _uniso(pos)
-	var feet := Vector3(g.x / 64.0, 0.0, g.y / 64.0)
+	var feet := Vector3(g.x / 64.0, _altura(g), g.y / 64.0)
 	var right := Vector3(cos(PI / 4.0), 0.0, -sin(PI / 4.0))
 	var dx := (src.size.x * 0.5 - pivot.x) * scale / PX_UNIT * (-1.0 if flip else 1.0)
 	var dy := (pivot.y - src.size.y * 0.5) * scale / (PX_UNIT * cos_e)
@@ -391,7 +470,7 @@ func _model3d(pasta: String, pos: Vector2, anim: String, fase: float, dir: Chara
 		world3d.mundo.add_child(ag)
 		agentes[drawing_key] = ag
 	var g := _uniso(pos)
-	ag.position = Vector3(g.x / 64.0, 0.0, g.y / 64.0)
+	ag.position = Vector3(g.x / 64.0, _altura(g), g.y / 64.0)
 	var frente := _uniso(pos + DIR_TELA[dir] * 32.0) - g
 	var golpe: Dictionary = golpes.get(drawing_key, {})
 	var continua := false  # fase do golpe já vem do relógio (contínua)
@@ -410,6 +489,9 @@ func _model3d(pasta: String, pos: Vector2, anim: String, fase: float, dir: Chara
 			if alvo.pos != (drawing_key as Combatant).pos:
 				frente = alvo.pos - (drawing_key as Combatant).pos  # mira exata no alvo, não nas 8 direções
 	ag.virar(atan2(frente.x, frente.y))
+	# Postura de combate (Léo, 14/11, nível B): em combate, quem está de pistola fica parado e anda com ela em punho.
+	# Escopeta e fuzil ainda não têm clipe de parado/andar armado no Mixamo, então seguem como antes.
+	ag.postura_combate = mode == Mode.COMBAT and drawing_key is Combatant and str((drawing_key as Combatant).weapon.get("id", "")) == "pistola"
 	ag.pose(anim, fase, continua)
 	if drawing_key is Combatant:
 		ag.clarao(fx.white_alpha(drawing_key))
@@ -542,18 +624,230 @@ func _draw_cast_shadow(at: Vector2, height: float, radius: float) -> void:
 		super(at, height, radius)
 
 
-# Objetivos do HUD: investigar o parque, depois o símbolo da árvore; em combate, sobreviver.
+# --- Cenas com roteiro (CenaRoteiro) ----------------------------------------------------------------
+
+# Toca a cena data/cenas/<id>.json: o jogo para (sem HUD, sem clique), a cena conduz câmera e personagens e, no fim,
+# o modo volta ao que era.
+func tocar_cena(cena_id: String) -> void:
+	var antes := mode
+	mode = Mode.CUTSCENE
+	busy = true
+	path = PackedVector2Array()
+	moving_unit = null
+	follow_paths.clear()
+	popups.clear()
+	combat_log.clear()
+	cena = CenaRoteiro.new()
+	add_child(cena)
+	cena.iniciar(self, cena_id)
+	await cena.terminou
+	cena_criatura.clear()
+	cena.queue_free()
+	cena = null
+	mode = antes if antes != Mode.COMBAT else Mode.EXPLORATION
+	busy = false
+	queue_redraw()
+
+
+func cena_pos(quem: Variant) -> Vector2:
+	return quem.pos if quem is Combatant else scenario.npcs[quem]
+
+
+func cena_mover(quem: Variant, p: Vector2) -> void:
+	if quem is Combatant:
+		walk_dist[quem] = walk_dist.get(quem, 0.0) + _iso(quem.pos).distance_to(_iso(p))
+		quem.pos = p
+	else:
+		scenario.npcs[quem] = p
+
+
+func cena_virar(quem: Variant, para: Vector2) -> void:
+	var d := _iso(para) - _iso(cena_pos(quem))
+	if d.length() < 0.5:
+		return
+	if quem is Combatant:
+		facing8[quem] = CharacterSheet.dir_from_vector(d)
+		facing[quem] = PlaceholderArt.dir_from_vector(d)
+	else:
+		npc_dir[quem] = CharacterSheet.dir_from_vector(d)
+
+
+# Andar: no grupo, uma rota de mentira em follow_paths faz o desenho escolher a caminhada (_draw_unit).
+func cena_andando(quem: Variant, sim: bool) -> void:
+	if quem is Combatant:
+		if sim:
+			follow_paths[quem] = PackedVector2Array([quem.pos])
+		else:
+			follow_paths.erase(quem)
+	elif sim:
+		npc_andando[quem] = true
+	else:
+		npc_andando.erase(quem)
+
+
+func cena_anim(quem: Variant, anim: String, dur: float, laco := false) -> void:
+	if quem is Combatant and enemies.has(quem) and anim != "death":
+		if anim == "":
+			cena_criatura.erase(quem)
+		else:
+			cena_criatura[quem] = {"anim": anim, "inicio": Time.get_ticks_msec(), "dur": maxf(dur, 0.1), "laco": laco}
+		return
+	if quem is Combatant:
+		if anim == "death":
+			quem.pv = 0  # cai e fica no chão (a pose de morte do jogo)
+		elif anim != "":
+			nikolai_clock[quem] = {"anim": anim, "start": Time.get_ticks_msec()}
+		return
+	if anim == "":
+		npc_pose.erase(quem)
+	else:
+		npc_pose[quem] = {"anim": anim, "inicio": Time.get_ticks_msec(), "dur": maxf(dur, 0.1)}
+
+
+# Poça de sangue que cresce no chão do mundo 3D.
+func cena_poca(p: Vector2, tamanho: float) -> void:
+	if world3d == null:
+		return
+	var q := QuadMesh.new()
+	q.size = Vector2(tamanho, tamanho)
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.albedo_color = Color(0.32, 0.015, 0.04, 0.88)
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.albedo_texture = _textura_poca()
+	var mi := MeshInstance3D.new()
+	mi.mesh = q
+	mi.material_override = m
+	mi.rotation_degrees = Vector3(-90, 0, 0)
+	mi.position = Vector3(p.x / 64.0, _altura(p) + 0.05, p.y / 64.0)
+	mi.scale = Vector3(0.1, 0.1, 0.1)
+	mi.name = "poca_cena"
+	world3d.mundo.add_child(mi)
+	create_tween().tween_property(mi, "scale", Vector3.ONE, 3.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+
+# Mancha redonda de borda irregular (a poça não é um quadrado).
+static func _textura_poca() -> Texture2D:
+	var n := 64
+	var img := Image.create(n, n, false, Image.FORMAT_RGBA8)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	var ondas: Array[float] = []
+	for k in 5:
+		ondas.append(rng.randf_range(0.04, 0.09))
+	for y in n:
+		for x in n:
+			var v := Vector2(x - n * 0.5 + 0.5, y - n * 0.5 + 0.5) / (n * 0.5)
+			var ang := v.angle()
+			var borda := 0.78
+			for k in ondas.size():
+				borda += ondas[k] * sin(ang * (k + 2) + k * 1.7)
+			var a := 1.0 - smoothstep(borda - 0.08, borda, v.length())
+			img.set_pixel(x, y, Color(1, 1, 1, a))
+	return ImageTexture.create_from_image(img)
+
+
+# Animação da Criatura pedida pela cena (ataque, por exemplo); sem pedido, a escolha normal do jogo.
+func _draw_creature(u: Combatant, at: Vector2, walking: bool, dist: float) -> void:
+	var c: Dictionary = cena_criatura.get(u, {})
+	if c.is_empty() or not u.is_alive():
+		super(u, at, walking, dist)
+		return
+	var anim := str(c["anim"])
+	var n := creature.frame_count(anim)
+	var k := (Time.get_ticks_msec() - int(c["inicio"])) / 1000.0 / float(c["dur"])
+	var f := int(k * n) % n if c.get("laco", false) else mini(int(k * n), n - 1)
+	creature.draw(self, at, anim, f, facing8.get(u, CharacterSheet.Dir.SW))
+	queue_redraw()
+
+
+func cena_choque(quem: Variant, sim: bool) -> void:
+	if quem is Combatant:
+		return
+	if sim:
+		npc_choque[quem] = true
+	else:
+		npc_choque.erase(quem)
+
+
+# Salto: o corpo sobe em arco (altura em unidades 3D) enquanto a posição no chão vai até o destino.
+func cena_salto(quem: Variant, ate: Vector2, tempo: float, altura: float) -> void:
+	var de := cena_pos(quem)
+	if quem is Combatant:
+		cena_virar(quem, ate)
+	var tw := create_tween()
+	tw.tween_method(func(k: float) -> void:
+		cena_mover(quem, de.lerp(ate, k))
+		var ag: Agente3D = agentes.get(quem)
+		if ag and ag.modelo:
+			ag.modelo.position.y = 4.0 * altura * k * (1.0 - k)
+		queue_redraw(), 0.0, 1.0, tempo)
+	await tw.finished
+
+
+# Criatura que só existe na cena (não entra em combate): some quando a cena acaba.
+func cena_surgir(tipo: String, p: Vector2) -> Combatant:
+	var c: Combatant = cfg.make_enemy(tipo, p)
+	enemies.append(c)
+	return c
+
+
+func cena_sumir(quem: Variant) -> void:
+	if quem is Combatant:
+		enemies.erase(quem)
+		if agentes.has(quem):
+			agentes[quem].queue_free()
+			agentes.erase(quem)
+	else:
+		npc_fora[quem] = true
+		npc_pose.erase(quem)
+		if agentes.has(quem):
+			agentes[quem].visible = false
+
+
+# Durante a cena não há HUD, barras de vida nem pausa.
+func _draw_health_bar(u: Combatant, at: Vector2) -> void:
+	if mode != Mode.CUTSCENE:
+		super(u, at)
+
+
+func can_pause() -> bool:
+	return mode != Mode.CUTSCENE and super()
+
+
+func diario_pode_abrir() -> bool:
+	return mode != Mode.CUTSCENE and not dialog_layer.visible and super()
+
+
+# Objetivos do HUD: os "objetivos" de parque.json, no mesmo formato dos outros lugares (Objectives.from_data).
 func _objectives() -> Array[Dictionary]:
-	return Objectives.build(scenario.clues, seen_clues, mode == Mode.COMBAT)
+	if scenario.objetivos.is_empty():
+		return Objectives.build(scenario.clues, seen_clues, mode == Mode.COMBAT)
+	return Objectives.from_data(scenario.objetivos, seen_clues, Missao1.tem, mode == Mode.COMBAT)
 
 
 # Caio tem a folha de parado em 3D; a Letícia ainda é figura provisória (corpo, cabeça e nome).
 func _draw_npc(font: Font, npc_id: String) -> void:
+	if npc_fora.has(npc_id):
+		return
 	var at := _iso(scenario.npcs[npc_id])
 	_draw_cast_shadow(at, 86.0, 22.0)
+	if npc_choque.has(npc_id):  # em choque: treme no lugar
+		var t := Time.get_ticks_msec() / 1000.0
+		at += Vector2(sin(t * 47.0) * 1.2, sin(t * 31.0) * 0.6)
+		queue_redraw()
 	if npc_id == "caio":
 		drawing_key = npc_id
-		caio3d.draw(self, at, caio3d.frame_at(Time.get_ticks_msec()), CharacterSheet.Dir.SE)
+		var dir: CharacterSheet.Dir = npc_dir.get(npc_id, CharacterSheet.Dir.SE)
+		var pose: Dictionary = npc_pose.get(npc_id, {})
+		if not pose.is_empty():  # animação pedida pela cena (morte, dano...): toca uma vez e para no fim
+			var f := clampf((Time.get_ticks_msec() - int(pose["inicio"])) / 1000.0 / float(pose["dur"]), 0.0, 0.999)
+			if not _model3d("caio3d", at, str(pose["anim"]), f, dir):
+				caio3d.draw(self, at, caio3d.frame_at(Time.get_ticks_msec()), dir)
+		elif npc_andando.has(npc_id) and _model3d("caio3d", at, "walk", 0.0, dir):
+			pass
+		else:
+			caio3d.draw(self, at, caio3d.frame_at(Time.get_ticks_msec()), dir)
 		drawing_key = null
 		queue_redraw()  # a respiração anima
 		return
@@ -575,29 +869,72 @@ func _dot_pos(cid: String) -> Vector2:
 func _draw_clue_hints() -> void:
 	var available := scenario.available_clues(seen_clues)
 	var pulse := 0.65 + 0.35 * sin(Time.get_ticks_msec() / 260.0)
-	var hover := _clue_under(get_global_mouse_position()) if not dialog_layer.visible else ""
+	var hover: String = hover_forcado if hover_forcado != "" else (_clue_under(get_global_mouse_position()) if not _dialogo_aberto() else "")
 	for cid in scenario.clues:
 		if seen_clues.has(cid):
+			if pista_malhas.has(cid) and not pista_malhas[cid].is_empty():
+				world3d.destacar(cid, pista_malhas[cid], 0.0, 0.0)
 			continue
 		var at := _dot_pos(cid)
-		var radius := DOT_RADIUS + (2.0 if cid == hover else 0.0)
-		# A pista ainda bloqueada (a árvore, antes das outras) fica apagada: clicar só avisa.
 		var locked := not available.has(cid)
-		var tint := Color(0.84, 0.68, 0.36) if not locked else Color(0.66, 0.2, 0.2)
-		var alpha := 1.0 if cid == hover else (pulse if not locked else 0.55)
-		draw_circle(at, radius + 2.0, Color(0.05, 0.03, 0.02, 0.85))
-		draw_circle(at, radius, Color(tint, alpha))
-		if locked:
-			continue
-		if player.pos.distance_to(scenario.clues[cid].pos) <= CLUE_NEAR:
-			draw_arc(at, radius + 5.0, 0.0, TAU, 24, Color(0.84, 0.68, 0.36, 0.5 * pulse), 1.0)
-	queue_redraw()  # a bolinha pulsa
+		var perto: bool = player.pos.distance_to(scenario.clues[cid].pos) <= CLUE_NEAR
+		var ativa: bool = cid == hover
+		var malhas := _malhas_pista(cid)
+		if malhas.is_empty():
+			_pista_bolinha(at, ativa, locked, perto, pulse)  # objetos sem malha própria no cenário mantêm a bolinha
+		else:
+			_pista_brilho(cid, malhas, at, ativa, locked, perto, pulse)
+	queue_redraw()  # o brilho e a bolinha pulsam
+
+
+func _apagar_destaques() -> void:
+	for cid in pista_malhas:
+		if not pista_malhas[cid].is_empty():
+			world3d.destacar(cid, pista_malhas[cid], 0.0, 0.0)
+
+
+func _pista_bolinha(at: Vector2, ativa: bool, locked: bool, perto: bool, pulse: float) -> void:
+	var radius := DOT_RADIUS + (2.0 if ativa else 0.0)
+	# A pista ainda bloqueada (a árvore, antes das outras) fica apagada: clicar só avisa.
+	var tint := Color(0.84, 0.68, 0.36) if not locked else Color(0.66, 0.2, 0.2)
+	var alpha := 1.0 if ativa else (pulse if not locked else 0.55)
+	draw_circle(at, radius + 2.0, Color(0.05, 0.03, 0.02, 0.85))
+	draw_circle(at, radius, Color(tint, alpha))
+	if not locked and perto:
+		draw_arc(at, radius + 5.0, 0.0, TAU, 24, Color(0.84, 0.68, 0.36, 0.5 * pulse), 1.0)
+
+
+# Malhas 3D do objeto da pista (dados: "destaque": {"estado": "tapete"}, ou "nomes"/"raio"/"mat"/"max", ver Destaque3D). Vazio quando o cenário não é 3D ou a pista não declara.
+func _malhas_pista(cid: String) -> Array:
+	if not pista_malhas.has(cid):
+		var c: Dictionary = scenario.clues[cid]
+		var d: Dictionary = c.get("destaque", {})
+		pista_malhas[cid] = world3d.malhas_em(Vector3(c.pos.x / 64.0, 0.0, c.pos.y / 64.0), d) if world3d != null and world3d.has_method("malhas_em") and not d.is_empty() else []
+	return pista_malhas[cid]
+
+
+func _rotulo_pista(at: Vector2, texto: String) -> void:
+	var font := ThemeDB.fallback_font
+	var w := font.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
+	var r := Rect2(at + Vector2(-w * 0.5 - 8.0, -46.0), Vector2(w + 16.0, 22.0))
+	draw_rect(r, Color(0.05, 0.03, 0.02, 0.88))
+	draw_rect(r, Color(0.84, 0.68, 0.36), false, 1.0)
+	draw_string(font, r.position + Vector2(8.0, 16.0), texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.93, 0.89, 0.8))
+
+
+# Léo (13/11): o objeto respira um brilho dourado fraco (mais forte com o grupo perto); com o mouse em cima o brilho
+# abre, ganha borda branca e o rótulo "Examinar". A pista ainda bloqueada não brilha e o rótulo avisa.
+func _pista_brilho(cid: String, malhas: Array, at: Vector2, ativa: bool, locked: bool, perto: bool, pulse: float) -> void:
+	var base := 0.0 if locked else (0.16 + 0.12 * pulse if perto else 0.07 + 0.06 * pulse)
+	world3d.destacar(cid, malhas, 1.0 if ativa else 0.0, 0.5 if ativa else base)
+	if ativa:
+		_rotulo_pista(at, "Examinar" if not locked else "Ainda não")
 
 
 # --- Pistas ---------------------------------------------------------------------------------------
 
 func _order_move(click: Vector2) -> void:
-	if dialog_layer.visible:
+	if _dialogo_aberto():
 		return
 	pending_clue = ""
 	var cid := _clue_under(get_global_mouse_position()) if mode == Mode.EXPLORATION else ""
@@ -642,6 +979,9 @@ func _clue_under(mouse: Vector2) -> String:
 			best_d = d
 	if best != "":
 		return best
+	var por_malha := _clue_under_malha(mouse)
+	if por_malha != "":
+		return por_malha
 	# Objetos grandes (a árvore) também respondem ao clique no desenho todo: elipses [cx, cy, rx, ry]
 	# em px do desenho, relativas ao pé da pista (Léo, 01/11/2026: clicar "bem na árvore").
 	for cid in scenario.clues:
@@ -653,6 +993,139 @@ func _clue_under(mouse: Vector2) -> String:
 			if (rel.x * rel.x) / (float(a[2]) * float(a[2])) + (rel.y * rel.y) / (float(a[3]) * float(a[3])) <= 1.0:
 				return cid
 	return ""
+
+
+# Pistas com malha 3D respondem ao clique no contorno que as destaca: o casco, na tela, dos pontos da malha mais uma folga.
+func _clue_under_malha(mouse: Vector2) -> String:
+	if world3d == null or world3d.camera == null or world3d.mundo.size.x < 64:  # sem render (testes headless) não há projeção
+		return ""
+	var tela := get_canvas_transform() * mouse
+	var best := ""
+	var best_d := INF
+	for cid in scenario.clues:
+		if seen_clues.has(cid) or _malhas_pista(cid).is_empty():
+			continue
+		var dec: Dictionary = scenario.clues[cid].get("destaque", {}).get("decalque", {})
+		if not dec.is_empty():  # marca pintada no chão: vale o traço do contorno, não o retângulo todo
+			if _clique_no_decalque(dec, tela) and best_d > 0.0:
+				best = cid
+				best_d = 0.0
+			continue
+		var casco := _casco_pista(cid)
+		if casco.is_empty():
+			continue
+		var d := _dist_casco(tela, casco)
+		if d <= MALHA_MARGEM and d < best_d:
+			best = cid
+			best_d = d
+	return best
+
+
+var _decalque_img := {}  # png -> Image
+
+
+# O ponto da tela cai no chão (plano do decalque); acerta se há traço do contorno a até ~MALHA_MARGEM px dali.
+func _clique_no_decalque(dec: Dictionary, tela: Vector2) -> bool:
+	var png := str(dec["png"])
+	if not _decalque_img.has(png):
+		var tex := load(png) as Texture2D
+		_decalque_img[png] = tex.get_image() if tex != null else null
+	var img: Image = _decalque_img[png]
+	if img == null:
+		return false
+	var cam: Camera3D = world3d.camera
+	var vp := tela * (Vector2(world3d.mundo.size) / get_viewport_rect().size)
+	var o := cam.project_ray_origin(vp)
+	var n := cam.project_ray_normal(vp)
+	var y := float(dec.get("y", 0.03))
+	if absf(n.y) < 0.0001:
+		return false
+	var hit := o + n * ((y - o.y) / n.y)
+	var lo: Array = dec["min"]
+	var hi: Array = dec["max"]
+	var u := (hit.x - float(lo[0])) / (float(hi[0]) - float(lo[0]))
+	var v := (hit.z - float(lo[1])) / (float(hi[1]) - float(lo[1]))
+	# folga em px da textura: MALHA_MARGEM px de tela ~ metros pela escala da câmera
+	var m_por_px := cam.size / float(world3d.mundo.size.y) * (float(world3d.mundo.size.y) / get_viewport_rect().size.y)
+	var folga := MALHA_MARGEM * m_por_px
+	var rx := int(ceil(folga / (float(hi[0]) - float(lo[0])) * img.get_width()))
+	var ry := int(ceil(folga / (float(hi[1]) - float(lo[1])) * img.get_height()))
+	var cx := int(u * img.get_width())
+	var cy := int(v * img.get_height())
+	for dy in range(-ry, ry + 1, 2):
+		for dx in range(-rx, rx + 1, 2):
+			var px := cx + dx
+			var py := cy + dy
+			if px >= 0 and py >= 0 and px < img.get_width() and py < img.get_height() and img.get_pixel(px, py).a > 0.2:
+				if Vector2(dx / float(maxi(rx, 1)), dy / float(maxi(ry, 1))).length() <= 1.0:
+					return true
+	return false
+
+
+var _pista_cascos := {}  # id -> casco na tela; refeito quando a câmera anda
+var _pista_cascos_chave: Variant = null
+
+
+func _casco_pista(cid: String) -> PackedVector2Array:
+	var cam: Camera3D = world3d.camera
+	var chave: Variant = [cam.global_transform, cam.size, get_canvas_transform()]
+	if chave != _pista_cascos_chave:
+		_pista_cascos_chave = chave
+		_pista_cascos.clear()
+	if not _pista_cascos.has(cid):
+		_pista_cascos[cid] = _casco(_para_tela(_pontos_pista(cid)))
+	return _pista_cascos[cid]
+
+
+var _pista_pontos := {}  # id -> PackedVector3Array (amostra dos vértices da malha, no mundo 3D)
+
+
+func _pontos_pista(cid: String) -> PackedVector3Array:
+	if _pista_pontos.has(cid):
+		return _pista_pontos[cid]
+	var out := PackedVector3Array()
+	for m in _malhas_pista(cid):
+		var mi := m as MeshInstance3D
+		if mi == null or mi.mesh == null:
+			continue
+		var xf := mi.global_transform
+		var bb := mi.get_aabb()
+		for k in 8:  # os cantos da caixa garantem o contorno mesmo em malhas finas
+			out.append(xf * (bb.position + bb.size * Vector3(k & 1, (k >> 1) & 1, (k >> 2) & 1)))
+		for sf in mi.mesh.get_surface_count():
+			var arr := mi.mesh.surface_get_arrays(sf)
+			var vs: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			var passo := maxi(1, vs.size() / 300)
+			for i in range(0, vs.size(), passo):
+				out.append(xf * vs[i])
+	_pista_pontos[cid] = out
+	return out
+
+
+func _para_tela(pts: PackedVector3Array) -> PackedVector2Array:
+	var cam: Camera3D = world3d.camera
+	var k := get_viewport_rect().size / Vector2(world3d.mundo.size)
+	var out := PackedVector2Array()
+	for p in pts:
+		if not cam.is_position_behind(p):
+			out.append(cam.unproject_position(p) * k)
+	return out
+
+
+func _casco(pts: PackedVector2Array) -> PackedVector2Array:
+	return Geometry2D.convex_hull(pts) if pts.size() >= 3 else pts
+
+
+# 0 dentro do casco; fora, a distância até a borda.
+func _dist_casco(p: Vector2, casco: PackedVector2Array) -> float:
+	if casco.size() >= 3 and Geometry2D.is_point_in_polygon(p, casco):
+		return 0.0
+	var best := INF
+	for i in casco.size():
+		var a := casco[i]
+		var b := casco[(i + 1) % casco.size()]
+		best = minf(best, p.distance_to(Geometry2D.get_closest_point_to_segment(p, a, b)))
+	return best
 
 
 # Já está perto: examina. Senão anda até o ponto livre mais próximo do objeto e examina ao chegar.
@@ -701,6 +1174,10 @@ func _show_dialog(image_path: String, text: String, cid: String) -> void:
 
 
 # Fecha a caixa de texto. Se era uma pista nova, registra e dispara o que vem depois dela.
+func _dialogo_aberto() -> bool:
+	return dialog_layer.visible or (caixa != null and caixa.ocupada)
+
+
 func _close_dialog() -> void:
 	dialog_layer.visible = false
 	var cid := dialog_clue
@@ -708,18 +1185,46 @@ func _close_dialog() -> void:
 	if cid == "" or seen_clues.has(cid):
 		return
 	seen_clues.append(cid)
+	Dicas.marcar("examinar")
+	audio.play_sfx("clue_found")
+	var c: Dictionary = scenario.clues[cid]
+	Diario.anotar(_diario_lugar(), cid, c["texto"], c["inspecao"])
+	if c["perda_san"] > 0 or c["perturbadora"]:  # pista que perturba: quem leu (o líder) perde SAN
+		room_combat._san_report({player: san.clue_read(player, {"perda_san": c["perda_san"]} if c["perda_san"] > 0 else c)}, "lê a pista")
+	collect_items(c["da"])
+	var falas := CaixaFala.falas_da_pista(scenario.id, cid)
+	if not falas.is_empty():  # 2 a 4 falas do grupo reagindo à pista, antes do que vem depois dela
+		await caixa.sequencia(falas)
+	pista_gatilho = cid
 	for trigger in scenario.triggers_after(cid):
 		_run_trigger(trigger)
+	pista_gatilho = ""
 	queue_redraw()
+
+
+func _gear_scarce() -> bool:
+	return true  # a missão tem escassez de recursos (sugestão 7)
 
 
 func _run_trigger(trigger: Dictionary) -> void:
 	if trigger["tipo"] != "combate":
 		return
+	cena_depois = str(trigger.get("cutscene_depois", ""))
 	for spec in trigger["inimigos"]:
 		var p: Array = spec["pos"]
 		enemies.append(cfg.make_enemy(spec["tipo"], Vector2(p[0], p[1])))
-	_start_combat()
+	# Cena antes do combate (Léo, 15/11: a criatura perto da van já começa atacando o Caio pelas costas). Só toca uma
+	# vez: depois de carregar o autosave do combate a marca já existe e o combate começa direto.
+	var antes := str(trigger.get("cutscene_antes", ""))
+	var marca := str(trigger.get("marca_cena", ""))
+	if antes != "" and CenaRoteiro.existe(antes) and (marca == "" or not Missao1.tem(marca)):
+		var pista := pista_gatilho
+		await tocar_cena(antes)
+		pista_gatilho = pista  # o autosave do combate ainda não conta a pista como vista
+		_start_combat(Combatant.Side.ENEMY)
+		pista_gatilho = ""
+		return
+	_start_combat(Combatant.Side.ENEMY)  # emboscada: os inimigos agem todos primeiro
 
 
 func _on_dialog_input(event: InputEvent) -> void:

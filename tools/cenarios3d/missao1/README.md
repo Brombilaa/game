@@ -39,6 +39,32 @@ celas ganharam uma travessa a 1 m, senão o mapa de colisão não as via e o gru
 (pistas, alçapão, chegadas, invasão, saída) saem já convertidos em `PONTOS`, que `col.js` grava no json da colisão e
 `gerar_dados.py` usa.
 
+### Paredes inteiras e limite de cada lugar (13/11/2026)
+
+O corte de colisão olha de cima, então parede inteira (3,8 m) atravessava a câmera do corte e só mostrava as faces
+de perfil: as paredes do fundo e da lateral da delegacia e da biblioteca não bloqueavam. Agora `colisao.js` achata
+para dentro da faixa as caixas e os cilindros em pé que cruzam o topo do corte. O subsolo continua com o mapa
+antigo (a escada é uma caixa alta e fecharia a saída). `gerar_dados.py` também fecha tudo fora do limite de cada lugar
+(prédio mais a calçada da frente; no celeiro, o terreiro), para o grupo não dar a volta pela rua.
+
+### Cripta (14/11/2026)
+
+O Léo escolheu o modelo C (Fosso de sangue) entre três, na 3ª rodada. As fontes do protótipo ficam em
+`/mnt/project-files/arte/cripta/jogo/` (`cripta.js`, que roda com as fontes acima).
+
+    node exp.js cripta dentro 23 cripta                       # base + cripta_trecho2..4 (grupos `estado_trecho*`)
+    node finalizar.mjs exp/cripta.glb exp/f_cripta.glb 7      # repete para cada trecho; 7 = célula de 7 m
+    node col_cripta.js                                        # out/colj_cripta.json -> colisao/cripta.json
+
+- **Trechos:** cada trecho é um glb à parte, desligado até o líder pisar numa faixa (`zonas` com `acao: estado`).
+- **Células:** a cripta tem 41 luzes e o Compatibility ilumina cada malha com um número limitado delas
+  (`max_lights_per_object`, subido para 24 no projeto). `finalizar.mjs` com o terceiro argumento só junta malhas
+  dentro de cada célula do chão.
+- **Dois níveis:** `colisao2.js` corta a cena no chão e a 1,5 m (terraço e galeria) e une os dois pelas escadas
+  (`nivel(x,z)` em `cripta.js`). Para o jogo sai um plano só: `retangulos` é o que barra o passo (inclui a borda
+  entre o alto e o chão) e `visao` é o que barra a visão (sem parapeito, fosso, altar, sarcófago e banco, marcados
+  com `userData.baixo`). `pontos.niveis` leva as áreas elevadas, que no jogo só mudam a altura do desenho.
+
 ## 3. No jogo
 
 - `scripts/exploration/cenario3d.gd`: carrega o glb e o json, monta luzes, névoa e o filtro PC antigo.

@@ -20,6 +20,8 @@ const BAR_PAD := 7.0  # da moldura até as casas
 const BAR_DIVIDER := 16.0  # vão entre as casas e o fim do turno
 const BAR_END_W := 92.0
 const BAR_BOTTOM := 532.0
+const RITUAL_GAP := 10.0  # vão (com um fio) entre as ações comuns e as casas de ritual (modelo A, Léo 16/11)
+const RITUAL_KEYS := {"armadura_sangue": "Z", "amaldicoar_arma": "X", "eletrocussao": "T", "cicatrizacao": "Y"}
 
 
 # Ações do rodapé no turno do jogador: [ícone, título, detalhe, ativa]. A arma secundária
@@ -28,13 +30,44 @@ func _action_slots() -> Array:
 	var data := room.cfg.game_data
 	var kit := data.get_entry("itens", "kit_primeiros_socorros")
 	var id := str(room.player.weapon["id"])
-	var slots := [[id, str(data.get_entry("armas", id).get("nome", id)), "Atacar · %d PA · clique no inimigo" % int(room.player.weapon["pa_cost"]), true]]
+	var ammo := room.ammo_of(room.player)  # [carregador, reserva] ou [] se a arma não usa munição
+	var attack := "Atacar · %d PA · clique no inimigo" % int(room.player.weapon["pa_cost"])
+	if not ammo.is_empty():
+		attack = "Atacar · %d PA · G recarrega (%d PA)" % [int(room.player.weapon["pa_cost"]), int(room.cfg.regra("custo_recarga_pa", 1))]
+	var slots := [[id, str(data.get_entry("armas", id).get("nome", id)), attack, true, ammo]]
 	var second := room._reserve_id()
 	if second != "":
-		slots.append([second, str(data.get_entry("armas", second).get("nome", second)), "Trocar arma · %d PA · tecla Q" % room.SWAP_PA, room.player.pa >= room.SWAP_PA])
+		var second_ammo := []
+		if int(room.cfg.weapon(second)["mag_size"]) > 0:
+			second_ammo = [int(room.player.mag.get(second, 0)), room.inventory.count(room.ammo_item(second))]
+		slots.append([second, str(data.get_entry("armas", second).get("nome", second)), "Trocar arma · %d PA · tecla Q" % int(room.cfg.regra("custo_trocar_arma_pa", 1)), room.player.pa >= int(room.cfg.regra("custo_trocar_arma_pa", 1)), second_ammo])
 	slots.append(["kit", "Kit de primeiros socorros", "Reanimar · %d PA · restam %d" % [int(kit["custo_pa_combate"]), room.inventory.count(room.KIT_ID)], room.inventory.count(room.KIT_ID) > 0])
+	slots.append(["vigilancia", "Vigilância", "%d PA · tecla F · atira no 1º inimigo que se mover no cone" % int(room.player.weapon["pa_cost"]), room.rules.overwatch_blocker(room.player) == "" or room.player.overwatch])
 	slots.append(["atrasar", "Atrasar", "Age depois na rodada · tecla D", true])
+	for rid in _rituals():  # rituais do controlado (Miguel): uma casa por ritual, com etiqueta de PA e SAN
+		var r := room.rituals.ritual(rid)
+		var pa := int(r["custo_pa"])
+		var san := int(r["custo_san"])
+		slots.append([rid, str(r["nome"]), "%d PA · %d SAN · tecla %s · %s" % [pa, san, RITUAL_KEYS.get(rid, "?"), str(r["descricao"])],
+			room.player.is_alive() and room.player.pa >= pa and room.player.san >= san, [], {"pa": pa, "san": san}])
 	return slots
+
+
+# Rituais que o controlado conhece (vazio para quem não é Ocultista).
+func _rituals() -> Array[String]:
+	return room.rituals.known(room.player)
+
+
+# Índice da primeira casa de ritual (igual ao número de casas se não houver nenhuma).
+func ritual_start(n: int) -> int:
+	return n - _rituals().size()
+
+
+# Ritual na casa `k` da barra, ou "" se a casa não é de ritual.
+func ritual_at(k: int, n: int) -> String:
+	var list := _rituals()
+	var i := k - (n - list.size())
+	return list[i] if i >= 0 and i < list.size() else ""
 
 
 # Posição do kit entre as casas da barra (depois da arma e da reserva, se houver).
@@ -43,7 +76,7 @@ func kit_index() -> int:
 
 
 func _bar_width(n: int) -> float:
-	return BAR_PAD * 2 + n * BAR_SLOT + (n - 1) * BAR_GAP + BAR_DIVIDER + BAR_END_W
+	return BAR_PAD * 2 + n * BAR_SLOT + (n - 1) * BAR_GAP + BAR_DIVIDER + BAR_END_W + (RITUAL_GAP if not _rituals().is_empty() else 0.0)
 
 
 # Moldura inteira da barra, em pixels da tela.
@@ -54,7 +87,8 @@ func _bar_rect(n: int) -> Rect2:
 
 func _action_rect(k: int, n: int) -> Rect2:
 	var bar := _bar_rect(n)
-	return Rect2(bar.position + Vector2(BAR_PAD + k * (BAR_SLOT + BAR_GAP), BAR_PAD), Vector2(BAR_SLOT, BAR_SLOT))
+	var shift := RITUAL_GAP if ritual_at(k, n) != "" else 0.0
+	return Rect2(bar.position + Vector2(BAR_PAD + k * (BAR_SLOT + BAR_GAP) + shift, BAR_PAD), Vector2(BAR_SLOT, BAR_SLOT))
 
 
 func _end_turn_rect(n: int) -> Rect2:
@@ -71,13 +105,16 @@ func _draw_actions(font: Font, to_world: Transform2D) -> void:
 	var br := Rect2(to_world * bar.position, bar.size)
 	_draw_bar_frame(br, (to_world * _end_turn_rect(n).position).x)
 	_draw_pa_strip(br.position + Vector2(14, 0), room.turns.turn_pa(room.player), room.player.pa)
+	if ritual_start(n) < n:  # fio vertical entre as ações comuns e os rituais
+		var gap_x := (to_world * _action_rect(ritual_start(n), n).position).x - RITUAL_GAP * 0.5 - BAR_GAP * 0.5
+		room.draw_line(Vector2(gap_x, br.position.y + 8.0), Vector2(gap_x, br.end.y - 8.0), Color(1, 1, 1, 0.22), 0.5)
 	var tip := -1
 	for k in n:
 		var screen := _action_rect(k, n)
 		var hover := screen.has_point(mouse)
 		if hover:
 			tip = k
-		_draw_slot(Rect2(to_world * screen.position, screen.size), slots[k], k == 0, hover)
+		_draw_slot(font, Rect2(to_world * screen.position, screen.size), slots[k], k == 0, hover)
 	var end := _end_turn_rect(n)
 	var er := Rect2(to_world * end.position, end.size)
 	var over_end := end.has_point(mouse)
@@ -113,7 +150,7 @@ func _draw_pa_strip(at: Vector2, total: int, left: int) -> void:
 
 # Casa de ação: fundo escuro, contorno preto, linha clara fina; a selecionada leva o anel branco
 # entre dois pretos (como os cartões do grupo); sob o mouse clareia; indisponível apaga o ícone.
-func _draw_slot(r: Rect2, slot: Array, selected: bool, hover: bool) -> void:
+func _draw_slot(font: Font, r: Rect2, slot: Array, selected: bool, hover: bool) -> void:
 	var enabled: bool = slot[3]
 	room.draw_rect(r, Color(0.075, 0.062, 0.052, 0.96))
 	room.draw_rect(Rect2(r.position + Vector2(0, r.size.y * 0.6), Vector2(r.size.x, r.size.y * 0.4)), Color(0, 0, 0, 0.22))
@@ -129,6 +166,34 @@ func _draw_slot(r: Rect2, slot: Array, selected: bool, hover: bool) -> void:
 		room.draw_rect(r.grow(-0.5), Color(1, 1, 1, 0.5 if hover else 0.2), false, 0.5)
 	if hover:
 		room.draw_rect(r, Color(1, 1, 1, 0.08))
+	if slot.size() > 5:
+		_draw_cost_tag(font, r, int(slot[5]["pa"]), int(slot[5]["san"]), enabled)
+	if slot.size() > 4 and not slot[4].is_empty():
+		_draw_ammo_tag(font, r, int(slot[4][0]), int(slot[4][1]), int(room.cfg.weapon(str(slot[0]))["mag_size"]))
+
+
+# Etiqueta de munição no canto de baixo da casa da arma (modelo A do Léo): balas no carregador em
+# destaque e a reserva da mochila menor. Vermelha com 25% ou menos do carregador (mínimo 2).
+func _draw_ammo_tag(font: Font, r: Rect2, mag: int, reserve: int, mag_size: int) -> void:
+	var low := mag <= maxi(2, mag_size / 4)
+	var tag := Rect2(Vector2(r.end.x - 29.0 - 1.0, r.end.y - 12.0 - 1.0), Vector2(29.0, 12.0))
+	room.draw_rect(tag.grow(1.0), Color.BLACK)
+	room.draw_rect(tag, Color(0.075, 0.062, 0.052, 0.94))
+	room.draw_rect(tag.grow(-0.5), Color(1, 1, 1, 0.2), false, 0.5)
+	var ink := Color(0.91, 0.38, 0.33) if low else Color(0.94, 0.91, 0.84)
+	room.draw_string(font, tag.position + Vector2(3.0, 9.0), str(mag), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, ink)
+	room.draw_string(font, tag.position + Vector2(0, 9.0), "/%d" % reserve, HORIZONTAL_ALIGNMENT_RIGHT, tag.size.x - 2.5, 6, Color(0.67, 0.63, 0.56))
+
+
+# Etiqueta de custo dos rituais no canto de baixo da casa (modelo A do Léo): PA em branco, SAN em roxo.
+func _draw_cost_tag(font: Font, r: Rect2, pa: int, san: int, enabled: bool) -> void:
+	var tag := Rect2(Vector2(r.end.x - 21.0 - 1.0, r.end.y - 12.0 - 1.0), Vector2(21.0, 12.0))
+	room.draw_rect(tag.grow(1.0), Color.BLACK)
+	room.draw_rect(tag, Color(0.075, 0.062, 0.052, 0.94))
+	room.draw_rect(tag.grow(-0.5), Color(1, 1, 1, 0.2), false, 0.5)
+	var dim := 1.0 if enabled else 0.55
+	room.draw_string(font, tag.position + Vector2(3.0, 9.0), str(pa), HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(0.94, 0.91, 0.84, dim))
+	room.draw_string(font, tag.position + Vector2(10.0, 9.0), str(san), HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(0.66, 0.5, 0.92, dim))
 
 
 # Fim do turno: botão carmesim chapado com a ampulheta. Estados: normal, sob o mouse (mais claro),

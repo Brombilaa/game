@@ -37,6 +37,7 @@ const K_PONTO := 0.34
 @export var deslocamento := Vector3.ZERO  # no jogo: leva o canto da área do cenário à origem do plano da sala
 @export var expoente_sobreposto := 0.7  # alfa^x das camadas claras sem luz (névoa rasteira, teias); 1 = mistura do Compatibility
 
+const POCA_ACIMA := 0.012
 var info := {}
 var camada_mundo: CanvasLayer
 var camera: Camera3D
@@ -219,11 +220,14 @@ func _malhas(caminho: String, est: String) -> void:
 	for m in cena.find_children("*", "MeshInstance3D", true, false):
 		var mi := m as MeshInstance3D
 		var faz_sombra := false
+		var soma := false
 		for i in mi.mesh.get_surface_count():
 			var mat := mi.get_active_material(i)
 			if not (mat is BaseMaterial3D):
 				continue
 			var marcas := _marcas(mat.resource_name)
+			if marcas.has("add"):
+				soma = true
 			if not marcas.has("semsombra"):
 				faz_sombra = true
 			if not copias.has(mat):
@@ -231,6 +235,11 @@ func _malhas(caminho: String, est: String) -> void:
 			mi.set_surface_override_material(i, copias[mat])
 		if not faz_sombra:
 			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		# Poças de luz pintadas no chão (Léo, 13/11: "iluminação estranha ao andar"): no protótipo ficam a 3 cm, na
+		# mesma altura do piso, e no Godot a disputa de profundidade com o piso acendia e apagava cada poça conforme
+		# a câmera andava. Plano deitado que soma luz sobe POCA_ACIMA.
+		if soma and (mi.global_transform * mi.get_aabb()).size.y < 0.001:
+			mi.global_position.y += POCA_ACIMA
 
 
 static func _marcas(nome: String) -> PackedStringArray:
@@ -425,3 +434,18 @@ func _efeito_pc_antigo() -> void:
 	camada.layer = 100
 	camada.add_child(r)
 	add_child(camada)
+
+
+# --- Destaque de pistas (Léo, 13/11): brilho e borda branca no objeto; a lógica fica em Destaque3D ----------------
+
+var destaque := Destaque3D.new()
+
+
+# `spec` é o "destaque" da pista nos dados (estado, mat, nomes, raio, max); vazio = nenhuma malha.
+func malhas_em(p: Vector3, spec: Dictionary) -> Array:
+	var raizes: Array = estados.get(str(spec["estado"]), []) if spec.has("estado") else [raiz]
+	return destaque.selecionar(raizes, p, spec)
+
+
+func destacar(chave: String, malhas: Array, contorno: float, brilho: float) -> void:
+	destaque.aplicar(raiz, chave, malhas, contorno, brilho)

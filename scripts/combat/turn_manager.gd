@@ -1,7 +1,10 @@
 class_name TurnManager
 extends RefCounted
-# Ordem de turnos do combate (GDD B.5): turnos individuais por iniciativa, PA próprios
-# por turno sem acúmulo, atrasar uma vez por rodada, passar e fim imediato do combate.
+# Ordem de turnos do combate (GDD B.5): turnos individuais, PA próprios por turno sem acúmulo,
+# atrasar uma vez por rodada, passar e fim imediato do combate.
+# Ordem da rodada (Léo, 13/11): intercala 1 inimigo, 1 aliado, 1 inimigo, 1 aliado...; dentro de cada
+# lado vale a iniciativa (AGI, maior primeiro). Quando um lado acaba, o outro segue em sequência.
+# Surpresa (Léo, 13/11): quem pega o outro desprevenido age todo primeiro na rodada 1, depois o outro lado.
 
 signal turn_started(unit: Combatant)
 signal turn_ended(unit: Combatant)
@@ -12,10 +15,13 @@ enum State { IDLE, ACTIVE, ENDED }
 enum Result { NONE, VICTORY, GAME_OVER }
 
 var pa_per_turn := 3
+var rupture_pa := 1  # PA a menos por turno em ruptura de SAN (combat.json > sanidade > ruptura_pa)
 var state := State.IDLE
 var result := Result.NONE
 var round_number := 0
-var order: Array[Combatant] = []  # iniciativa fixa durante o combate
+var order: Array[Combatant] = []  # ordem da rodada atual (a que o HUD mostra)
+var surprise := -1  # lado que pegou o outro desprevenido (Combatant.Side) ou -1
+var _by_initiative: Array[Combatant] = []
 var current: Combatant = null
 var _queue: Array[Combatant] = []
 var _delayed: Array[Combatant] = []
@@ -30,23 +36,60 @@ func _init(pa: int = 3) -> void:
 
 # Monta participantes e ordena a iniciativa (maior primeiro). Empate residual, que o GDD
 # diz que não deve ocorrer: protagonista antes de inimigo, depois a ordem da lista.
-func start(units: Array[Combatant]) -> void:
-	order = units.duplicate()
+# surprise_side: lado que pegou o outro desprevenido e age todo primeiro na rodada 1 (-1 = ninguém).
+func start(units: Array[Combatant], surprise_side: int = -1) -> void:
+	_by_initiative = units.duplicate()
 	var index := {}
 	for i in units.size():
 		index[units[i]] = i
-	order.sort_custom(func(a: Combatant, b: Combatant) -> bool:
+	_by_initiative.sort_custom(func(a: Combatant, b: Combatant) -> bool:
 		if a.initiative != b.initiative:
 			return a.initiative > b.initiative
 		if a.side != b.side:
 			return a.side == Combatant.Side.PLAYER
 		return index[a] < index[b])
+	surprise = surprise_side
+	order = _round_order(1)
 	state = State.ACTIVE
 	result = Result.NONE
 	round_number = 0
 	if not _check_end():
 		_next_round()
 		_advance()
+
+
+# Entra no combate em andamento (a Dama de Sangue que surge de Roberto Ghular): age no fim da rodada atual e,
+# das próximas em diante, na ordem normal.
+func add_unit(unit: Combatant) -> void:
+	if _by_initiative.has(unit):
+		return
+	_by_initiative.append(unit)
+	if state == State.ACTIVE:
+		order.append(unit)
+		_queue.append(unit)
+
+
+# Sequência de uma rodada: na rodada 1 com surpresa, o lado que surpreendeu inteiro e depois o outro;
+# nas demais, inimigo e aliado alternados, começando pelo inimigo.
+func _round_order(number: int) -> Array[Combatant]:
+	var foes: Array[Combatant] = []
+	var allies: Array[Combatant] = []
+	for u in _by_initiative:
+		if u.is_alive():
+			(foes if u.side == Combatant.Side.ENEMY else allies).append(u)
+	var seq: Array[Combatant] = []
+	if number == 1 and surprise >= 0:
+		var first := foes if surprise == Combatant.Side.ENEMY else allies
+		var second := allies if surprise == Combatant.Side.ENEMY else foes
+		seq.append_array(first)
+		seq.append_array(second)
+		return seq
+	for k in maxi(foes.size(), allies.size()):
+		if k < foes.size():
+			seq.append(foes[k])
+		if k < allies.size():
+			seq.append(allies[k])
+	return seq
 
 
 func is_turn_of(unit: Combatant) -> bool:
@@ -114,7 +157,10 @@ func can_delay(unit: Combatant) -> bool:
 
 # PA com que a unidade começa cada turno: o da ficha, se houver, senão o padrão.
 func turn_pa(unit: Combatant) -> int:
-	return unit.pa_per_turn if unit.pa_per_turn >= 0 else pa_per_turn
+	var pa := unit.pa_per_turn if unit.pa_per_turn >= 0 else pa_per_turn
+	if unit.ruptured:
+		pa = maxi(pa - rupture_pa, 1)  # ruptura de SAN: sempre sobra 1 PA
+	return pa
 
 
 func _advance() -> void:
@@ -134,6 +180,7 @@ func _advance() -> void:
 			current = unit
 			unit.pa = turn_pa(unit)
 			unit.moved_px = 0.0
+			unit.overwatch = false  # a vigilância dura só até o próximo turno de quem vigia
 			turn_started.emit(unit)
 			return
 
@@ -143,9 +190,8 @@ func _next_round() -> void:
 	_delayed.clear()
 	_acted.clear()
 	_queue.clear()
-	for u in order:
-		if u.is_alive():
-			_queue.append(u)
+	order = _round_order(round_number)
+	_queue.append_array(order)
 	round_started.emit(round_number)
 
 
@@ -153,7 +199,7 @@ func _next_round() -> void:
 func _check_end() -> bool:
 	var players := false
 	var enemies := false
-	for u in order:
+	for u in _by_initiative:
 		if u.is_alive():
 			if u.side == Combatant.Side.PLAYER:
 				players = true
