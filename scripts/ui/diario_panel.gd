@@ -2,7 +2,8 @@ class_name DiarioPanel
 extends CanvasLayer
 # Diário de pistas, modelo A "caderno de campo" (Léo, 15/11/2026): abre com a tecla J (ou fecha com J, Esc e o X).
 # Lista à esquerda com tudo o que o grupo examinou (da mais nova para a mais antiga), a pista escolhida à direita com
-# imagem e texto, e o próximo objetivo no pé. Com o diário aberto o tempo para, como no inventário (GDD #23).
+# imagem e texto, e o próximo objetivo no pé. No pé também fica o botão LIGAR (tecla L, modelo A do Léo, 16/11): a
+# pista aberta vira a primeira, ele escolhe a segunda na lista e, se as duas se completam, nasce uma conclusão (Ligacoes). Com o diário aberto o tempo para, como no inventário (GDD #23).
 # Só desenha e lê o mouse e o teclado; os dados vêm de Diario/Missao1 e o objetivo, de `room._objectives()`.
 
 const PW := 640.0
@@ -20,6 +21,9 @@ const SEL_BG := Color(0.17, 0.115, 0.1)
 var room: Node
 var open := false
 var sel := 0  # posição na lista de recentes
+var ligando := false  # modo ligar: a pista de `_a` espera a segunda
+var _a := ""  # id da primeira pista do modo ligar
+var _aviso := ""  # resultado da última tentativa de ligar, mostrado no pé até o próximo refresh
 
 var _lista: VBoxContainer
 var _titulo_det: Label
@@ -27,6 +31,7 @@ var _lugar_det: Label
 var _imagem: TextureRect
 var _texto: Label
 var _obj: Label
+var _ligar: Button
 var _contagem: Label
 var _vazio: Label
 var _raiz: Control
@@ -132,8 +137,24 @@ func _rodape() -> Control:
 	e.border_color = CRIMSON
 	e.set_content_margin_all(8)
 	caixa.add_theme_stylebox_override("panel", e)
+	var linha := HBoxContainer.new()
+	linha.add_theme_constant_override("separation", 8)
+	caixa.add_child(linha)
 	_obj = _rotulo("", 13, OBJ_TEXT)
-	caixa.add_child(_obj)
+	_obj.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_obj.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	linha.add_child(_obj)
+	_ligar = Button.new()
+	_ligar.focus_mode = Control.FOCUS_NONE
+	_ligar.add_theme_font_size_override("font_size", 12)
+	_ligar.add_theme_color_override("font_color", Color(1, 1, 1))
+	var e2 := StyleBoxFlat.new()
+	e2.bg_color = CRIMSON
+	e2.set_content_margin_all(4)
+	for n in ["normal", "hover", "pressed"]:
+		_ligar.add_theme_stylebox_override(n, e2)
+	_ligar.pressed.connect(alternar_ligar)
+	linha.add_child(_ligar)
 	return caixa
 
 
@@ -150,12 +171,15 @@ func abrir() -> void:
 	if open:
 		return
 	open = true
+	ligando = false
+	_aviso = ""
 	sel = 0  # a última descoberta
 	visible = true
 	atualizar()
 
 
 func fechar() -> void:
+	ligando = false
 	open = false
 	visible = false
 
@@ -182,8 +206,13 @@ func atualizar() -> void:
 	_titulo_det.visible = tem
 	_lugar_det.visible = tem
 	_texto.visible = tem
-	_imagem.visible = tem and str(itens[sel]["imagem"]) != ""
-	if tem:
+	_imagem.visible = tem and not ligando and str(itens[sel]["imagem"]) != ""
+	if tem and ligando:
+		_titulo_det.text = "Ligar duas pistas"
+		_lugar_det.text = "ESCOLHA A SEGUNDA NA LISTA"
+		_texto.text = "1) %s\n2) %s" % [_titulo_de(_a), str(itens[sel]["titulo"]) if str(itens[sel]["id"]) != _a else "…"]
+		_imagem.texture = null
+	elif tem:
 		var e: Dictionary = itens[sel]
 		_titulo_det.text = e["titulo"]
 		_lugar_det.text = str(e["lugar"]).to_upper()
@@ -191,15 +220,21 @@ func atualizar() -> void:
 		_imagem.texture = load(e["imagem"]) if _imagem.visible and ResourceLoader.exists(e["imagem"]) else null
 	var obj := Diario.objetivo_atual(room._objectives()) if room != null else ""
 	_obj.text = "PRÓXIMO OBJETIVO   " + obj if obj != "" else "Sem objetivo no momento."
+	if ligando:
+		_obj.text = "Clique na segunda pista (ou Enter). Esc cancela."
+	if _aviso != "":
+		_obj.text = _aviso
+	_ligar.visible = Missao1.diario.size() >= 2
+	_ligar.text = "CANCELAR (L)" if ligando else "LIGAR (L)"
 
 
 func _botao(i: int, e: Dictionary) -> Button:
 	var b := Button.new()
-	b.text = "%s\n%s" % [e["titulo"], str(e["lugar"]).to_upper()]
+	b.text = "%s%s\n%s" % ["① " if ligando and e["id"] == _a else "", e["titulo"], str(e["lugar"]).to_upper()]
 	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	b.focus_mode = Control.FOCUS_NONE
 	b.add_theme_font_size_override("font_size", 12)
-	b.add_theme_color_override("font_color", TEXT if i == sel else MUTED)
+	b.add_theme_color_override("font_color", TEXT if i == sel or (ligando and e["id"] == _a) else MUTED)
 	var estilo := StyleBoxFlat.new()
 	estilo.bg_color = SEL_BG if i == sel else Color(0, 0, 0, 0)
 	estilo.border_width_left = 3 if i == sel else 0
@@ -212,8 +247,71 @@ func _botao(i: int, e: Dictionary) -> Button:
 
 
 func _escolher(i: int) -> void:
+	if ligando:
+		_confirmar(i)
+		return
 	sel = i
 	atualizar()
+
+
+# Teclas de cima e de baixo: só movem o cursor (no modo ligar não ligam nada até o Enter).
+func _cursor(i: int) -> void:
+	sel = clampi(i, 0, maxi(Missao1.diario.size() - 1, 0))
+	_aviso = ""
+	atualizar()
+
+
+# Liga L: abre o modo ligar com a pista aberta como primeira, ou cancela.
+func alternar_ligar() -> void:
+	if not open:
+		return
+	_aviso = ""
+	if ligando:
+		ligando = false
+	elif Missao1.diario.size() >= 2:
+		var itens := Diario.recentes()
+		_a = str(itens[sel]["id"])
+		ligando = true
+		sel = sel + 1 if sel + 1 < itens.size() else sel - 1  # o cursor sai da primeira pista
+	atualizar()
+
+
+func _confirmar(i: int) -> void:
+	var itens := Diario.recentes()
+	i = clampi(i, 0, itens.size() - 1)
+	var b := str(itens[i]["id"])
+	if b == _a:
+		_aviso = "Escolha uma pista diferente da primeira."
+		atualizar()
+		return
+	var r := Ligacoes.tentar(_a, b)
+	match r["resultado"]:
+		Ligacoes.Resultado.NOVA:
+			ligando = false
+			sel = 0  # a conclusão é a entrada mais nova
+			_aviso = "Conclusão nova: " + str(r["entrada"]["titulo"])
+		Ligacoes.Resultado.JA_FEITA:
+			ligando = false
+			sel = _posicao(str(r["entrada"]["id"]))
+			_aviso = "Você já ligou essas duas pistas."
+		_:
+			_aviso = "Essas pistas não parecem se ligar."
+	atualizar()
+
+
+func _posicao(id: String) -> int:
+	var itens := Diario.recentes()
+	for k in itens.size():
+		if itens[k]["id"] == id:
+			return k
+	return 0
+
+
+func _titulo_de(id: String) -> String:
+	for e in Missao1.diario:
+		if e["id"] == id:
+			return str(e["titulo"])
+	return id
 
 
 func _input(event: InputEvent) -> void:
@@ -224,9 +322,16 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif open:
 		if event.keycode == KEY_ESCAPE:
-			fechar()
+			if ligando:
+				alternar_ligar()
+			else:
+				fechar()
+		elif event.keycode == KEY_L:
+			alternar_ligar()
 		elif event.keycode == KEY_UP:
-			_escolher(maxi(sel - 1, 0))
+			_cursor(sel - 1)
 		elif event.keycode == KEY_DOWN:
-			_escolher(mini(sel + 1, Missao1.diario.size() - 1))
+			_cursor(sel + 1)
+		elif ligando and (event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER or event.keycode == KEY_SPACE):
+			_confirmar(sel)
 		get_viewport().set_input_as_handled()  # com o diário aberto o mundo não recebe nada
