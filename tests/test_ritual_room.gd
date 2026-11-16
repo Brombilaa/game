@@ -34,6 +34,14 @@ func _run() -> void:
 	room.rules.units = [miguel, e]
 	miguel.pa = 3
 
+	var bar: RoomActionBar = room.action_bar
+	var slots: Array = bar._action_slots()
+	var n := slots.size()
+	var start := bar.ritual_start(n)
+	_check(n - start == 4 and slots[start][0] == "armadura_sangue" and slots[n - 1][0] == "cicatrizacao", "a barra do Miguel ganha 4 casas de ritual no fim")
+	_check(slots[start][5] == {"pa": 1, "san": 2} and slots[start + 2][5] == {"pa": 2, "san": 4}, "cada casa traz o custo de PA e SAN")
+	_check(bar._action_rect(start, n).position.x - bar._action_rect(start - 1, n).end.x > RoomActionBar.BAR_GAP, "vão entre as ações comuns e os rituais")
+	_check(bar._bar_rect(n).encloses(bar._action_rect(n - 1, n)) and bar._action_rect(n - 1, n).end.x < bar._end_turn_rect(n).position.x, "as casas cabem na moldura antes do fim do turno")
 	room.room_ritual.cast("armadura_sangue")
 	_check(miguel.buffs.has("armadura_sangue") and miguel.pa == 2 and miguel.san == 20, "Z: Armadura de Sangue paga 1 PA e 2 SAN")
 	_check(room.popups.any(func(p: Dictionary) -> bool: return p.text == "ARMADURA DE SANGUE"), "o nome do ritual sobe sobre o Miguel")
@@ -60,6 +68,8 @@ func _run() -> void:
 	fernando.pa = 3
 	room.room_ritual.cast("armadura_sangue")
 	_check(fernando.pa == 3 and not fernando.buffs.has("armadura_sangue"), "quem não é Ocultista não conjura")
+
+	_check(room.action_bar.ritual_start(room.action_bar._action_slots().size()) == room.action_bar._action_slots().size(), "quem não é Ocultista não tem casas de ritual")
 
 	room.mode = room.Mode.EXPLORATION
 	room.queue_free()
