@@ -48,3 +48,5 @@ não passam por este carregador. O combate lê armas e inimigos destas tabelas v
 por PA estão em `combat.json` por enquanto.
 
 Ao exportar o jogo, incluir `data/*.json` no filtro de recursos não importados do preset.
+
+`falas_soltas.json` guarda as falas do grupo na exploração (Fernando, Nikolai e Miguel conversando sobre as pistas). Cada item tem `id`, `area` (id do cenário), `falas` (1 a 2 linhas `quem`/`texto`) e, se quiser, `requer` (marca). A lógica de quando falar está em `FalasSoltas` e as falas tocam uma vez por jogo; este arquivo não passa pelo `GameData`.
