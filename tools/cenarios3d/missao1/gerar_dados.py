@@ -266,11 +266,13 @@ def celeiro(d, p, ret):
     """Pós-combate da missão 1 (Léo, 15/11): a Dama morta e a Letícia salva, o grupo sobe pelo poço e encontra a equipe
     de campo da Ordem (do bem) dentro do celeiro da Fazenda Ghular. Mesma cena 3D e mesmas colisões da fazenda, sem
     inimigos. Ao chegar toca a conversa (data/cenas/celeiro_ordem.json) e depois o fim do capítulo: a cutscene feita
-    fora do jogo (se o vídeo existir) e o cartão AURORA (modelo A, Léo 16/11). Equipe da Ordem: rascunho da PR #189
-    (Marta, Otávio, Ivo e Bia). Posições, hora, textos e o caminho do vídeo são provisórios do Claude."""
-    d["inicio"]["npcs"] = [{"id": "leticia", "pos": p(5.4, 10.4)}, {"id": "otavio", "pos": p(4.6, 10.9)},
-                           {"id": "marta", "pos": p(8.2, 10.9)}, {"id": "ivo", "pos": p(8.8, 9.8)},
-                           {"id": "bia", "pos": p(6.0, 13.0)}]
+    fora do jogo (se o vídeo existir; sem ele, a cena da igreja na Itália feita no jogo) e o cartão AURORA (modelo A,
+    Léo 16/11). Posições, hora, textos e o caminho do vídeo são provisórios do Claude."""
+    # Elenco (Léo, 19/11): Tristan, sub-líder da Ordem; Mark, que sela o poço e conhece o Miguel de anos atrás;
+    # Júlia, namorada da Letícia e bibliotecária da cidade, que chega pela porta; a equipe médica cuida da Letícia.
+    d["inicio"]["npcs"] = [{"id": "leticia", "pos": p(5.4, 10.4)}, {"id": "medico", "pos": p(4.6, 10.9)},
+                           {"id": "tristan", "pos": p(8.2, 10.9)}, {"id": "mark", "pos": p(8.8, 9.8)},
+                           {"id": "julia", "pos": p(6.0, 13.0)}]
     d["chegadas"] = {"poco": [p(6.0, 9.9), p(6.6, 10.4), p(7.2, 9.9)]}
     d["objetivos"] = [{"texto": "Falar com a Ordem", "marca": "celeiro_conversa", "provisorio": True}]
     d["cena_ao_chegar"] = {"cena": "celeiro_ordem", "marca": "celeiro_conversa"}

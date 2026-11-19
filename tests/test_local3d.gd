@@ -299,7 +299,7 @@ func _celeiro_ordem() -> void:
 		Missao1.marcar(m)
 	var room = await _abrir("celeiro", "poco")
 	_check(room.enemies.is_empty(), "celeiro: sem inimigos")
-	for n in ["leticia", "marta", "otavio", "ivo", "bia"]:
+	for n in ["leticia", "tristan", "mark", "julia", "medico"]:
 		_check(room.scenario.npcs.has(n), "celeiro: %s está lá" % n)
 		if room.scenario.npcs.has(n):
 			_check(Pathfinder.is_free(room.scenario.npcs[n], room.walls, room.NPC_RADIUS), "celeiro: %s em ponto livre" % n)
@@ -316,12 +316,14 @@ func _celeiro_ordem() -> void:
 	_check(Missao1.tem("celeiro_conversa"), "celeiro: a conversa marca que já tocou")
 	_check(room.fim_capitulo != null and room.mode == room.Mode.CUTSCENE, "celeiro: depois da conversa vem o fim do capítulo")
 	var fim: FimCapitulo = room.fim_capitulo
-	for i in 60 * 20:
+	var viu_italia := false
+	for i in 60 * 30:
 		await process_frame
+		viu_italia = viu_italia or (is_instance_valid(fim) and fim.italia != null)
 		if Missao1.tem("capitulo1_fim"):
 			break
+	_check(viu_italia, "celeiro: sem o vídeo, corta para a igreja na Itália antes do cartão")
 	Engine.time_scale = 1.0
-	_check(not fim.tocou_video or FimCapitulo.tem_video(fim.video), "celeiro: sem o vídeo da cutscene externa, pula direto para o cartão")
 	_check(Missao1.tem("capitulo1_fim"), "celeiro: o cartão AURORA toca e o capítulo termina")
 	await _fechar(room)
 	# Save feito depois da conversa: vai direto ao fim, sem repetir as falas.

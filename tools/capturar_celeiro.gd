@@ -34,7 +34,8 @@ func _initialize() -> void:
 	var ultimo := ""
 	var desde := 0
 	var quadro := 0
-	while n < maximo and quadro < 30 * 120:
+	var italia_feitos: Array = []
+	while n < maximo and quadro < 30 * 200:
 		await process_frame
 		quadro += 1
 		desde += 1
@@ -50,6 +51,13 @@ func _initialize() -> void:
 			print("fala ", n, " ", ultimo)
 			n += 1
 			caixa._avanca()
+		var it: CenaItalia = room.fim_capitulo.italia if room.fim_capitulo != null else null
+		if it != null and is_instance_valid(it):
+			for marco in [4.0, 6.7, 8.5]:
+				if it.t >= marco and not italia_feitos.has(marco):
+					italia_feitos.append(marco)
+					root.get_texture().get_image().save_png("%s_italia_%s.png" % [prefixo, str(marco)])
+					print("itália ", marco)
 		if room.fim_capitulo != null and room.fim_capitulo.cartao != null and room.fim_capitulo.cartao._t > 2.5:
 			root.get_texture().get_image().save_png("%s_%02d.png" % [prefixo, n])
 			print("cartão")

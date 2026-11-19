@@ -1,9 +1,9 @@
 class_name FimCapitulo
 extends CanvasLayer
-# Fim do capítulo 1 (Léo, 15/11/2026): depois da conversa com a Ordem no celeiro, a tela escurece, toca a cutscene
-# feita fora do jogo e, por fim, o cartão AURORA (CartaoCapitulo, modelo A escolhido pelo Léo em 16/11).
-# A cutscene externa ainda não existe: enquanto o vídeo (`video`, Ogg Theora, o formato que a Godot toca) não estiver
-# no projeto, ela é pulada sem aviso e o cartão entra direto. Qualquer tecla ou clique pula o vídeo.
+# Fim do capítulo 1 (Léo, 15/11 e 19/11/2026): depois da conversa com a Ordem no celeiro, a tela escurece, corta para
+# a igreja na Itália (o cliffhanger grande) e, por fim, entra o cartão AURORA (CartaoCapitulo, modelo A, 16/11).
+# A igreja é desenhada no jogo (CenaItalia) até existir a cutscene externa: quando o vídeo (`video`, Ogg Theora, o
+# formato que a Godot toca) estiver no projeto, ele toca no lugar dela. Qualquer tecla ou clique pula os dois.
 # Quem chama decide o que vem depois (`terminou`): a sala marca o capítulo e volta ao menu.
 
 signal terminou
@@ -16,6 +16,7 @@ var video := ""
 var titulo := "AURORA"
 var legenda := "CAPÍTULO 1"
 var tocou_video := false  # o vídeo existia e começou (os testes leem)
+var italia: CenaItalia  # a cena da igreja, quando não há vídeo
 var cartao: CartaoCapitulo
 var _preto: ColorRect
 var _player: VideoStreamPlayer
@@ -53,6 +54,11 @@ func _sequencia() -> void:
 	await t.finished
 	if tem_video(video):
 		await _tocar_video()
+	else:
+		italia = CenaItalia.new()
+		add_child(italia)
+		await italia.terminou
+		italia.queue_free()
 	cartao = CartaoCapitulo.tocar(self, titulo, legenda)
 	await cartao.terminou
 	terminou.emit()
