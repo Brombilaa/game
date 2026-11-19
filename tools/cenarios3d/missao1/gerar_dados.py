@@ -274,7 +274,7 @@ def celeiro(d, p, ret):
     d["chegadas"] = {"poco": [p(6.0, 9.9), p(6.6, 10.4), p(7.2, 9.9)]}
     d["objetivos"] = [{"texto": "Falar com a Ordem", "marca": "celeiro_conversa", "provisorio": True}]
     d["cena_ao_chegar"] = {"cena": "celeiro_ordem", "marca": "celeiro_conversa"}
-    d["fim_capitulo"] = {"video": "res://assets/cutscenes/fim_capitulo1.ogv", "titulo": "AURORA", "legenda": "CAPÍTULO 1",
+    d["fim_capitulo"] = {"video": "fim_capitulo1", "titulo": "AURORA", "legenda": "CAPÍTULO 1",
                          "marca": "capitulo1_fim", "provisorio": True}
 
 

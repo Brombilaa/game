@@ -10,6 +10,7 @@ signal terminou
 
 const ESCURECER := 1.4  # s até a tela ficar preta (provisório)
 const PAUSA := 0.6  # s de preto antes do vídeo ou do cartão (provisório)
+const PASTA_VIDEO := "res://assets/cutscenes/"  # o dado traz só o nome: <nome>.ogv nesta pasta
 
 var video := ""
 var titulo := "AURORA"
@@ -22,7 +23,8 @@ var _player: VideoStreamPlayer
 
 static func tocar(pai: Node, dados: Dictionary) -> FimCapitulo:
 	var f := FimCapitulo.new()
-	f.video = str(dados.get("video", ""))
+	var nome := str(dados.get("video", ""))
+	f.video = PASTA_VIDEO + nome + ".ogv" if nome != "" else ""
 	f.titulo = str(dados.get("titulo", "AURORA"))
 	f.legenda = str(dados.get("legenda", "CAPÍTULO 1"))
 	pai.add_child(f)

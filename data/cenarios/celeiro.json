@@ -8082,7 +8082,7 @@
   "marca": "celeiro_conversa"
  },
  "fim_capitulo": {
-  "video": "res://assets/cutscenes/fim_capitulo1.ogv",
+  "video": "fim_capitulo1",
   "titulo": "AURORA",
   "legenda": "CAPÍTULO 1",
   "marca": "capitulo1_fim",
