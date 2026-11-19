@@ -133,6 +133,7 @@ func _layout() -> void:
 	panel_box.custom_minimum_size = Vector2(pw, 0)
 	panel_box.reset_size()
 	panel_box.position = Vector2(size.x * (STRIP_W + 0.04), ((size.y - panel_box.size.y) / 2.0)).round()
+	_layout_controls()
 
 
 func activate(item: String) -> void:

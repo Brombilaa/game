@@ -15,7 +15,7 @@ const OPTION_ROWS := [["master", "Volume geral"], ["music", "Música"], ["sfx", 
 const TOGGLE_KEYS := ["fullscreen", "vsync", "fast_combat"]
 const SLOT_MARK := {"auto": "A", "manual_1": "I", "manual_2": "II", "manual_3": "III"}
 const AREA_NAMES := {"test_room": "Sala de teste", "parque": "Parque"}
-const PANEL_TITLES := {"load": "CARREGAR", "opts": "OPÇÕES", "credits": "CRÉDITOS"}
+const PANEL_TITLES := {"load": "CARREGAR", "opts": "OPÇÕES", "credits": "CRÉDITOS", "controls": ""}
 # Créditos (Léo, 14/11). "\n" quebra a linha (sem quebra automática, para o painel ter a altura certa).
 const CREDITS := [
 	["Pacto Carmesim", "Protótipo da missão 1"],
@@ -230,9 +230,19 @@ func _layout() -> void:
 	panel_box.custom_minimum_size = Vector2(w * 0.52, 0)
 	panel_box.reset_size()
 	panel_box.position = Vector2(w * 0.4, h * 0.2)
+	_layout_controls()
 	var box: Control = dialog.get_node("Box")
 	box.reset_size()
 	box.position = (size - box.size) / 2.0
+
+
+# O mapa de controles é largo: centrado na tela, acima do menu.
+func _layout_controls() -> void:
+	if panel != "controls":
+		return
+	panel_box.custom_minimum_size = Vector2.ZERO
+	panel_box.reset_size()
+	panel_box.position = ((size - panel_box.size) / 2.0).round()
 
 
 # --- Pontos que o menu de pausa (PauseMenu) troca ------------------------------------
@@ -418,6 +428,12 @@ func _open(which: String) -> void:
 				var r := MenuRow.new(self, kind, spec[0], spec[1])
 				r.activated.connect(func(id: String) -> void: change_option(id, 0.0))
 				_add_panel_row(r)
+			var keys := MenuRow.new(self, MenuRow.Kind.ITEM, "controls", "Controles")
+			keys.font_size = 17
+			keys.activated.connect(func(_id: String) -> void: _open("controls"))
+			_add_panel_row(keys)
+		"controls":
+			panel_body.add_child(ControlesCaderno.new())
 		"credits":
 			for line in CREDITS:
 				var block := VBoxContainer.new()
@@ -429,11 +445,12 @@ func _open(which: String) -> void:
 				panel_body.add_child(block)
 		_:
 			_fill_panel(which)
-	var close := MenuRow.new(self, MenuRow.Kind.ITEM, "close", "Fechar")
+	var close := MenuRow.new(self, MenuRow.Kind.ITEM, "close", "Voltar" if which == "controls" else "Fechar")
 	close.font_size = 15
 	close.centered = true
 	close.activated.connect(func(_id: String) -> void: close_panel())
 	_add_panel_row(close)
+	_style_panel()
 	panel_box.visible = true
 	_layout()
 	create_tween().tween_property(panel_box, "modulate:a", 1.0, PANEL_FADE)
@@ -448,8 +465,20 @@ func _add_panel_row(r: MenuRow) -> void:
 	panel_rows.append(r)
 
 
+# O mapa de controles traz a própria página (placa e moldura do caderno); o painel padrão some atrás dela.
+func _style_panel() -> void:
+	if panel == "controls":
+		panel_box.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	else:
+		panel_box.remove_theme_stylebox_override("panel")
+	panel_title.visible = panel != "controls"
+
+
 func close_panel() -> void:
 	if panel == "":
+		return
+	if panel == "controls":  # volta para as Opções
+		_open("opts")
 		return
 	if panel == "opts":
 		options.save(options_path)

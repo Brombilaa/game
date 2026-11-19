@@ -16,6 +16,7 @@ func _run() -> void:
 	_cleanup()
 	_test_intro()
 	_test_options()
+	_test_controles()
 	await _test_sem_save()
 	await _test_scene()
 	_cleanup()
@@ -65,6 +66,20 @@ func _test_options() -> void:
 	back.apply()  # headless: só mexe no áudio
 
 
+func _test_controles() -> void:
+	var teclas := {}
+	for g in ControlesCaderno.grupos():
+		for row in g[1]:
+			for k in row[0]:
+				teclas[k] = true
+	for k in ["B", "J", "C", "Tab", "Esc", "Espaço", "D", "Q", "G", "F", "Z", "X", "T", "Y"]:
+		_check(teclas.has(k), "o mapa de controles lista a tecla " + k)
+	for iid in RoomItems.KEY_LABELS:
+		_check(teclas.has(RoomItems.KEY_LABELS[iid]), "o mapa lista a tecla do item " + iid)
+	var mapa := ControlesCaderno.new()
+	_check(mapa.custom_minimum_size.y > 0.0 and mapa.custom_minimum_size.y <= 540.0, "a página do mapa cabe na tela")
+
+
 func _test_scene() -> void:
 	SaveSlots.save(SaveSlots.manual(2), {"current_area": "test_room"}, DIR)
 	SaveSlots.save(SaveSlots.AUTO, {"current_area": "test_room"}, DIR)
@@ -101,13 +116,18 @@ func _test_scene() -> void:
 
 	menu.activate("opts")
 	_check(menu.panel == "opts", "Opções abre o painel")
-	_check(menu.panel_rows.size() == MainMenu.OPTION_ROWS.size() + 1, "uma linha por opção, mais Fechar")
+	_check(menu.panel_rows.size() == MainMenu.OPTION_ROWS.size() + 2, "uma linha por opção, mais Controles e Fechar")
 	var vs: bool = menu.options.values["vsync"]
 	menu.change_option("vsync", 0.0)
 	_check(menu.options.values["vsync"] != vs, "sincronia vertical liga e desliga")
 	_check(GameOptions.load_from(OPTIONS_PATH).values["vsync"] == menu.options.values["vsync"], "a opção é gravada na hora")
 	menu.change_option("vsync", 0.0)
 	await process_frame
+	menu._open("controls")
+	_check(menu.panel == "controls" and menu.panel_body.get_child(0) is ControlesCaderno, "Controles abre o mapa de controles")
+	await process_frame
+	menu._back()
+	_check(menu.panel == "opts", "Esc no mapa de controles volta às Opções")
 	menu._back()
 	_check(menu.panel == "", "Esc ou botão direito fecham o painel")
 
