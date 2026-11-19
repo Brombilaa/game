@@ -6,7 +6,7 @@ extends SceneTree
 # Rodar com:
 #   godot --headless --path . -s tests/test_local3d.gd
 
-const LOCAIS := ["delegacia_17h", "delegacia_21h", "subsolo", "biblioteca", "fazenda", "cripta"]
+const LOCAIS := ["delegacia_17h", "delegacia_21h", "subsolo", "biblioteca", "fazenda", "cripta", "celeiro"]
 
 var failures := 0
 
@@ -32,6 +32,7 @@ func _run() -> void:
 	await _cripta()
 	_cinema_e_tentaculo()
 	await _fim_da_missao()
+	await _celeiro_ordem()
 	print("Falhas: %d" % failures if failures > 0 else "OK: test_local3d")
 	quit(1 if failures > 0 else 0)
 
@@ -321,6 +322,7 @@ func _cripta() -> void:
 	room._inspect("leticia")
 	room._close_dialog()
 	_check(room.seen_clues.has("leticia") and Missao1.tem("leticia_acordou"), "cripta: depois do combate a Letícia acorda ao interagir")
+	_check(room.indo_para == "celeiro", "cripta: com a Letícia acordada o grupo sobe para o celeiro")
 	await _fechar(room)
 	# Voltar de um save: trechos revelados continuam à vista e quem já caiu não volta.
 	room = await _abrir("cripta")
@@ -335,6 +337,52 @@ func _cripta() -> void:
 	for e in room.enemies:
 		nomes.append(e.name)
 	_check(nomes.has("Dama de Sangue") and not nomes.has("Roberto Ghular"), "cripta: save feito depois de a Dama surgir volta com ela")
+	await _fechar(room)
+
+
+# Pós-combate (Léo, 15/11): no celeiro, sem o Fernando, a Ordem espera com a Letícia; a conversa toca ao chegar e
+# depois vem o fim do capítulo (cutscene externa, se o vídeo existir, e o cartão AURORA).
+func _celeiro_ordem() -> void:
+	Missao1.reiniciar()
+	for m in ["cripta_vencida", "fernando_morreu", "leticia_acordou"]:
+		Missao1.marcar(m)
+	var room = await _abrir("celeiro", "poco")
+	_check(room.enemies.is_empty(), "celeiro: sem inimigos")
+	for n in ["leticia", "tristan", "mark", "julia", "medico"]:
+		_check(room.scenario.npcs.has(n), "celeiro: %s está lá" % n)
+		if room.scenario.npcs.has(n):
+			_check(Pathfinder.is_free(room.scenario.npcs[n], room.walls, room.NPC_RADIUS), "celeiro: %s em ponto livre" % n)
+	var fernando: Combatant = room.party[0]
+	_check(fernando.name == "Fernando" and fernando.dead and room.player != fernando, "celeiro: o Fernando não volta e outro lidera")
+	_check(not room._drawn_units().has(fernando), "celeiro: o corpo do Fernando ficou na cripta")
+	await process_frame
+	_check(room.mode == room.Mode.CUTSCENE and room.cena != null, "celeiro: a conversa com a Ordem toca ao chegar")
+	Engine.time_scale = 4.0
+	for i in 60 * 40:
+		await process_frame
+		if room.fim_capitulo != null:
+			break
+	_check(Missao1.tem("celeiro_conversa"), "celeiro: a conversa marca que já tocou")
+	_check(room.fim_capitulo != null and room.mode == room.Mode.CUTSCENE, "celeiro: depois da conversa vem o fim do capítulo")
+	var fim: FimCapitulo = room.fim_capitulo
+	var viu_italia := false
+	for i in 60 * 30:
+		await process_frame
+		viu_italia = viu_italia or (is_instance_valid(fim) and fim.italia != null)
+		if Missao1.tem("capitulo1_fim"):
+			break
+	_check(viu_italia, "celeiro: sem o vídeo, corta para a igreja na Itália antes do cartão")
+	Engine.time_scale = 1.0
+	_check(Missao1.tem("capitulo1_fim"), "celeiro: o cartão AURORA toca e o capítulo termina")
+	await _fechar(room)
+	# Save feito depois da conversa: vai direto ao fim, sem repetir as falas.
+	Missao1.reiniciar()
+	for m in ["fernando_morreu", "celeiro_conversa"]:
+		Missao1.marcar(m)
+	room = await _abrir("celeiro", "poco")
+	await process_frame
+	await process_frame
+	_check(room.cena == null and room.fim_capitulo != null, "celeiro: carregar depois da conversa vai direto ao fim")
 	await _fechar(room)
 
 

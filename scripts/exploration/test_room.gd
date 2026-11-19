@@ -152,6 +152,7 @@ var unlinked := {}  # seguidores soltos da corrente do grupo: não acompanham o 
 
 var follow_rng := RandomNumberGenerator.new()
 var loot_rng := RandomNumberGenerator.new()  # sorteio dos itens largados pelos inimigos
+var pending_corpse: Combatant  # corpo que o controlado vai examinar ao chegar
 
 var inventory: Inventory  # mochila compartilhada do grupo (20 espaços)
 
@@ -451,8 +452,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		var click := _resolve_click(get_global_mouse_position())
 		if mode == Mode.EXPLORATION:
 			var target := _enemy_at(click)
+			var corpse := room_gear.corpse_at(click)
 			if target and _visible(target.pos):
 				_stealth_attack(target)
+			elif corpse and _visible(corpse.pos):
+				room_gear.click_corpse(corpse)
 			else:
 				_order_move(click)
 		elif mode == Mode.COMBAT:
@@ -512,6 +516,7 @@ func _resolve_click(mouse: Vector2) -> Vector2:
 
 
 func _order_move(click: Vector2) -> void:
+	pending_corpse = null  # novo destino cancela o saque pendente
 	var wants_door := false
 	if not door_open and door.grow(12).has_point(click):
 		# Clique na porta: andar até o lado em que o personagem está e abrir ao chegar.
@@ -571,6 +576,7 @@ func _process(delta: float) -> void:
 	if (inv_panel and inv_panel.open) or (diario_panel and diario_panel.open):
 		return  # inventário ou diário aberto: o tempo para (GDD #23)
 	minimap._update_discovered()
+	_update_enemy_turn_speed()
 	fx.update(delta)
 	_apply_zoom_pulse()
 	camera.offset = fx.shake_offset()
@@ -587,6 +593,14 @@ func _process(delta: float) -> void:
 		combat_log = combat_log.filter(func(l: Dictionary) -> bool: return l.time > 0.0)
 		queue_redraw()
 	_update_perf(delta)
+	if pending_corpse != null:
+		if mode != Mode.EXPLORATION or not room_gear.is_corpse(pending_corpse):
+			pending_corpse = null
+		elif path.is_empty() and moving_unit == null:
+			var c := pending_corpse
+			pending_corpse = null
+			if player.pos.distance_to(c.pos) <= RoomGear.CORPSE_REACH * 1.5:
+				room_gear.examine_corpse(c)
 	if player != null:
 		audio.update_heartbeat(_san_ratio())  # coração em laço com a SAN baixa
 	if _san_ratio() < 1.0 and player.max_san > 0 and player.san <= 0:
@@ -861,6 +875,24 @@ func _stealth_attack(target: Combatant) -> void:
 	room_combat._stealth_attack(target)
 
 
+# Acelerar a vez do inimigo (Léo, 15/11; PR #171, restaurado): segurando Shift enquanto os inimigos agem, o tempo
+# sobe para 4x (8x com o combate rápido ligado). Soltou, ou voltou a vez do grupo, o tempo volta ao normal.
+const ENEMY_TURN_BOOST := 2.0
+var enemy_turn_boost := false
+
+
+func _update_enemy_turn_speed() -> void:
+	if mode != Mode.COMBAT:
+		return
+	var enemy_acting: bool = busy and turns != null and turns.current != null and turns.current.side == Combatant.Side.ENEMY
+	var want: bool = enemy_acting and Input.is_key_pressed(KEY_SHIFT)
+	if want == enemy_turn_boost:
+		return
+	enemy_turn_boost = want
+	Engine.time_scale = (2.0 if options.values["fast_combat"] else 1.0) * (ENEMY_TURN_BOOST * 2.0 if want else 1.0)
+	queue_redraw()
+
+
 func _start_combat(surprise_side: int = -1) -> void:  # override
 	room_combat._start_combat(surprise_side)
 
@@ -994,6 +1026,10 @@ func _setup_gear() -> void:
 
 func _loot_enemy(e: Combatant) -> void:
 	room_gear._loot_enemy(e)
+
+
+func _corpse_at(p: Vector2) -> Combatant:
+	return room_gear.corpse_at(p)
 
 
 func collect_items(found: Array) -> String:

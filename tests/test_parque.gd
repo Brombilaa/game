@@ -55,6 +55,20 @@ func _run() -> void:
 	_check(fernando.max_san == san0 + 2 and fernando.san == fernando.max_san, "a pulseira dá 2 de SAN máxima")
 	room.gear_unequip(fernando, "acessorio")
 	_check(fernando.max_san == san0, "tirar a pulseira devolve a SAN")
+	# Acessório de PV (crucifixo, provisório): +3 de PV máximo; trocar de acessório tira o anterior.
+	var pv0 := fernando.max_pv
+	room.inventory.add("crucifixo_velho")
+	var cruz := -1
+	for i in room.inventory.slots.size():
+		if not room.inventory.slots[i].is_empty() and room.inventory.slots[i]["id"] == "crucifixo_velho":
+			cruz = i
+	_check(room.gear_is_equippable("crucifixo_velho") and room.gear_item_kind("crucifixo_velho") == "acessorio", "o crucifixo é acessório")
+	room.gear_equip(fernando, "acessorio", cruz)
+	_check(fernando.max_pv == pv0 + 3 and fernando.pv == fernando.max_pv, "o crucifixo dá 3 de PV máximo")
+	room.gear_equip(fernando, "acessorio", pul)
+	_check(fernando.max_pv == pv0 and fernando.max_san == san0 + 2 and room.inventory.count("crucifixo_velho") == 1, "trocar de acessório devolve o PV e aplica a SAN")
+	room.gear_unequip(fernando, "acessorio")
+	_check(fernando.max_san == san0 and fernando.max_pv == pv0, "sem acessório, PV e SAN voltam ao normal")
 	room.gear_equip(fernando, "secundaria", esc)
 	_check(int(fernando.mag.get("escopeta", -1)) == 0, "escopeta recém-achada começa com o carregador vazio")
 	# Pista perturbadora (Caio morto) tira SAN de quem leu.
@@ -69,8 +83,22 @@ func _run() -> void:
 	var cultista: Combatant = room.cfg.make_enemy("cultista", Vector2.ZERO)
 	cultista.drops = [{"item": "bandagem", "qtd": 1, "chance": 1.0}]
 	var antes: int = room.inventory.count("bandagem")
+	cultista.pos = room.player.pos + Vector2(300, 0)
+	room.enemies.append(cultista)
+	cultista.pv = 0
 	room._loot_enemy(cultista)
-	_check(room.inventory.count("bandagem") == antes + 1, "inimigo abatido larga o item da ficha")
+	_check(room.inventory.count("bandagem") == antes and cultista.loot.size() == 1, "inimigo abatido deixa o saque no corpo, sem ir para a mochila")
+	_check(room._corpse_at(cultista.pos) == cultista and room.room_gear.is_corpse(cultista), "corpo com saque é clicável")
+	room.room_gear.click_corpse(cultista)
+	_check(room.inventory.count("bandagem") == antes and room.pending_corpse == cultista, "corpo longe: o controlado anda até ele antes de examinar")
+	room.pending_corpse = null
+	cultista.pos = room.player.pos + Vector2(20, 0)
+	room.room_gear.click_corpse(cultista)
+	_check(room.inventory.count("bandagem") == antes + 1 and cultista.loot.is_empty() and room._corpse_at(cultista.pos) == null, "examinar perto passa o saque para a mochila e apaga o brilho")
+	room.enemies.erase(cultista)
+	for kind in ["cultista", "atirador", "criatura_sangue"]:
+		var t: Combatant = room.cfg.make_enemy(kind, Vector2.ZERO)
+		_check(not t.drops.is_empty(), "tabela de saque própria: " + kind)
 	var cheia := Inventory.new(room.cfg.game_data)
 	var inv: Inventory = room.inventory
 	for i in cheia.SIZE:
