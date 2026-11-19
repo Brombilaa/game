@@ -57,6 +57,8 @@ const EQUIP_LABELS := {"principal": "ARMA PRINCIPAL", "secundaria": "ARMA SECUND
 
 # Textos provisórios dos itens (o GDD ainda não os define).
 const BLURBS := {
+	"pulseira_amizade": "Acessório: amarra a mente ao que o Caio deixou.",
+	"crucifixo_velho": "Acessório: pesa no peito e segura o corpo de pé.",
 	"pistola": "Arma curta de uso comum. Confiável à curta distância.",
 	"escopeta": "Dano alto à queima-roupa, gasta 2 PA por disparo.",
 	"espada": "Lâmina de corpo a corpo, forte nas mãos de quem aceita o risco.",
@@ -287,6 +289,10 @@ func _describe(id: String) -> Dictionary:
 		lines.append(["Em combate", "%d PA" % int(it["custo_pa_combate"])])
 	if it.get("efeito") == "defesa" and it.get("valor") != null:
 		lines.append(["Defesa", "%d%%" % roundi(float(it["valor"]) * 100.0)])
+	if it.get("efeito") == "san_max" and it.get("valor") != null:
+		lines.append(["SAN máxima", "+%d" % int(it["valor"])])
+	if it.get("efeito") == "pv_max" and it.get("valor") != null:
+		lines.append(["PV máximo", "+%d" % int(it["valor"])])
 	return {"nome": it["nome"], "tipo": str(it["categoria"]).capitalize(), "texto": BLURBS.get(id, ""), "linhas": lines}
 
 
