@@ -11,7 +11,7 @@ extends "res://scripts/exploration/parque.gd"
 #   - visao: o que barra a visão quando é menos do que o que barra o passo (parapeito, fosso, altar);
 #   - niveis: áreas elevadas; só mudam a altura em que cada um é desenhado (e o clique acha o piso certo);
 #   - chefe: Roberto Ghular se mata com pouca vida e a Dama de Sangue surge dele, no mesmo combate;
-#   - fim: com a Dama em ~30% de vida toca a cutscene da morte do Fernando pelo tentáculo (cena_tentaculo.gd);
+#   - fim: com a Dama em ~20% de vida (limite em cripta.json) toca a cutscene da morte do Fernando pelo tentáculo (cena_tentaculo.gd);
 #   - grupos: marca gravada quando todos os inimigos de um grupo caem (não voltam ao carregar o save).
 # O lugar aberto vem de Missao1.local (ou de `local_id`, para abrir a cena direto no editor).
 
@@ -548,7 +548,7 @@ func _e_a_dama(u: Combatant) -> bool:
 	return enemies.has(u) and u.name == "Dama de Sangue"  # surgida de Roberto ou já no lugar dele (save)
 
 
-# Fim da missão 1 (Léo, 15/11): quando o golpe acerta e a Dama fica com ~30% de vida ou menos, o combate para e toca a
+# Fim da missão 1 (Léo, 15/11): quando o golpe acerta e a Dama fica com ~20% de vida ou menos (fim.limite de cripta.json), o combate para e toca a
 # cutscene do tentáculo (CenaTentaculo). Roda no impacto, quando a barra de vida já mostra o valor novo.
 func _on_fx_impact(job: Dictionary) -> void:
 	super(job)
