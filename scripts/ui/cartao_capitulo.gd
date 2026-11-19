@@ -16,6 +16,7 @@ var fade := 1.2
 var _t := 0.0
 var _saindo := false
 var _desenho: Control
+var _nome: Control
 
 
 static func tocar(pai: Node, titulo_ := "AURORA", legenda_ := "CAPÍTULO 1", duracao_ := 5.0) -> CartaoCapitulo:
@@ -35,6 +36,12 @@ func _ready() -> void:
 	_desenho.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_desenho.draw.connect(_desenhar)
 	add_child(_desenho)
+	# O nome vai num controle à parte, por cima do céu.
+	_nome = Control.new()
+	_nome.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_nome.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_nome.draw.connect(_desenhar_nome)
+	add_child(_nome)
 
 
 func alfa() -> float:
@@ -52,6 +59,7 @@ func _process(delta: float) -> void:
 		queue_free()
 		return
 	_desenho.queue_redraw()
+	_nome.queue_redraw()
 
 
 func _input(event: InputEvent) -> void:
@@ -83,18 +91,39 @@ func _desenhar() -> void:
 		var al := 0.05 * (i + 1) * a
 		_desenho.draw_rect(Rect2(quadro.position.x, horizonte - quadro.size.y * 0.1 + quadro.size.y * 0.0125 * i, quadro.size.x, quadro.size.y * 0.0125 + 1), Color(0.48, 0.16, 0.11, al))
 	_desenho.draw_rect(Rect2(quadro.position.x, horizonte, quadro.size.x, quadro.end.y - horizonte), Color(0.03, 0.024, 0.024, a))
-	var fonte: Font = load(FONTE)
+
+
+# Letras desse tamanho, redesenhadas a cada quadro, saíam como blocos cheios no renderizador de compatibilidade
+# (cache de glifos grandes). Com campo de distância (MSDF) cada glifo é gerado uma vez e só é ampliado.
+static var _msdf: FontFile
+
+
+static func _fonte_msdf() -> FontFile:
+	if _msdf == null:
+		_msdf = (load(FONTE) as FontFile).duplicate()
+		_msdf.multichannel_signed_distance_field = true
+		_msdf.msdf_size = 64
+		_msdf.msdf_pixel_range = 8
+	return _msdf
+
+
+func _desenhar_nome() -> void:
+	var tela := _nome.size
+	var a := alfa()
+	var h := minf(tela.x / PROPORCAO, tela.y)
+	var quadro := Rect2(0, (tela.y - h) * 0.5, tela.x, h)
+	var fonte := _fonte_msdf()
 	var tam_t := int(quadro.size.y * 0.3)
 	var larg := fonte.get_string_size(titulo, HORIZONTAL_ALIGNMENT_LEFT, -1, tam_t).x + tam_t * 0.32 * titulo.length()
 	var x := quadro.position.x + (quadro.size.x - larg) * 0.5
 	var y := quadro.position.y + quadro.size.y * 0.52
 	for ch in titulo:  # espaçamento largo entre as letras
 		var s := str(ch)
-		_desenho.draw_string(fonte, Vector2(x + 3, y + 3), s, HORIZONTAL_ALIGNMENT_LEFT, -1, tam_t, Color(0, 0, 0, a))
-		_desenho.draw_string(fonte, Vector2(x, y), s, HORIZONTAL_ALIGNMENT_LEFT, -1, tam_t, Color(0.92, 0.87, 0.82, a))
+		_nome.draw_string(fonte, Vector2(x + 3, y + 3), s, HORIZONTAL_ALIGNMENT_LEFT, -1, tam_t, Color(0, 0, 0, a))
+		_nome.draw_string(fonte, Vector2(x, y), s, HORIZONTAL_ALIGNMENT_LEFT, -1, tam_t, Color(0.92, 0.87, 0.82, a))
 		x += fonte.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, tam_t).x + tam_t * 0.32
 	if legenda != "":
 		var tam_l := int(quadro.size.y * 0.055)
 		var fl: Font = load("res://assets/fonts/SpecialElite-Regular.ttf")
 		var wl := fl.get_string_size(legenda, HORIZONTAL_ALIGNMENT_LEFT, -1, tam_l).x
-		_desenho.draw_string(fl, Vector2(quadro.position.x + (quadro.size.x - wl) * 0.5, y + quadro.size.y * 0.12), legenda, HORIZONTAL_ALIGNMENT_LEFT, -1, tam_l, Color(0.66, 0.6, 0.55, a))
+		_nome.draw_string(fl, Vector2(quadro.position.x + (quadro.size.x - wl) * 0.5, y + quadro.size.y * 0.12), legenda, HORIZONTAL_ALIGNMENT_LEFT, -1, tam_l, Color(0.66, 0.6, 0.55, a))
