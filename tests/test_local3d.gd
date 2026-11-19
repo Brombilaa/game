@@ -418,17 +418,17 @@ func _fim_da_missao() -> void:
 	_check(dama != null and not room.dados.get("fim", {}).is_empty(), "fim: a Dama está na cripta e os dados trazem o fim")
 	room._start_combat()
 	var acerto := {"ok": true, "hit": true, "damage": 3, "crit": false, "blocked": false}
-	# Acima de 30%: o combate segue.
+	# Acima do limite do fim (20%): o combate segue.
 	dama.pv = int(dama.max_pv * 0.6)
 	room._on_fx_impact({"attacker": room.player, "target": dama, "r": acerto, "from_pv": dama.pv + 3})
-	_check(not room.fim_tocou and room.mode == room.Mode.COMBAT, "fim: com a Dama acima de 30% a cena não toca")
+	_check(not room.fim_tocou and room.mode == room.Mode.COMBAT, "fim: com a Dama acima do limite a cena não toca")
 	# Um golpe que a mataria a deixa por um fio.
 	dama.pv = 0
 	room._show_attack(room.player, dama, acerto)
 	_check(dama.pv == 1, "fim: a Dama não morre antes da cena")
-	# No impacto com ~30% ou menos, a cena começa e congela o combate.
+	# No impacto com ~20% ou menos, a cena começa e congela o combate.
 	room._on_fx_impact({"attacker": room.player, "target": dama, "r": acerto, "from_pv": 4})
-	_check(room.fim_tocou and room.mode == room.Mode.CUTSCENE, "fim: abaixo de 30% a cutscene começa")
+	_check(room.fim_tocou and room.mode == room.Mode.CUTSCENE, "fim: abaixo do limite (20%) a cutscene começa")
 	_check(room.turns.state == TurnManager.State.ENDED, "fim: o combate fica congelado")
 	_check(not room.can_pause(), "fim: não se pausa durante a cutscene")
 	# Só toca uma vez.

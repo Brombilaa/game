@@ -11,7 +11,7 @@ extends "res://scripts/exploration/parque.gd"
 #   - visao: o que barra a visão quando é menos do que o que barra o passo (parapeito, fosso, altar);
 #   - niveis: áreas elevadas; só mudam a altura em que cada um é desenhado (e o clique acha o piso certo);
 #   - chefe: Roberto Ghular se mata com pouca vida e a Dama de Sangue surge dele, no mesmo combate;
-#   - fim: com a Dama em ~30% de vida toca a cutscene da morte do Fernando pelo tentáculo (cena_tentaculo.gd);
+#   - fim: com a Dama em ~20% de vida (limite em cripta.json) toca a cutscene da morte do Fernando pelo tentáculo (cena_tentaculo.gd);
 #   - grupos: marca gravada quando todos os inimigos de um grupo caem (não voltam ao carregar o save).
 # O lugar aberto vem de Missao1.local (ou de `local_id`, para abrir a cena direto no editor).
 
@@ -249,6 +249,7 @@ func _por_inimigo(spec: Dictionary) -> Combatant:
 		chefe_virou = true
 	var u := cfg.make_enemy(tipo, Vector2(p[0], p[1]))
 	u.perception *= float(spec.get("percepcao_fator", 1.0))
+	u.em_ritual = bool(spec.get("ritual", false))  # salão da cripta: só luta se for atacado (Léo, 19/11)
 	if spec.has("olha"):
 		var o: Array = spec["olha"]
 		facing8[u] = CharacterSheet.dir_from_vector(_iso(u.pos + Vector2(o[0], o[1]) * 32.0) - _iso(u.pos))
@@ -520,6 +521,8 @@ func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void
 	super(attacker, target, r)
 	if _e_a_dama(target) and not target.is_alive() and not dados.get("fim", {}).is_empty() and not fim_tocou:
 		target.pv = 1  # a Dama não morre antes da cutscene do fim (Léo, 15/11): um golpe que a mataria a deixa por um fio
+	if _e_a_dama(target) and not target.is_alive():
+		_romper_ritual()
 	var chefe: Dictionary = dados.get("chefe", {})
 	if chefe.is_empty() or chefe_virou or not enemies.has(target):
 		return
@@ -544,11 +547,23 @@ func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void
 	queue_redraw()
 
 
+# A Dama morreu: quem ainda estava no ritual (Léo, 19/11: só luta se for atacado) cai junto e o combate acaba.
+# Provisório do Claude (19/11), para a luta não continuar contra seis que nem lutavam.
+func _romper_ritual() -> void:
+	var algum := false
+	for e in enemies:
+		if e.em_ritual and e.is_alive():
+			e.pv = 0
+			algum = true
+	if algum:
+		_log("O ritual se rompe com a Dama: os que o mantinham caem.")
+
+
 func _e_a_dama(u: Combatant) -> bool:
 	return enemies.has(u) and u.name == "Dama de Sangue"  # surgida de Roberto ou já no lugar dele (save)
 
 
-# Fim da missão 1 (Léo, 15/11): quando o golpe acerta e a Dama fica com ~30% de vida ou menos, o combate para e toca a
+# Fim da missão 1 (Léo, 15/11): quando o golpe acerta e a Dama fica com ~20% de vida ou menos (fim.limite de cripta.json), o combate para e toca a
 # cutscene do tentáculo (CenaTentaculo). Roda no impacto, quando a barra de vida já mostra o valor novo.
 func _on_fx_impact(job: Dictionary) -> void:
 	super(job)

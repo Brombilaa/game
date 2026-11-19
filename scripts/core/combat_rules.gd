@@ -200,6 +200,7 @@ func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers:
 	if result.reason != "":
 		return result
 	result.ok = true
+	target.provoke()  # quem estava no ritual (cripta) acorda até com o tiro que erra
 	attacker.pa -= int(attacker.weapon["pa_cost"])
 	if int(attacker.weapon.get("mag_size", 0)) > 0 and attacker.mag.has(attacker.weapon["id"]):
 		attacker.mag[attacker.weapon["id"]] = int(attacker.mag[attacker.weapon["id"]]) - 1  # cada tiro gasta 1 bala
@@ -314,6 +315,7 @@ func light_factor(target: Combatant) -> float:
 # Léo: sangrando, atordoado, em chamas e envenenado. Percentuais e durações em condicoes.json.
 
 func apply_condition(unit: Combatant, id: String) -> void:
+	unit.provoke()
 	var c := cfg.condition(id)
 	var rounds := -1
 	if c["duracao"] == "rodadas":

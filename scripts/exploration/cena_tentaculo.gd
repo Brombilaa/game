@@ -1,6 +1,6 @@
 class_name CenaTentaculo
 extends Node
-# Cutscene in-game da morte do Fernando (Léo, 15/11/2026): com a Dama de Sangue em ~30% de vida, um tentáculo dela sobe,
+# Cutscene in-game da morte do Fernando (Léo, 15/11/2026): com a Dama de Sangue em ~20% de vida (fim.limite de cripta.json), um tentáculo dela sobe,
 # desce até o chão, rasteja até o Fernando e atravessa o meio do corpo dele. Ele morre e o combate continua.
 # Roda dentro do jogo, em modo cinema (Cinema), com o combate congelado e o HUD escondido. Tempos, textos e a
 # forma do tentáculo são provisórios do Claude. Filho da sala (local3d.gd): o _process dele roda depois do da sala e
@@ -275,6 +275,6 @@ func _retomar() -> void:
 	Engine.time_scale = 2.0 if room.options.values["fast_combat"] else 1.0
 	room.audio.on_combat_started()
 	room.turns.state = TurnManager.State.ACTIVE
-	room.turns._advance()  # segue a ordem normal: a Dama continua em ~30% e o grupo luta sem o Fernando
+	room.turns._advance()  # segue a ordem normal: a Dama continua em ~20% e o grupo luta sem o Fernando
 	terminou.emit()
 	queue_free()

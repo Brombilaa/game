@@ -121,12 +121,12 @@
     "id": "roberto_ghular",
     "nome": "Roberto Ghular",
     "provisorio": true,
-    "pv": 40,
+    "pv": 24,
     "pa": 3,
     "agi": 2,
     "percepcao_px": 450,
     "precisao": 0,
-    "defesa": 0.1,
+    "defesa": 0.0,
     "ataques": [
       "tiro_atirador"
     ],
@@ -157,7 +157,7 @@
     "agi": 2,
     "percepcao_px": 450,
     "precisao": 0,
-    "defesa": 0.1,
+    "defesa": 0.0,
     "ataques": [
       "garra_dama"
     ],
