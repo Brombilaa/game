@@ -88,6 +88,7 @@ func _start_combat(surprise_side: int = -1) -> void:
 	room.audio.on_combat_started()
 	room.turns = TurnManager.new(int(room.cfg.value("pa_per_turn")))
 	room.turns.turn_effects = func(u: Combatant) -> bool:
+		room.item_rules.tick(u)  # sinalizadores de quem lançou perdem um turno
 		var fx := room.rules.start_turn_effects(u)
 		if fx.damage > 0:
 			_popup(u.pos, "-%d" % fx.damage, "damage")
@@ -130,6 +131,7 @@ func _on_combat_ended(result: TurnManager.Result) -> void:
 	room.hud.on_turn_ended()
 	room.audio.on_combat_ended()
 	RitualRules.clear_buffs(room.party)  # Armadura de Sangue e Amaldiçoar Arma acabam com o combate
+	room.item_rules.clear()  # sinalizadores apagam
 	if result == TurnManager.Result.VICTORY:
 		room.mode = TestRoom.Mode.EXPLORATION
 		room.hud.on_combat_ended()

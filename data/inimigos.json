@@ -27,6 +27,11 @@
         "item": "bandagem",
         "qtd": 1,
         "chance": 0.2
+      },
+      {
+        "item": "sal",
+        "qtd": 1,
+        "chance": 0.15
       }
     ]
   },
@@ -63,6 +68,11 @@
         "item": "antidoto",
         "qtd": 1,
         "chance": 0.15
+      },
+      {
+        "item": "sinalizador",
+        "qtd": 1,
+        "chance": 0.15
       }
     ]
   },
@@ -81,7 +91,9 @@
     ],
     "comportamento": "cerca",
     "resistencias": [],
-    "fraquezas": [],
+    "fraquezas": [
+      "sal"
+    ],
     "chefe": false,
     "fases": [],
     "drops": [
@@ -137,7 +149,9 @@
       "garra_dama"
     ],
     "comportamento": "cerca",
-    "resistencias": ["atordoado"],
+    "resistencias": [
+      "atordoado"
+    ],
     "fraquezas": [],
     "chefe": true,
     "fases": [],
