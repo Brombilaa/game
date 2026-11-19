@@ -77,8 +77,11 @@ func _action_slots() -> Array:
 		var r := room.rituals.ritual(rid)
 		var pa := int(r["custo_pa"])
 		var san := int(r["custo_san"])
-		slots.append([rid, str(r["nome"]), "%d PA · %d SAN · %s · %s" % [pa, san, key_text(slots.size()), str(r["descricao"])],
-			room.player.is_alive() and room.player.pa >= pa and room.player.san >= san, [], {"pa": pa, "san": san}])
+		var need := room.rituals.cost_components(rid)
+		var have := room.rituals.components_available(rid)
+		var elem := RitualRules.element_name(room.rituals.element(rid))
+		slots.append([rid, str(r["nome"]), "%d PA · %d SAN · %d de %s (tem %d) · %s · %s" % [pa, san, need, elem, have, key_text(slots.size()), str(r["descricao"])],
+			room.player.is_alive() and room.player.pa >= pa and room.player.san >= san and have >= need, [], {"pa": pa, "san": san, "elemento": room.rituals.element(rid), "tem": have}])
 	return slots
 
 
@@ -210,6 +213,8 @@ func _draw_slot(font: Font, r: Rect2, slot: Array, selected: bool, hover: bool) 
 		room.draw_rect(r, Color(1, 1, 1, 0.08))
 	if slot.size() > 5 and not slot[5].is_empty():
 		_draw_cost_tag(font, r, int(slot[5]["pa"]), int(slot[5]["san"]), enabled)
+		if slot[5].has("elemento"):
+			_draw_component_tag(font, r, str(slot[5]["elemento"]), int(slot[5]["tem"]))
 	if slot.size() > 6:
 		_draw_qty_tag(font, r, int(slot[6]))
 	if slot.size() > 4 and not slot[4].is_empty():
@@ -282,6 +287,19 @@ func _draw_cost_tag(font: Font, r: Rect2, pa: int, san: int, enabled: bool) -> v
 	var dim := 1.0 if enabled else 0.55
 	room.draw_string(font, tag.position + Vector2(3.0, 9.0), str(pa), HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(0.94, 0.91, 0.84, dim))
 	room.draw_string(font, tag.position + Vector2(10.0, 9.0), str(san), HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(0.66, 0.5, 0.92, dim))
+
+
+# Componentes do ritual na mochila, no canto de baixo à esquerda: o número na cor do elemento, vermelho no zero.
+const ELEMENT_INK := {"sangue": Color(0.86, 0.24, 0.24), "energia": Color(0.95, 0.8, 0.3), "morte": Color(0.78, 0.78, 0.74), "conhecimento": Color(0.55, 0.75, 0.95)}
+
+
+func _draw_component_tag(font: Font, r: Rect2, elemento: String, have: int) -> void:
+	var tag := Rect2(Vector2(r.position.x + 1.0, r.end.y - 12.0 - 1.0), Vector2(12.0, 12.0))
+	room.draw_rect(tag.grow(1.0), Color.BLACK)
+	room.draw_rect(tag, Color(0.075, 0.062, 0.052, 0.94))
+	room.draw_rect(Rect2(tag.position, Vector2(tag.size.x, 2.0)), ELEMENT_INK.get(elemento, Color.WHITE))
+	var ink: Color = Color(0.91, 0.38, 0.33) if have <= 0 else Color(0.94, 0.91, 0.84)
+	room.draw_string(font, tag.position + Vector2(0, 10.0), str(mini(have, 9)), HORIZONTAL_ALIGNMENT_CENTER, tag.size.x, 8, ink)
 
 
 # Fim do turno: botão carmesim chapado com a ampulheta. Estados: normal, sob o mouse (mais claro),

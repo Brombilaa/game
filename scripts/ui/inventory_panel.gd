@@ -71,6 +71,17 @@ const BLURBS := {
 	"granada_luz": "Clarão que atordoa os inimigos perto do ponto onde cai. Só em combate.",
 	"sinalizador": "Luz vermelha no chão por alguns turnos: o grupo acerta melhor quem está nela. Só em combate.",
 	"componente_ritual": "Material usado nos rituais.",
+	"sangue_coagulado": "Componente de Sangue. Tirado da Criatura de Sangue.",
+	"prego_enferrujado": "Componente de Sangue: a ferrugem lembra o sangue.",
+	"frasco_orgao": "Componente de Sangue.",
+	"bateria": "Componente de Energia.",
+	"maco_fios": "Componente de Energia.",
+	"celular_quebrado": "Componente de Energia.",
+	"ossos_pequenos": "Componente de Morte.",
+	"cinzas": "Componente de Morte.",
+	"relogio_quebrado": "Componente de Morte: o tempo parado.",
+	"anel_ouro": "Componente de Conhecimento.",
+	"tomo_antigo": "Componente de Conhecimento.",
 	"colete": "Protege reduzindo o dano recebido.",
 	"colete_leve": "Reduz o dano recebido em 10%.",
 	"colete_pesado": "Reduz o dano recebido em 20%, mas deixa o personagem mais lento.",
@@ -295,6 +306,8 @@ func _describe(id: String) -> Dictionary:
 		lines.append(["SAN máxima", "+%d" % int(it["valor"])])
 	if it.get("efeito") == "pv_max" and it.get("valor") != null:
 		lines.append(["PV máximo", "+%d" % int(it["valor"])])
+	if it.get("elemento") != null:
+		lines.append(["Elemento", RitualRules.element_name(str(it["elemento"]))])
 	return {"nome": it["nome"], "tipo": str(it["categoria"]).capitalize(), "texto": BLURBS.get(id, ""), "linhas": lines}
 
 
