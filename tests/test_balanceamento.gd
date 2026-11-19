@@ -22,11 +22,32 @@ func _init() -> void:
 		_check(r.vitoria >= 0.9, "%s: o grupo vence quase sempre (%d%%)" % [id, roundi(r.vitoria * 100)])
 		_check(r.algum_caiu >= 0.1 and r.algum_caiu <= 0.5, "%s: alguém cai em parte das lutas (%d%%)" % [id, roundi(r.algum_caiu * 100)])
 		_check(r.rodadas <= 4.0, "%s: luta curta (%.1f rodadas)" % [id, r.rodadas])
-	# Chefe: Roberto vira a Dama e, no limite do fim, o Fernando sai da luta (cena) e ela continua.
-	var chefe: Dictionary = BalancoSim.ENCONTROS["salao"].duplicate(true)
-	chefe["inimigos"] = ["atirador", "roberto_ghular"]
-	var r := sim.rodar_encontro(chefe, 150)
-	_check(r.vitoria >= 0.15 and r.vitoria <= 0.7, "Roberto e Dama: luta difícil, mas possível sem rituais (%d%%)" % roundi(r.vitoria * 100))
+	# Chefe: Roberto vira a Dama e, no limite do fim, o Fernando sai da luta (cena) e ela continua. Os 6 do salão
+	# seguem o ritual e só lutam se forem atacados (Léo, 19/11), então a luta é contra Roberto e a Dama.
+	var r := sim.rodar("salao", 150)
+	_check(r.vitoria >= 0.15 and r.vitoria <= 0.7, "salão: luta difícil, mas possível sem rituais (%d%%)" % roundi(r.vitoria * 100))
+	var todos: Dictionary = BalancoSim.ENCONTROS["salao"].duplicate(true)
+	todos["ritual"] = 0
+	_check(sim.rodar_encontro(todos, 60).vitoria < r.vitoria, "salão: com os 7 lutando desde o início é bem pior")
+	# Quem está no ritual não age e acorda ao ser atacado, mesmo se o tiro errar.
+	var rules := CombatRules.new(cfg)
+	var a := cfg.make_agent("nikolai", Vector2.ZERO)
+	var c := cfg.make_enemy("cultista", Vector2(64, 0))
+	c.em_ritual = true
+	a.pa = 3
+	a.hit_bonus = -5.0  # erra com certeza (chance mínima 25%; repete até errar)
+	var errou := false
+	for i in 20:
+		c.em_ritual = true
+		a.pa = 3
+		var res := rules.attack(a, c, [] as Array[Rect2], [])
+		if res.ok and not res.hit:
+			errou = true
+			break
+	_check(errou and not c.em_ritual, "ritual: o tiro que erra também acorda o cultista")
+	c.em_ritual = true
+	c.take_damage(1)
+	_check(not c.em_ritual, "ritual: levar dano acorda")
 	print("Falhas: %d" % failures)
 	quit(1 if failures > 0 else 0)
 

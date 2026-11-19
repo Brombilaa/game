@@ -173,8 +173,8 @@
     "tipo": "corpo_a_corpo",
     "arma_longa": false,
     "dano": [
-      4,
-      6
+      5,
+      8
     ],
     "custo_pa": 2,
     "precisao_base": 0.75,

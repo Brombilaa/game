@@ -10,7 +10,8 @@ extends RefCounted
 #     que rende mais dano por turno na distância inicial, como o jogador escolheria antes de abrir fogo;
 #   - inimigos de corpo a corpo andam reto até o alvo; atiradores ficam parados no lugar em que começam;
 #   - inimigo escolhe o membro vivo mais perto, respeitando no máximo 2 atacantes por alvo (como EnemyAi);
-#   - o grupo atira no inimigo mais ferido ao alcance (o Miguel vai no mais perto, de espada).
+#   - o grupo atira no inimigo mais ferido ao alcance (o Miguel vai no mais perto, de espada) e não mexe com
+#     quem está no ritual (cripta) enquanto houver outro inimigo lutando; o tiro que erra também acorda.
 # A SAN não entra: o medidor de terror é outra passada.
 
 const GRUPO := ["fernando", "nikolai", "miguel"]
@@ -23,9 +24,9 @@ const ENCONTROS := {
 	"delegacia": {"nome": "Delegacia 21h: invasão de 3 atiradores", "inimigos": ["atirador", "atirador", "atirador"], "dist_m": 9.0, "surpresa": Combatant.Side.ENEMY},
 	"fazenda": {"nome": "Fazenda: 3 atiradores", "inimigos": ["atirador", "atirador", "atirador"], "dist_m": 10.0, "surpresa": -1},
 	"corredor": {"nome": "Cripta, corredor: 2 cultistas", "inimigos": ["cultista", "cultista"], "dist_m": 7.0, "surpresa": -1},
-	# Salão como está na main (Léo: 7 inimigos contando Roberto). Com os PV do GDD o grupo não vence em campo aberto
-	# (ver o relatório); a decisão de reduzir fica com o Léo.
-	"salao": {"nome": "Cripta, salão: 4 cultistas, 2 atiradores, Roberto e a Dama", "inimigos": ["cultista", "cultista", "cultista", "cultista", "atirador", "atirador", "roberto_ghular"], "dist_m": 9.0, "surpresa": -1, "chefe": {"de": "roberto_ghular", "limite": 0.25, "vira": "dama_sangue", "fim": 0.3}},
+	# Salão (Léo: 7 inimigos contando Roberto). Léo (19/11): os 6 em volta do Roberto seguem o ritual e só lutam
+	# se forem atacados ("ritual": quantos dos primeiros da lista começam em ritual). Limites como em cripta.json.
+	"salao": {"nome": "Cripta, salão: 4 cultistas e 2 atiradores no ritual, Roberto e a Dama", "inimigos": ["cultista", "cultista", "cultista", "cultista", "atirador", "atirador", "roberto_ghular"], "ritual": 6, "dist_m": 9.0, "surpresa": -1, "chefe": {"de": "roberto_ghular", "limite": 0.5, "vira": "dama_sangue", "fim": 0.2}},
 }
 
 const MAX_RODADAS := 40
@@ -88,7 +89,9 @@ func lutar(e: Dictionary) -> Dictionary:
 	var lista: Array = e["inimigos"]
 	for i in lista.size():
 		var y := (i - (lista.size() - 1) / 2.0) * 50.0
-		units.append(cfg.make_enemy(lista[i], Vector2(float(e["dist_m"]) * ppm, y)))
+		var inimigo := cfg.make_enemy(lista[i], Vector2(float(e["dist_m"]) * ppm, y))
+		inimigo.em_ritual = i < int(e.get("ritual", 0))
+		units.append(inimigo)
 	rules.units = units
 	var turns := TurnManager.new(int(cfg.value("pa_per_turn")))
 	turns.start(units, int(e["surpresa"]))
@@ -105,6 +108,9 @@ func lutar(e: Dictionary) -> Dictionary:
 		var u := turns.current
 		if u == null:
 			break
+		if u.em_ritual:
+			turns.end_turn()  # segue o ritual (só luta depois de ser atacado)
+			continue
 		var guard := 0
 		while turns.is_turn_of(u) and u.pa > 0 and guard < 12:
 			guard += 1
@@ -133,6 +139,10 @@ func lutar(e: Dictionary) -> Dictionary:
 						units.append(dama)
 						turns.add_unit(dama)
 						x.pv = 0
+				if dama and not dama.is_alive():
+					for x in units:
+						if x.em_ritual:
+							x.pv = 0  # o ritual se rompe com a Dama (local3d._romper_ritual)
 				if dama and not fim and dama.pv <= float(chefe["fim"]) * dama.max_pv:
 					fim = true  # cutscene do tentáculo: o Fernando morre e a luta segue com quem sobrou
 					for a in grupo:
@@ -167,6 +177,8 @@ func _alvo(u: Combatant, units: Array[Combatant], atacantes: Dictionary) -> Comb
 	for x in units:
 		if x.side == u.side or not x.is_alive():
 			continue
+		if x.em_ritual and _tem_lutando(units, u.side):
+			continue  # o grupo deixa quieto quem está no ritual enquanto houver inimigo lutando
 		var d := CombatRules.gap(u, x)
 		var n := d
 		if u.side == Combatant.Side.ENEMY:
@@ -217,3 +229,11 @@ func _melhor_arma(rules: CombatRules, a: Combatant, dist: float) -> Dictionary:
 	if int(melhor.get("mag_size", 0)) > 0:
 		a.mag[melhor["id"]] = int(melhor["mag_size"])
 	return melhor
+
+
+# Algum inimigo do lado oposto a `lado` está de pé e fora do ritual.
+func _tem_lutando(units: Array[Combatant], lado: int) -> bool:
+	for x in units:
+		if x.side != lado and x.is_alive() and not x.em_ritual:
+			return true
+	return false

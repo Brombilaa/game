@@ -249,6 +249,7 @@ func _por_inimigo(spec: Dictionary) -> Combatant:
 		chefe_virou = true
 	var u := cfg.make_enemy(tipo, Vector2(p[0], p[1]))
 	u.perception *= float(spec.get("percepcao_fator", 1.0))
+	u.em_ritual = bool(spec.get("ritual", false))  # salão da cripta: só luta se for atacado (Léo, 19/11)
 	if spec.has("olha"):
 		var o: Array = spec["olha"]
 		facing8[u] = CharacterSheet.dir_from_vector(_iso(u.pos + Vector2(o[0], o[1]) * 32.0) - _iso(u.pos))
@@ -520,6 +521,8 @@ func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void
 	super(attacker, target, r)
 	if _e_a_dama(target) and not target.is_alive() and not dados.get("fim", {}).is_empty() and not fim_tocou:
 		target.pv = 1  # a Dama não morre antes da cutscene do fim (Léo, 15/11): um golpe que a mataria a deixa por um fio
+	if _e_a_dama(target) and not target.is_alive():
+		_romper_ritual()
 	var chefe: Dictionary = dados.get("chefe", {})
 	if chefe.is_empty() or chefe_virou or not enemies.has(target):
 		return
@@ -542,6 +545,18 @@ func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void
 	fx.shake_time = 0.5
 	fx.shake_px = 6.0
 	queue_redraw()
+
+
+# A Dama morreu: quem ainda estava no ritual (Léo, 19/11: só luta se for atacado) cai junto e o combate acaba.
+# Provisório do Claude (19/11), para a luta não continuar contra seis que nem lutavam.
+func _romper_ritual() -> void:
+	var algum := false
+	for e in enemies:
+		if e.em_ritual and e.is_alive():
+			e.pv = 0
+			algum = true
+	if algum:
+		_log("O ritual se rompe com a Dama: os que o mantinham caem.")
 
 
 func _e_a_dama(u: Combatant) -> bool:

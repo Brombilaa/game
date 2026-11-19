@@ -26,6 +26,9 @@ func run_turn(unit: Combatant) -> void:
 			await room.get_tree().process_frame  # tiro de vigilância em cena: espera o golpe acabar
 		if not room.turns.is_turn_of(unit):
 			break
+		if unit.em_ritual:  # Léo (19/11): segue o ritual enquanto ninguém o atacar
+			room.turns.end_turn()
+			break
 		var target := pick_target(unit)
 		if target == null:
 			room.turns.end_turn()

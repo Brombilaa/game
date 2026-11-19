@@ -268,6 +268,8 @@ def cripta(d, p, ret):
              "olha": [round(math.sin(i["ry"]), 3), round(math.cos(i["ry"]), 3)], "provisorio": True}
         if i["desprevenido"]:
             e["percepcao_fator"] = 0.5  # de costas: percebe a metade da distância (provisório)
+        if e["grupo"] == "salao":
+            e["ritual"] = True  # Léo (19/11): focados no ritual, só lutam se forem atacados
         d["inimigos"].append(e)
     d["inimigos"].append({"tipo": "roberto_ghular", "pos": p(*P["roberto"]), "trecho": 4, "grupo": "salao"})
     # Roberto se mata com pouca vida e a Dama de Sangue surge dele (Léo). O limite de 50% é provisório
