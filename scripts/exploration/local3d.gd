@@ -123,6 +123,7 @@ func _portas() -> void:
 
 func _ready() -> void:
 	super()
+	DiarioMiguel.esteve(local_id)  # a página deste lugar aparece no caderno do Miguel
 	if dados.has("marca_ao_chegar"):
 		Missao1.marcar(str(dados["marca_ao_chegar"]))
 	# Cômodo menor que a tela (subsolo): a câmera pode centralizar em vez de encostar no canto.

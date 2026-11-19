@@ -17,6 +17,7 @@ func _run() -> void:
 	Progresso.autosave_ativo = true
 	Missao1.reiniciar()
 	_regras()
+	_relato()
 	await _salvo_e_painel()
 	DirAccess.remove_absolute(DIR.path_join("auto.json"))
 	print("Falhas: %d" % failures if failures > 0 else "OK: test_diario")
@@ -34,6 +35,35 @@ func _regras() -> void:
 	_check(Diario.objetivo_atual([]) == "", "sem objetivo, vazio")
 	Missao1.reiniciar()
 	_check(Missao1.diario.is_empty(), "novo jogo esvazia o diário")
+
+
+# Aba DIÁRIO: o relato do Miguel só ganha página depois que o grupo esteve no lugar, e cada linha/desenho só
+# aparece quando a pista ou a marca que ele pede existe.
+func _relato() -> void:
+	Missao1.reiniciar()
+	_check(DiarioMiguel.secoes().is_empty(), "relato começa vazio")
+	DiarioMiguel.esteve("parque")
+	var s := DiarioMiguel.secoes()
+	_check(s.size() == 1 and s[0]["id"] == "parque", "estar no parque abre a página do parque")
+	var antes: int = s[0]["linhas"].size()
+	var des: int = s[0]["desenhos"].size()
+	Diario.anotar("PARQUE · 16h", "caio", "O Caio não se mexe mais.", "")
+	s = DiarioMiguel.secoes()
+	_check(s[0]["linhas"].size() == antes + 1 and s[0]["desenhos"].size() == des + 1, "a pista do Caio acrescenta linha e desenho")
+	DiarioMiguel.esteve("subsolo")
+	s = DiarioMiguel.secoes()
+	_check(s.size() == 2 and s[1]["id"] == "delegacia_21h", "o subsolo entra na página da delegacia de noite")
+	_check(not DiarioMiguel.cumpre("marca:nao_existe") and DiarioMiguel.cumpre(""), "regra do 'requer'")
+	_check(DiarioMiguel.cabecalho()["sub"].contains("primeira missão oficial"), "cabeçalho da primeira missão oficial")
+	var d := DiarioMiguel.dados()
+	for sec in d["secoes"]:
+		for x in sec["desenhos"]:
+			_check(DiarioMiguel.caminho(str(x["desenho"])) != "", "o desenho existe: " + str(x["desenho"]))
+	for k in d["desenhos_pistas"]:
+		_check(DiarioMiguel.desenho_pista(k) != "", "desenho da pista existe: " + k)
+	for k in d["desenhos_criaturas"]:
+		_check(DiarioMiguel.desenho_criatura(k) != "", "desenho da criatura existe: " + k)
+	Missao1.reiniciar()
 
 
 func _salvo_e_painel() -> void:
@@ -57,6 +87,8 @@ func _salvo_e_painel() -> void:
 	_check(p != null and not p.open, "a sala tem o painel e ele começa fechado")
 	p.alternar()
 	_check(p.open and p.visible, "o painel abre")
+	_check(p.secao == "diario", "o caderno abre na aba DIÁRIO")
+	p.trocar_secao("pistas")
 	_check(p._lista.get_child_count() == 1 and p._texto.text == "Marcas.", "mostra a última descoberta")
 	_check(p._obj.text.contains("PRÓXIMO OBJETIVO"), "o objetivo do HUD aparece no pé")
 	p._escolher(0)

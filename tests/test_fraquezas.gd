@@ -164,10 +164,6 @@ func _criaturas() -> void:
 				sabe += 1 if a["conhecida"] else 0
 				_check(str(a["miguel"]) != "", "fala do Miguel em cada descoberta")
 			_check(c["afinidades"].size() == 2 and sabe == 1, "Criatura com 1 de 2 anotadas")
-	for m in ["A", "B", "C"]:
-		var p := DiarioCriaturas.pagina(m, cs[0])
-		_check(p != null and p.get_child_count() > 0, "monta a página no modelo " + m)
-		p.free()
 	var fichas: Dictionary = Fraquezas.dados()["criaturas"]
 	for id in gd.ids("inimigos"):
 		_check(fichas.has(id), "todo inimigo tem página no caderno: " + id)

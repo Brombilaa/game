@@ -63,6 +63,8 @@ var drawing_key: Variant = null  # personagem (ou id do NPC) sendo desenhado, pa
 
 
 func _ready() -> void:
+	if _area_id() == SCENARIO_ID:
+		DiarioMiguel.esteve(SCENARIO_ID)  # a página do parque aparece no caderno do Miguel
 	pathfinder = _novo_pathfinder()
 	scenario = Scenario.load_id(_scenario_id())
 	assert(scenario.ok(), "\n".join(scenario.errors))
@@ -1165,7 +1167,8 @@ func _process(delta: float) -> void:
 func _falas_soltas(delta: float) -> void:
 	if falas == null:
 		falas = FalasSoltas.new(_area_id())
-	var livre := mode == Mode.EXPLORATION and not busy and indo_para == "" and not _dialogo_aberto()
+	var livre := mode == Mode.EXPLORATION and not busy and indo_para == "" and not _dialogo_aberto() \
+		and not (diario_panel != null and diario_panel.open)  # com o caderno aberto ninguém fala
 	var f := falas.tick(delta, livre)
 	if not f.is_empty():
 		caixa.sequencia(f["falas"], true)
