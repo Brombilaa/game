@@ -322,6 +322,8 @@ func _draw() -> void:
 			if e.is_alive():
 				_draw_range(e.pos, rules.perception_range(e, player), Color(PlaceholderArt.color("sangue_claro"), 0.35))
 	_draw_overwatch()
+	if mode == Mode.EXPLORATION:
+		room_gear.draw_corpses()  # corpo com saque: brilho dourado no chão
 	var items: Array = []
 	for u in _drawn_units():
 		items.append({"pos": u.pos, "unit": u})
