@@ -31,6 +31,11 @@ func san(key: String):
 	return data["sanidade"][key]
 
 
+# Bloco "preparo" de combat.json (rituais preparados no ponto de descanso).
+func preparo(key: String):
+	return data["preparo"][key]
+
+
 func cover(kind: String) -> Dictionary:
 	return data["cover"][kind]
 

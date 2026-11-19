@@ -72,6 +72,7 @@ static func capturar(room: Node, area: String, rotulo: String, pista_do_combate 
 			"max_san": m.max_san,
 			"ruptura": m.ruptured,
 			"louco": m.insane,
+			"preparados": m.prepared.duplicate(),
 			"morto": m.dead,
 			"atributos": m.atributos.duplicate(),
 			"equip": (room.gear.get(m, {}) as Dictionary).duplicate(),
@@ -130,6 +131,11 @@ static func aplicar(room: Node, data: Dictionary) -> void:
 			m.initiative = int(m.atributos.get("AGI", m.initiative))
 		m.ruptured = bool(g.get("ruptura", false))
 		m.insane = bool(g.get("louco", false))
+		m.prepared.clear()  # rituais preparados no ponto de descanso (save antigo não tem o campo)
+		if g.get("preparados") is Dictionary:
+			for rid in g["preparados"]:
+				if not room.cfg.game_data.get_entry("rituais", str(rid)).is_empty() and int(g["preparados"][rid]) > 0:
+					m.prepared[str(rid)] = int(g["preparados"][rid])
 		var equip = g.get("equip")
 		if equip is Dictionary and room.gear.has(m):
 			for slot in room.gear[m]:

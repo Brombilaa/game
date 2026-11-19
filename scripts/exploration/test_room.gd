@@ -164,6 +164,7 @@ var gear := {}  # membro -> {"principal", "secundaria", "colete", "acessorio"}: 
 
 var inv_panel: InventoryPanel
 var diario_panel: DiarioPanel
+var descanso_panel: DescansoPanel  # tecla F num ponto de descanso (zona segura)
 
 var enemies: Array[Combatant] = [
 	cfg.make_enemy("cultista", Vector2(800, 360)),
@@ -239,6 +240,7 @@ var dicas_hud := RoomDicasHud.new(self)
 var room_combat := RoomCombat.new(self)
 var room_gear := RoomGear.new(self)
 var room_ritual := RoomRitual.new(self)
+var room_descanso := RoomDescanso.new(self)  # pontos de descanso: descansar e preparar rituais
 var room_items := RoomItems.new(self)
 var room_party := RoomParty.new(self)
 var room_drawing := RoomDrawing.new(self)
@@ -305,6 +307,9 @@ func _ready() -> void:
 	diario_panel = DiarioPanel.new()  # tecla J; o tempo também para com ele aberto
 	diario_panel.room = self
 	add_child(diario_panel)
+	descanso_panel = DescansoPanel.new()
+	descanso_panel.room = self
+	add_child(descanso_panel)
 	_reset_follow_offsets(Vector2.RIGHT)
 	for variant in ENEMY_SHEETS:
 		enemy_sheets[variant] = CharacterSheet.new(ENEMY_SHEETS[variant])
@@ -416,6 +421,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			anim3d_pick = (anim3d_pick + 2) % (AnimSheet.NAMES.size() + 1) - 1
 			_popup(player.pos, "anim: automático" if anim3d_pick < 0 else "anim: " + AnimSheet.NAMES[anim3d_pick])
 			queue_redraw()
+		elif event.pressed and not event.echo and event.keycode == KEY_F and room_descanso.try_open():
+			get_viewport().set_input_as_handled()
 		elif event.pressed and event.keycode == KEY_C and (mode == Mode.EXPLORATION or _player_ready()):
 			_toggle_crouch()
 		return
@@ -567,8 +574,9 @@ func _start_move(unit: Combatant, new_path: PackedVector2Array) -> void:
 
 
 func _process(delta: float) -> void:
-	if (inv_panel and inv_panel.open) or (diario_panel and diario_panel.open):
-		return  # inventário ou diário aberto: o tempo para (GDD #23)
+	if (inv_panel and inv_panel.open) or (diario_panel and diario_panel.open) or (descanso_panel and descanso_panel.open):
+		return  # inventário, diário ou descanso aberto: o tempo para (GDD #23)
+	room_descanso.tick()
 	minimap._update_discovered()
 	_update_enemy_turn_speed()
 	fx.update(delta)
@@ -670,7 +678,7 @@ func _exit_tree() -> void:
 # A sala de teste não tem save: recomeça. O parque e os outros lugares voltam ao autosave.
 # O diário abre quando nada mais ocupa a tela (inventário, caixa de pista) e o jogo não está parado por outro motivo.
 func diario_pode_abrir() -> bool:
-	return not (inv_panel and inv_panel.open) and mode != Mode.GAME_OVER and not get_tree().paused and not Scenes.busy(get_tree())
+	return not (inv_panel and inv_panel.open) and not (descanso_panel and descanso_panel.open) and mode != Mode.GAME_OVER and not get_tree().paused and not Scenes.busy(get_tree())
 
 
 func can_pause() -> bool:
