@@ -153,6 +153,7 @@ var unlinked := {}  # seguidores soltos da corrente do grupo: não acompanham o 
 
 var follow_rng := RandomNumberGenerator.new()
 var loot_rng := RandomNumberGenerator.new()  # sorteio dos itens largados pelos inimigos
+var pending_corpse: Combatant  # corpo que o controlado vai examinar ao chegar
 
 var inventory: Inventory  # mochila compartilhada do grupo (20 espaços)
 
@@ -460,8 +461,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		var click := _resolve_click(get_global_mouse_position())
 		if mode == Mode.EXPLORATION:
 			var target := _enemy_at(click)
+			var corpse := room_gear.corpse_at(click)
 			if target and _visible(target.pos):
 				_stealth_attack(target)
+			elif corpse and _visible(corpse.pos):
+				room_gear.click_corpse(corpse)
 			else:
 				_order_move(click)
 		elif mode == Mode.COMBAT:
@@ -521,6 +525,7 @@ func _resolve_click(mouse: Vector2) -> Vector2:
 
 
 func _order_move(click: Vector2) -> void:
+	pending_corpse = null  # novo destino cancela o saque pendente
 	var wants_door := false
 	if not door_open and door.grow(12).has_point(click):
 		# Clique na porta: andar até o lado em que o personagem está e abrir ao chegar.
@@ -596,6 +601,14 @@ func _process(delta: float) -> void:
 		combat_log = combat_log.filter(func(l: Dictionary) -> bool: return l.time > 0.0)
 		queue_redraw()
 	_update_perf(delta)
+	if pending_corpse != null:
+		if mode != Mode.EXPLORATION or not room_gear.is_corpse(pending_corpse):
+			pending_corpse = null
+		elif path.is_empty() and moving_unit == null:
+			var c := pending_corpse
+			pending_corpse = null
+			if player.pos.distance_to(c.pos) <= RoomGear.CORPSE_REACH * 1.5:
+				room_gear.examine_corpse(c)
 	if player != null:
 		audio.update_heartbeat(_san_ratio())  # coração em laço com a SAN baixa
 	if _san_ratio() < 1.0 and player.max_san > 0 and player.san <= 0:
@@ -1003,6 +1016,10 @@ func _setup_gear() -> void:
 
 func _loot_enemy(e: Combatant) -> void:
 	room_gear._loot_enemy(e)
+
+
+func _corpse_at(p: Vector2) -> Combatant:
+	return room_gear.corpse_at(p)
 
 
 func collect_items(found: Array) -> String:
