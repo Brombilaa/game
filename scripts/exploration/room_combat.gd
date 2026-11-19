@@ -526,7 +526,7 @@ func _afinidade(target: Combatant, r: Dictionary) -> void:
 		return
 	_popup(target.pos, f["popup"], "crit" if f["popup"] == "FRAQUEZA" else "blocked")
 	if f["nova"]:
-		_log("Anotado no diário: %s" % Fraquezas.titulo(room.rules.cfg.game_data, target.kind, str(r["tipo_dano"])))
+		_log("Diário: %s" % Fraquezas.titulo(room.rules.cfg.game_data, target.kind, str(r["tipo_dano"])))
 
 
 func _popup(at: Vector2, text: String, kind := "info") -> void:

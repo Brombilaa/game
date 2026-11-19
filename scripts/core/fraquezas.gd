@@ -76,14 +76,13 @@ static func _descoberta(kind: String, tipo: String) -> Dictionary:
 	return {}
 
 
-# Título da entrada no diário: "Criatura de Sangue: fraca a rituais".
+# Título da entrada no diário: "Criatura de Sangue: rituais ferem mais" (sem gênero, serve para todos).
 static func titulo(game_data: GameData, kind: String, tipo: String) -> String:
 	var nome := kind
 	if game_data != null:
 		nome = str(game_data.get_entry("inimigos", kind).get("nome", kind))
 	var af := afinidade(game_data, kind, tipo)
-	var como := "fraca a" if af == "fraqueza" else "resiste a"
-	return "%s: %s %s" % [nome, como, nome_tipo(tipo)]
+	return "%s: %s ferem %s" % [nome, nome_tipo(tipo), "mais" if af == "fraqueza" else "menos"]
 
 
 # Anota a descoberta no diário. via = "pista" usa o texto da pista; "combate" o texto de quando se percebe lutando.
