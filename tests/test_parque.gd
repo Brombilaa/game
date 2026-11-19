@@ -174,6 +174,12 @@ func _run() -> void:
 			room._close_dialog()
 	_check(room.mode == room.Mode.EXPLORATION, "as pistas iniciais não disparam combate")
 
+	# Esconderijo com saque (16/11, provisório): só depois das pistas iniciais, e o saque vai para a mochila.
+	var antes_mochila: int = room.inventory.count("curativo")
+	room._inspect("mochila_piquenique")
+	room._close_dialog()
+	_check(room.seen_clues.has("mochila_piquenique") and room.inventory.count("curativo") == antes_mochila + 1, "o esconderijo do parque dá o saque")
+
 	room._inspect("arvore_simbolo")
 	_check(room.dialog_clue == "arvore_simbolo" and room.dialog_image.visible, "a árvore abre a inspeção com imagem")
 	room._close_dialog()

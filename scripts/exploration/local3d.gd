@@ -420,7 +420,18 @@ func _inspect(cid: String) -> void:
 		if str(bruto["id"]) == cid and bruto.has("requer") and not Missao1.tem(str(bruto["requer"])):
 			_show_dialog("", str(bruto.get("texto_antes", "Ainda não.")), "")
 			return
+	if _trancada(c):
+		_show_dialog("", c.texto_trancado, "")
+		return
 	_show_dialog(c.inspecao, c.texto, cid)
+
+
+# Baú num trecho que ainda não foi revelado (cripta) fica invisível até o líder pisar na faixa do trecho.
+func _pista_oculta(cid: String) -> bool:
+	for bruto in dados.get("pistas", []):
+		if str(bruto["id"]) == cid and int(bruto.get("trecho", 1)) > 1:
+			return not Missao1.tem("%s_trecho%d" % [local_id, int(bruto["trecho"])])
+	return false
 
 
 func _run_trigger(trigger: Dictionary) -> void:

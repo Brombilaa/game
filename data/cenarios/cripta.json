@@ -7090,6 +7090,63 @@
    "texto_antes": "Letícia está sobre o altar, ferida e desmaiada. Não dá para chegar até ela agora.",
    "texto": "Letícia abre os olhos devagar. Está ferida, mas viva.",
    "provisorio": true
+  },
+  {
+   "id": "mochila_desaparecido",
+   "pos": [
+    704.0,
+    3360.0
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Ao pé da corda há uma mochila encharcada, de alguém dos fichários da delegacia. Dentro: um curativo e uma chave de ferro com um osso entalhado no cabo.",
+   "provisorio": true,
+   "da": [
+    {
+     "item": "curativo",
+     "qtd": 1
+    },
+    {
+     "item": "chave_ossuario",
+     "qtd": 1
+    }
+   ]
+  },
+  {
+   "id": "ossuario",
+   "pos": [
+    2048.0,
+    675.8
+   ],
+   "raio": 90,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "A chave de osso abre a tampa do ossuário. Entre restos que ninguém deveria ter mexido, ficaram suprimentos de quem veio antes.",
+   "provisorio": true,
+   "da": [
+    {
+     "item": "kit_primeiros_socorros",
+     "qtd": 1
+    },
+    {
+     "item": "curativo",
+     "qtd": 2
+    },
+    {
+     "item": "municao_pistola",
+     "qtd": 6
+    }
+   ],
+   "chave": "chave_ossuario",
+   "texto_trancado": "Trancado. A tampa do ossuário tem uma fechadura de ferro.",
+   "trecho": 4
   }
  ],
  "gatilhos": [
