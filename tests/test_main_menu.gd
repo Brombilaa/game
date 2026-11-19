@@ -76,8 +76,17 @@ func _test_controles() -> void:
 	for k in ControlesCaderno.LAYOUT:
 		no_teclado[k[0]] = true
 	for k in m:
+		if k.begins_with("M:"):
+			continue
 		_check(no_teclado.has(k), "a tecla %s aparece desenhada no teclado" % k)
+	for k in m:
+		_check(str(m[k]["titulo"]) != "" and str(m[k]["texto"]) != "", "a tecla %s tem ficha com título e texto" % k)
+	_check(str(m["Q"]["custo"]) == "1 PA" and str(m["Z"]["custo"]).contains("SAN"), "os custos vêm dos dados do jogo")
 	var mapa := ControlesCaderno.new()
+	mapa.size = mapa.custom_minimum_size
+	_check(mapa._target_at(mapa._key_rect(["Q", 1.5, 2, 1.0]).get_center()) == "Q", "o mouse sobre a tecla acha a tecla")
+	mapa.filter = "painel"
+	_check(mapa._active("B") and not mapa._active("Q"), "o filtro Painéis apaga o combate")
 	_check(mapa.custom_minimum_size.y <= 540.0 and mapa.custom_minimum_size.x <= 960.0, "a página do mapa cabe na tela")
 
 

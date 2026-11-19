@@ -433,7 +433,9 @@ func _open(which: String) -> void:
 			keys.activated.connect(func(_id: String) -> void: _open("controls"))
 			_add_panel_row(keys)
 		"controls":
-			panel_body.add_child(ControlesCaderno.new())
+			var caderno := ControlesCaderno.new()
+			caderno.voltar.connect(_back)
+			panel_body.add_child(caderno)
 		"credits":
 			for line in CREDITS:
 				var block := VBoxContainer.new()

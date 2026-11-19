@@ -1,32 +1,31 @@
 class_name ControlesCaderno
 extends Control
-# Mapa de controles nas Opções (Léo, 19/11/2026): só a visão do teclado e do mouse, numa página do caderno de campo
-# (mesma placa escura, bronze, dourado e teclas do Diário e do inventário). Cada tecla usada mostra a função
-# embaixo do rótulo e a cor diz o grupo. Só mostra; não remapeia.
-# As teclas dos itens de combate vêm de RoomItems.KEY_LABELS e as dos rituais de RoomActionBar.RITUAL_KEYS, então
-# o mapa acompanha qualquer troca feita no código. Quem mudar outra tecla do jogo deve atualizar `mapa()`.
+# Mapa de controles nas Opções (Léo, 19/11/2026): teclado e mouse desenhados numa página do caderno de campo, em
+# tons de pergaminho e tinta. Cada tecla usada mostra a função; passar o mouse (ou clicar) numa tecla abre a ficha no
+# pé da página com o que ela faz, quando vale e o custo. Os filtros Tudo, Explorar, Combate e Painéis apagam o resto,
+# para consultar só o que importa naquele momento. Só mostra; não remapeia as teclas.
+# Itens de combate e rituais vêm de RoomItems.KEY_LABELS, RoomActionBar.RITUAL_KEYS e de data/ (nome, PA, SAN),
+# então o mapa acompanha trocas de tecla e de balanceamento. Quem mudar outra tecla do jogo atualiza `mapa()`.
 
-const GOLD := Color(0.839, 0.678, 0.361)
+signal voltar  # botão direito: o menu volta um passo
+
+const INK := Color(0.05, 0.037, 0.03, 0.97)
+const PAPER := Color(0.91, 0.87, 0.79)
+const MUTED := Color(0.62, 0.56, 0.46)
+const FAINT := Color(0.34, 0.29, 0.23)
 const BRONZE := Color(0.353, 0.255, 0.149)
-const PLATE := Color(0.05, 0.037, 0.03, 0.97)
-const TEXT := Color(0.91, 0.87, 0.79)
-const MUTED := Color(0.66, 0.6, 0.49)
+const GOLD := Color(0.839, 0.678, 0.361)
+const BLOOD := Color(0.72, 0.2, 0.18)
 const FONT := preload("res://assets/fonts/SpecialElite-Regular.ttf")
-const TEX_KEY := preload("res://assets/sprites/ui/inv/tecla.png")
 
-# Grupos: cor da tecla e nome na legenda.
-const CATS := {
-	"mover": [Color(0.839, 0.678, 0.361), "Explorar"],
-	"painel": [Color(0.45, 0.66, 0.78), "Painéis e sistema"],
-	"combate": [Color(0.86, 0.32, 0.28), "Combate"],
-	"uso": [Color(0.66, 0.5, 0.82), "Itens e rituais"],
-}
-const KEY := 40.0
+const FILTERS := [["all", "Tudo"], ["mover", "Explorar"], ["combate", "Combate"], ["painel", "Painéis"]]
+const KEY := 36.0
 const GAP := 3.0
 const PAD := 18.0
-const TITLE_H := 34.0
-const PAGE_W := 840.0
-const PAGE_H := 372.0
+const TOP := 56.0
+const PAGE_W := 820.0
+const PAGE_H := 432.0
+const CARD_H := 104.0
 
 # Teclado: [rótulo, coluna (em teclas), linha, largura (em teclas)].
 const LAYOUT := [
@@ -42,55 +41,93 @@ const LAYOUT := [
 	["Espaço", 2.5, 5, 6.5],
 	["Home", 13.25, 1, 1.0], ["Del", 14.25, 1, 1.0], ["↑", 13.75, 4, 1.0], ["↓", 13.75, 5, 1.0],
 ]
+# Botões do mouse (retângulos relativos ao desenho do mouse): [id, x, y, w, h].
+const MOUSE_PARTS := [["Esq", 2.0, 2.0, 32.0, 40.0], ["Dir", 36.0, 2.0, 32.0, 40.0], ["Meio", 30.0, 10.0, 10.0, 22.0], ["Roda", 0.0, 46.0, 70.0, 56.0]]
 
-var mapped := {}  # rótulo -> [grupo, texto curto]
+const SHORT := {"granada_luz": "granada", "sinalizador": "sinal", "armadura_sangue": "armadura", "amaldicoar_arma": "maldição", "eletrocussao": "choque", "cicatrizacao": "curar"}
+
+static var _data: GameData
+
+var mapped := {}  # rótulo -> ficha
+var filter := "all"
+var selected := ""  # tecla (ou "M:Esq") aberta na ficha
+var hover := ""
 
 
 func _init() -> void:
 	mapped = mapa()
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mouse_filter = Control.MOUSE_FILTER_STOP
 	custom_minimum_size = Vector2(PAGE_W, PAGE_H)
 
 
-# Rótulo da tecla -> [grupo, função em poucas palavras]. Duas funções na mesma tecla viram "a · b".
+# Dados de balanceamento (custos), carregados uma vez.
+static func data() -> GameData:
+	if _data == null:
+		_data = GameData.new()
+		_data.load_dir()
+	return _data
+
+
+# Ficha: {cat, curto, titulo, quando, texto, custo}. `cat` decide o filtro: mover, combate ou painel.
+static func _ficha(cat: String, curto: String, titulo: String, quando: String, texto: String, custo := "") -> Dictionary:
+	return {"cat": cat, "curto": curto, "titulo": titulo, "quando": quando, "texto": texto, "custo": custo}
+
+
+# Rótulo da tecla -> ficha. Duas funções na mesma tecla viram uma ficha só, com as duas.
 static func mapa() -> Dictionary:
 	var m := {}
-	_add(m, "Esc", "painel", "pausa")
-	_add(m, "F3", "painel", "perf.")
-	_add(m, "B", "painel", "mochila")
-	_add(m, "J", "painel", "diário")
-	_add(m, "E", "painel", "equipar")
-	_add(m, "Del", "painel", "descartar")
-	_add(m, "Enter", "painel", "ligar pistas")
-	_add(m, "↑", "painel", "diário")
-	_add(m, "↓", "painel", "diário")
-	_add(m, "L", "mover", "lanterna")
-	_add(m, "Tab", "mover", "trocar")
+	_add(m, "Esc", _ficha("painel", "pausa", "Pausa", "Em qualquer lugar", "Abre o menu de pausa: salvar, carregar e opções. Dentro de um painel, fecha o painel."))
+	_add(m, "F3", _ficha("painel", "perf.", "Desempenho", "Em qualquer lugar", "Mostra na tela os quadros por segundo e outros números técnicos."))
+	_add(m, "B", _ficha("painel", "mochila", "Mochila", "Fora de falas", "Abre o inventário compartilhado e o equipamento de cada personagem. O tempo para enquanto estiver aberta."))
+	_add(m, "J", _ficha("painel", "diário", "Diário de pistas", "Fora de falas", "Mostra as pistas que o grupo examinou e o próximo objetivo. O tempo para enquanto estiver aberto."))
+	_add(m, "E", _ficha("painel", "equipar", "Equipar ou usar", "Na mochila", "Equipa a arma ou o colete escolhido, ou usa o consumível."))
+	_add(m, "Del", _ficha("painel", "descartar", "Descartar", "Na mochila", "Joga fora o item escolhido. Ele some e não volta."))
+	_add(m, "Enter", _ficha("painel", "ligar", "Ligar pistas", "No diário", "Confirma a ligação entre duas pistas. Também avança as falas."))
+	_add(m, "↑", _ficha("painel", "diário", "Subir na lista", "No diário", "Move a escolha para a pista de cima."))
+	_add(m, "↓", _ficha("painel", "diário", "Descer na lista", "No diário", "Move a escolha para a pista de baixo."))
+	_add(m, "L", _ficha("mover", "lanterna", "Lanterna", "À noite, explorando", "Liga e desliga a lanterna do líder. No diário, L abre o modo de ligar pistas."))
+	_add(m, "Tab", _ficha("mover", "trocar", "Trocar de personagem", "Explorar e combate", "Passa o controle para o próximo do grupo. Os outros seguem o controlado."))
 	for n in ["1", "2", "3"]:
-		_add(m, n, "mover", "escolher")
-	_add(m, "C", "mover", "agachar")
-	_add(m, "Home", "mover", "câmera")
-	_add(m, "Espaço", "combate", "passar o turno")
-	_add(m, "D", "combate", "atrasar")
-	_add(m, "Q", "combate", "trocar arma")
-	_add(m, "G", "combate", "recarga")
-	_add(m, "F", "combate", "vigia")
-	_add(m, "Shift", "combate", "acelerar inimigo")
-	var itens := {"granada_luz": "granada", "sinalizador": "sinal"}
+		_add(m, n, _ficha("mover", "escolher", "Escolher o personagem " + n, "Explorar e combate", "Passa o controle direto para o personagem " + n + " do grupo."))
+	_add(m, "C", _ficha("mover", "agachar", "Agachar", "Explorar; em combate na sua vez", "Alterna agachado. Agachado, os inimigos só percebem o grupo na metade da distância, e um ataque sem alerta ganha bônus."))
+	_add(m, "Home", _ficha("combate", "câmera", "Recentrar a câmera", "Combate", "Traz a câmera de volta ao grupo depois de arrastá-la com o botão do meio."))
+	var rules := data()
+	_add(m, "Espaço", _ficha("combate", "passar turno", "Passar o turno", "Combate", "Encerra o turno do personagem controlado. Fora do combate, avança as falas."))
+	_add(m, "D", _ficha("combate", "atrasar", "Atrasar", "Combate", "Adia a vez do personagem para mais tarde na mesma rodada."))
+	_add(m, "Q", _ficha("combate", "trocar arma", "Trocar de arma", "Combate", "Alterna entre a arma principal e a reserva.", _pa(rules.rule("custo_trocar_arma_pa"))))
+	_add(m, "G", _ficha("combate", "recarga", "Recarregar", "Combate", "Enche o pente com a munição da mochila.", _pa(rules.rule("custo_recarga_pa"))))
+	_add(m, "F", _ficha("combate", "vigia", "Vigilância", "Combate", "Fica de guarda e atira no primeiro inimigo que se mover dentro do cone.", "mesmo PA do ataque da arma"))
+	_add(m, "Shift", _ficha("combate", "acelerar", "Acelerar o turno inimigo", "Combate", "Segure durante a jogada dos inimigos para vê-la mais rápido."))
 	for iid in RoomItems.KEY_LABELS:
-		_add(m, RoomItems.KEY_LABELS[iid], "uso", itens.get(iid, str(iid)))
-	var rit := RoomActionBar.RITUAL_KEYS
-	var nomes := {"armadura_sangue": "armadura", "amaldicoar_arma": "maldição", "eletrocussao": "choque", "cicatrizacao": "curar"}
-	for rid in rit:
-		_add(m, rit[rid], "uso", nomes.get(rid, str(rid)))
+		var item := rules.get_entry("itens", iid)
+		var custo := _pa(item.get("custo_pa_combate"))
+		_add(m, RoomItems.KEY_LABELS[iid], _ficha("combate", SHORT.get(iid, str(item.get("nome", iid)).to_lower()), str(item.get("nome", iid)), "Combate, na sua vez", _cap(str(RoomActionBar.ITEM_TIPS.get(iid, "item de uso em combate"))) + ".", custo))
+	for rid in RoomActionBar.RITUAL_KEYS:
+		var r := rules.get_entry("rituais", rid)
+		var curto: String = SHORT.get(rid, str(r.get("nome", rid)).to_lower())
+		_add(m, RoomActionBar.RITUAL_KEYS[rid], _ficha("combate", curto, str(r.get("nome", rid)), "Combate · só o Ocultista", str(r.get("descricao", "")), "%s · %s SAN" % [_pa(r.get("custo_pa")), str(r.get("custo_san", "?"))]))
+	m["M:Esq"] = _ficha("mover", "", "Botão esquerdo", "Explorar e combate", "Move o grupo, examina objetos e abre portas. Em combate move, ataca o inimigo sob o cursor ou escolhe o alvo. Clicar num retrato troca de personagem.")
+	m["M:Dir"] = _ficha("painel", "", "Botão direito", "Menus", "Volta um passo nos menus e painéis.")
+	m["M:Meio"] = _ficha("combate", "", "Botão do meio", "Combate", "Arraste para mover a câmera. Clicar (ou Home) recentra.")
+	m["M:Roda"] = _ficha("mover", "", "Roda do mouse", "Em qualquer lugar", "Aproxima e afasta a câmera.")
 	return m
 
 
-static func _add(m: Dictionary, key: String, cat: String, text: String) -> void:
-	if m.has(key):
-		m[key] = [m[key][0], str(m[key][1]) + " · " + text]
-	else:
-		m[key] = [cat, text]
+static func _cap(t: String) -> String:
+	return t.substr(0, 1).to_upper() + t.substr(1)
+
+
+static func _pa(v: Variant) -> String:
+	return "%s PA" % (str(int(v)) if v != null else "?")
+
+
+static func _add(m: Dictionary, key: String, f: Dictionary) -> void:
+	if not m.has(key):
+		m[key] = f
+		return
+	var old: Dictionary = m[key]  # a mesma tecla serve a duas coisas: junta as duas na ficha
+	m[key] = _ficha(old["cat"], str(old["curto"]) + " · " + str(f["curto"]), str(old["titulo"]) + " / " + str(f["titulo"]), str(old["quando"]) + " · " + str(f["quando"]),
+		str(old["texto"]) + " | " + str(f["texto"]), str(old["custo"]) + (" · " if old["custo"] != "" and f["custo"] != "" else "") + str(f["custo"]))
 
 
 func _kx(col: float) -> float:
@@ -98,36 +135,118 @@ func _kx(col: float) -> float:
 
 
 func _ky(row: int) -> float:
-	return TITLE_H + 12.0 + row * (KEY + GAP) + (8.0 if row > 0 else 0.0)
+	return TOP + row * (KEY + GAP) + (8.0 if row > 0 else 0.0)
+
+
+func _key_rect(k: Array) -> Rect2:
+	return Rect2(_kx(k[1]), _ky(k[2]), k[3] * KEY + (k[3] - 1.0) * GAP, KEY)
+
+
+func _mouse_origin() -> Vector2:
+	return Vector2(size.x - 120.0, TOP + 4.0)
+
+
+func _filter_rect(i: int) -> Rect2:
+	var x := size.x - PAD - 4.0 * 78.0 + i * 78.0
+	return Rect2(x, 8.0, 74.0, 22.0)
+
+
+func _card_rect() -> Rect2:
+	return Rect2(PAD, size.y - CARD_H - 14.0, size.x - PAD * 2.0, CARD_H)
+
+
+func _active(id: String) -> bool:
+	if not mapped.has(id):
+		return false
+	return filter == "all" or mapped[id]["cat"] == filter or (filter == "combate" and mapped[id]["cat"] == "uso")
+
+
+# Quem está sob o mouse: rótulo de tecla ou "M:parte".
+func _target_at(p: Vector2) -> String:
+	for k in LAYOUT:
+		if _key_rect(k).has_point(p):
+			return k[0]
+	var o := _mouse_origin() + Vector2(25, 0)
+	for part in MOUSE_PARTS:
+		if Rect2(o + Vector2(part[1], part[2]), Vector2(part[3], part[4])).has_point(p) and part[0] != "Roda":
+			return "M:" + part[0]
+	if Rect2(o, Vector2(70, 110)).has_point(p):
+		return "M:Roda" if Rect2(o + Vector2(0, 46), Vector2(70, 64)).has_point(p) else ""
+	return ""
+
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		var t := _target_at(event.position)
+		if t != hover:
+			hover = t
+			queue_redraw()
+	elif event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_RIGHT:
+			voltar.emit()
+			return
+		if event.button_index != MOUSE_BUTTON_LEFT:
+			return
+		for i in FILTERS.size():
+			if _filter_rect(i).has_point(event.position):
+				filter = FILTERS[i][0]
+				queue_redraw()
+				return
+		var t := _target_at(event.position)
+		if t != "":
+			selected = t
+			queue_redraw()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_MOUSE_EXIT and hover != "":
+		hover = ""
+		queue_redraw()
+
+
+func _shown() -> String:
+	return hover if hover != "" and mapped.has(hover) else selected
 
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), PLATE)
+	draw_rect(Rect2(Vector2.ZERO, size), INK)
 	draw_rect(Rect2(Vector2.ZERO, size), BRONZE, false, 2.0)
-	draw_string(FONT, Vector2(PAD, 22.0), "CADERNO DE CAMPO · CONTROLES", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, GOLD)
-	draw_rect(Rect2(PAD, TITLE_H - 6.0, size.x - PAD * 2.0, 1.0), Color(BRONZE, 0.8))
+	draw_rect(Rect2(5, 5, size.x - 10, size.y - 10), Color(BRONZE, 0.35), false, 1.0)  # filete interno de caderno
+	draw_string(FONT, Vector2(PAD, 28.0), "CADERNO DE CAMPO", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, GOLD)
+	draw_string(FONT, Vector2(PAD, 44.0), "controles do jogo · passe o mouse numa tecla", HORIZONTAL_ALIGNMENT_LEFT, -1, 9, MUTED)
+	for i in FILTERS.size():
+		var r := _filter_rect(i)
+		var on: bool = FILTERS[i][0] == filter
+		if on:
+			draw_rect(r, Color(PAPER, 0.12))
+		draw_rect(r, Color(PAPER if on else BRONZE, 0.9 if on else 0.7), false, 1.0)
+		draw_string(FONT, r.position + Vector2(0, 15.0), FILTERS[i][1], HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 10, PAPER if on else MUTED)
 	for k in LAYOUT:
 		_draw_key(k)
-	_draw_mouse(Vector2(size.x - 150.0, TITLE_H + 6.0))
-	_draw_legend(Vector2(PAD, size.y - 34.0))
+	_draw_mouse()
+	_draw_card()
 
 
 func _draw_key(k: Array) -> void:
 	var label: String = k[0]
-	var r := Rect2(_kx(k[1]), _ky(k[2]), k[3] * KEY + (k[3] - 1.0) * GAP, KEY)
-	var use: Array = mapped.get(label, [])
-	var tint: Color = CATS[use[0]][0] if not use.is_empty() else Color(0.3, 0.26, 0.22)
-	draw_rect(r, Color(tint, 0.2 if not use.is_empty() else 0.1))
-	draw_rect(r, Color(tint, 0.95 if not use.is_empty() else 0.45), false, 1.0)
+	var r := _key_rect(k)
+	var used := mapped.has(label)
+	var on := used and _active(label)
+	var picked: bool = label == _shown()
+	var edge := BLOOD.lightened(0.15) if picked else (PAPER if on else (FAINT if used else Color(FAINT, 0.55)))
+	draw_rect(r, Color(PAPER, 0.22) if picked else (Color(PAPER, 0.07) if on else Color(0, 0, 0, 0.25)))
+	draw_rect(r, edge, false, 1.5 if picked else 1.0)
+	if on:
+		draw_rect(Rect2(r.position + Vector2(3, KEY - 4.0), Vector2(r.size.x - 6.0, 1.0)), Color(PAPER, 0.35))  # sublinhado de tecla em uso
 	var big := label.length() <= 2 or label == "Home"
-	draw_string(FONT, r.position + Vector2(0, 14.0), label, HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 11 if big else 9, TEXT if not use.is_empty() else MUTED)
-	if not use.is_empty():
-		var lines := _wrap(str(use[1]), r.size.x + 2.0, 7)
+	var ink := PAPER if on else (FAINT if used else Color(FAINT, 0.8))
+	draw_string(FONT, r.position + Vector2(0, 14.0), label, HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 11 if big else 9, ink)
+	if used:
+		var lines := _wrap(str(mapped[label]["curto"]), r.size.x + 2.0, 7)
 		for i in mini(lines.size(), 2):
-			draw_string(FONT, r.position + Vector2(-1.0, 23.0 + i * 8.0), lines[i], HORIZONTAL_ALIGNMENT_CENTER, r.size.x + 2.0, 7, Color(tint.lightened(0.35), 1.0))
+			draw_string(FONT, r.position + Vector2(-1.0, 22.0 + i * 8.0), lines[i], HORIZONTAL_ALIGNMENT_CENTER, r.size.x + 2.0, 7, ink if on else FAINT)
 
 
-# Quebra o texto em linhas que cabem em `w` pixels (por palavras).
 static func _wrap(text: String, w: float, fsize: int) -> Array:
 	var lines: Array = []
 	var cur := ""
@@ -142,38 +261,65 @@ static func _wrap(text: String, w: float, fsize: int) -> Array:
 	return lines
 
 
-func _draw_mouse(at: Vector2) -> void:
-	var body := Rect2(at + Vector2(25, 0), Vector2(70, 110))
-	var edge := Color(BRONZE, 0.95)
-	draw_rect(body, Color(0.1, 0.075, 0.06))
-	draw_rect(body, edge, false, 1.5)
-	var left := Rect2(body.position + Vector2(2, 2), Vector2(32, 40))
-	var right := Rect2(body.position + Vector2(36, 2), Vector2(32, 40))
-	var cm: Color = CATS["mover"][0]
-	var cc: Color = CATS["combate"][0]
-	draw_rect(left, Color(cm, 0.35))
-	draw_rect(right, Color(CATS["painel"][0], 0.35))
-	draw_rect(Rect2(body.position + Vector2(30, 10), Vector2(10, 22)), Color(cc, 0.5))
-	draw_rect(Rect2(body.position + Vector2(30, 10), Vector2(10, 22)), edge, false, 1.0)
-	draw_line(body.position + Vector2(35, 0), body.position + Vector2(35, 44), edge, 1.0)
-	draw_line(body.position + Vector2(0, 44), body.position + Vector2(70, 44), edge, 1.0)
-	var notes := [
-		["Esq", "mover · atacar · examinar", cm],
-		["Dir", "voltar nos menus", CATS["painel"][0]],
-		["Meio", "arrastar: câmera (combate)", cc],
-		["Roda", "zoom", GOLD],
-	]
-	for i in notes.size():
-		var y := body.end.y + 18.0 + i * 24.0
-		draw_string(FONT, Vector2(at.x - 8.0, y), "Mouse " + notes[i][0], HORIZONTAL_ALIGNMENT_LEFT, -1, 9, notes[i][2])
-		draw_string(FONT, Vector2(at.x - 8.0, y + 10.0), notes[i][1], HORIZONTAL_ALIGNMENT_LEFT, 130, 8, MUTED)
+func _draw_mouse() -> void:
+	var o := _mouse_origin() + Vector2(25, 0)
+	var body := Rect2(o, Vector2(70, 110))
+	draw_rect(body, Color(0, 0, 0, 0.3))
+	draw_rect(body, Color(PAPER, 0.5), false, 1.2)
+	for part in MOUSE_PARTS:
+		if part[0] == "Roda":
+			continue
+		var id: String = "M:" + part[0]
+		var r := Rect2(o + Vector2(part[1], part[2]), Vector2(part[3], part[4]))
+		var on := _active(id)
+		var picked: bool = id == _shown()
+		draw_rect(r, Color(PAPER, 0.25) if picked else (Color(PAPER, 0.1) if on else Color(0, 0, 0, 0.2)))
+		draw_rect(r, BLOOD.lightened(0.15) if picked else (PAPER if on else FAINT), false, 1.0)
+	draw_line(o + Vector2(0, 44), o + Vector2(70, 44), Color(PAPER, 0.35), 1.0)
+	draw_string(FONT, o + Vector2(2, 26), "esq.", HORIZONTAL_ALIGNMENT_CENTER, 32, 8, PAPER if _active("M:Esq") else FAINT)
+	draw_string(FONT, o + Vector2(36, 26), "dir.", HORIZONTAL_ALIGNMENT_CENTER, 32, 8, PAPER if _active("M:Dir") else FAINT)
+	draw_string(FONT, o + Vector2(0, 60), "mover · atacar · menus", HORIZONTAL_ALIGNMENT_CENTER, 70, 6, MUTED)
+	var roda := "M:Roda" == _shown()
+	var rr := Rect2(o + Vector2(0, 68), Vector2(70, 38))
+	draw_rect(rr, Color(PAPER, 0.2) if roda else Color(0, 0, 0, 0.0))
+	draw_string(FONT, o + Vector2(0, 80), "roda: zoom", HORIZONTAL_ALIGNMENT_CENTER, 70, 8, PAPER if _active("M:Roda") else FAINT)
+	draw_string(FONT, o + Vector2(0, 92), "meio: câmera", HORIZONTAL_ALIGNMENT_CENTER, 70, 8, PAPER if _active("M:Meio") else FAINT)
+	draw_string(FONT, o + Vector2(0, 124), "MOUSE", HORIZONTAL_ALIGNMENT_CENTER, 70, 8, MUTED)
 
 
-func _draw_legend(at: Vector2) -> void:
-	var x := at.x
-	for cat in CATS:
-		draw_rect(Rect2(x, at.y + 2.0, 10, 10), Color(CATS[cat][0], 0.35))
-		draw_rect(Rect2(x, at.y + 2.0, 10, 10), CATS[cat][0], false, 1.0)
-		draw_string(FONT, Vector2(x + 15.0, at.y + 11.0), CATS[cat][1], HORIZONTAL_ALIGNMENT_LEFT, -1, 10, TEXT)
-		x += 24.0 + FONT.get_string_size(CATS[cat][1], HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x + 12.0
-	draw_string(FONT, Vector2(PAD, size.y - 8.0), "Só leitura: as teclas ainda não podem ser trocadas.", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, MUTED)
+# Ficha no pé da página: a tecla grande, o nome, quando vale, o custo e o texto.
+func _draw_card() -> void:
+	var r := _card_rect()
+	draw_rect(r, Color(PAPER, 0.045))
+	draw_rect(r, Color(BRONZE, 0.9), false, 1.0)
+	var id: String = _shown()
+	if id == "" or not mapped.has(id):
+		draw_string(FONT, r.position + Vector2(20, 40), "Passe o mouse numa tecla para ver o que ela faz.", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, MUTED)
+		draw_string(FONT, r.position + Vector2(20, 62), "Teclas acesas estão em uso; as apagadas não fazem nada. Use os filtros para ver só explorar, combate ou painéis.", HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 40.0, 9, FAINT)
+		draw_string(FONT, r.position + Vector2(20, 90), "Só leitura: as teclas ainda não podem ser trocadas.", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, FAINT)
+		return
+	var f: Dictionary = mapped[id]
+	var cap := Rect2(r.position + Vector2(16, 16), Vector2(64, 64))
+	draw_rect(cap, Color(PAPER, 0.1))
+	draw_rect(cap, PAPER, false, 1.5)
+	draw_rect(Rect2(cap.position + Vector2(5, 59), Vector2(54, 1)), Color(PAPER, 0.4))
+	var cap_text := id.trim_prefix("M:") if id.begins_with("M:") else id
+	draw_string(FONT, cap.position + Vector2(0, 40), cap_text, HORIZONTAL_ALIGNMENT_CENTER, cap.size.x, 22 if cap_text.length() <= 2 else 13, PAPER)
+	if id.begins_with("M:"):
+		draw_string(FONT, cap.position + Vector2(0, 54), "mouse", HORIZONTAL_ALIGNMENT_CENTER, cap.size.x, 8, MUTED)
+	var x := r.position.x + 96.0
+	draw_string(FONT, Vector2(x, r.position.y + 28.0), str(f["titulo"]), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 120.0, 15, GOLD)
+	var tag_y := r.position.y + 44.0
+	var tx := x
+	for tag in [["QUANDO", str(f["quando"])], ["CUSTO", str(f["custo"])]]:
+		if tag[1] == "":
+			continue
+		var s: String = tag[0] + "  " + tag[1]
+		var w := FONT.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, 9).x + 14.0
+		draw_rect(Rect2(tx, tag_y - 10.0, w, 15.0), Color(BLOOD, 0.18) if tag[0] == "CUSTO" else Color(PAPER, 0.08))
+		draw_rect(Rect2(tx, tag_y - 10.0, w, 15.0), Color(BLOOD.lightened(0.2), 0.8) if tag[0] == "CUSTO" else Color(BRONZE, 0.9), false, 1.0)
+		draw_string(FONT, Vector2(tx + 7.0, tag_y + 1.0), s, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, PAPER)
+		tx += w + 8.0
+	var lines := _wrap(str(f["texto"]), r.size.x - 120.0, 10)
+	for i in mini(lines.size(), 3):
+		draw_string(FONT, Vector2(x, r.position.y + 66.0 + i * 13.0), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 10, PAPER)

@@ -35,4 +35,12 @@ func _run() -> void:
 	if menu.has_method("_layout_controls"):
 		menu._open("controls")
 		await _save("controles")
+		var caderno: ControlesCaderno = menu.panel_body.get_child(0)
+		caderno.selected = "Z"
+		caderno.queue_redraw()
+		await _save("controles_ficha")
+		caderno.selected = "Q"
+		caderno.filter = "combate"
+		caderno.queue_redraw()
+		await _save("controles_combate")
 	quit()
