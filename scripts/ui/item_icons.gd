@@ -272,18 +272,6 @@ const PIXEL_ROWS := {
 		"...ocbbbbbco....",
 		"....ooooooo.....",
 	],
-	"sal": [
-		".....oooooo.....",
-		"....oyyyyyyo....",
-		"....oooooooo....",
-		"...oaaaaaaaao...",
-		"...oaaaaaaaao...",
-		"...oarrrrrrao...",
-		"...oarrrrrrao...",
-		"...oaaaaaaaao...",
-		"...oaaaaaaaao...",
-		"....oooooooo....",
-	],
 	"sinalizador": [
 		"......ogo.......",
 		".....ogyyo......",

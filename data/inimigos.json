@@ -27,11 +27,6 @@
         "item": "bandagem",
         "qtd": 1,
         "chance": 0.2
-      },
-      {
-        "item": "sal",
-        "qtd": 1,
-        "chance": 0.15
       }
     ]
   },
@@ -91,9 +86,7 @@
     ],
     "comportamento": "cerca",
     "resistencias": [],
-    "fraquezas": [
-      "sal"
-    ],
+    "fraquezas": [],
     "chefe": false,
     "fases": [],
     "drops": [

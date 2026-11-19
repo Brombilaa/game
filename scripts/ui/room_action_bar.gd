@@ -24,7 +24,6 @@ const RITUAL_GAP := 10.0  # vão (com um fio) entre as ações comuns e as casas
 # Dica curta dos itens de combate na barra (valores provisórios em combat.json, itens_combate).
 const ITEM_TIPS := {
 	"granada_luz": "atordoa os inimigos perto do ponto",
-	"sal": "queima a Criatura de Sangue",
 	"sinalizador": "luz no chão: +acerto contra quem está nela",
 }
 const RITUAL_KEYS := {"armadura_sangue": "Z", "amaldicoar_arma": "X", "eletrocussao": "T", "cicatrizacao": "Y"}
@@ -50,7 +49,7 @@ func _action_slots() -> Array:
 	slots.append(["kit", "Kit de primeiros socorros", "Reanimar · %d PA · restam %d" % [int(kit["custo_pa_combate"]), room.inventory.count(room.KIT_ID)], room.inventory.count(room.KIT_ID) > 0])
 	slots.append(["vigilancia", "Vigilância", "%d PA · tecla F · atira no 1º inimigo que se mover no cone" % int(room.player.weapon["pa_cost"]), room.rules.overwatch_blocker(room.player) == "" or room.player.overwatch])
 	slots.append(["atrasar", "Atrasar", "Age depois na rodada · tecla D", true])
-	for iid in room.room_items.available():  # itens de combate na mochila (granada de luz, sal, sinalizador)
+	for iid in room.room_items.available():  # itens de combate na mochila (granada de luz e sinalizador)
 		var cost := room.item_rules.cost(iid)
 		var it := data.get_entry("itens", iid)
 		slots.append([iid, str(it["nome"]), "%d PA · tecla %s · %s" % [cost, RoomItems.KEY_LABELS.get(iid, "?"), ITEM_TIPS.get(iid, "")],

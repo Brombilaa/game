@@ -67,7 +67,6 @@ const BLURBS := {
 	"antidoto": "Neutraliza o veneno em quem o toma.",
 	"curativo": "Cobre ferimentos leves.",
 	"granada_luz": "Clarão que atordoa os inimigos perto do ponto onde cai. Só em combate.",
-	"sal": "Sal grosso. Queima a Criatura de Sangue. Só em combate.",
 	"sinalizador": "Luz vermelha no chão por alguns turnos: o grupo acerta melhor quem está nela. Só em combate.",
 	"componente_ritual": "Material usado nos rituais.",
 	"colete": "Protege reduzindo o dano recebido.",

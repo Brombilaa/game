@@ -1,16 +1,15 @@
 class_name RoomItems
 extends RefCounted
-# Itens de uso em combate na sala (granada de luz, sal grosso, sinalizador): escolhe o ponto ou o alvo, chama
+# Itens de uso em combate na sala (granada de luz e sinalizador): escolhe o ponto ou o alvo, chama
 # ItemRules, tira o item da mochila e encena o resultado. Só em combate, na vez do controlado.
-# Teclas provisórias: H granada de luz, K sal, U sinalizador; também pela casa do item na barra de combate.
+# Teclas provisórias: H granada de luz, U sinalizador; também pela casa do item na barra de combate.
 # Mira: o ponto sob o mouse, se der para alcançar; senão (ou clicando na barra) o melhor alvo automático.
 
 const KEYS := {
 	KEY_H: "granada_luz",
-	KEY_K: "sal",
 	KEY_U: "sinalizador",
 }
-const KEY_LABELS := {"granada_luz": "H", "sal": "K", "sinalizador": "U"}
+const KEY_LABELS := {"granada_luz": "H", "sinalizador": "U"}
 
 var room: TestRoom
 
@@ -50,17 +49,10 @@ func use(id: String) -> void:
 	var walls := room._sight_blockers()
 	var target: Combatant = null
 	var point := Vector2.INF
-	if room.item_rules.effect(id) == "sal":
-		target = _pick_salt_target(user, id, have, walls)
-		if target == null:
-			_reject("requirement", "Nenhuma criatura que tema o sal ao alcance")
-			return
-		point = target.pos
-	else:
-		point = _pick_point(user, id, have, walls)
-		if point == Vector2.INF:
-			_reject("out_of_range", "Nenhum inimigo ao alcance de %s" % name)
-			return
+	point = _pick_point(user, id, have, walls)
+	if point == Vector2.INF:
+		_reject("out_of_range", "Nenhum inimigo ao alcance de %s" % name)
+		return
 	room.rules.units = room._living_units()
 	var out := room.item_rules.use(user, id, have, point, target, room._living_units(), walls)
 	if not out.ok:
@@ -81,21 +73,6 @@ func _mouse_point() -> Vector2:
 	if room._mouse_on_hud(room.get_viewport().get_mouse_position()):
 		return Vector2.INF
 	return room._resolve_click(room.get_global_mouse_position())
-
-
-# Sal: a criatura sob o mouse, se der; senão a mais perto que tem a fraqueza e está ao alcance.
-func _pick_salt_target(user: Combatant, id: String, have: int, walls: Array[Rect2]) -> Combatant:
-	var mouse := _mouse_point()
-	if mouse != Vector2.INF:
-		var under := room.room_combat._enemy_at(mouse)
-		if under and room.item_rules.blocker(user, id, have, under.pos, under, walls) in ["", "no_pa"]:
-			return under
-	var best: Combatant = null
-	for e in room.enemies:
-		if e.is_alive() and room.item_rules.blocker(user, id, have, e.pos, e, walls) in ["", "no_pa"]:
-			if best == null or CombatRules.gap(user, e) < CombatRules.gap(user, best):
-				best = e
-	return best
 
 
 # Granada e sinalizador: o ponto sob o mouse, se der; senão o inimigo ao alcance que junta mais inimigos no raio.
@@ -133,16 +110,6 @@ func _show(user: Combatant, id: String, target: Combatant, out: Dictionary) -> v
 				room.room_combat._popup(u.pos, "IMUNE", "info")
 			if out.stunned.is_empty() and out.immune.is_empty():
 				room.hud.show_notice("O clarão não pegou ninguém")
-		"sal":
-			room.room_combat._popup(target.pos, "-%d" % out.damage, "damage")
-			room.room_combat._log("O sal queima %s: %d" % [target.name, out.damage])
-			room.hit_shake[target] = TestRoom.HIT_SHAKE_SECONDS
-			if not target.is_alive():
-				room.room_combat._popup(target.pos, "ABATIDO", "down")
-				room.room_combat._log("%s foi abatido" % target.name)
-				if not target.looted:
-					target.looted = true
-					room._loot_enemy(target)
 		"sinalizador":
 			room.room_combat._popup(out.point, "SINALIZADOR", "info")
 	room.queue_redraw()

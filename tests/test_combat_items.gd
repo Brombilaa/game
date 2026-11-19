@@ -1,5 +1,5 @@
 extends SceneTree
-# Teste headless dos itens de uso em combate (granada de luz, sal grosso, sinalizador). Rodar com:
+# Teste headless dos itens de uso em combate (granada de luz e sinalizador). Rodar com:
 #   godot --headless --path . -s tests/test_combat_items.gd
 
 var failures := 0
@@ -14,7 +14,6 @@ func _init() -> void:
 	_test_data()
 	_test_flashbang()
 	_test_flashbang_range_and_walls()
-	_test_salt()
 	_test_flare()
 	_test_cost()
 	print("Falhas: %d" % failures)
@@ -40,13 +39,13 @@ func _m(meters: float) -> float:
 
 func _test_data() -> void:
 	_fresh()
-	_check(items.combat_items() == ["granada_luz", "sal", "sinalizador"], "três itens de combate em itens.json")
+	_check(items.combat_items() == ["granada_luz", "sinalizador"], "dois itens de combate em itens.json (sem sal, Léo 19/11)")
 	for id in items.combat_items():
 		_check(items.cost(id) == 1, "%s custa 1 PA (custo de usar item)" % id)
 		_check(cfg.game_data.provisional.has("itens." + id), "%s marcado como provisório" % id)
 		_check(ItemIcons.has_icon(id), "%s tem ícone" % id)
 	_check(not items.is_combat_item("bandagem"), "bandagem não é item de arremesso")
-	_check((cfg.game_data.get_entry("inimigos", "criatura_sangue")["fraquezas"] as Array).has("sal"), "Criatura de Sangue é fraca a sal")
+	_check(not cfg.game_data.has_entry("itens", "sal"), "o sal não existe no jogo (Léo, 19/11)")
 
 
 func _test_flashbang() -> void:
@@ -78,21 +77,6 @@ func _test_flashbang_range_and_walls() -> void:
 	_check(items.blocker(f, "granada_luz", 0, Vector2(_m(4), 0)) == "requirement", "sem o item na mochila não usa")
 	f.pa = 0
 	_check(items.blocker(f, "granada_luz", 1, Vector2(_m(4), 0)) == "no_pa", "sem PA não usa")
-
-
-func _test_salt() -> void:
-	_fresh()
-	var f := _agent()
-	var criatura := cfg.make_enemy("criatura_sangue", Vector2(_m(2), 0))
-	var cultista := cfg.make_enemy("cultista", Vector2(_m(1), _m(1)))
-	_check(items.blocker(f, "sal", 1, cultista.pos, cultista) == "requirement", "sal não serve contra cultista")
-	criatura.defense = 0.5
-	var pv := criatura.pv
-	var out := items.use(f, "sal", 1, criatura.pos, criatura, [f, criatura], NO_WALLS)
-	_check(out.ok and out.damage >= 6 and out.damage <= 10, "sal causa 6-10 (%d)" % out.damage)
-	_check(criatura.pv == pv - out.damage, "sal não erra e ignora a defesa")
-	var longe := cfg.make_enemy("criatura_sangue", Vector2(_m(5), 0))
-	_check(items.blocker(f, "sal", 1, longe.pos, longe) == "out_of_range", "sal além de 3 m: fora de alcance")
 
 
 func _test_flare() -> void:

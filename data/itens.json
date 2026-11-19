@@ -4,7 +4,6 @@
   {"id": "bandagem", "nome": "Bandagem", "provisorio": true, "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": 5, "custo_pa_combate": 1, "efeito": "remover_sangrando", "valor": null},
   {"id": "antidoto", "nome": "Antídoto", "provisorio": true, "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": 5, "custo_pa_combate": 1, "efeito": "remover_envenenado", "valor": null},
   {"id": "granada_luz", "nome": "Granada de luz", "provisorio": true, "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": 3, "custo_pa_combate": 1, "efeito": "granada_luz", "valor": null},
-  {"id": "sal", "nome": "Sal grosso", "provisorio": true, "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": 5, "custo_pa_combate": 1, "efeito": "sal", "valor": null},
   {"id": "sinalizador", "nome": "Sinalizador", "provisorio": true, "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": 3, "custo_pa_combate": 1, "efeito": "sinalizador", "valor": null},
   {"id": "colete_leve", "nome": "Colete leve", "provisorio": true, "categoria": "equipamento", "consumivel": false, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": "defesa", "valor": 0.1},
   {"id": "colete_pesado", "nome": "Colete pesado", "provisorio": true, "categoria": "equipamento", "consumivel": false, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": "defesa", "valor": 0.2},
