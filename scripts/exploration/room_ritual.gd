@@ -1,7 +1,7 @@
 class_name RoomRitual
 extends RefCounted
 # Rituais do Ocultista na sala (Miguel): escolhe o alvo, chama RitualRules e encena o resultado com textos
-# flutuantes e registro. Atalho: a tecla numérica da casa do ritual na barra de combate (Léo, 19/11: 1 a 9 em
+# flutuantes e registro. Cada ritual gasta um componente do seu elemento da mochila; sem ele, avisa o que falta. Atalho: a tecla numérica da casa do ritual na barra de combate (Léo, 19/11: 1 a 9 em
 # ordem, sem letras). Só em combate, na vez do controlado.
 
 var room: TestRoom
@@ -35,10 +35,19 @@ func cast(id: String) -> void:
 	room.rules.units = room._living_units()
 	var out := room.rituals.cast(caster, id, target, room._sight_blockers(), room.covers)
 	if not out.ok:
-		_reject(out.reason)
+		_reject(out.reason, _component_notice(id) if out.reason == "no_component" else "")
 		return
 	_show(caster, id, target, out)
 	room.room_combat._after_player_action()
+
+
+# Aviso de componente em falta: "Sem componente de Sangue (sangue coagulado, prego enferrujado...)".
+func _component_notice(id: String) -> String:
+	var rr := room.rituals
+	var names: Array[String] = []
+	for iid in rr.component_items(rr.element(id)):
+		names.append(str(room.cfg.game_data.get_entry("itens", iid)["nome"]).to_lower())
+	return "Sem componente de %s para %s (%s)" % [RitualRules.element_name(rr.element(id)), rr.ritual(id)["nome"], ", ".join(names)]
 
 
 func _reject(reason: String, notice := "") -> void:
@@ -52,11 +61,11 @@ func _pick_enemy(caster: Combatant, id: String) -> Combatant:
 	var walls := room._sight_blockers()
 	if not room._mouse_on_hud(room.get_viewport().get_mouse_position()):
 		var under := room.room_combat._enemy_at(room._resolve_click(room.get_global_mouse_position()))
-		if under and room.rituals.blocker(caster, id, under, walls, room.covers) in ["", "no_pa", "no_san"]:
+		if under and room.rituals.blocker(caster, id, under, walls, room.covers) in ["", "no_pa", "no_san", "no_component"]:
 			return under
 	var best: Combatant = null
 	for e in room.enemies:
-		if e.is_alive() and room.rituals.blocker(caster, id, e, walls, room.covers) in ["", "no_pa", "no_san"]:
+		if e.is_alive() and room.rituals.blocker(caster, id, e, walls, room.covers) in ["", "no_pa", "no_san", "no_component"]:
 			if best == null or CombatRules.gap(caster, e) < CombatRules.gap(caster, best):
 				best = e
 	return best
@@ -81,6 +90,8 @@ func _show(caster: Combatant, id: String, target: Combatant, out: Dictionary) ->
 	room.audio.play_sfx("item_use")
 	room.room_combat._popup(caster.pos, r["nome"].to_upper(), "san")
 	room.room_combat._log("%s conjura %s" % [caster.name, r["nome"]])
+	for iid in out.components:
+		room.room_combat._log("%s gasta %s" % [caster.name, str(room.cfg.game_data.get_entry("itens", iid)["nome"]).to_lower()])
 	room.room_combat._san_report({caster: out.san}, "paga o ritual")
 	if not out.ok or caster.insane:
 		return

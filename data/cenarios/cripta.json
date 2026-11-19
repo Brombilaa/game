@@ -7128,7 +7128,7 @@
     0,
     -30
    ],
-   "texto": "A chave de osso abre a tampa do ossuário. Entre restos que ninguém deveria ter mexido, ficaram suprimentos de quem veio antes.",
+   "texto": "A chave de osso abre a tampa do ossuário. Entre restos que ninguém deveria ter mexido, ficaram suprimentos de quem veio antes, um punhado de cinzas e um frasco com um órgão boiando.",
    "provisorio": true,
    "da": [
     {
@@ -7142,6 +7142,14 @@
     {
      "item": "municao_pistola",
      "qtd": 6
+    },
+    {
+     "item": "cinzas",
+     "qtd": 2
+    },
+    {
+     "item": "frasco_orgao",
+     "qtd": 1
     }
    ],
    "chave": "chave_ossuario",
