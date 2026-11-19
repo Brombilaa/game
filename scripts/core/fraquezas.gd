@@ -115,3 +115,35 @@ static func ao_acertar(game_data: GameData, target: Combatant, r: Dictionary) ->
 		return {"popup": "", "nova": false}
 	var nova := revelar(game_data, target.kind, str(r.get("tipo_dano", "")), "combate")
 	return {"popup": "FRAQUEZA" if af == "fraqueza" else "RESISTE", "nova": nova}
+
+
+# --- Seção CRIATURAS do diário (o caderno do Miguel) ------------------------------------------------
+
+# O grupo encontrou o inimigo num combate: a criatura passa a aparecer na seção, mesmo sem nada descoberto.
+static func ver(kind: String) -> void:
+	if kind != "":
+		Missao1.marcar("visto_" + kind)
+
+
+# Criaturas que aparecem na seção, na ordem de data/fraquezas.json: vistas em combate ou com alguma descoberta.
+# Cada uma: {kind, nome, nota, retrato, afinidades: [{tipo, afinidade, nome_tipo, conhecida, miguel}]}.
+# Afinidades ainda não descobertas vêm com conhecida = false (a seção mostra "???").
+static func criaturas(game_data: GameData) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var fichas: Dictionary = dados().get("criaturas", {})
+	for kind in fichas:
+		var afs: Array[Dictionary] = []
+		var alguma := false
+		for d in descobertas():
+			if d["inimigo"] != kind:
+				continue
+			var sabe := conhecida(kind, d["tipo"])
+			alguma = alguma or sabe
+			afs.append({"tipo": d["tipo"], "afinidade": afinidade(game_data, kind, d["tipo"]), "nome_tipo": nome_tipo(d["tipo"]), "conhecida": sabe, "miguel": str(d.get("miguel", ""))})
+		if not alguma and not Missao1.tem("visto_" + kind):
+			continue
+		var nome := str(kind)
+		if game_data != null:
+			nome = str(game_data.get_entry("inimigos", kind).get("nome", kind))
+		out.append({"kind": kind, "nome": nome, "nota": str(fichas[kind].get("nota", "")), "retrato": str(fichas[kind].get("retrato", "")), "afinidades": afs})
+	return out

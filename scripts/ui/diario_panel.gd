@@ -24,6 +24,9 @@ var sel := 0  # posição na lista de recentes
 var ligando := false  # modo ligar: a pista de `_a` espera a segunda
 var _a := ""  # id da primeira pista do modo ligar
 var _aviso := ""  # resultado da última tentativa de ligar, mostrado no pé até o próximo refresh
+var secao := "pistas"  # "pistas" ou "criaturas" (caderno do Miguel; Tab ou clique na aba troca)
+var modelo_criaturas := "A"  # visual da página da criatura: A, B ou C (DiarioCriaturas), até o Léo escolher
+var sel_criatura := 0
 
 var _lista: VBoxContainer
 var _titulo_det: Label
@@ -35,6 +38,10 @@ var _ligar: Button
 var _contagem: Label
 var _vazio: Label
 var _raiz: Control
+var _det: MarginContainer  # página da pista (seção PISTAS)
+var _pagina: ScrollContainer  # página da criatura (seção CRIATURAS)
+var _aba_pistas: Button
+var _aba_criaturas: Button
 
 
 func _init() -> void:
@@ -71,9 +78,15 @@ func _cabecalho() -> Control:
 	var h := HBoxContainer.new()
 	h.custom_minimum_size = Vector2(0, 30)
 	var t := _rotulo("  DIÁRIO", 16, GOLD)
-	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	t.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	h.add_child(t)
+	_aba_pistas = _aba("PISTAS", "pistas")
+	h.add_child(_aba_pistas)
+	_aba_criaturas = _aba("CRIATURAS", "criaturas")
+	h.add_child(_aba_criaturas)
+	var vao := Control.new()
+	vao.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	h.add_child(vao)
 	_contagem = _rotulo("", 12, MUTED)
 	_contagem.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	h.add_child(_contagem)
@@ -109,6 +122,12 @@ func _corpo() -> Control:
 		margem.add_theme_constant_override("margin_" + lado, 12)
 	margem.add_child(det)
 	linha.add_child(margem)
+	_det = margem
+	_pagina = ScrollContainer.new()
+	_pagina.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_pagina.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_pagina.visible = false
+	linha.add_child(_pagina)
 	_titulo_det = _rotulo("", 18, GOLD)
 	det.add_child(_titulo_det)
 	_lugar_det = _rotulo("", 11, MUTED)
@@ -158,6 +177,36 @@ func _rodape() -> Control:
 	return caixa
 
 
+func _aba(texto: String, id: String) -> Button:
+	var b := Button.new()
+	b.text = texto
+	b.focus_mode = Control.FOCUS_NONE
+	b.add_theme_font_size_override("font_size", 12)
+	b.pressed.connect(trocar_secao.bind(id))
+	return b
+
+
+func _estilo_aba(b: Button, ativa: bool) -> void:
+	var e := StyleBoxFlat.new()
+	e.bg_color = SEL_BG if ativa else Color(0, 0, 0, 0)
+	e.border_width_bottom = 2 if ativa else 0
+	e.border_color = CRIMSON
+	e.content_margin_left = 8
+	e.content_margin_right = 8
+	for n in ["normal", "hover", "pressed"]:
+		b.add_theme_stylebox_override(n, e)
+	b.add_theme_color_override("font_color", GOLD if ativa else MUTED)
+	b.add_theme_color_override("font_hover_color", GOLD)
+
+
+# Troca entre PISTAS e CRIATURAS (sai do modo ligar).
+func trocar_secao(id: String) -> void:
+	secao = id
+	ligando = false
+	_aviso = ""
+	atualizar()
+
+
 func _rotulo(texto: String, tamanho: int, cor: Color) -> Label:
 	var l := Label.new()
 	l.text = texto
@@ -196,6 +245,13 @@ func atualizar() -> void:
 	for f in _lista.get_children():
 		_lista.remove_child(f)
 		f.queue_free()
+	_estilo_aba(_aba_pistas, secao == "pistas")
+	_estilo_aba(_aba_criaturas, secao == "criaturas")
+	_det.visible = secao == "pistas"
+	_pagina.visible = secao == "criaturas"
+	if secao == "criaturas":
+		_atualizar_criaturas()
+		return
 	var itens := Diario.recentes()
 	sel = clampi(sel, 0, maxi(itens.size() - 1, 0))
 	_contagem.text = "%d %s  " % [itens.size(), "pista" if itens.size() == 1 else "pistas"]
@@ -314,6 +370,56 @@ func _titulo_de(id: String) -> String:
 	return id
 
 
+# Seção CRIATURAS: lista das criaturas encontradas e a página do caderno do Miguel (modelo A, B ou C).
+func _atualizar_criaturas() -> void:
+	var cs := Fraquezas.criaturas(room.rules.cfg.game_data if room != null and "rules" in room else null)
+	sel_criatura = clampi(sel_criatura, 0, maxi(cs.size() - 1, 0))
+	_contagem.text = "%d %s  " % [cs.size(), "criatura" if cs.size() == 1 else "criaturas"]
+	for f in _pagina.get_children():
+		_pagina.remove_child(f)
+		f.queue_free()
+	for i in cs.size():
+		var sabe := 0
+		for a in cs[i]["afinidades"]:
+			sabe += 1 if a["conhecida"] else 0
+		_lista.add_child(_botao_criatura(i, cs[i]["nome"], "anotado: %d de %d" % [sabe, cs[i]["afinidades"].size()]))
+	var m := MarginContainer.new()
+	m.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for lado in ["left", "right", "top", "bottom"]:
+		m.add_theme_constant_override("margin_" + lado, 10)
+	_pagina.add_child(m)
+	if cs.is_empty():
+		var v := _rotulo("Miguel ainda não anotou nenhuma criatura.\nEnfrente ou investigue o que está em Aurora.", 13, MUTED)
+		v.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		m.add_child(v)
+	else:
+		var p := DiarioCriaturas.pagina(modelo_criaturas, cs[sel_criatura])
+		p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		m.add_child(p)
+	_obj.text = "Caderno do Miguel: o que o grupo sabe de cada criatura. Tab volta às pistas."
+	_ligar.visible = false
+
+
+func _botao_criatura(i: int, nome: String, sub: String) -> Button:
+	var b := Button.new()
+	b.text = "%s\n%s" % [nome, sub.to_upper()]
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.focus_mode = Control.FOCUS_NONE
+	b.add_theme_font_size_override("font_size", 12)
+	b.add_theme_color_override("font_color", TEXT if i == sel_criatura else MUTED)
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = SEL_BG if i == sel_criatura else Color(0, 0, 0, 0)
+	estilo.border_width_left = 3 if i == sel_criatura else 0
+	estilo.border_color = CRIMSON
+	estilo.set_content_margin_all(7)
+	for n in ["normal", "hover", "pressed"]:
+		b.add_theme_stylebox_override(n, estilo)
+	b.pressed.connect(func() -> void:
+		sel_criatura = i
+		atualizar())
+	return b
+
+
 func _input(event: InputEvent) -> void:
 	if not (event is InputEventKey and event.pressed and not event.echo):
 		return
@@ -326,6 +432,13 @@ func _input(event: InputEvent) -> void:
 				alternar_ligar()
 			else:
 				fechar()
+		elif event.keycode == KEY_TAB:
+			trocar_secao("criaturas" if secao == "pistas" else "pistas")
+		elif secao == "criaturas" and (event.keycode == KEY_UP or event.keycode == KEY_DOWN):
+			sel_criatura += -1 if event.keycode == KEY_UP else 1
+			atualizar()
+		elif secao == "criaturas":
+			pass
 		elif event.keycode == KEY_L:
 			alternar_ligar()
 		elif event.keycode == KEY_UP:

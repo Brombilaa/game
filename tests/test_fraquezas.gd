@@ -16,6 +16,7 @@ func _initialize() -> void:
 	_dano_arma()
 	_dano_ritual()
 	_descoberta()
+	_criaturas()
 	_dados()
 	Missao1.reiniciar()
 	print("Falhas: %d" % failures if failures > 0 else "OK: test_fraquezas")
@@ -142,6 +143,34 @@ func _descoberta() -> void:
 	Missao1.reiniciar()
 	Missao1.diario = Diario.ler(salvo)
 	_check(Missao1.diario.size() == n and Fraquezas.conhecida("cultista", "ritual") and Fraquezas.conhecida("criatura_sangue", "balistico"), "as descobertas voltam do save com o diário")
+
+
+# Seção CRIATURAS (caderno do Miguel): só entra quem foi visto ou tem descoberta; o que falta vem como não conhecido.
+func _criaturas() -> void:
+	Missao1.reiniciar()
+	var gd := cfg.game_data
+	_check(Fraquezas.criaturas(gd).is_empty(), "caderno começa vazio")
+	Fraquezas.ver("atirador")
+	var cs := Fraquezas.criaturas(gd)
+	_check(cs.size() == 1 and cs[0]["kind"] == "atirador" and not cs[0]["afinidades"][0]["conhecida"], "visto em combate entra sem nada descoberto")
+	Fraquezas.ao_examinar(gd, "banco_quebrado")
+	cs = Fraquezas.criaturas(gd)
+	_check(cs.size() == 2, "descoberta por pista também faz a criatura entrar")
+	for c in cs:
+		_check(str(c["nota"]) != "", "nota do Miguel: " + str(c["kind"]))
+		if c["kind"] == "criatura_sangue":
+			var sabe := 0
+			for a in c["afinidades"]:
+				sabe += 1 if a["conhecida"] else 0
+				_check(str(a["miguel"]) != "", "fala do Miguel em cada descoberta")
+			_check(c["afinidades"].size() == 2 and sabe == 1, "Criatura com 1 de 2 anotadas")
+	for m in ["A", "B", "C"]:
+		var p := DiarioCriaturas.pagina(m, cs[0])
+		_check(p != null and p.get_child_count() > 0, "monta a página no modelo " + m)
+		p.free()
+	var fichas: Dictionary = Fraquezas.dados()["criaturas"]
+	for id in gd.ids("inimigos"):
+		_check(fichas.has(id), "todo inimigo tem página no caderno: " + id)
 
 
 func _dados() -> void:

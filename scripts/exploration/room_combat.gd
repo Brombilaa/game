@@ -109,6 +109,7 @@ func _start_combat(surprise_side: int = -1) -> void:
 	room.turns.start(units, surprise_side)
 	for e in room.enemies:  # o grupo vê quem entrou no combate: o primeiro de cada tipo assusta
 		if e.is_alive():
+			Fraquezas.ver(e.kind)  # entra na seção CRIATURAS do diário
 			_san_report(room.san.enemy_seen(e, room.party), "vê %s" % e.name)
 	room.queue_redraw()
 
