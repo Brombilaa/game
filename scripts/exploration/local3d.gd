@@ -30,6 +30,8 @@ var chefe_virou := false  # a Dama de Sangue já surgiu
 var portas := {}  # id -> {"rect": Rect2, "chave": item, "no": MeshInstance3D}: portas trancadas que ainda não abriram
 var porta_avisada := ""  # a porta cujo aviso "Trancada" já apareceu nesta aproximação
 var fim_tocou := false  # a cutscene do tentáculo (fim da missão 1) já começou
+var fim_capitulo: FimCapitulo  # cutscene externa e cartão AURORA, no fim do celeiro
+const CENA_MENU := "res://scenes/menu/main_menu.tscn"
 const PX_ALTURA := 62.855  # px do desenho por unidade de altura (PX_UNIT * cos(elevação da câmera))
 const FLASH_SOBE := 0.06  # flashbang: segundos até a tela ficar branca (provisório)
 const FLASH_SEGURA := 0.45  # segundos de tela branca (provisório)
@@ -136,9 +138,55 @@ func _ready() -> void:
 		seen_clues.append("tapete")
 	for z in dados.get("zonas", []):
 		dentro_de[z["id"]] = _ret(z).has_point(player.pos)
+	_fernando_morto()
+	if dados.has("cena_ao_chegar") or dados.has("fim_capitulo"):
+		_pos_combate.call_deferred()
 	var inv: Dictionary = dados.get("invasao", {})
 	if not inv.is_empty() and str(inv.get("quando", "")) == "chegada_subsolo" and Missao1.chegada == "subsolo" and not Missao1.tem(str(inv["marca"])):
 		_invasao.call_deferred(inv)
+
+
+# O Fernando morreu na cripta (cutscene do tentáculo): nos lugares seguintes ele não volta de pé, mesmo sem save.
+func _fernando_morto() -> void:
+	if not Missao1.tem("fernando_morreu"):
+		return
+	for m in party:
+		if m.name == "Fernando":
+			m.pv = 0
+			m.dead = true
+	if player.dead:
+		for m in party:
+			if not m.dead:
+				player = m
+				break
+	_reset_follow_offsets(Vector2.RIGHT)
+
+
+# Pós-combate (celeiro): a conversa com a Ordem toca ao chegar e depois vem o fim do capítulo. Carregar um save
+# feito depois da conversa vai direto ao fim; depois do fim do capítulo, o lugar fica livre.
+func _pos_combate() -> void:
+	var c: Dictionary = dados.get("cena_ao_chegar", {})
+	if not c.is_empty() and not Missao1.tem(str(c.get("marca", ""))) and CenaRoteiro.existe(str(c["cena"])):
+		await tocar_cena(str(c["cena"]))
+		if c.has("marca"):
+			Missao1.marcar(str(c["marca"]))
+	var fim: Dictionary = dados.get("fim_capitulo", {})
+	if not fim.is_empty() and not Missao1.tem(str(fim.get("marca", ""))):
+		iniciar_fim_capitulo(fim)
+
+
+func iniciar_fim_capitulo(fim: Dictionary) -> void:
+	if fim_capitulo != null:
+		return
+	mode = Mode.CUTSCENE
+	busy = true
+	path = PackedVector2Array()
+	fim_capitulo = FimCapitulo.tocar(self, fim)
+	await fim_capitulo.terminou
+	Missao1.marcar(str(fim.get("marca", "capitulo1_fim")))
+	Progresso.autosalvar(self, _area_id(), _place_label())
+	if is_inside_tree() and get_tree().current_scene == self:
+		Scenes.go(get_tree(), CENA_MENU)
 
 
 # Tudo o que o mapa de colisão marca é sólido e bloqueia a visão (paredes, móveis, moitas); não há porta.
@@ -373,7 +421,18 @@ func _inspect(cid: String) -> void:
 		if str(bruto["id"]) == cid and bruto.has("requer") and not Missao1.tem(str(bruto["requer"])):
 			_show_dialog("", str(bruto.get("texto_antes", "Ainda não.")), "")
 			return
+	if _trancada(c):
+		_show_dialog("", c.texto_trancado, "")
+		return
 	_show_dialog(c.inspecao, c.texto, cid)
+
+
+# Baú num trecho que ainda não foi revelado (cripta) fica invisível até o líder pisar na faixa do trecho.
+func _pista_oculta(cid: String) -> bool:
+	for bruto in dados.get("pistas", []):
+		if str(bruto["id"]) == cid and int(bruto.get("trecho", 1)) > 1:
+			return not Missao1.tem("%s_trecho%d" % [local_id, int(bruto["trecho"])])
+	return false
 
 
 func _run_trigger(trigger: Dictionary) -> void:
@@ -525,7 +584,7 @@ func _draw_health_bar(u: Combatant, at: Vector2) -> void:
 func _drawn_units() -> Array[Combatant]:
 	var out := super()
 	for m in party:
-		if m.dead and m.name == "Fernando" and Missao1.tem("fernando_morreu") and not out.has(m):
+		if m.dead and m.name == "Fernando" and Missao1.tem("fernando_morreu") and local_id == "cripta" and not out.has(m):
 			out.append(m)
 	return out
 

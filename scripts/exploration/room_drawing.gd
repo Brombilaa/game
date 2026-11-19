@@ -47,6 +47,8 @@ func _draw() -> void:
 			if e.is_alive() and room._visible(e.pos):
 				_draw_range(e.pos, room.rules.perception_range(e, room.player), Color(PlaceholderArt.color("sangue_claro"), 0.35))
 	_draw_overwatch()
+	if room.mode == TestRoom.Mode.EXPLORATION:
+		room.room_gear.draw_corpses()
 	# Peças ordenadas por profundidade: quanto maior x + y, mais perto da câmera.
 	var items: Array = []
 	for w in room.walls:

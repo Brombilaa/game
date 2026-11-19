@@ -24,6 +24,8 @@ const TEMPO_POR_LETRA_SOLTA := 0.045
 const NOMES := {
 	"fernando": "Fernando", "nikolai": "Nikolai", "miguel": "Miguel",
 	"leticia": "Letícia", "caio": "Caio",
+	# Celeiro, depois da Dama (Léo, 19/11): Tristan, sub-líder da Ordem; Mark, que sela o poço; Júlia, namorada da Letícia
+	"tristan": "Tristan", "mark": "Mark", "julia": "Júlia", "medico": "Socorrista",
 }
 const ARQUIVO_FALAS := "res://data/falas.json"
 

@@ -11,8 +11,10 @@ const SCENARIO_ID := "parque"
 const BOUNDS_PAD := 64.0  # espessura das paredes invisíveis na borda do plano
 const BIG_PROPS := ["van", "lago", "lago_2", "lago_3", "lago_4", "arvore", "mata_1", "mata_2", "arbusto_4"]  # paredes: bloqueiam também a visão (Léo: van e arbustos atrás da árvore)
 const NPC_RADIUS := 14.0
-const NPC_NAMES := {"caio": "Caio", "leticia": "Letícia"}
-const NPC_COLORS := {"caio": Color("#46628a"), "leticia": Color("#885050")}  # figuras provisórias
+const NPC_NAMES := {"caio": "Caio", "leticia": "Letícia", "tristan": "Tristan", "mark": "Mark", "julia": "Júlia", "medico": "Socorrista"}
+# Figuras provisórias. O pessoal do celeiro (Léo, 19/11) tem cores diferentes até ganhar modelo 3D.
+const NPC_COLORS := {"caio": Color("#46628a"), "leticia": Color("#885050"), "tristan": Color("#4a4d52"), "mark": Color("#5d5a3a"),
+	"julia": Color("#6a4f78"), "medico": Color("#c9c2b0")}
 var caio3d := IdleSheet.new("caio3d", "caio3d")  # Caio: só a animação de parado (morre no primeiro mapa)
 
 const DOT_RADIUS := 6.0  # bolinha da pista, em px do desenho
@@ -324,6 +326,8 @@ func _draw() -> void:
 			if e.is_alive():
 				_draw_range(e.pos, rules.perception_range(e, player), Color(PlaceholderArt.color("sangue_claro"), 0.35))
 	_draw_overwatch()
+	if mode == Mode.EXPLORATION:
+		room_gear.draw_corpses()  # corpo com saque: brilho dourado no chão
 	var items: Array = []
 	for u in _drawn_units():
 		items.append({"pos": u.pos, "unit": u})
@@ -880,6 +884,8 @@ func _draw_clue_hints() -> void:
 			if pista_malhas.has(cid) and not pista_malhas[cid].is_empty():
 				world3d.destacar(cid, pista_malhas[cid], 0.0, 0.0)
 			continue
+		if _pista_oculta(cid):
+			continue
 		var at := _dot_pos(cid)
 		var locked := not available.has(cid)
 		var perto: bool = player.pos.distance_to(scenario.clues[cid].pos) <= CLUE_NEAR
@@ -976,7 +982,7 @@ func _clue_under(mouse: Vector2) -> String:
 	var best := ""
 	var best_d := INF
 	for cid in scenario.clues:
-		if seen_clues.has(cid):
+		if seen_clues.has(cid) or _pista_oculta(cid):
 			continue
 		var d := mouse.distance_to(_dot_pos(cid))
 		if d <= DOT_HIT and d < best_d:
@@ -1179,7 +1185,20 @@ func _inspect(cid: String) -> void:
 	if not scenario.available_clues(seen_clues).has(cid):
 		_show_dialog("", "Ainda há o que olhar no parque antes disso.", "")
 		return
+	if _trancada(c):
+		_show_dialog("", c.texto_trancado, "")
+		return
 	_show_dialog(c.inspecao, c.texto, cid)
+
+
+# Baú ou esconderijo trancado (GDD #19, mesma regra das portas): só abre com a chave achada no cenário, que fica na mochila.
+func _trancada(c: Dictionary) -> bool:
+	return str(c.get("chave", "")) != "" and inventory.count(str(c["chave"])) <= 0
+
+
+# Pista que o cenário ainda não revelou (trecho escondido da cripta): sem bolinha e sem clique. A cena do local decide.
+func _pista_oculta(_cid: String) -> bool:
+	return false
 
 
 func _show_dialog(image_path: String, text: String, cid: String) -> void:

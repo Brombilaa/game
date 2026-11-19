@@ -1,0 +1,52 @@
+{
+	"_nota": "Pós-combate da missão 1 (Léo, 15/11 e 19/11/2026): a Dama de Sangue morta e a Letícia salva, o grupo (Nikolai e Miguel, sem o Fernando) sobe pelo poço e encontra a Ordem no celeiro. Direção do Léo (19/11): Tristan, o sub-líder, lamenta a morte do Fernando e consola o grupo com respeito; Mark fecha o poço e se surpreende ao ver o Miguel depois de tantos anos, e o Miguel também; a Júlia, namorada da Letícia e bibliotecária da cidade, chega até ela, que é atendida pela equipe médica; cliffhanger básico no fim. Depois vem a cena da igreja na Itália e o fim do capítulo (dados do celeiro). Falas, tempos, posições e o cliffhanger são provisórios do Claude.",
+	"passos": [
+		{"faz": "cinema", "estado": "entrar", "tempo": 0.8, "junto": true},
+		{"faz": "camera", "em": "lider", "zoom": 1.35, "tempo": 0.6},
+		{"faz": "legenda", "texto": "Lanternas no celeiro. A Ordem chegou.", "tempo": 2.2},
+		{"faz": "olhar", "quem": "Nikolai", "para": "tristan"},
+		{"faz": "olhar", "quem": "Miguel", "para": "tristan"},
+		{"faz": "andar", "quem": "tristan", "ate": "lider", "perto": 70},
+		{"faz": "camera", "em": "tristan", "tempo": 0.4},
+		{"faz": "dialogo", "falas": [
+			{"quem": "tristan", "texto": "Nikolai. Miguel. Eu respondo pela equipe esta noite."},
+			{"quem": "tristan", "texto": "Já me contaram do Fernando. Eu sinto muito. Ele era dos melhores que a Ordem já teve."},
+			{"quem": "nikolai", "texto": "Ele foi na frente. Como sempre ia."},
+			{"quem": "tristan", "texto": "Então ele sabia o que fazia. Isso não diminui nada. Hoje vocês descansam, o resto fica com a gente."}
+		]},
+		{"faz": "camera", "em": "julia", "tempo": 0.4},
+		{"faz": "andar", "quem": "julia", "ate": "leticia", "perto": 34, "correr": true},
+		{"faz": "olhar", "quem": "leticia", "para": "julia"},
+		{"faz": "choque", "quem": "leticia", "sim": false},
+		{"faz": "camera", "em": "leticia", "tempo": 0.4},
+		{"faz": "dialogo", "falas": [
+			{"quem": "julia", "texto": "Letícia! Eu passei a noite na biblioteca esperando alguma notícia."},
+			{"quem": "leticia", "texto": "Júlia... O Caio. Ele gritou o meu nome e eu não consegui fazer nada."},
+			{"quem": "medico", "texto": "Ela perdeu sangue, mas vai ficar bem. Fica do lado dela e deixa a gente trabalhar."}
+		]},
+		{"faz": "olhar", "quem": "mark", "para": [780, 690]},
+		{"faz": "camera", "em": "mark", "tempo": 0.4},
+		{"faz": "dialogo", "falas": [
+			{"quem": "mark", "texto": "Sal, ferro e lacre. Esse poço não abre mais."}
+		]},
+		{"faz": "olhar", "quem": "mark", "para": "Miguel"},
+		{"faz": "olhar", "quem": "Miguel", "para": "mark"},
+		{"faz": "dialogo", "falas": [
+			{"quem": "mark", "texto": "Espera... Miguel? É você mesmo?"},
+			{"quem": "miguel", "texto": "Mark? Depois de todos esses anos, logo aqui?"},
+			{"quem": "mark", "texto": "Achei que você tinha largado tudo isso."},
+			{"quem": "miguel", "texto": "Eu também achei."}
+		]},
+		{"faz": "esperar", "tempo": 0.8},
+		{"faz": "tremor", "forca": 5, "tempo": 0.6},
+		{"faz": "camera", "em": [780, 700], "zoom": 1.5, "tempo": 0.6},
+		{"faz": "legenda", "texto": "Do fundo do poço, algo bate contra o lacre. Uma vez.", "tempo": 2.4},
+		{"faz": "olhar", "quem": "mark", "para": [780, 690]},
+		{"faz": "dialogo", "falas": [
+			{"quem": "mark", "texto": "...Vocês ouviram isso?"},
+			{"quem": "tristan", "texto": "Ouvimos. Ninguém fala disso lá fora."}
+		]},
+		{"faz": "marca", "id": "celeiro_conversa"},
+		{"faz": "esperar", "tempo": 0.6}
+	]
+}

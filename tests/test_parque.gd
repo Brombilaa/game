@@ -83,8 +83,22 @@ func _run() -> void:
 	var cultista: Combatant = room.cfg.make_enemy("cultista", Vector2.ZERO)
 	cultista.drops = [{"item": "bandagem", "qtd": 1, "chance": 1.0}]
 	var antes: int = room.inventory.count("bandagem")
+	cultista.pos = room.player.pos + Vector2(300, 0)
+	room.enemies.append(cultista)
+	cultista.pv = 0
 	room._loot_enemy(cultista)
-	_check(room.inventory.count("bandagem") == antes + 1, "inimigo abatido larga o item da ficha")
+	_check(room.inventory.count("bandagem") == antes and cultista.loot.size() == 1, "inimigo abatido deixa o saque no corpo, sem ir para a mochila")
+	_check(room._corpse_at(cultista.pos) == cultista and room.room_gear.is_corpse(cultista), "corpo com saque é clicável")
+	room.room_gear.click_corpse(cultista)
+	_check(room.inventory.count("bandagem") == antes and room.pending_corpse == cultista, "corpo longe: o controlado anda até ele antes de examinar")
+	room.pending_corpse = null
+	cultista.pos = room.player.pos + Vector2(20, 0)
+	room.room_gear.click_corpse(cultista)
+	_check(room.inventory.count("bandagem") == antes + 1 and cultista.loot.is_empty() and room._corpse_at(cultista.pos) == null, "examinar perto passa o saque para a mochila e apaga o brilho")
+	room.enemies.erase(cultista)
+	for kind in ["cultista", "atirador", "criatura_sangue"]:
+		var t: Combatant = room.cfg.make_enemy(kind, Vector2.ZERO)
+		_check(not t.drops.is_empty(), "tabela de saque própria: " + kind)
 	var cheia := Inventory.new(room.cfg.game_data)
 	var inv: Inventory = room.inventory
 	for i in cheia.SIZE:
@@ -159,6 +173,12 @@ func _run() -> void:
 			room._inspect(cid)
 			room._close_dialog()
 	_check(room.mode == room.Mode.EXPLORATION, "as pistas iniciais não disparam combate")
+
+	# Esconderijo com saque (16/11, provisório): só depois das pistas iniciais, e o saque vai para a mochila.
+	var antes_mochila: int = room.inventory.count("curativo")
+	room._inspect("mochila_piquenique")
+	room._close_dialog()
+	_check(room.seen_clues.has("mochila_piquenique") and room.inventory.count("curativo") == antes_mochila + 1, "o esconderijo do parque dá o saque")
 
 	room._inspect("arvore_simbolo")
 	_check(room.dialog_clue == "arvore_simbolo" and room.dialog_image.visible, "a árvore abre a inspeção com imagem")

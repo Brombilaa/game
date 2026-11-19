@@ -8036,6 +8036,79 @@
    },
    "texto": "O poço antigo desce para o escuro. Uma corda presa na borda some lá embaixo.",
    "provisorio": true
+  },
+  {
+   "id": "prego_mourao",
+   "pos": [
+    697.6,
+    1216.0
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Pendurada num prego do mourão, uma chave de cadeado com a etiqueta \"Celeiro\", enferrujada, mas inteira.",
+   "provisorio": true,
+   "da": [
+    {
+     "item": "chave_celeiro",
+     "qtd": 1
+    }
+   ]
+  },
+  {
+   "id": "caixote_ferramentas",
+   "pos": [
+    899.8,
+    300.2
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Atrás de um fardo de feno, um caixote de ferramentas arrombado. Sobraram um curativo e algumas balas.",
+   "provisorio": true,
+   "da": [
+    {
+     "item": "curativo",
+     "qtd": 1
+    },
+    {
+     "item": "municao_pistola",
+     "qtd": 4
+    }
+   ]
+  },
+  {
+   "id": "bau_celeiro",
+   "pos": [
+    620.2,
+    880.0
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "O cadeado do baú do celeiro cede. Dentro, enrolado num pano, um kit de primeiros socorros e cartuchos de escopeta.",
+   "provisorio": true,
+   "da": [
+    {
+     "item": "kit_primeiros_socorros",
+     "qtd": 1
+    },
+    {
+     "item": "municao_escopeta",
+     "qtd": 6
+    }
+   ],
+   "chave": "chave_celeiro",
+   "texto_trancado": "Trancado. O baú do celeiro tem um cadeado, e a chave deve estar por perto."
   }
  ],
  "gatilhos": [

@@ -1,5 +1,5 @@
 {
-	"_comentario": "Falas curtas por pista (2 a 4, sem escolhas), tocadas na caixa com retrato (CaixaFala) logo depois do texto da pista. Chave: <cenario>/<pista>. só o grupo (Fernando, Nikolai, Miguel) fala, entre si (Léo, 15/11); quem = id do personagem (retrato em assets/sprites/retratos). Textos provisórios do Claude, para o Léo revisar.",
+	"_comentario": "Falas curtas por pista (2 a 4, sem escolhas), tocadas na caixa com retrato (CaixaFala) logo depois do texto da pista. Chave: <cenario>/<pista>. só o grupo (Fernando, Nikolai, Miguel) fala, entre si (Léo, 15/11); quem = id do personagem (retrato em assets/sprites/retratos). Textos provisórios do Claude, para o Léo revisar. Na cripta a Letícia acordada também fala, e o Fernando não (já morreu).",
 	"parque/marcas_pneu": [
 		{
 			"quem": "nikolai",
@@ -84,12 +84,16 @@
 	],
 	"cripta/leticia": [
 		{
-			"quem": "fernando",
-			"texto": "Ela está respirando. Está ferida, mas viva."
+			"quem": "miguel",
+			"texto": "Ela está respirando. Ferida, mas viva."
+		},
+		{
+			"quem": "leticia",
+			"texto": "Vocês... vieram mesmo. Cadê o outro? O de casaco?"
 		},
 		{
 			"quem": "nikolai",
-			"texto": "Então ela viu o que aconteceu aqui embaixo."
+			"texto": "Depois. Primeiro a gente tira você daqui."
 		}
 	]
 }
