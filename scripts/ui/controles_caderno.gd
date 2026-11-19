@@ -92,20 +92,24 @@ static func mapa() -> Dictionary:
 	_add(m, "C", _ficha("mover", "agachar", "Agachar", "Explorar; em combate na sua vez", "Alterna agachado. Agachado, os inimigos só percebem o grupo na metade da distância, e um ataque sem alerta ganha bônus."))
 	_add(m, "Home", _ficha("combate", "câmera", "Recentrar a câmera", "Combate", "Traz a câmera de volta ao grupo depois de arrastá-la com o botão do meio."))
 	var rules := data()
+	# Lidos em tempo de execução (load) para o mapa não criar dependência circular de scripts com a sala e a barra.
+	var item_keys: Dictionary = load("res://scripts/exploration/room_items.gd").KEY_LABELS
+	var ritual_keys: Dictionary = load("res://scripts/ui/room_action_bar.gd").RITUAL_KEYS
+	var item_tips: Dictionary = load("res://scripts/ui/room_action_bar.gd").ITEM_TIPS
 	_add(m, "Espaço", _ficha("combate", "passar turno", "Passar o turno", "Combate", "Encerra o turno do personagem controlado. Fora do combate, avança as falas."))
 	_add(m, "D", _ficha("combate", "atrasar", "Atrasar", "Combate", "Adia a vez do personagem para mais tarde na mesma rodada."))
 	_add(m, "Q", _ficha("combate", "trocar arma", "Trocar de arma", "Combate", "Alterna entre a arma principal e a reserva.", _pa(rules.rule("custo_trocar_arma_pa"))))
 	_add(m, "G", _ficha("combate", "recarga", "Recarregar", "Combate", "Enche o pente com a munição da mochila.", _pa(rules.rule("custo_recarga_pa"))))
 	_add(m, "F", _ficha("combate", "vigia", "Vigilância", "Combate", "Fica de guarda e atira no primeiro inimigo que se mover dentro do cone.", "mesmo PA do ataque da arma"))
 	_add(m, "Shift", _ficha("combate", "acelerar", "Acelerar o turno inimigo", "Combate", "Segure durante a jogada dos inimigos para vê-la mais rápido."))
-	for iid in RoomItems.KEY_LABELS:
+	for iid in item_keys:
 		var item := rules.get_entry("itens", iid)
 		var custo := _pa(item.get("custo_pa_combate"))
-		_add(m, RoomItems.KEY_LABELS[iid], _ficha("combate", SHORT.get(iid, str(item.get("nome", iid)).to_lower()), str(item.get("nome", iid)), "Combate, na sua vez", _cap(str(RoomActionBar.ITEM_TIPS.get(iid, "item de uso em combate"))) + ".", custo))
-	for rid in RoomActionBar.RITUAL_KEYS:
+		_add(m, item_keys[iid], _ficha("combate", SHORT.get(iid, str(item.get("nome", iid)).to_lower()), str(item.get("nome", iid)), "Combate, na sua vez", _cap(str(item_tips.get(iid, "item de uso em combate"))) + ".", custo))
+	for rid in ritual_keys:
 		var r := rules.get_entry("rituais", rid)
 		var curto: String = SHORT.get(rid, str(r.get("nome", rid)).to_lower())
-		_add(m, RoomActionBar.RITUAL_KEYS[rid], _ficha("combate", curto, str(r.get("nome", rid)), "Combate · só o Ocultista", str(r.get("descricao", "")), "%s · %s SAN" % [_pa(r.get("custo_pa")), str(r.get("custo_san", "?"))]))
+		_add(m, ritual_keys[rid], _ficha("combate", curto, str(r.get("nome", rid)), "Combate · só o Ocultista", str(r.get("descricao", "")), "%s · %s SAN" % [_pa(r.get("custo_pa")), str(r.get("custo_san", "?"))]))
 	m["M:Esq"] = _ficha("mover", "", "Botão esquerdo", "Explorar e combate", "Move o grupo, examina objetos e abre portas. Em combate move, ataca o inimigo sob o cursor ou escolhe o alvo. Clicar num retrato troca de personagem.")
 	m["M:Dir"] = _ficha("painel", "", "Botão direito", "Menus", "Volta um passo nos menus e painéis.")
 	m["M:Meio"] = _ficha("combate", "", "Botão do meio", "Combate", "Arraste para mover a câmera. Clicar (ou Home) recentra.")
