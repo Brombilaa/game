@@ -55,6 +55,20 @@ func _run() -> void:
 	_check(fernando.max_san == san0 + 2 and fernando.san == fernando.max_san, "a pulseira dá 2 de SAN máxima")
 	room.gear_unequip(fernando, "acessorio")
 	_check(fernando.max_san == san0, "tirar a pulseira devolve a SAN")
+	# Acessório de PV (crucifixo, provisório): +3 de PV máximo; trocar de acessório tira o anterior.
+	var pv0 := fernando.max_pv
+	room.inventory.add("crucifixo_velho")
+	var cruz := -1
+	for i in room.inventory.slots.size():
+		if not room.inventory.slots[i].is_empty() and room.inventory.slots[i]["id"] == "crucifixo_velho":
+			cruz = i
+	_check(room.gear_is_equippable("crucifixo_velho") and room.gear_item_kind("crucifixo_velho") == "acessorio", "o crucifixo é acessório")
+	room.gear_equip(fernando, "acessorio", cruz)
+	_check(fernando.max_pv == pv0 + 3 and fernando.pv == fernando.max_pv, "o crucifixo dá 3 de PV máximo")
+	room.gear_equip(fernando, "acessorio", pul)
+	_check(fernando.max_pv == pv0 and fernando.max_san == san0 + 2 and room.inventory.count("crucifixo_velho") == 1, "trocar de acessório devolve o PV e aplica a SAN")
+	room.gear_unequip(fernando, "acessorio")
+	_check(fernando.max_san == san0 and fernando.max_pv == pv0, "sem acessório, PV e SAN voltam ao normal")
 	room.gear_equip(fernando, "secundaria", esc)
 	_check(int(fernando.mag.get("escopeta", -1)) == 0, "escopeta recém-achada começa com o carregador vazio")
 	# Pista perturbadora (Caio morto) tira SAN de quem leu.

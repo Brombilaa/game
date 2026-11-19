@@ -41,18 +41,29 @@ func gear_item_kind(id: String) -> String:
 	var efeito = room.cfg.game_data.get_entry("itens", id).get("efeito")
 	if efeito == "defesa":
 		return "colete"
-	if efeito == "san_max":
+	if efeito in ACCESSORY_EFFECTS:
 		return "acessorio"
 	return "item"
 
 
-# Acessório de SAN (pulseira da amizade, Léo 15/11): soma ou tira o bônus de SAN máxima de `m`.
+# Efeitos de acessório (quarto espaço do equipamento; o GDD deixa acessórios fora do escopo inicial,
+# então só há bônus de máximo, valores provisórios do Claude): san_max (pulseira, Léo 15/11) e pv_max.
+const ACCESSORY_EFFECTS := ["san_max", "pv_max"]
+
+
+# Soma (sign 1) ou tira (sign -1) o bônus do acessório `id` no máximo de SAN ou de PV de `m`.
 func _apply_accessory(m: Combatant, id: String, sign: int) -> void:
-	if id == "" or str(room.cfg.game_data.get_entry("itens", id).get("efeito", "")) != "san_max":
+	if id == "":
 		return
-	var v := int(room.cfg.game_data.get_entry("itens", id).get("valor", 0)) * sign
-	m.max_san = maxi(m.max_san + v, 0)
-	m.san = clampi(m.san + maxi(v, 0), 0, m.max_san)
+	var item: Dictionary = room.cfg.game_data.get_entry("itens", id)
+	var v := int(item.get("valor", 0)) * sign
+	match str(item.get("efeito", "")):
+		"san_max":
+			m.max_san = maxi(m.max_san + v, 0)
+			m.san = clampi(m.san + maxi(v, 0), 0, m.max_san)
+		"pv_max":
+			m.max_pv = maxi(m.max_pv + v, 1)
+			m.pv = clampi(m.pv + maxi(v, 0), 0 if m.pv <= 0 else 1, m.max_pv)
 
 
 # Arma com carregador que ainda não passou pela mão de `m` começa vazia (recarrega da mochila).
