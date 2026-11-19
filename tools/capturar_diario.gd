@@ -30,15 +30,12 @@ func _initialize() -> void:
 	for aba in ["diario", "pistas", "criaturas"]:
 		dp.trocar_secao(aba)
 		if aba == "diario":
-			for m in ["A", "B", "C"]:
-				dp.modelo_diario = m
-				for n in 2:
-					dp.sel_pagina = n
-					dp.atualizar()
-					for i in 12:
-						await process_frame
-					root.get_texture().get_image().save_png("%s/diario_%s_%d.png" % [pasta, m, n])
-			dp.modelo_diario = "A"
+			for n in 2:
+				dp.sel_pagina = n
+				dp.atualizar()
+				for i in 12:
+					await process_frame
+				root.get_texture().get_image().save_png("%s/diario_%d.png" % [pasta, n])
 			continue
 		for i in 12:
 			await process_frame

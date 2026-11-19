@@ -14,6 +14,7 @@ const COURO := preload("res://assets/sprites/diario/couro.jpg")
 const PAPEL := preload("res://assets/sprites/diario/papel.jpg")
 const CAFE := preload("res://assets/sprites/diario/cafe.png")
 const SANGUE := preload("res://assets/sprites/diario/sangue.png")
+const RABISCOS := "res://assets/sprites/diario/rabiscos/%s.png"
 
 const CAPA := Rect2(128, 50, 704, 444)  # na tela interna 960x540
 const BORDA := 11.0  # couro visível em volta das páginas
@@ -53,6 +54,7 @@ var _pg_pistas_esq: Control
 var _pg_pistas_dir: Control
 var _negrito: FontVariation
 var _dica: Label
+var _geracao := 0  # cada refresh do DIÁRIO invalida o _refluir anterior
 
 const DICAS := {
 	"diario": "J fecha · Tab troca de aba · ← → vira a página",
@@ -433,6 +435,7 @@ func trocar_secao(id: String) -> void:
 
 
 func atualizar() -> void:
+	_geracao += 1
 	_estilo_abas()
 	_dica.text = DICAS.get(secao, "")
 	for pg in [_esq, _dir]:
@@ -452,6 +455,8 @@ func atualizar() -> void:
 
 func _atualizar_diario() -> void:
 	var ss := DiarioMiguel.secoes()
+	_pautas(_esq, true)
+	_pautas(_dir, false)
 	var col := _coluna(_esq)
 	if ss.is_empty():
 		col.add_child(_titulo("Diário"))
@@ -468,64 +473,170 @@ func _atualizar_diario() -> void:
 	var h := _rotulo(str(s["titulo"]), 19, VERMELHO, _negrito)
 	col.add_child(h)
 	# O texto corre pela página dupla (esquerda e depois direita) com os desenhos no meio dele, como num
-	# caderno de verdade. Cada desenho entra depois de uma linha, espalhados por igual.
+	# caderno de verdade (modelo "corrido", Léo 19/11). Cada desenho entra depois de uma linha, espalhados por igual.
 	var linhas: Array = s["linhas"]
 	var desenhos: Array = s["desenhos"]
 	var depois := {}  # índice da linha -> desenho que vem junto dela
 	for i in desenhos.size():
 		depois[clampi(int(round(float(i) * linhas.size() / desenhos.size())), 0, maxi(linhas.size() - 1, 0))] = i
-	var usado := 0.0
-	for c in col.get_children():
-		usado += _altura_estimada(c) + 3.0
-	var cabe := _esq.size.y - 32.0
-	var blocos: Array[Control] = []
+	var cabe := _esq.size.y - 40.0  # o pé da direita fica para o "n de m"
+	var fixos := col.get_child_count()
 	for i in linhas.size():
 		var l: Dictionary = linhas[i]
 		var tam := 17 if l["maior"] else 15
 		if depois.has(i):
-			blocos.append_array(_bloco_desenho(desenhos[depois[i]], depois[i], str(l["t"]), tam, i))
+			for bl in _bloco_desenho(desenhos[depois[i]], depois[i], str(l["t"]), tam, i):
+				col.add_child(bl)
 		else:
-			blocos.append(_linha(str(l["t"]), tam, false, i))
-	# Divide o lugar entre as duas páginas: a esquerda leva mais ou menos metade (nunca mais do que cabe).
-	var total := usado
-	for bl in blocos:
-		total += _altura_estimada(bl) + 3.0
-	var alvo := minf(cabe, maxf(total * 0.55, usado + 60.0))
-	var atual := col
-	for bl in blocos:
-		var alt := _altura_estimada(bl)
-		if atual == col and usado + alt > alvo and usado > 0.0:
-			atual = _coluna(_dir)  # o texto continua na página da direita
-		atual.add_child(bl)
-		usado += alt + 3.0
-	_mancha(_esq, CAFE, Vector2(_esq.size.x - 150, _esq.size.y - 140), 120, 0.0, 0.5)
-	_mancha(_dir, SANGUE, Vector2(_dir.size.x - 92, _dir.size.y - 96), 70, 40.0, 0.4)
+			col.add_child(_linha(str(l["t"]), tam, false, i))
+	# Anotações soltas do Miguel no fim (lembretes, perguntas), cada uma com um rabisco do lado.
+	for k in s["notas"].size():
+		col.add_child(_nota(s["notas"][k], k))
+	# Tudo entra primeiro na página da esquerda; depois do layout, _refluir passa o resto para a direita.
+	var col_dir := _coluna(_dir)
+	col.modulate.a = 0.0
+	col_dir.modulate.a = 0.0
+	_refluir(col, col_dir, fixos, cabe)
+	_enfeites(sel_pagina)
 	var pag := _rotulo("‹  %d de %d  ›" % [sel_pagina + 1, ss.size()], 14, APAGADO)
 	pag.autowrap_mode = TextServer.AUTOWRAP_OFF
 	pag.position = Vector2(_dir.size.x - 92, _dir.size.y - 26)
 	_dir.add_child(pag)
 
 
-# Três jeitos de misturar desenho e texto (Léo, 19/11: "desenhos entre os textos"), até ele escolher:
-# A corrido = desenho ao lado de uma frase (direita, depois esquerda) e um no meio do texto;
-# B colado = recortes de papel colados com fita, ao lado e no meio; C solto = desenhos grandes no meio do
-# texto, puxados para um lado, com a legenda e uma seta do outro.
-var modelo_diario := "A"
+# Depois do layout real (as alturas do texto manuscrito só existem aí): a esquerda fica com mais ou menos
+# metade do lugar e o resto passa para a direita; o que não cabe na página dupla sai; papel sobrando
+# embaixo ganha o mapa rabiscado do caminho.
+func _refluir(col: VBoxContainer, col_dir: VBoxContainer, fixos: int, cabe: float) -> void:
+	_geracao += 1
+	var g := _geracao
+	for i in 3:
+		await get_tree().process_frame
+	if g != _geracao or not is_instance_valid(col) or not is_instance_valid(col_dir):
+		return
+	var filhos := col.get_children()
+	var fim := 0.0
+	for c in filhos:
+		fim = maxf(fim, c.position.y + c.size.y)
+	var alvo := clampf(fim * 0.62, 120.0, cabe)
+	if fim > cabe * 1.3:
+		alvo = cabe  # lugar cheio: a esquerda vai até o fim
+	var passou := false
+	for i in range(fixos, filhos.size()):
+		var c: Control = filhos[i]
+		if passou or c.position.y + c.size.y > alvo:
+			passou = true
+			col.remove_child(c)
+			col_dir.add_child(c)
+	for i in 3:
+		await get_tree().process_frame
+	if g != _geracao or not is_instance_valid(col_dir):
+		return
+	var resto := 0.0
+	for c in col_dir.get_children():
+		if c.position.y + c.size.y > cabe - 6.0:
+			c.queue_free()  # não cabe mais nada na página dupla
+		else:
+			resto = c.position.y + c.size.y
+	var resto_esq := 0.0
+	for c in col.get_children():
+		resto_esq = maxf(resto_esq, c.position.y + c.size.y)
+	# Papel sobrando: o mapa rabiscado do caminho vai na página mais vazia e um rabisco grande na outra.
+	var livre := {col: cabe - resto_esq, col_dir: cabe - resto}
+	var mais := col if livre[col] > livre[col_dir] else col_dir
+	var menos := col_dir if mais == col else col
+	if livre[mais] > 150.0:
+		var lado := minf(200.0, (livre[mais] - 40.0) * 1.33)
+		mais.add_child(_centro(_figura(RABISCOS % "mapa", Vector2(lado, lado * 0.75), "o caminho até aqui", 3.0, false)))
+	if livre[menos] > 70.0:
+		var nome: String = ["olho", "espiral", "estrela"][sel_pagina % 3]
+		var q := minf(84.0, livre[menos] - 20.0)
+		var r := _esboco(RABISCOS % nome, Vector2(q, q), -10.0 + sel_pagina * 7.0)
+		r.modulate.a = 0.6
+		menos.add_child(_centro(r))
+	col.modulate.a = 1.0
+	col_dir.modulate.a = 1.0
 
 
-func _bloco_desenho(d: Dictionary, n: int, texto: String, tam: int, semente: int, max_h := 150.0) -> Array[Control]:
+func _centro(c: Control) -> CenterContainer:
+	var cc := CenterContainer.new()
+	cc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cc.add_child(c)
+	return cc
+
+
+# Pauta de caderno: linhas finas e, na página da esquerda, a margem vermelha.
+class Pautas extends Control:
+	var esquerda := true
+
+	func _draw() -> void:
+		var y := 52.0
+		while y < size.y - 10.0:
+			draw_line(Vector2(10, y), Vector2(size.x - 10, y), Color(0.42, 0.5, 0.6, 0.13), 1.0)
+			y += 19.0
+		if esquerda:
+			draw_line(Vector2(20, 6), Vector2(20, size.y - 6), Color(0.7, 0.2, 0.16, 0.22), 1.0)
+		else:
+			draw_line(Vector2(size.x - 20, 6), Vector2(size.x - 20, size.y - 6), Color(0.7, 0.2, 0.16, 0.22), 1.0)
+
+
+func _pautas(pagina: Control, esquerda: bool) -> void:
+	var p := Pautas.new()
+	p.esquerda = esquerda
+	p.size = pagina.size
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pagina.add_child(p)
+
+
+# Manchas e rabiscos soltos nas margens, num arranjo que muda de um lugar para outro.
+func _enfeites(n: int) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7919 + n * 31
+	var pequenos := ["estrela", "espiral", "olho", "x", "seta"]
+	for i in 2:
+		var t: Texture2D = load(RABISCOS % pequenos[(n + i * 2) % pequenos.size()])
+		var r := _esboco("", Vector2(17, 17), rng.randf_range(-25, 25))
+		r.texture = t
+		r.modulate.a = 0.75
+		r.position = Vector2(1, 90 + i * 170 + rng.randf_range(0, 60))
+		_esq.add_child(r)
+	var t2: Texture2D = load(RABISCOS % pequenos[(n + 1) % pequenos.size()])
+	var r2 := _esboco("", Vector2(17, 17), rng.randf_range(-25, 25))
+	r2.texture = t2
+	r2.modulate.a = 0.75
+	r2.position = Vector2(_dir.size.x - 19, 120 + rng.randf_range(0, 160))
+	_dir.add_child(r2)
+	_mancha(_esq, CAFE, Vector2(_esq.size.x - 150 - rng.randf_range(0, 60), _esq.size.y - 140), 120, rng.randf_range(0, 90), 0.45)
+	_mancha(_dir, SANGUE, Vector2(_dir.size.x - 92, _dir.size.y - 96 - rng.randf_range(0, 200)), 70, rng.randf_range(0, 90), 0.35)
+
+
+# Anotação solta: rabisco + frase curta em vermelho ou a lápis, meio torta.
+func _nota(nota: Dictionary, k: int) -> Control:
+	var hb := HBoxContainer.new()
+	hb.add_theme_constant_override("separation", 6)
+	hb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var ic := _esboco(RABISCOS % str(nota.get("rabisco", "seta")), Vector2(22, 22), -8.0 + k * 9.0)
+	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	hb.add_child(ic)
+	var t := str(nota["t"])
+	var l := _linha(("[color=#8e1b12]%s[/color]" % t) if k % 2 == 0 else t, 14, false, 40 + k)
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	l.rotation = deg_to_rad(-1.5 if k % 2 == 0 else 1.2)
+	hb.add_child(l)
+	return hb
+
+
+func _bloco_desenho(d: Dictionary, n: int, texto: String, tam: int, semente: int) -> Array[Control]:
 	var cam := DiarioMiguel.caminho(str(d["desenho"]))
 	var leg := str(d["legenda"])
 	var tex: Texture2D = load(cam) if cam != "" else null
 	var asp := float(tex.get_height()) / tex.get_width() if tex != null else 0.6
-	var lado := (n % 3) != 1  # 1º e 3º ao lado de uma frase, o 2º no meio do texto
-	var dir := n % 3 == 0
-	if modelo_diario == "C":
-		lado = false
 	var frase := _linha(texto, tam, false, semente)
-	if lado:
-		var larg := 118.0 if modelo_diario == "A" else 112.0
-		var fig := _figura(cam, Vector2(larg, minf(larg * asp, 120.0)), leg, 4.0 if dir else -4.0)
+	if n % 3 != 1:  # 1º e 3º ao lado de uma frase (direita, depois esquerda), o 2º no meio do texto
+		var dir := n % 3 == 0
+		var larg := 112.0
+		var fig := _figura(cam, Vector2(larg, minf(larg * asp, 112.0)), leg, 4.0 if dir else -4.0, n == 0)
 		var hb := HBoxContainer.new()
 		hb.add_theme_constant_override("separation", 8)
 		hb.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -538,103 +649,41 @@ func _bloco_desenho(d: Dictionary, n: int, texto: String, tam: int, semente: int
 			hb.add_child(fig)
 			hb.add_child(frase)
 		return [hb]
-	var out: Array[Control] = [frase]
-	if modelo_diario == "C":
-		var larg := 190.0
-		var hb := HBoxContainer.new()
-		hb.add_theme_constant_override("separation", 6)
-		hb.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var hh := minf(larg * asp, max_h)
-		var img := _esboco(cam, Vector2(hh / asp, hh), -2.0 if n % 2 == 0 else 2.0)
-		var nota_txt := ("[color=#8e1b12]← %s[/color]" % leg) if n % 2 == 0 else ("[color=#8e1b12]%s →[/color]" % leg)
-		var nota := _linha(nota_txt, 14, n % 2 == 1, semente)
-		nota.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		nota.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		if n % 2 == 0:
-			hb.add_child(img)
-			hb.add_child(nota)
-		else:
-			hb.add_child(nota)
-			hb.add_child(img)
-		out.append(hb)
-		return out
-	var larg2 := 200.0 if modelo_diario == "A" else 180.0
 	var cc := CenterContainer.new()
 	cc.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var h2 := minf(larg2 * asp, minf(125.0, max_h - 24.0))
-	cc.add_child(_figura(cam, Vector2(h2 / asp, h2), leg, -2.0))
-	out.append(cc)
-	return out
+	var h2 := minf(200.0 * asp, 116.0)
+	cc.add_child(_figura(cam, Vector2(h2 / asp, h2), leg, -2.0, false, 190.0))
+	return [frase, cc]
 
 
-# Desenho com a legenda embaixo: solto no papel (A) ou num recorte colado com fita (B).
-func _figura(cam: String, tam: Vector2, leg: String, graus: float) -> Control:
+# Desenho com a legenda embaixo e, às vezes, um pedaço de fita prendendo no papel.
+func _figura(cam: String, tam: Vector2, leg: String, graus: float, fita := false, leg_min := 118.0) -> Control:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", -2)
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var img := _esboco(cam, tam, 0.0)
-	v.add_child(img)
+	v.add_child(_esboco(cam, tam, 0.0))
 	var l := _rotulo(leg, 12, VERMELHO)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.custom_minimum_size.x = maxf(tam.x, 118.0)
+	var larg_leg := maxf(tam.x, leg_min)
+	l.custom_minimum_size.x = larg_leg
 	v.add_child(l)
-	var raiz: Control = v
-	if modelo_diario == "B":
-		var p := PanelContainer.new()
-		var e := StyleBoxFlat.new()
-		e.bg_color = Color(0.96, 0.92, 0.82)
-		for m in ["left", "right", "top", "bottom"]:
-			e.set("content_margin_" + m, 4)
-		e.shadow_color = Color(0, 0, 0, 0.28)
-		e.shadow_size = 2
-		e.shadow_offset = Vector2(1, 2)
-		p.add_theme_stylebox_override("panel", e)
-		p.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		p.add_child(v)
-		var fita := ColorRect.new()  # fita adesiva amarelada no topo (fora do container, que esticaria ela)
-		fita.color = Color(0.86, 0.8, 0.6, 0.7)
-		fita.size = Vector2(38, 10)
-		fita.position = Vector2(tam.x / 2.0 - 15, -5)
-		fita.rotation = deg_to_rad(-6)
-		fita.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		p.set_meta("fita", fita)
-		raiz = p
 	var c := Control.new()  # a rotação fica no filho; o container só vê o tamanho
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	c.custom_minimum_size = Vector2(maxf(tam.x, 118.0) + 8, tam.y + (30 if modelo_diario == "B" else 22))
-	c.add_child(raiz)
-	raiz.pivot_offset = c.custom_minimum_size / 2.0
-	raiz.rotation = deg_to_rad(graus)
-	if raiz.has_meta("fita"):
-		c.add_child(raiz.get_meta("fita"))
+	c.custom_minimum_size = Vector2(larg_leg + 8, tam.y + 22)
+	c.add_child(v)
+	v.pivot_offset = c.custom_minimum_size / 2.0
+	v.rotation = deg_to_rad(graus)
+	if fita:
+		for lado in [-1, 1]:
+			var f := ColorRect.new()  # fita adesiva amarelada nos cantos de cima
+			f.color = Color(0.88, 0.82, 0.62, 0.6)
+			f.size = Vector2(30, 9)
+			f.pivot_offset = f.size / 2.0
+			f.position = Vector2(c.custom_minimum_size.x / 2.0 + lado * tam.x * 0.42 - 15, -2)
+			f.rotation = deg_to_rad(lado * 32.0)
+			f.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			c.add_child(f)
 	return c
-
-
-# Altura aproximada de um bloco antes do layout (para saber quando o texto passa para a página da direita).
-func _altura_estimada(c: Control) -> float:
-	var larg := _esq.size.x - 52.0
-	if c is RichTextLabel:
-		return _altura_texto(c, larg)
-	if c is HBoxContainer:
-		var h := 0.0
-		var resto := larg
-		for k in c.get_children():
-			if not k is RichTextLabel:
-				resto -= k.get_combined_minimum_size().x + 8.0
-				h = maxf(h, k.get_combined_minimum_size().y)
-		for k in c.get_children():
-			if k is RichTextLabel:
-				h = maxf(h, _altura_texto(k, resto))
-		return h
-	if c is Label:
-		return 20.0 if c.get_theme_font_size("font_size") < 20 else 36.0
-	return c.get_combined_minimum_size().y
-
-
-func _altura_texto(r: RichTextLabel, larg: float) -> float:
-	var plano := RegEx.create_from_string("\\[[^\\]]*\\]").sub(r.text, "", true)
-	var tam := r.get_theme_font_size("normal_font_size")
-	return MAO.get_multiline_string_size(plano, HORIZONTAL_ALIGNMENT_LEFT, larg, tam).y * 1.08
 
 
 # --- PISTAS ----------------------------------------------------------------------------------------------

@@ -40,7 +40,8 @@ static func cumpre(requer: String) -> bool:
 	return false
 
 
-# Páginas que já existem, na ordem da missão: {id, titulo, linhas: [{t, maior}], desenhos: [{desenho, legenda}]}.
+# Páginas que já existem, na ordem da missão: {id, titulo, linhas: [{t, maior}], desenhos: [{desenho, legenda}],
+# notas: [{t, rabisco}]} (anotações soltas no pé, com um rabisco de assets/sprites/diario/rabiscos).
 static func secoes() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for s in dados().get("secoes", []):
@@ -57,7 +58,11 @@ static func secoes() -> Array[Dictionary]:
 		for d in s["desenhos"]:
 			if cumpre(str(d.get("requer", ""))):
 				desenhos.append({"desenho": str(d["desenho"]), "legenda": str(d.get("legenda", ""))})
-		out.append({"id": str(s["id"]), "titulo": str(s["titulo"]), "linhas": linhas, "desenhos": desenhos})
+		var notas: Array[Dictionary] = []
+		for n in s.get("notas", []):
+			if cumpre(str(n.get("requer", ""))):
+				notas.append({"t": str(n["t"]), "rabisco": str(n.get("rabisco", "seta"))})
+		out.append({"id": str(s["id"]), "titulo": str(s["titulo"]), "linhas": linhas, "desenhos": desenhos, "notas": notas})
 	return out
 
 

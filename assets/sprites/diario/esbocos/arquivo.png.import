@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bk281xuaywqjg"
-path="res://.godot/imported/leticia.png-f80bdc02a18a86a969acc603224a9e13.ctex"
+uid="uid://dvun1to18jh7i"
+path="res://.godot/imported/arquivo.png-2e9b6c4e57b4d81e48b59e31fcaf9cc4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/diario/esbocos/leticia.png"
-dest_files=["res://.godot/imported/leticia.png-f80bdc02a18a86a969acc603224a9e13.ctex"]
+source_file="res://assets/sprites/diario/esbocos/arquivo.png"
+dest_files=["res://.godot/imported/arquivo.png-2e9b6c4e57b4d81e48b59e31fcaf9cc4.ctex"]
 
 [params]
 

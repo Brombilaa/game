@@ -61,3 +61,4 @@ assets/fonts/Caveat-Variable.ttf -filter -diff -merge -text
 assets/sprites/diario/*.png -filter -diff -merge -text
 assets/sprites/diario/*.jpg -filter -diff -merge -text
 assets/sprites/diario/esbocos/*.png -filter -diff -merge -text
+assets/sprites/diario/rabiscos/*.png -filter -diff -merge -text
