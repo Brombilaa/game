@@ -1,29 +1,14 @@
 class_name RoomRitual
 extends RefCounted
 # Rituais do Ocultista na sala (Miguel): escolhe o alvo, chama RitualRules e encena o resultado com textos
-# flutuantes e registro. Teclas provisórias até o Léo escolher os botões da barra (3 modelos): Z armadura,
-# X amaldiçoar, T eletrocussão, Y cicatrização. Só em combate, na vez do controlado.
-
-const KEYS := {
-	KEY_Z: "armadura_sangue",
-	KEY_X: "amaldicoar_arma",
-	KEY_T: "eletrocussao",
-	KEY_Y: "cicatrizacao",
-}
+# flutuantes e registro. Atalho: a tecla numérica da casa do ritual na barra de combate (Léo, 19/11: 1 a 9 em
+# ordem, sem letras). Só em combate, na vez do controlado.
 
 var room: TestRoom
 
 
 func _init(owner_room: TestRoom) -> void:
 	room = owner_room
-
-
-# Tecla de ritual: retorna true se a tecla é de ritual (mesmo que a conjuração seja recusada).
-func handle_key(keycode: int) -> bool:
-	if not KEYS.has(keycode):
-		return false
-	cast(KEYS[keycode])
-	return true
 
 
 func cast(id: String) -> void:

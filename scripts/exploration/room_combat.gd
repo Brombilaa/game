@@ -12,7 +12,7 @@ func _init(owner_room: TestRoom) -> void:
 	room = owner_room
 
 
-# Recarga (tecla G): fora do combate a animação trava o ataque por RELOAD_SECONDS (Léo, 13/11: "atira enquanto recarrega");
+# Recarga (casa da arma na barra, tecla 1, em combate; tecla G fora dele): fora do combate a animação trava o ataque por RELOAD_SECONDS (Léo, 13/11: "atira enquanto recarrega");
 # em combate o custo é só o 1 PA e a animação não bloqueia nada.
 func _reloading(u: Combatant) -> bool:
 	if room.mode == TestRoom.Mode.COMBAT:  # em combate a recarga custa 1 PA e pronto: sem espera (escassez, sugestão 7)
@@ -182,7 +182,7 @@ func _combat_click(click: Vector2) -> void:
 		if _reloading(room.player):
 			_reject("reloading")
 			return
-		if room.rules.needs_reload(room.player):  # carregador vazio: recarrega sozinho (Léo); fora disso só com a tecla G
+		if room.rules.needs_reload(room.player):  # carregador vazio: recarrega sozinho (Léo); fora disso só com a tecla 1 (casa da arma) em combate ou G fora dele
 			_reload()
 			return
 		room._show_attack(room.player, target, room.rules.attack(room.player, target, room._sight_blockers(), room.covers))
@@ -359,7 +359,7 @@ func _player_delay() -> void:
 		room.hud.show_notice("Atrasou")
 
 
-# Vigilância (tecla F, Léo 15/11): paga os PA de um tiro e, no turno dos inimigos, atira no primeiro que se
+# Vigilância (casa da barra com tecla numérica; era a tecla F, Léo 15/11): paga os PA de um tiro e, no turno dos inimigos, atira no primeiro que se
 # mover à vista e ao alcance. Só em combate, na vez do controlado; dura até o próximo turno dele.
 func _overwatch() -> void:
 	if not room._player_ready():
