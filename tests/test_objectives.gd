@@ -37,7 +37,9 @@ func _init() -> void:
 	_check(o[2]["feito"] and o[3]["texto"] == Objectives.COMBAT_TEXT and o[3]["atual"], "marca conclui; em combate o atual é sobreviver")
 	var parque := Scenario.load_id("parque")
 	_check(parque.objetivos.size() == 2, "parque.json tem os objetivos no formato comum")
-	var antigo := Objectives.build(parque.clues, ["caio"], false)
+	var sem_saque := parque.clues.duplicate()
+	sem_saque.erase("mochila_piquenique")  # esconderijo opcional (16/11): fora dos objetivos e do caminho antigo
+	var antigo := Objectives.build(sem_saque, ["caio"], false)
 	var novo := Objectives.from_data(parque.objetivos, ["caio"], tem, false)
 	_check(antigo == novo, "objetivos do parque iguais aos de antes (%s)" % str(novo))
 	print("Falhas: %d" % failures)

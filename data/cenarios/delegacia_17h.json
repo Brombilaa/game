@@ -1398,6 +1398,31 @@
    ]
   },
   {
+   "id": "cofre_ghular",
+   "pos": [
+    876.8,
+    185.6
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Atrás da estante do escritório há um cofre de parede. A combinação está colada por baixo da gaveta da escrivaninha, e dentro ficam um colete e munição guardados pelo delegado.",
+   "provisorio": true,
+   "da": [
+    {
+     "item": "colete_leve",
+     "qtd": 1
+    },
+    {
+     "item": "municao_pistola",
+     "qtd": 6
+    }
+   ]
+  },
+  {
    "id": "kit_recepcao",
    "pos": [
     288.0,

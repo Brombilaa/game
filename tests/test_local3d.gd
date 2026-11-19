@@ -6,7 +6,7 @@ extends SceneTree
 # Rodar com:
 #   godot --headless --path . -s tests/test_local3d.gd
 
-const LOCAIS := ["delegacia_17h", "delegacia_21h", "subsolo", "biblioteca", "fazenda", "cripta"]
+const LOCAIS := ["delegacia_17h", "delegacia_21h", "subsolo", "biblioteca", "fazenda", "cripta", "celeiro"]
 
 var failures := 0
 
@@ -25,12 +25,14 @@ func _run() -> void:
 		await _local(id)
 	await _investigacao()
 	await _porta_com_chave()
+	await _baus()
 	await _tapete_e_alcapao()
 	await _invasao()
 	await _celeiro()
 	await _cripta()
 	_cinema_e_tentaculo()
 	await _fim_da_missao()
+	await _celeiro_ordem()
 	print("Falhas: %d" % failures if failures > 0 else "OK: test_local3d")
 	quit(1 if failures > 0 else 0)
 
@@ -129,6 +131,54 @@ func _porta_com_chave() -> void:
 	var room2 = await _abrir("delegacia_17h")
 	_check(not room2.walls.has(r) and room2.portas.is_empty(), "17h: porta aberta continua aberta ao voltar")
 	await _fechar(room2)
+
+
+func _baus() -> void:
+	# Baús e esconderijos com saque (16/11, provisório): chave achada num lugar abre o baú trancado de outro.
+	var pares := {"biblioteca": ["gaveta_balcao", "armario_acervo", "chave_acervo"], "fazenda": ["prego_mourao", "bau_celeiro", "chave_celeiro"], "cripta": ["mochila_desaparecido", "ossuario", "chave_ossuario"]}
+	for id in pares:
+		Missao1.reiniciar()
+		var room = await _abrir(id)
+		var onde: Array = pares[id]
+		var bau: Dictionary = room.scenario.clues[onde[1]]
+		_check(bau.chave == onde[2] and not bau.da.is_empty(), id + ": o baú " + onde[1] + " é trancado e tem saque")
+		if id == "cripta":
+			_check(room._pista_oculta("ossuario"), id + ": o ossuário fica escondido até o salão ser revelado")
+			Missao1.marcar("cripta_trecho4")
+			_check(not room._pista_oculta("ossuario"), id + ": o ossuário aparece com o salão revelado")
+		var antes: int = room.inventory.count("curativo") + room.inventory.count("bandagem") + room.inventory.count("kit_primeiros_socorros") + room.inventory.count("municao_pistola") + room.inventory.count("municao_escopeta")
+		room._inspect(onde[1])
+		_check(room.dialog_layer.visible and room.dialog_text.text == bau.texto_trancado, id + ": sem a chave aparece o aviso de trancado")
+		room._close_dialog()
+		_check(not room.seen_clues.has(onde[1]), id + ": o baú trancado não conta como visto sem a chave")
+		room._inspect(onde[0])
+		room._close_dialog()
+		_check(room.inventory.count(onde[2]) == 1, id + ": a chave " + onde[2] + " está num esconderijo do cenário")
+		room._inspect(onde[1])
+		_check(room.dialog_text.text == bau.texto, id + ": com a chave o baú abre")
+		room._close_dialog()
+		_check(room.seen_clues.has(onde[1]), id + ": o baú aberto fica visto")
+		var depois: int = room.inventory.count("curativo") + room.inventory.count("bandagem") + room.inventory.count("kit_primeiros_socorros") + room.inventory.count("municao_pistola") + room.inventory.count("municao_escopeta")
+		_check(depois > antes, id + ": o saque do baú entra na mochila")
+		await _fechar(room)
+	# Delegacia: o cofre fica atrás da porta trancada do escritório (a chave do chaveiro vale pelas duas coisas).
+	Missao1.reiniciar()
+	var del = await _abrir("delegacia_17h")
+	var cofre: Vector2 = del.scenario.clues["cofre_ghular"].pos
+	_check(del.pathfinder.find_path(del.player.pos, cofre, del._obstacles(del.player), del.player.radius).size() < 2, "17h: sem a chave do escritório o cofre é inalcançável")
+	del.inventory.add("chave_escritorio", 1)
+	del.party[0].pos = (del.portas["escritorio_ghular"]["rect"] as Rect2).get_center() + Vector2(0, 40)
+	del._portas()
+	_check(del.pathfinder.find_path(del.player.pos, cofre, del._obstacles(del.player), del.player.radius).size() > 1, "17h: com a porta aberta o cofre é alcançável")
+	await _fechar(del)
+	# Todos os itens do saque existem nos dados.
+	var dados_jogo := GameData.new()
+	dados_jogo.load_dir()
+	for id in ["delegacia_17h", "biblioteca", "fazenda", "cripta", "parque"]:
+		var sc := Scenario.load_id(id)
+		for cid in sc.clues:
+			for f in sc.clues[cid].da:
+				_check(dados_jogo.has_entry("itens", str(f["item"])) or dados_jogo.has_entry("armas", str(f["item"])), id + ": o item " + str(f["item"]) + " do saque de " + cid + " existe")
 
 
 func _tapete_e_alcapao() -> void:
@@ -272,6 +322,7 @@ func _cripta() -> void:
 	room._inspect("leticia")
 	room._close_dialog()
 	_check(room.seen_clues.has("leticia") and Missao1.tem("leticia_acordou"), "cripta: depois do combate a Letícia acorda ao interagir")
+	_check(room.indo_para == "celeiro", "cripta: com a Letícia acordada o grupo sobe para o celeiro")
 	await _fechar(room)
 	# Voltar de um save: trechos revelados continuam à vista e quem já caiu não volta.
 	room = await _abrir("cripta")
@@ -286,6 +337,52 @@ func _cripta() -> void:
 	for e in room.enemies:
 		nomes.append(e.name)
 	_check(nomes.has("Dama de Sangue") and not nomes.has("Roberto Ghular"), "cripta: save feito depois de a Dama surgir volta com ela")
+	await _fechar(room)
+
+
+# Pós-combate (Léo, 15/11): no celeiro, sem o Fernando, a Ordem espera com a Letícia; a conversa toca ao chegar e
+# depois vem o fim do capítulo (cutscene externa, se o vídeo existir, e o cartão AURORA).
+func _celeiro_ordem() -> void:
+	Missao1.reiniciar()
+	for m in ["cripta_vencida", "fernando_morreu", "leticia_acordou"]:
+		Missao1.marcar(m)
+	var room = await _abrir("celeiro", "poco")
+	_check(room.enemies.is_empty(), "celeiro: sem inimigos")
+	for n in ["leticia", "tristan", "mark", "julia", "medico"]:
+		_check(room.scenario.npcs.has(n), "celeiro: %s está lá" % n)
+		if room.scenario.npcs.has(n):
+			_check(Pathfinder.is_free(room.scenario.npcs[n], room.walls, room.NPC_RADIUS), "celeiro: %s em ponto livre" % n)
+	var fernando: Combatant = room.party[0]
+	_check(fernando.name == "Fernando" and fernando.dead and room.player != fernando, "celeiro: o Fernando não volta e outro lidera")
+	_check(not room._drawn_units().has(fernando), "celeiro: o corpo do Fernando ficou na cripta")
+	await process_frame
+	_check(room.mode == room.Mode.CUTSCENE and room.cena != null, "celeiro: a conversa com a Ordem toca ao chegar")
+	Engine.time_scale = 4.0
+	for i in 60 * 40:
+		await process_frame
+		if room.fim_capitulo != null:
+			break
+	_check(Missao1.tem("celeiro_conversa"), "celeiro: a conversa marca que já tocou")
+	_check(room.fim_capitulo != null and room.mode == room.Mode.CUTSCENE, "celeiro: depois da conversa vem o fim do capítulo")
+	var fim: FimCapitulo = room.fim_capitulo
+	var viu_italia := false
+	for i in 60 * 30:
+		await process_frame
+		viu_italia = viu_italia or (is_instance_valid(fim) and fim.italia != null)
+		if Missao1.tem("capitulo1_fim"):
+			break
+	_check(viu_italia, "celeiro: sem o vídeo, corta para a igreja na Itália antes do cartão")
+	Engine.time_scale = 1.0
+	_check(Missao1.tem("capitulo1_fim"), "celeiro: o cartão AURORA toca e o capítulo termina")
+	await _fechar(room)
+	# Save feito depois da conversa: vai direto ao fim, sem repetir as falas.
+	Missao1.reiniciar()
+	for m in ["fernando_morreu", "celeiro_conversa"]:
+		Missao1.marcar(m)
+	room = await _abrir("celeiro", "poco")
+	await process_frame
+	await process_frame
+	_check(room.cena == null and room.fim_capitulo != null, "celeiro: carregar depois da conversa vai direto ao fim")
 	await _fechar(room)
 
 
