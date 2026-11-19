@@ -17,6 +17,18 @@ const TITULOS := {
 	"tapete": "Tapete fora do lugar",
 	"poco": "O poço da fazenda",
 	"livro_faltando": "O livro que faltava",
+	"livro_ocorrencias": "Livro de ocorrências",
+	"agenda_ghular": "A agenda do delegado",
+	"gaveta_provas": "Gaveta de provas forçada",
+	"ficha_desaparecidos": "Fichas de desaparecidos",
+	"cela_arranhoes": "Arranhões na cela",
+	"chaveiro_recepcao": "Chaveiro da recepção",
+	"kit_recepcao": "Kit esquecido",
+	"fichario": "Ficha arrancada",
+	"mesa_leitura": "Livro de história",
+	"mapa_antigo": "Mapa antigo",
+	"diario_bibliotecaria": "Diário da bibliotecária",
+	"caixa_arquivo": "Caixa de arquivo",
 }
 
 

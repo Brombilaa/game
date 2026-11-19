@@ -1,0 +1,121 @@
+{
+	"_comentario": "Fraquezas e resistências dos inimigos (sugestão 6 da segunda leva, aprovada pelo Léo em 16/11). Quais inimigos têm o quê fica em inimigos.json (campos 'fraquezas' e 'resistencias', com os tipos de dano abaixo; 'atordoado' em resistencias continua sendo imunidade a atordoar). Aqui ficam os multiplicadores e como o grupo descobre cada uma. TUDO PROVISÓRIO do Claude, para o Léo revisar jogando.",
+	"provisorio": true,
+	"_tipos": "tipos de dano: 'balistico' (armas de fogo), 'corpo_a_corpo' (soco, espada, faca, garra) e 'ritual' (Eletrocussão). 'fogo' e 'sal' ficam reservados para os itens de uso em combate.",
+	"tipos": {
+		"balistico": "balas",
+		"corpo_a_corpo": "golpes de perto",
+		"ritual": "rituais",
+		"fogo": "fogo",
+		"sal": "sal"
+	},
+	"_multiplicadores": "dano multiplicado antes da defesa (colete, Armadura de Sangue). Fraqueza = +50%, resistência = -50%.",
+	"fraqueza": 1.5,
+	"resistencia": 0.5,
+	"_descobertas": "cada descoberta anota uma entrada no diário (lugar 'INIMIGOS', id 'frq_<inimigo>_<tipo>') quando o grupo examina uma das 'pistas'. Sem pista, o grupo também descobre no combate, no primeiro golpe que pega a fraqueza ou a resistência (texto 'combate'). Depois de descoberta, o combate mostra FRAQUEZA ou RESISTE no golpe.",
+	"descobertas": [
+		{
+			"inimigo": "criatura_sangue",
+			"tipo": "balistico",
+			"pistas": [
+				"banco_quebrado"
+			],
+			"texto": "Há buracos de bala na madeira, ao lado das marcas de garra, e o sangue seco não é de gente. Alguém atirou na coisa que fez isso e não a parou: bala mal arranha a Criatura de Sangue.",
+			"combate": "As balas entram na Criatura de Sangue e o corpo dela se fecha em volta. Tiro faz pouco efeito.",
+			"miguel": "Descarreguei a pistola nela e o corpo fechou em volta das balas. Não gasto mais munição assim."
+		},
+		{
+			"inimigo": "criatura_sangue",
+			"tipo": "ritual",
+			"pistas": [
+				"mesa_leitura"
+			],
+			"texto": "O livro de história descreve as criaturas do pacto: carne feita de sangue, que só se desfaz com o próprio Outro Lado. Rituais ferem a Criatura de Sangue muito mais que armas.",
+			"combate": "O ritual rasga a Criatura de Sangue por dentro. Ela sente muito mais do que sente bala.",
+			"miguel": "O que é feito do Outro Lado só se desfaz com o Outro Lado. Eletrocussão nela, sempre."
+		},
+		{
+			"inimigo": "cultista",
+			"tipo": "ritual",
+			"pistas": [
+				"cela_arranhoes"
+			],
+			"texto": "O símbolo desenhado na cela é o mesmo que os cultistas carregam marcado na pele. Ele protege quem o usa: rituais pegam mais fraco nos cultistas.",
+			"combate": "A marca de sangue na pele do cultista brilha e engole parte do ritual.",
+			"miguel": "A marca na pele deles bebe o ritual. Contra cultista, prefiro que o Fernando resolva no chumbo."
+		},
+		{
+			"inimigo": "atirador",
+			"tipo": "corpo_a_corpo",
+			"pistas": [
+				"gaveta_provas"
+			],
+			"texto": "As balas soltas na gaveta são de fuzil de caça, iguais às dos atiradores do culto. Arma longa e pesada: de perto, quem atira com ela fica exposto. Atiradores apanham mais em golpes de perto.",
+			"combate": "De perto o atirador não consegue usar o fuzil e fica sem defesa.",
+			"miguel": "Fuzil longo não serve de perto. Se alguém chegar colado no atirador, ele não tem o que fazer."
+		},
+		{
+			"inimigo": "roberto_ghular",
+			"tipo": "corpo_a_corpo",
+			"pistas": [
+				"agenda_ghular"
+			],
+			"texto": "\"Roberto voltou da fazenda. Não parece mais ele.\" O que voltou aguenta pancadas que derrubariam um homem: golpes de perto quase não afetam Roberto Ghular.",
+			"combate": "Roberto Ghular nem sente o golpe. O que está dentro dele aguenta pancada.",
+			"miguel": "Roberto não sente pancada. Não é mais o corpo de um homem que está ali."
+		},
+		{
+			"inimigo": "roberto_ghular",
+			"tipo": "ritual",
+			"pistas": [
+				"diario_bibliotecaria"
+			],
+			"texto": "Roberto pedia os livros sobre o pacto de novo e de novo. O pacto que o mudou também o prende: rituais ferem Roberto Ghular mais que armas.",
+			"combate": "O ritual arranca um grito de Roberto Ghular que não é a voz dele.",
+			"miguel": "O pacto que tomou Roberto ainda o prende. Ritual dói nele de um jeito que bala não dói."
+		},
+		{
+			"inimigo": "dama_sangue",
+			"tipo": "corpo_a_corpo",
+			"pistas": [
+				"livro_faltando"
+			],
+			"texto": "Num canto da mesa sobrou uma página solta do livro levado: \"A Senhora do Sangue não se toca com as mãos. Quem chega perto dela sangra antes de ferir.\" A Dama de Sangue resiste a golpes de perto.",
+			"combate": "O golpe afunda no sangue da Dama como em água. De perto ela quase não se fere.",
+			"miguel": "Quem chega perto dela sangra antes de ferir. De longe, sempre de longe."
+		},
+		{
+			"inimigo": "dama_sangue",
+			"tipo": "ritual",
+			"pistas": [
+				"poco"
+			],
+			"texto": "Na boca do poço há velas apagadas e símbolos de proteção riscados na pedra. Alguém já tentou conter o que vive lá embaixo com rituais, e quase deu certo: a Dama de Sangue é fraca a rituais.",
+			"combate": "O ritual faz a Dama de Sangue recuar. É disso que ela tem medo.",
+			"miguel": "Alguém quase a prendeu com velas e símbolos. Se houver um jeito de vencê-la, é pelo ritual."
+		}
+	],
+	"_criaturas": "Seção CRIATURAS do diário, escrita como o caderno do Miguel. Uma criatura aparece quando o grupo a encontra num combate ou descobre algo dela numa pista. 'nota' é a primeira impressão do Miguel; 'retrato' é o nome em assets/sprites/retratos (vazio = sem retrato). Textos provisórios do Claude.",
+	"criaturas": {
+		"cultista": {
+			"retrato": "cultista",
+			"nota": "Gente de Aurora. Vizinhos, talvez. Usam capuz e carregam o símbolo da árvore marcado na pele. Lutam de faca e chegam em bando, tentando cercar quem fica sozinho."
+		},
+		"atirador": {
+			"retrato": "atirador",
+			"nota": "Ficam longe, atrás de cobertura, com fuzil de caça. Veem mais longe que os outros. Enquanto um atirador estiver de pé, ninguém do grupo fica parado em campo aberto."
+		},
+		"criatura_sangue": {
+			"retrato": "criatura",
+			"nota": "Não tenho nome melhor para isso. Um corpo feito de sangue que anda e tem garras. Olhar para ela pesa na cabeça. Foi uma dessas que abriu o banco do parque."
+		},
+		"roberto_ghular": {
+			"retrato": "",
+			"nota": "Roberto Ghular, da família da fazenda. A agenda do delegado diz que ele voltou de lá diferente. Ainda atira como homem, mas o que olha por trás dos olhos dele não é o Roberto."
+		},
+		"dama_sangue": {
+			"retrato": "dama",
+			"nota": "A Senhora do Sangue dos livros do pacto. Tudo em Aurora leva até ela. Não se atordoa, não recua e chama os fiéis quando é ferida. Se eu escrever isto e não voltar, que alguém leia."
+		}
+	}
+}

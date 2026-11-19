@@ -140,7 +140,7 @@ func blocker(caster: Combatant, id: String, target: Combatant = null, walls: Arr
 # Conjura. Retorna {ok, reason, id, components (ids gastos), san (resultado de SanRules.lose), + o efeito: damage, stunned, resisted_stun,
 # healed, cleared, rounds, defense, bonus}.
 func cast(caster: Combatant, id: String, target: Combatant = null, walls: Array[Rect2] = [], covers: Array = []) -> Dictionary:
-	var out := {"ok": false, "reason": "", "id": id, "components": [], "san": {}, "damage": 0, "stunned": false, "resisted_stun": false, "healed": 0, "cleared": false}
+	var out := {"ok": false, "reason": "", "id": id, "components": [], "san": {}, "damage": 0, "stunned": false, "resisted_stun": false, "healed": 0, "cleared": false, "tipo_dano": "", "afinidade": ""}
 	out.reason = blocker(caster, id, target, walls, covers)
 	if out.reason != "":
 		return out
@@ -158,7 +158,9 @@ func cast(caster: Combatant, id: String, target: Combatant = null, walls: Array[
 			caster.buffs[id] = {"rounds": int(r["rodadas"]), "defesa": 0.0, "dano": int(r["valor"])}
 		"dano":
 			var dmg := rng.randi_range(int(r["dano"][0]), int(r["dano"][1])) + int_bonus(caster)
-			out.damage = rules.damage_after_defense(float(dmg), target.defense_total())
+			out.tipo_dano = Fraquezas.RITUAL
+			out.afinidade = Fraquezas.afinidade(cfg.game_data, target.kind, Fraquezas.RITUAL)  # fraqueza/resistência (provisório)
+			out.damage = rules.damage_after_defense(float(dmg) * Fraquezas.multiplicador(out.afinidade), target.defense_total())
 			target.take_damage(out.damage)
 			if target.is_alive() and rng.randf() < float(r["chance_atordoar"] if r["chance_atordoar"] != null else 0.0):
 				if _resists_stun(target):
