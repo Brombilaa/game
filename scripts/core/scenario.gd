@@ -134,7 +134,7 @@ func _parse(data: Dictionary) -> void:
 			errors.append("colisão fora do plano: " + str(c["id"]))
 		colliders[c["id"]] = rect
 	for c in data.get("pistas", []):
-		clues[c["id"]] = {"pos": _vec(c["pos"]), "raio": float(c["raio"]), "ordem": int(c["ordem"]), "texto": str(c["texto"]), "inspecao": str(c.get("inspecao", "")), "bolinha": _vec(c.get("bolinha", [0, -60])), "areas": c.get("areas", []), "destaque": c.get("destaque", {}), "da": c.get("da", []), "perda_san": int(c.get("perda_san", 0)), "perturbadora": bool(c.get("perturbadora", false))}
+		clues[c["id"]] = {"pos": _vec(c["pos"]), "raio": float(c["raio"]), "ordem": int(c["ordem"]), "texto": str(c["texto"]), "inspecao": str(c.get("inspecao", "")), "bolinha": _vec(c.get("bolinha", [0, -60])), "areas": c.get("areas", []), "destaque": c.get("destaque", {}), "da": c.get("da", []), "perda_san": int(c.get("perda_san", 0)), "perturbadora": bool(c.get("perturbadora", false)), "chave": str(c.get("chave", "")), "texto_trancado": str(c.get("texto_trancado", "Trancado. Falta a chave."))}
 	objetivos = data.get("objetivos", [])
 	recortes = data.get("recortes", [])
 	for o in data.get("oclusores", []):

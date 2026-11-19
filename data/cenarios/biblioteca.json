@@ -1227,6 +1227,58 @@
      "qtd": 1
     }
    ]
+  },
+  {
+   "id": "gaveta_balcao",
+   "pos": [
+    889.6,
+    672.0
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Na gaveta do balcão de empréstimos, junto de carimbos secos, há uma chave pequena com uma etiqueta: \"Acervo restrito\".",
+   "provisorio": true,
+   "da": [
+    {
+     "item": "chave_acervo",
+     "qtd": 1
+    }
+   ]
+  },
+  {
+   "id": "armario_acervo",
+   "pos": [
+    1100.8,
+    640.0
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "A chave gira no armário do acervo restrito. Entre livros embrulhados em plástico, a bibliotecária guardava suprimentos de emergência.",
+   "provisorio": true,
+   "da": [
+    {
+     "item": "bandagem",
+     "qtd": 2
+    },
+    {
+     "item": "antidoto",
+     "qtd": 1
+    },
+    {
+     "item": "municao_escopeta",
+     "qtd": 4
+    }
+   ],
+   "chave": "chave_acervo",
+   "texto_trancado": "Trancado. O armário do acervo restrito precisa de uma chave."
   }
  ],
  "gatilhos": [],

@@ -878,6 +878,8 @@ func _draw_clue_hints() -> void:
 			if pista_malhas.has(cid) and not pista_malhas[cid].is_empty():
 				world3d.destacar(cid, pista_malhas[cid], 0.0, 0.0)
 			continue
+		if _pista_oculta(cid):
+			continue
 		var at := _dot_pos(cid)
 		var locked := not available.has(cid)
 		var perto: bool = player.pos.distance_to(scenario.clues[cid].pos) <= CLUE_NEAR
@@ -974,7 +976,7 @@ func _clue_under(mouse: Vector2) -> String:
 	var best := ""
 	var best_d := INF
 	for cid in scenario.clues:
-		if seen_clues.has(cid):
+		if seen_clues.has(cid) or _pista_oculta(cid):
 			continue
 		var d := mouse.distance_to(_dot_pos(cid))
 		if d <= DOT_HIT and d < best_d:
@@ -1176,7 +1178,20 @@ func _inspect(cid: String) -> void:
 	if not scenario.available_clues(seen_clues).has(cid):
 		_show_dialog("", "Ainda há o que olhar no parque antes disso.", "")
 		return
+	if _trancada(c):
+		_show_dialog("", c.texto_trancado, "")
+		return
 	_show_dialog(c.inspecao, c.texto, cid)
+
+
+# Baú ou esconderijo trancado (GDD #19, mesma regra das portas): só abre com a chave achada no cenário, que fica na mochila.
+func _trancada(c: Dictionary) -> bool:
+	return str(c.get("chave", "")) != "" and inventory.count(str(c["chave"])) <= 0
+
+
+# Pista que o cenário ainda não revelou (trecho escondido da cripta): sem bolinha e sem clique. A cena do local decide.
+func _pista_oculta(_cid: String) -> bool:
+	return false
 
 
 func _show_dialog(image_path: String, text: String, cid: String) -> void:
