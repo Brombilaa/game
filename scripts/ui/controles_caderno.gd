@@ -4,8 +4,8 @@ extends Control
 # tons de pergaminho e tinta. Cada tecla usada mostra a função; passar o mouse (ou clicar) numa tecla abre a ficha no
 # pé da página com o que ela faz, quando vale e o custo. Os filtros Tudo, Explorar, Combate e Painéis apagam o resto,
 # para consultar só o que importa naquele momento. Só mostra; não remapeia as teclas.
-# Itens de combate e rituais vêm de RoomItems.KEY_LABELS, RoomActionBar.RITUAL_KEYS e de data/ (nome, PA, SAN),
-# então o mapa acompanha trocas de tecla e de balanceamento. Quem mudar outra tecla do jogo atualiza `mapa()`.
+# Itens de combate e rituais vêm de Atalhos (teste de igualdade em tests/test_atalhos.gd) e de data/ (nome, PA,
+# SAN), então o mapa acompanha o balanceamento. Quem mudar uma tecla do jogo atualiza `Atalhos` e `mapa()`.
 
 signal voltar  # botão direito: o menu volta um passo
 
@@ -92,16 +92,15 @@ static func mapa() -> Dictionary:
 	_add(m, "C", _ficha("mover", "agachar", "Agachar", "Explorar; em combate na sua vez", "Alterna agachado. Agachado, os inimigos só percebem o grupo na metade da distância, e um ataque sem alerta ganha bônus."))
 	_add(m, "Home", _ficha("combate", "câmera", "Recentrar a câmera", "Combate", "Traz a câmera de volta ao grupo depois de arrastá-la com o botão do meio."))
 	var rules := data()
-	# Lidos em tempo de execução (load) para o mapa não criar dependência circular de scripts com a sala e a barra.
-	var item_keys: Dictionary = load("res://scripts/exploration/room_items.gd").KEY_LABELS
-	var ritual_keys: Dictionary = load("res://scripts/ui/room_action_bar.gd").RITUAL_KEYS
-	var item_tips: Dictionary = load("res://scripts/ui/room_action_bar.gd").ITEM_TIPS
 	_add(m, "Espaço", _ficha("combate", "passar turno", "Passar o turno", "Combate", "Encerra o turno do personagem controlado. Fora do combate, avança as falas."))
 	_add(m, "D", _ficha("combate", "atrasar", "Atrasar", "Combate", "Adia a vez do personagem para mais tarde na mesma rodada."))
 	_add(m, "Q", _ficha("combate", "trocar arma", "Trocar de arma", "Combate", "Alterna entre a arma principal e a reserva.", _pa(rules.rule("custo_trocar_arma_pa"))))
 	_add(m, "G", _ficha("combate", "recarga", "Recarregar", "Combate", "Enche o pente com a munição da mochila.", _pa(rules.rule("custo_recarga_pa"))))
 	_add(m, "F", _ficha("combate", "vigia", "Vigilância", "Combate", "Fica de guarda e atira no primeiro inimigo que se mover dentro do cone.", "mesmo PA do ataque da arma"))
 	_add(m, "Shift", _ficha("combate", "acelerar", "Acelerar o turno inimigo", "Combate", "Segure durante a jogada dos inimigos para vê-la mais rápido."))
+	var item_keys := Atalhos.ITEM_KEYS
+	var ritual_keys := Atalhos.RITUAL_KEYS
+	var item_tips := Atalhos.ITEM_TIPS
 	for iid in item_keys:
 		var item := rules.get_entry("itens", iid)
 		var custo := _pa(item.get("custo_pa_combate"))
