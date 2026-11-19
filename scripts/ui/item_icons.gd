@@ -260,6 +260,30 @@ const PIXEL_ROWS := {
 		".....orrrro.....",
 		"......oooo......",
 	],
+	"granada_luz": [
+		"......ooo.......",
+		".....oaaao......",
+		"....ooobooo.....",
+		"...ocbbbbbco....",
+		"..ocbbaabbbco...",
+		"..obbaabbbbbo...",
+		"..obbbbbbbbbo...",
+		"..ocbbbbbbbco...",
+		"...ocbbbbbco....",
+		"....ooooooo.....",
+	],
+	"sinalizador": [
+		"......ogo.......",
+		".....ogyyo......",
+		"......oyo.......",
+		".....oaaao......",
+		".....orrro......",
+		".....orrro......",
+		".....orrro......",
+		".....orrro......",
+		".....occco......",
+		".....ooooo......",
+	],
 }
 
 

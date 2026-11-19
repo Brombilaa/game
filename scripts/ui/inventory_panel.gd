@@ -58,7 +58,7 @@ const EQUIP_LABELS := {"principal": "ARMA PRINCIPAL", "secundaria": "ARMA SECUND
 # Textos provisórios dos itens (o GDD ainda não os define).
 const BLURBS := {
 	"pulseira_amizade": "Acessório: amarra a mente ao que o Caio deixou.",
-	"crucifixo_velho": "Acessório: pesa no peito e segura o corpo de pé.",
+	"plaqueta_identificacao": "Acessório: a plaqueta de um agente antigo lembra que dá para aguentar mais um pouco.",
 	"pistola": "Arma curta de uso comum. Confiável à curta distância.",
 	"escopeta": "Dano alto à queima-roupa, gasta 2 PA por disparo.",
 	"espada": "Lâmina de corpo a corpo, forte nas mãos de quem aceita o risco.",
@@ -68,6 +68,8 @@ const BLURBS := {
 	"bandagem": "Estanca o sangramento de quem a usa.",
 	"antidoto": "Neutraliza o veneno em quem o toma.",
 	"curativo": "Cobre ferimentos leves.",
+	"granada_luz": "Clarão que atordoa os inimigos perto do ponto onde cai. Só em combate.",
+	"sinalizador": "Luz vermelha no chão por alguns turnos: o grupo acerta melhor quem está nela. Só em combate.",
 	"componente_ritual": "Material usado nos rituais.",
 	"colete": "Protege reduzindo o dano recebido.",
 	"colete_leve": "Reduz o dano recebido em 10%.",

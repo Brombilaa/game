@@ -132,6 +132,7 @@ var cfg := CombatConfig.load_file()
 var rules := CombatRules.new(cfg)
 var san := SanRules.new(cfg)  # SAN como medidor de terror: perda, ruptura e loucura (GDD #11)
 var rituals := RitualRules.new(cfg, rules, san)  # rituais do Ocultista (Miguel): custo de PA e SAN
+var item_rules := ItemRules.new(cfg, rules)  # itens de combate: granada de luz e sinalizador (provisórios)
 
 # Grupo: Fernando, Nikolai e Miguel pelas fichas do GDD (classe e atributos; Ficha e personagens.json).
 var party: Array[Combatant] = [
@@ -235,6 +236,7 @@ var dicas_hud := RoomDicasHud.new(self)
 var room_combat := RoomCombat.new(self)
 var room_gear := RoomGear.new(self)
 var room_ritual := RoomRitual.new(self)
+var room_items := RoomItems.new(self)
 var room_party := RoomParty.new(self)
 var room_drawing := RoomDrawing.new(self)
 
@@ -407,6 +409,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_overwatch()
 		elif event.pressed and not event.echo and room_ritual.handle_key(event.keycode):
 			pass  # rituais do Miguel (Z, X, T, Y)
+		elif event.pressed and not event.echo and room_items.handle_key(event.keycode):
+			pass  # itens de combate (H granada de luz, U sinalizador)
 		elif event.pressed and event.keycode == KEY_V:
 			use_3d = not use_3d
 			_popup(player.pos, "Nikolai 3D" if use_3d else "Nikolai 2D")
@@ -435,11 +439,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		if _mouse_on_hud(screen):  # rodapé: o fim do turno passa a vez; os ícones não movem o personagem
 			var n := action_bar._action_slots().size()
 			var ritual_id := ""
+			var item_id := ""
 			for k in n:
 				if action_bar.ritual_at(k, n) != "" and action_bar._action_rect(k, n).has_point(screen):
 					ritual_id = action_bar.ritual_at(k, n)
+				if action_bar.item_at(k) != "" and action_bar._action_rect(k, n).has_point(screen):
+					item_id = action_bar.item_at(k)
 			if ritual_id != "":
 				room_ritual.cast(ritual_id)
+			elif item_id != "":
+				room_items.use(item_id)
 			elif action_bar._end_turn_rect(n).has_point(screen):
 				_player_pass()
 			elif _reserve_id() != "" and action_bar._action_rect(1, n).has_point(screen):

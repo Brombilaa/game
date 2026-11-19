@@ -21,6 +21,11 @@ const BAR_DIVIDER := 16.0  # vão entre as casas e o fim do turno
 const BAR_END_W := 92.0
 const BAR_BOTTOM := 532.0
 const RITUAL_GAP := 10.0  # vão (com um fio) entre as ações comuns e as casas de ritual (modelo A, Léo 16/11)
+# Dica curta dos itens de combate na barra (valores provisórios em combat.json, itens_combate).
+const ITEM_TIPS := {
+	"granada_luz": "atordoa os inimigos perto do ponto",
+	"sinalizador": "luz no chão: +acerto contra quem está nela",
+}
 const RITUAL_KEYS := {"armadura_sangue": "Z", "amaldicoar_arma": "X", "eletrocussao": "T", "cicatrizacao": "Y"}
 
 
@@ -44,6 +49,11 @@ func _action_slots() -> Array:
 	slots.append(["kit", "Kit de primeiros socorros", "Reanimar · %d PA · restam %d" % [int(kit["custo_pa_combate"]), room.inventory.count(room.KIT_ID)], room.inventory.count(room.KIT_ID) > 0])
 	slots.append(["vigilancia", "Vigilância", "%d PA · tecla F · atira no 1º inimigo que se mover no cone" % int(room.player.weapon["pa_cost"]), room.rules.overwatch_blocker(room.player) == "" or room.player.overwatch])
 	slots.append(["atrasar", "Atrasar", "Age depois na rodada · tecla D", true])
+	for iid in room.room_items.available():  # itens de combate na mochila (granada de luz e sinalizador)
+		var cost := room.item_rules.cost(iid)
+		var it := data.get_entry("itens", iid)
+		slots.append([iid, str(it["nome"]), "%d PA · tecla %s · %s" % [cost, RoomItems.KEY_LABELS.get(iid, "?"), ITEM_TIPS.get(iid, "")],
+			room.player.is_alive() and room.player.pa >= cost, [], {}, room.inventory.count(iid)])
 	for rid in _rituals():  # rituais do controlado (Miguel): uma casa por ritual, com etiqueta de PA e SAN
 		var r := room.rituals.ritual(rid)
 		var pa := int(r["custo_pa"])
@@ -67,6 +77,18 @@ func ritual_start(n: int) -> int:
 func ritual_at(k: int, n: int) -> String:
 	var list := _rituals()
 	var i := k - (n - list.size())
+	return list[i] if i >= 0 and i < list.size() else ""
+
+
+# Índice da primeira casa de item de combate (depois de kit, vigilância e atrasar).
+func item_start() -> int:
+	return kit_index() + 3
+
+
+# Item de combate na casa `k` da barra, ou "" se a casa não é de item.
+func item_at(k: int) -> String:
+	var list := room.room_items.available()
+	var i := k - item_start()
 	return list[i] if i >= 0 and i < list.size() else ""
 
 
@@ -166,8 +188,10 @@ func _draw_slot(font: Font, r: Rect2, slot: Array, selected: bool, hover: bool) 
 		room.draw_rect(r.grow(-0.5), Color(1, 1, 1, 0.5 if hover else 0.2), false, 0.5)
 	if hover:
 		room.draw_rect(r, Color(1, 1, 1, 0.08))
-	if slot.size() > 5:
+	if slot.size() > 5 and not slot[5].is_empty():
 		_draw_cost_tag(font, r, int(slot[5]["pa"]), int(slot[5]["san"]), enabled)
+	if slot.size() > 6:
+		_draw_qty_tag(font, r, int(slot[6]))
 	if slot.size() > 4 and not slot[4].is_empty():
 		_draw_ammo_tag(font, r, int(slot[4][0]), int(slot[4][1]), int(room.cfg.weapon(str(slot[0]))["mag_size"]))
 
@@ -183,6 +207,15 @@ func _draw_ammo_tag(font: Font, r: Rect2, mag: int, reserve: int, mag_size: int)
 	var ink := Color(0.91, 0.38, 0.33) if low else Color(0.94, 0.91, 0.84)
 	room.draw_string(font, tag.position + Vector2(3.0, 9.0), str(mag), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, ink)
 	room.draw_string(font, tag.position + Vector2(0, 9.0), "/%d" % reserve, HORIZONTAL_ALIGNMENT_RIGHT, tag.size.x - 2.5, 6, Color(0.67, 0.63, 0.56))
+
+
+# Quantidade na mochila no canto de baixo da casa dos itens de combate.
+func _draw_qty_tag(font: Font, r: Rect2, qty: int) -> void:
+	var tag := Rect2(Vector2(r.end.x - 15.0 - 1.0, r.end.y - 12.0 - 1.0), Vector2(15.0, 12.0))
+	room.draw_rect(tag.grow(1.0), Color.BLACK)
+	room.draw_rect(tag, Color(0.075, 0.062, 0.052, 0.94))
+	room.draw_rect(tag.grow(-0.5), Color(1, 1, 1, 0.2), false, 0.5)
+	room.draw_string(font, tag.position + Vector2(0, 9.0), "x%d" % qty, HORIZONTAL_ALIGNMENT_CENTER, tag.size.x, 8, Color(0.94, 0.91, 0.84))
 
 
 # Etiqueta de custo dos rituais no canto de baixo da casa (modelo A do Léo): PA em branco, SAN em roxo.

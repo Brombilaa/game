@@ -15,6 +15,7 @@ extends RefCounted
 var cfg: CombatConfig
 var rng: RandomNumberGenerator
 var units: Array = []  # todos em combate (a sala atualiza); usado para achar o aliado que flanqueia
+var lit_zones: Array = []  # sinalizadores acesos (ItemRules): {pos, radius, rounds, owner, bonus}
 
 
 func _init(config: CombatConfig, random: RandomNumberGenerator = null) -> void:
@@ -119,11 +120,23 @@ func hit_chance(attacker: Combatant, target: Combatant, covers: Array = [], stea
 	chance += maxi(attacker.initiative - 1, 0) * cfg.value("agi_hit_bonus")  # initiative = AGI
 	if attacker.ruptured:
 		chance -= float(cfg.san("ruptura_acerto"))  # ruptura de SAN (GDD #11)
+	chance += lit_bonus(attacker, target)  # sinalizador (itens de combate, provisório)
 	chance -= _range_penalty(w, gap(attacker, target))
 	var c := cover_between(attacker.pos, target, covers)
 	if c and c.kind == "partial":
 		chance -= float(cfg.cover("partial")["hit_penalty"])
 	return clampf(chance, cfg.value("hit_chance_min"), cfg.value("hit_chance_max"))
+
+
+# Sinalizador aceso (ItemRules): o grupo acerta melhor o inimigo que está dentro da luz. Não soma dois sinalizadores.
+func lit_bonus(attacker: Combatant, target: Combatant) -> float:
+	if attacker.side != Combatant.Side.PLAYER or target.side == attacker.side:
+		return 0.0
+	var best := 0.0
+	for z: Dictionary in lit_zones:
+		if target.pos.distance_to(z.pos) <= float(z.radius) + target.radius:
+			best = maxf(best, float(z.bonus))
+	return best
 
 
 # Aliado do atacante que flanqueia o alvo (M4): vivo, a até `flank_max_distance_m` do alvo e do lado

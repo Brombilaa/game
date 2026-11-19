@@ -187,6 +187,8 @@ func gear_use(m: Combatant, bag_index: int) -> String:
 		return "Recarregue a arma com G"
 	if id == TestRoom.KIT_ID:
 		return "O kit reanima um aliado caído (barra de combate)"
+	if room.item_rules.is_combat_item(id):
+		return "Use em combate (tecla %s ou barra de combate)" % RoomItems.KEY_LABELS.get(id, "?")
 	var heal := effect == "curar_pv"
 	if not cures.has(effect) and not heal:
 		return "Sem efeito por enquanto"
@@ -220,6 +222,8 @@ func _setup_gear() -> void:
 	room.inventory = Inventory.new(room.cfg.game_data)
 	var scarce := room._gear_scarce()
 	var items := [[TestRoom.KIT_ID, 1], ["colete_leve", 1], ["colete_pesado", 1]] if scarce else [[TestRoom.KIT_ID, 1], ["bandagem", 2], ["antidoto", 1], ["colete_leve", 1], ["colete_pesado", 1]]
+	# Itens de combate (sugestão 5, provisório do Claude): a Ordem manda o grupo com uma granada de luz e um sinalizador.
+	items += [["granada_luz", 1], ["sinalizador", 1]] if scarce else [["granada_luz", 2], ["sinalizador", 2]]
 	for item in items:
 		room.inventory.add(item[0], item[1])
 	var reserves := {"pistola": 12, "escopeta": 0, "fuzil_precisao": 5} if scarce else {"pistola": 24, "escopeta": 12, "fuzil_precisao": 12}
