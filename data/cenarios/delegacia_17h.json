@@ -1337,12 +1337,16 @@
     0,
     -30
    ],
-   "texto": "A gaveta da sala de provas foi forçada. Dentro, entre papéis manchados, ainda restam algumas balas soltas.",
+   "texto": "A gaveta da sala de provas foi forçada. Dentro, entre papéis manchados, ainda restam algumas balas soltas e um celular de tela rachada, num saco de provas.",
    "provisorio": true,
    "da": [
     {
      "item": "municao_pistola",
      "qtd": 6
+    },
+    {
+     "item": "celular_quebrado",
+     "qtd": 1
     }
    ]
   },
@@ -1409,7 +1413,7 @@
     0,
     -30
    ],
-   "texto": "Atrás da estante do escritório há um cofre de parede. A combinação está colada por baixo da gaveta da escrivaninha, e dentro ficam um colete e munição guardados pelo delegado.",
+   "texto": "Atrás da estante do escritório há um cofre de parede. A combinação está colada por baixo da gaveta da escrivaninha, e dentro ficam um colete, munição e duas baterias de rádio guardados pelo delegado.",
    "provisorio": true,
    "da": [
     {
@@ -1419,6 +1423,10 @@
     {
      "item": "municao_pistola",
      "qtd": 6
+    },
+    {
+     "item": "bateria",
+     "qtd": 2
     }
    ]
   },

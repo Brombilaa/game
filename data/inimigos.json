@@ -101,6 +101,11 @@
     "fases": [],
     "drops": [
       {
+        "item": "sangue_coagulado",
+        "qtd": 1,
+        "chance": 1.0
+      },
+      {
         "item": "bandagem",
         "qtd": 1,
         "chance": 0.15

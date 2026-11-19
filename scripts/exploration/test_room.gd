@@ -131,7 +131,7 @@ var cfg := CombatConfig.load_file()
 
 var rules := CombatRules.new(cfg)
 var san := SanRules.new(cfg)  # SAN como medidor de terror: perda, ruptura e loucura (GDD #11)
-var rituals := RitualRules.new(cfg, rules, san)  # rituais do Ocultista (Miguel): custo de PA e SAN
+var rituals := RitualRules.new(cfg, rules, san)  # rituais do Ocultista (Miguel): custo de PA, SAN e componente
 var item_rules := ItemRules.new(cfg, rules)  # itens de combate: granada de luz e sinalizador (provisórios)
 
 # Grupo: Fernando, Nikolai e Miguel pelas fichas do GDD (classe e atributos; Ficha e personagens.json).
@@ -155,7 +155,10 @@ var follow_rng := RandomNumberGenerator.new()
 var loot_rng := RandomNumberGenerator.new()  # sorteio dos itens largados pelos inimigos
 var pending_corpse: Combatant  # corpo que o controlado vai examinar ao chegar
 
-var inventory: Inventory  # mochila compartilhada do grupo (20 espaços)
+var inventory: Inventory:  # mochila compartilhada do grupo (20 espaços); os rituais tiram dela os componentes
+	set(v):
+		inventory = v
+		rituals.inventory = v
 
 var gear := {}  # membro -> {"principal", "secundaria", "colete", "acessorio"}: ids ("" = vazio)
 
