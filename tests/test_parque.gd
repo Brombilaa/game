@@ -55,18 +55,18 @@ func _run() -> void:
 	_check(fernando.max_san == san0 + 2 and fernando.san == fernando.max_san, "a pulseira dá 2 de SAN máxima")
 	room.gear_unequip(fernando, "acessorio")
 	_check(fernando.max_san == san0, "tirar a pulseira devolve a SAN")
-	# Acessório de PV (crucifixo, provisório): +3 de PV máximo; trocar de acessório tira o anterior.
+	# Acessório de PV (plaqueta de identificação, provisório; o crucifixo saiu, Léo 19/11: o jogo não usa cruzes): +3 de PV máximo; trocar de acessório tira o anterior.
 	var pv0 := fernando.max_pv
-	room.inventory.add("crucifixo_velho")
+	room.inventory.add("plaqueta_identificacao")
 	var cruz := -1
 	for i in room.inventory.slots.size():
-		if not room.inventory.slots[i].is_empty() and room.inventory.slots[i]["id"] == "crucifixo_velho":
+		if not room.inventory.slots[i].is_empty() and room.inventory.slots[i]["id"] == "plaqueta_identificacao":
 			cruz = i
-	_check(room.gear_is_equippable("crucifixo_velho") and room.gear_item_kind("crucifixo_velho") == "acessorio", "o crucifixo é acessório")
+	_check(room.gear_is_equippable("plaqueta_identificacao") and room.gear_item_kind("plaqueta_identificacao") == "acessorio", "a plaqueta é acessório")
 	room.gear_equip(fernando, "acessorio", cruz)
-	_check(fernando.max_pv == pv0 + 3 and fernando.pv == fernando.max_pv, "o crucifixo dá 3 de PV máximo")
+	_check(fernando.max_pv == pv0 + 3 and fernando.pv == fernando.max_pv, "a plaqueta dá 3 de PV máximo")
 	room.gear_equip(fernando, "acessorio", pul)
-	_check(fernando.max_pv == pv0 and fernando.max_san == san0 + 2 and room.inventory.count("crucifixo_velho") == 1, "trocar de acessório devolve o PV e aplica a SAN")
+	_check(fernando.max_pv == pv0 and fernando.max_san == san0 + 2 and room.inventory.count("plaqueta_identificacao") == 1, "trocar de acessório devolve o PV e aplica a SAN")
 	room.gear_unequip(fernando, "acessorio")
 	_check(fernando.max_san == san0 and fernando.max_pv == pv0, "sem acessório, PV e SAN voltam ao normal")
 	room.gear_equip(fernando, "secundaria", esc)
