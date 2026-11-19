@@ -180,9 +180,9 @@ func needs_reload(u: Combatant) -> bool:
 
 # Resolve o ataque, gasta PA e aplica dano. Coberturas não são destruídas (Léo: ainda não).
 # stealth: ataque furtivo contra inimigo sem alerta (bônus de acerto e multiplicador de dano).
-# Retorna {ok, reason, chance, hit, blocked, crit, damage, cover}.
+# Retorna {ok, reason, chance, hit, blocked, crit, damage, cover, flank, tipo_dano, afinidade ("fraqueza"/"resistencia"/"")}.
 func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers: Array, stealth := false) -> Dictionary:
-	var result := {"ok": false, "reason": "", "chance": 0.0, "hit": false, "blocked": false, "crit": false, "damage": 0, "cover": "", "flank": false}
+	var result := {"ok": false, "reason": "", "chance": 0.0, "hit": false, "blocked": false, "crit": false, "damage": 0, "cover": "", "flank": false, "tipo_dano": "", "afinidade": ""}
 	result.reason = attack_blocker(attacker, target, walls, covers)
 	if result.reason != "":
 		return result
@@ -208,6 +208,9 @@ func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers:
 		dmg *= cfg.value("stealth_damage_multiplier")
 	if attacker.ruptured:
 		dmg *= 1.0 - float(cfg.san("ruptura_dano"))
+	result.tipo_dano = Fraquezas.tipo_da_arma(attacker.weapon)
+	result.afinidade = Fraquezas.afinidade(cfg.game_data, target.kind, result.tipo_dano)  # fraqueza/resistência (provisório)
+	dmg *= Fraquezas.multiplicador(result.afinidade)
 	result.damage = damage_after_defense(dmg, target.defense_total())
 	target.take_damage(result.damage)
 	if result.crit and target.is_alive():

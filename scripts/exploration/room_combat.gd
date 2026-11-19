@@ -476,6 +476,7 @@ func _on_fx_impact(job: Dictionary) -> void:
 		if target.pos != attacker.pos and target.is_alive():
 			room.facing8[target] = CharacterSheet.dir_from_vector(room._iso(attacker.pos) - room._iso(target.pos))  # o atingido vira para quem bateu
 		_popup(target.pos, "-%d" % r.damage, "crit" if r.crit else "damage")
+		_afinidade(target, r)
 		room.hit_shake[target] = TestRoom.CRIT_SHAKE_SECONDS if r.crit else TestRoom.HIT_SHAKE_SECONDS
 		if target.is_alive() and room._sheet3d(target) != null and not room.enemies.has(target):
 			room.nikolai_clock[target] = {"anim": "hit", "start": Time.get_ticks_msec()}  # reação ao golpe (Nikolai 3D)
@@ -518,6 +519,16 @@ func _san_report(results: Dictionary, cause: String) -> void:
 
 # `at` é um ponto da sala; o texto nasce na altura da cabeça e sobe enquanto some.
 # kind: damage, crit, miss, blocked, down, heal ou info (estilos em POPUP_STYLES).
+# Golpe que pegou fraqueza ou resistência do inimigo: mostra FRAQUEZA/RESISTE e, na primeira vez, anota no diário.
+func _afinidade(target: Combatant, r: Dictionary) -> void:
+	var f := Fraquezas.ao_acertar(room.rules.cfg.game_data, target, r)
+	if f["popup"] == "":
+		return
+	_popup(target.pos, f["popup"], "crit" if f["popup"] == "FRAQUEZA" else "blocked")
+	if f["nova"]:
+		_log("Anotado no diário: %s" % Fraquezas.titulo(room.rules.cfg.game_data, target.kind, str(r["tipo_dano"])))
+
+
 func _popup(at: Vector2, text: String, kind := "info") -> void:
 	var stacked := room.popups.filter(func(p: Dictionary) -> bool: return p.anchor.distance_to(at) < 1.0).size()
 	room.popups.append({"anchor": at, "pos": room._iso(at) + Vector2(0, -CharacterSheet.HEIGHT - 14 - 18 * stacked), "text": text, "kind": kind, "time": TestRoom.POPUP_SECONDS})

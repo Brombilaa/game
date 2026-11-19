@@ -1205,7 +1205,10 @@ func _close_dialog() -> void:
 	Diario.anotar(_diario_lugar(), cid, c["texto"], c["inspecao"])
 	if c["perda_san"] > 0 or c["perturbadora"]:  # pista que perturba: quem leu (o líder) perde SAN
 		room_combat._san_report({player: san.clue_read(player, {"perda_san": c["perda_san"]} if c["perda_san"] > 0 else c)}, "lê a pista")
-	collect_items(c["da"])
+	var achou := collect_items(c["da"])
+	var fraq := Fraquezas.ao_examinar(rules.cfg.game_data, cid)  # a pista ensina uma fraqueza ou resistência
+	if not fraq.is_empty():
+		hud.show_notice(((achou + " · ") if achou != "" else "") + "Diário: " + ", ".join(fraq))
 	var falas := CaixaFala.falas_da_pista(scenario.id, cid)
 	if not falas.is_empty():  # 2 a 4 falas do grupo reagindo à pista, antes do que vem depois dela
 		await caixa.sequencia(falas)

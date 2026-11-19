@@ -106,6 +106,7 @@ func _show(caster: Combatant, id: String, target: Combatant, out: Dictionary) ->
 			room.room_combat._popup(caster.pos, "+%d DANO" % int(r["valor"]), "heal")
 		"dano":
 			room.room_combat._popup(target.pos, "-%d" % out.damage, "damage")
+			room.room_combat._afinidade(target, out)
 			room.room_combat._log("%s atinge %s: %d" % [r["nome"], target.name, out.damage])
 			room.hit_shake[target] = TestRoom.HIT_SHAKE_SECONDS
 			if out.stunned:

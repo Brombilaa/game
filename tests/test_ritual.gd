@@ -121,7 +121,7 @@ func _test_curse() -> void:
 func _test_electrocution() -> void:
 	_fresh()
 	var m := _miguel(3)
-	var e := cfg.make_enemy("cultista", Vector2(100, 0))
+	var e := cfg.make_enemy("atirador", Vector2(100, 0))  # sem fraqueza nem resistência a ritual (o cultista resiste)
 	e.defense = 0.0
 	e.pv = 100
 	e.max_pv = 100
@@ -144,7 +144,7 @@ func _test_electrocution() -> void:
 	_check(rit.blocker(m, "eletrocussao", m, NO_WALLS, []) == "requirement", "não vale contra aliado")
 	var stuns := 0
 	for i in 200:
-		var t := cfg.make_enemy("cultista", Vector2(100, 0))
+		var t := cfg.make_enemy("atirador", Vector2(100, 0))
 		t.pv = 100
 		t.max_pv = 100
 		var mm := _miguel()

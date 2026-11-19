@@ -13,7 +13,9 @@
       "faca_cultista"
     ],
     "comportamento": "cerca",
-    "resistencias": [],
+    "resistencias": [
+      "ritual"
+    ],
     "fraquezas": [],
     "chefe": false,
     "fases": [],
@@ -45,7 +47,9 @@
     ],
     "comportamento": "atirador",
     "resistencias": [],
-    "fraquezas": [],
+    "fraquezas": [
+      "corpo_a_corpo"
+    ],
     "chefe": false,
     "fases": [],
     "drops": [
@@ -80,8 +84,12 @@
       "garra_criatura"
     ],
     "comportamento": "cerca",
-    "resistencias": [],
-    "fraquezas": [],
+    "resistencias": [
+      "balistico"
+    ],
+    "fraquezas": [
+      "ritual"
+    ],
     "chefe": false,
     "fases": [],
     "drops": [
@@ -106,8 +114,12 @@
       "tiro_atirador"
     ],
     "comportamento": "atirador",
-    "resistencias": [],
-    "fraquezas": [],
+    "resistencias": [
+      "corpo_a_corpo"
+    ],
+    "fraquezas": [
+      "ritual"
+    ],
     "chefe": true,
     "fases": [],
     "drops": [
@@ -137,8 +149,13 @@
       "garra_dama"
     ],
     "comportamento": "cerca",
-    "resistencias": ["atordoado"],
-    "fraquezas": [],
+    "resistencias": [
+      "atordoado",
+      "corpo_a_corpo"
+    ],
+    "fraquezas": [
+      "ritual"
+    ],
     "chefe": true,
     "fases": [],
     "drops": []
