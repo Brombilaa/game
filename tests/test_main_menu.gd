@@ -67,17 +67,18 @@ func _test_options() -> void:
 
 
 func _test_controles() -> void:
-	var teclas := {}
-	for g in ControlesCaderno.grupos():
-		for row in g[1]:
-			for k in row[0]:
-				teclas[k] = true
-	for k in ["B", "J", "C", "Tab", "Esc", "Espaço", "D", "Q", "G", "F", "Z", "X", "T", "Y"]:
-		_check(teclas.has(k), "o mapa de controles lista a tecla " + k)
+	var m := ControlesCaderno.mapa()
+	for k in ["B", "J", "C", "Tab", "Esc", "Espaço", "D", "Q", "G", "F", "Z", "X", "T", "Y", "L", "E", "Shift"]:
+		_check(m.has(k), "o mapa de controles tem a tecla " + k)
 	for iid in RoomItems.KEY_LABELS:
-		_check(teclas.has(RoomItems.KEY_LABELS[iid]), "o mapa lista a tecla do item " + iid)
+		_check(m.has(RoomItems.KEY_LABELS[iid]), "o mapa tem a tecla do item " + iid)
+	var no_teclado := {}
+	for k in ControlesCaderno.LAYOUT:
+		no_teclado[k[0]] = true
+	for k in m:
+		_check(no_teclado.has(k), "a tecla %s aparece desenhada no teclado" % k)
 	var mapa := ControlesCaderno.new()
-	_check(mapa.custom_minimum_size.y > 0.0 and mapa.custom_minimum_size.y <= 540.0, "a página do mapa cabe na tela")
+	_check(mapa.custom_minimum_size.y <= 540.0 and mapa.custom_minimum_size.x <= 960.0, "a página do mapa cabe na tela")
 
 
 func _test_scene() -> void:

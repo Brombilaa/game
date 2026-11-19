@@ -1,150 +1,179 @@
 class_name ControlesCaderno
 extends Control
-# Mapa de controles nas Opções (Léo, 19/11/2026): uma página do caderno de campo (mesma placa escura, bronze,
-# dourado e teclas do Diário e do inventário) com todas as teclas e botões do jogo. Só mostra; não remapeia.
-# A lista vem de `grupos()`: as teclas dos itens de combate são lidas de RoomItems.KEY_LABELS e as dos
-# rituais de RoomActionBar.RITUAL_KEYS, então o mapa acompanha qualquer troca de tecla feita no código.
-# Quem mudar uma tecla em outro lugar do jogo deve atualizar a linha correspondente aqui.
+# Mapa de controles nas Opções (Léo, 19/11/2026): só a visão do teclado e do mouse, numa página do caderno de campo
+# (mesma placa escura, bronze, dourado e teclas do Diário e do inventário). Cada tecla usada mostra a função
+# embaixo do rótulo e a cor diz o grupo. Só mostra; não remapeia.
+# As teclas dos itens de combate vêm de RoomItems.KEY_LABELS e as dos rituais de RoomActionBar.RITUAL_KEYS, então
+# o mapa acompanha qualquer troca feita no código. Quem mudar outra tecla do jogo deve atualizar `mapa()`.
 
 const GOLD := Color(0.839, 0.678, 0.361)
 const BRONZE := Color(0.353, 0.255, 0.149)
 const PLATE := Color(0.05, 0.037, 0.03, 0.97)
 const TEXT := Color(0.91, 0.87, 0.79)
 const MUTED := Color(0.66, 0.6, 0.49)
-const CRIMSON := Color(0.62, 0.09, 0.11)
 const FONT := preload("res://assets/fonts/SpecialElite-Regular.ttf")
 const TEX_KEY := preload("res://assets/sprites/ui/inv/tecla.png")
-const TEX_KEY_WIDE := preload("res://assets/sprites/ui/inv/tecla_larga.png")
 
-const PAD := 16.0
-const COL_GAP := 22.0
-const HEAD_H := 21.0
-const ROW_H := 17.0
-const GROUP_GAP := 8.0
-const KEY_H := 17.0
-const KEY_W := 17.0
-const KEY_W_WIDE := 25.0
+# Grupos: cor da tecla e nome na legenda.
+const CATS := {
+	"mover": [Color(0.839, 0.678, 0.361), "Explorar"],
+	"painel": [Color(0.45, 0.66, 0.78), "Painéis e sistema"],
+	"combate": [Color(0.86, 0.32, 0.28), "Combate"],
+	"uso": [Color(0.66, 0.5, 0.82), "Itens e rituais"],
+}
+const KEY := 40.0
+const GAP := 3.0
+const PAD := 18.0
 const TITLE_H := 34.0
-const FOOT_H := 24.0
-const TEXT_SIZE := 10
-const KEYS_W := 92.0  # largura reservada às teclas de cada linha
+const PAGE_W := 840.0
+const PAGE_H := 372.0
 
-const ITEM_NAMES := {"granada_luz": "Granada de luz (combate, 1 PA)", "sinalizador": "Sinalizador (combate, 1 PA)"}
+# Teclado: [rótulo, coluna (em teclas), linha, largura (em teclas)].
+const LAYOUT := [
+	["Esc", 0.0, 0, 1.0], ["F3", 2.0, 0, 1.0],
+	["1", 0.0, 1, 1.0], ["2", 1.0, 1, 1.0], ["3", 2.0, 1, 1.0], ["4", 3.0, 1, 1.0], ["5", 4.0, 1, 1.0],
+	["6", 5.0, 1, 1.0], ["7", 6.0, 1, 1.0], ["8", 7.0, 1, 1.0], ["9", 8.0, 1, 1.0], ["0", 9.0, 1, 1.0],
+	["Tab", 0.0, 2, 1.5], ["Q", 1.5, 2, 1.0], ["W", 2.5, 2, 1.0], ["E", 3.5, 2, 1.0], ["R", 4.5, 2, 1.0],
+	["T", 5.5, 2, 1.0], ["Y", 6.5, 2, 1.0], ["U", 7.5, 2, 1.0], ["I", 8.5, 2, 1.0], ["O", 9.5, 2, 1.0], ["P", 10.5, 2, 1.0],
+	["A", 1.75, 3, 1.0], ["S", 2.75, 3, 1.0], ["D", 3.75, 3, 1.0], ["F", 4.75, 3, 1.0], ["G", 5.75, 3, 1.0],
+	["H", 6.75, 3, 1.0], ["J", 7.75, 3, 1.0], ["K", 8.75, 3, 1.0], ["L", 9.75, 3, 1.0], ["Enter", 10.75, 3, 1.75],
+	["Shift", 0.0, 4, 2.25], ["Z", 2.25, 4, 1.0], ["X", 3.25, 4, 1.0], ["C", 4.25, 4, 1.0], ["V", 5.25, 4, 1.0],
+	["B", 6.25, 4, 1.0], ["N", 7.25, 4, 1.0], ["M", 8.25, 4, 1.0],
+	["Espaço", 2.5, 5, 6.5],
+	["Home", 13.25, 1, 1.0], ["Del", 14.25, 1, 1.0], ["↑", 13.75, 4, 1.0], ["↓", 13.75, 5, 1.0],
+]
 
-var cols: Array = []  # [[grupo, ...], [grupo, ...]]
-var page_w := 600.0
+var mapped := {}  # rótulo -> [grupo, texto curto]
 
 
 func _init() -> void:
-	cols = columns()
+	mapped = mapa()
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	custom_minimum_size = Vector2(page_w, page_height())
+	custom_minimum_size = Vector2(PAGE_W, PAGE_H)
 
 
-# Cada grupo: [título, [[teclas, descrição], ...]]; "teclas" é uma lista de rótulos (cada um vira uma tecla)
-# ou um texto de mouse (começa com "·").
-static func grupos() -> Array:
-	var itens: Array = []
+# Rótulo da tecla -> [grupo, função em poucas palavras]. Duas funções na mesma tecla viram "a · b".
+static func mapa() -> Dictionary:
+	var m := {}
+	_add(m, "Esc", "painel", "pausa")
+	_add(m, "F3", "painel", "perf.")
+	_add(m, "B", "painel", "mochila")
+	_add(m, "J", "painel", "diário")
+	_add(m, "E", "painel", "equipar")
+	_add(m, "Del", "painel", "descartar")
+	_add(m, "Enter", "painel", "ligar pistas")
+	_add(m, "↑", "painel", "diário")
+	_add(m, "↓", "painel", "diário")
+	_add(m, "L", "mover", "lanterna")
+	_add(m, "Tab", "mover", "trocar")
+	for n in ["1", "2", "3"]:
+		_add(m, n, "mover", "escolher")
+	_add(m, "C", "mover", "agachar")
+	_add(m, "Home", "mover", "câmera")
+	_add(m, "Espaço", "combate", "passar o turno")
+	_add(m, "D", "combate", "atrasar")
+	_add(m, "Q", "combate", "trocar arma")
+	_add(m, "G", "combate", "recarga")
+	_add(m, "F", "combate", "vigia")
+	_add(m, "Shift", "combate", "acelerar inimigo")
+	var itens := {"granada_luz": "granada", "sinalizador": "sinal"}
 	for iid in RoomItems.KEY_LABELS:
-		itens.append([[RoomItems.KEY_LABELS[iid]], ITEM_NAMES.get(iid, str(iid))])
-	itens.sort_custom(func(a: Array, b: Array) -> bool: return a[0][0] < b[0][0])
+		_add(m, RoomItems.KEY_LABELS[iid], "uso", itens.get(iid, str(iid)))
 	var rit := RoomActionBar.RITUAL_KEYS
-	return [
-		["MOVER E EXPLORAR", [
-			[["·Esq"], "Mover o grupo, examinar, abrir"],
-			[["·Meio"], "Combate: arrastar move a câmera"],
-			[["Home"], "Combate: recentrar a câmera"],
-			[["·Roda"], "Zoom"],
-			[["C"], "Agachar e levantar"],
-			[["Tab"], "Trocar de personagem"],
-			[["1", "2", "3"], "Escolher o personagem"],
-			[["L"], "Lanterna (só à noite)"],
-		]],
-		["PAINÉIS E SISTEMA", [
-			[["B"], "Inventário"],
-			[["J"], "Diário de pistas"],
-			[["Esc"], "Pausa; fecha painéis e menus"],
-			[["·Dir"], "Voltar nos menus"],
-			[["F3"], "Desempenho na tela"],
-		]],
-		["COMBATE", [
-			[["·Esq"], "Mover, atacar, escolher alvo"],
-			[["Espaço"], "Passar o turno"],
-			[["D"], "Atrasar (age depois)"],
-			[["Q"], "Trocar de arma"],
-			[["G"], "Recarregar"],
-			[["F"], "Vigilância"],
-			[["Shift"], "Acelerar turno inimigo (segurar)"],
-		]],
-		["ITENS E RITUAIS", itens + [
-			[[rit["armadura_sangue"]], "Armadura de Sangue (Miguel)"],
-			[[rit["amaldicoar_arma"]], "Amaldiçoar Arma de Sangue"],
-			[[rit["eletrocussao"]], "Eletrocussão"],
-			[[rit["cicatrizacao"]], "Cicatrização"],
-		]],
-		["INVENTÁRIO E DIÁRIO", [
-			[["E"], "Inventário: equipar ou usar"],
-			[["Del"], "Inventário: descartar"],
-			[["↑", "↓"], "Diário: percorrer pistas"],
-			[["L"], "Diário: ligar pistas"],
-			[["Enter"], "Diário: confirmar ligação"],
-		]],
-	]
+	var nomes := {"armadura_sangue": "armadura", "amaldicoar_arma": "maldição", "eletrocussao": "choque", "cicatrizacao": "curar"}
+	for rid in rit:
+		_add(m, rit[rid], "uso", nomes.get(rid, str(rid)))
+	return m
 
 
-# Duas colunas: [movimento, painéis, inventário] e [combate, itens e rituais].
-static func columns() -> Array:
-	var g := grupos()
-	return [[g[0], g[1], g[4]], [g[2], g[3]]]
+static func _add(m: Dictionary, key: String, cat: String, text: String) -> void:
+	if m.has(key):
+		m[key] = [m[key][0], str(m[key][1]) + " · " + text]
+	else:
+		m[key] = [cat, text]
 
 
-static func group_height(g: Array) -> float:
-	return HEAD_H + g[1].size() * ROW_H + GROUP_GAP
+func _kx(col: float) -> float:
+	return PAD + col * (KEY + GAP)
 
 
-static func page_height() -> float:
-	var h := 0.0
-	for col in columns():
-		var ch := 0.0
-		for g in col:
-			ch += group_height(g)
-		h = maxf(h, ch)
-	return TITLE_H + h + FOOT_H + PAD
+func _ky(row: int) -> float:
+	return TITLE_H + 12.0 + row * (KEY + GAP) + (8.0 if row > 0 else 0.0)
 
 
 func _draw() -> void:
-	var r := Rect2(Vector2.ZERO, size)
-	draw_rect(r, PLATE)
-	draw_rect(r, BRONZE, false, 2.0)
-	draw_rect(Rect2(PAD, TITLE_H - 6.0, size.x - PAD * 2.0, 1.0), Color(BRONZE, 0.8))
+	draw_rect(Rect2(Vector2.ZERO, size), PLATE)
+	draw_rect(Rect2(Vector2.ZERO, size), BRONZE, false, 2.0)
 	draw_string(FONT, Vector2(PAD, 22.0), "CADERNO DE CAMPO · CONTROLES", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, GOLD)
-	var col_w := (size.x - PAD * 2.0 - COL_GAP) / 2.0
-	for c in cols.size():
-		var x := PAD + c * (col_w + COL_GAP)
-		var y := TITLE_H + 2.0
-		for g in cols[c]:
-			draw_string(FONT, Vector2(x, y + 13.0), g[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 11, CRIMSON.lightened(0.35))
-			draw_rect(Rect2(x, y + 17.0, col_w, 1.0), Color(BRONZE, 0.55))
-			y += HEAD_H
-			for row in g[1]:
-				_draw_row(Vector2(x, y), row, col_w)
-				y += ROW_H
-			y += GROUP_GAP
-	draw_string(FONT, Vector2(PAD, size.y - 9.0), "Só leitura: as teclas ainda não podem ser trocadas.", HORIZONTAL_ALIGNMENT_LEFT, -1, 9, MUTED)
+	draw_rect(Rect2(PAD, TITLE_H - 6.0, size.x - PAD * 2.0, 1.0), Color(BRONZE, 0.8))
+	for k in LAYOUT:
+		_draw_key(k)
+	_draw_mouse(Vector2(size.x - 150.0, TITLE_H + 6.0))
+	_draw_legend(Vector2(PAD, size.y - 34.0))
 
 
-func _draw_row(at: Vector2, row: Array, col_w: float) -> void:
+func _draw_key(k: Array) -> void:
+	var label: String = k[0]
+	var r := Rect2(_kx(k[1]), _ky(k[2]), k[3] * KEY + (k[3] - 1.0) * GAP, KEY)
+	var use: Array = mapped.get(label, [])
+	var tint: Color = CATS[use[0]][0] if not use.is_empty() else Color(0.3, 0.26, 0.22)
+	draw_rect(r, Color(tint, 0.2 if not use.is_empty() else 0.1))
+	draw_rect(r, Color(tint, 0.95 if not use.is_empty() else 0.45), false, 1.0)
+	var big := label.length() <= 2 or label == "Home"
+	draw_string(FONT, r.position + Vector2(0, 14.0), label, HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 11 if big else 9, TEXT if not use.is_empty() else MUTED)
+	if not use.is_empty():
+		var lines := _wrap(str(use[1]), r.size.x + 2.0, 7)
+		for i in mini(lines.size(), 2):
+			draw_string(FONT, r.position + Vector2(-1.0, 23.0 + i * 8.0), lines[i], HORIZONTAL_ALIGNMENT_CENTER, r.size.x + 2.0, 7, Color(tint.lightened(0.35), 1.0))
+
+
+# Quebra o texto em linhas que cabem em `w` pixels (por palavras).
+static func _wrap(text: String, w: float, fsize: int) -> Array:
+	var lines: Array = []
+	var cur := ""
+	for word in text.split(" "):
+		var next: String = word if cur == "" else cur + " " + word
+		if FONT.get_string_size(next, HORIZONTAL_ALIGNMENT_LEFT, -1, fsize).x > w and cur != "":
+			lines.append(cur)
+			cur = word
+		else:
+			cur = next
+	lines.append(cur)
+	return lines
+
+
+func _draw_mouse(at: Vector2) -> void:
+	var body := Rect2(at + Vector2(25, 0), Vector2(70, 110))
+	var edge := Color(BRONZE, 0.95)
+	draw_rect(body, Color(0.1, 0.075, 0.06))
+	draw_rect(body, edge, false, 1.5)
+	var left := Rect2(body.position + Vector2(2, 2), Vector2(32, 40))
+	var right := Rect2(body.position + Vector2(36, 2), Vector2(32, 40))
+	var cm: Color = CATS["mover"][0]
+	var cc: Color = CATS["combate"][0]
+	draw_rect(left, Color(cm, 0.35))
+	draw_rect(right, Color(CATS["painel"][0], 0.35))
+	draw_rect(Rect2(body.position + Vector2(30, 10), Vector2(10, 22)), Color(cc, 0.5))
+	draw_rect(Rect2(body.position + Vector2(30, 10), Vector2(10, 22)), edge, false, 1.0)
+	draw_line(body.position + Vector2(35, 0), body.position + Vector2(35, 44), edge, 1.0)
+	draw_line(body.position + Vector2(0, 44), body.position + Vector2(70, 44), edge, 1.0)
+	var notes := [
+		["Esq", "mover · atacar · examinar", cm],
+		["Dir", "voltar nos menus", CATS["painel"][0]],
+		["Meio", "arrastar: câmera (combate)", cc],
+		["Roda", "zoom", GOLD],
+	]
+	for i in notes.size():
+		var y := body.end.y + 18.0 + i * 24.0
+		draw_string(FONT, Vector2(at.x - 8.0, y), "Mouse " + notes[i][0], HORIZONTAL_ALIGNMENT_LEFT, -1, 9, notes[i][2])
+		draw_string(FONT, Vector2(at.x - 8.0, y + 10.0), notes[i][1], HORIZONTAL_ALIGNMENT_LEFT, 130, 8, MUTED)
+
+
+func _draw_legend(at: Vector2) -> void:
 	var x := at.x
-	for k in row[0]:
-		var label: String = k
-		if label.begins_with("·"):  # botão do mouse: texto dourado, sem tecla
-			var mouse := "Mouse " + label.substr(1)
-			draw_string(FONT, at + Vector2(x - at.x, 13.0), mouse, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, GOLD)
-			x += FONT.get_string_size(mouse, HORIZONTAL_ALIGNMENT_LEFT, -1, 9).x + 4.0
-			continue
-		var w := KEY_W if label.length() == 1 else maxf(KEY_W_WIDE, FONT.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 9).x + 16.0)
-		var kr := Rect2(Vector2(x, at.y + 1.0), Vector2(w, KEY_H))
-		draw_texture_rect(TEX_KEY if label.length() == 1 else TEX_KEY_WIDE, kr, false)
-		draw_string(FONT, kr.position + Vector2(0, 12.5), label, HORIZONTAL_ALIGNMENT_CENTER, w, 9, TEXT)
-		x += w + 3.0
-	draw_string(FONT, Vector2(at.x + KEYS_W, at.y + 13.0), str(row[1]), HORIZONTAL_ALIGNMENT_LEFT, col_w - KEYS_W, TEXT_SIZE, TEXT)
+	for cat in CATS:
+		draw_rect(Rect2(x, at.y + 2.0, 10, 10), Color(CATS[cat][0], 0.35))
+		draw_rect(Rect2(x, at.y + 2.0, 10, 10), CATS[cat][0], false, 1.0)
+		draw_string(FONT, Vector2(x + 15.0, at.y + 11.0), CATS[cat][1], HORIZONTAL_ALIGNMENT_LEFT, -1, 10, TEXT)
+		x += 24.0 + FONT.get_string_size(CATS[cat][1], HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x + 12.0
+	draw_string(FONT, Vector2(PAD, size.y - 8.0), "Só leitura: as teclas ainda não podem ser trocadas.", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, MUTED)
