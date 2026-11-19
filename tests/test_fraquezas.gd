@@ -97,6 +97,9 @@ func _dano_ritual() -> void:
 	rng.seed = 3
 	var rules := CombatRules.new(cfg, rng)
 	var rit := RitualRules.new(cfg, rules, SanRules.new(cfg, rng), rng)
+	rit.inventory = Inventory.new(cfg.game_data)  # a Eletrocussão gasta um componente de Energia
+	for iid in rit.component_items(rit.element("eletrocussao")):
+		rit.inventory.add(iid, 5)
 	var m := cfg.make_agent("miguel", Vector2.ZERO, {"VIG": 1, "FOR": 1, "INT": 1, "AGI": 1, "PRE": 1})
 	m.max_san = 50
 	m.san = 50
