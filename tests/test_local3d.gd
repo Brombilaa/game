@@ -6,7 +6,7 @@ extends SceneTree
 # Rodar com:
 #   godot --headless --path . -s tests/test_local3d.gd
 
-const LOCAIS := ["delegacia_17h", "delegacia_21h", "subsolo", "biblioteca", "fazenda", "cripta"]
+const LOCAIS := ["delegacia_17h", "delegacia_21h", "subsolo", "biblioteca", "fazenda", "fazenda_ordem", "cripta"]
 
 var failures := 0
 
@@ -29,6 +29,7 @@ func _run() -> void:
 	await _invasao()
 	await _celeiro()
 	await _cripta()
+	await _fazenda_ordem()
 	_cinema_e_tentaculo()
 	await _fim_da_missao()
 	print("Falhas: %d" % failures if failures > 0 else "OK: test_local3d")
@@ -205,6 +206,38 @@ func _celeiro() -> void:
 	for e in room.enemies:
 		var rota: PackedVector2Array = room.pathfinder.find_path(room.player.pos, e.pos, room._obstacles(room.player, false), room.player.radius)
 		_check(rota.size() > 1, "fazenda: dá para chegar até o inimigo do celeiro")
+	await _fechar(room)
+
+
+# Fazenda com a Ordem (Léo, 16/11): depois da cripta o grupo sobe e encontra os agentes, sem inimigos; cada agente
+# tem uma conversa; a Letícia acordada leva a cripta até lá.
+func _fazenda_ordem() -> void:
+	Missao1.reiniciar()
+	var room = await _abrir("fazenda_ordem")
+	_check(room.enemies.is_empty() and room.mode == room.Mode.EXPLORATION, "fazenda da Ordem: sem inimigos")
+	_check(room.scenario.npcs.size() == 4 and room.scenario.npc_info.size() == 4, "fazenda da Ordem: 4 figuras (3 agentes e a Letícia)")
+	for id in room.scenario.npcs:
+		_check(room._npc_nome(id) != "", "fazenda da Ordem: %s tem nome" % id)
+		var rota: PackedVector2Array = room.pathfinder.find_path(room.player.pos, room.scenario.npcs[id] + Vector2(0, 50), room._obstacles(room.player), room.player.radius)
+		_check(rota.size() > 1, "fazenda da Ordem: dá para chegar em %s" % id)
+	room._inspect("ordem_marta")
+	room._close_dialog()
+	await process_frame
+	_check(Missao1.tem("ordem_marta_falou"), "fazenda da Ordem: conversar com a comandante grava a marca")
+	_check(room.indo_para == "", "fazenda da Ordem: conversar não leva a outro lugar")
+	await _fechar(room)
+	Missao1.reiniciar()
+	room = await _abrir("cripta")
+	room._inspect("leticia")  # antes da Dama cair: só o aviso
+	room._close_dialog()
+	_check(room.indo_para == "", "cripta: sem vencer a Dama, a Letícia não leva a lugar nenhum")
+	await _fechar(room)
+	Missao1.reiniciar()
+	Missao1.marcar("cripta_vencida")
+	room = await _abrir("cripta")
+	room._inspect("leticia")
+	room._close_dialog()
+	_check(room.indo_para == "fazenda_ordem", "cripta: acordar a Letícia leva à fazenda com a Ordem")
 	await _fechar(room)
 
 

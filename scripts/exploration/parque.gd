@@ -854,12 +854,20 @@ func _draw_npc(font: Font, npc_id: String) -> void:
 		drawing_key = null
 		queue_redraw()  # a respiração anima
 		return
-	draw_rect(Rect2(at + Vector2(-11, -66), Vector2(22, 60)), NPC_COLORS[npc_id])
+	draw_rect(Rect2(at + Vector2(-11, -66), Vector2(22, 60)), _npc_cor(npc_id))
 	draw_rect(Rect2(at + Vector2(-8, -86), Vector2(16, 18)), Color("#d6b292"))
-	var name_text: String = NPC_NAMES[npc_id]
+	var name_text: String = _npc_nome(npc_id)
 	var width := font.get_string_size(name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
 	draw_string_outline(font, at + Vector2(-width * 0.5, -94), name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, 3, Color(0.05, 0.03, 0.02))
 	draw_string(font, at + Vector2(-width * 0.5, -94), name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(0.93, 0.89, 0.8))
+
+
+func _npc_nome(npc_id: String) -> String:
+	return str(scenario.npc_info[npc_id]["nome"]) if scenario.npc_info.has(npc_id) else NPC_NAMES[npc_id]
+
+
+func _npc_cor(npc_id: String) -> Color:
+	return scenario.npc_info[npc_id]["cor"] if scenario.npc_info.has(npc_id) else NPC_COLORS[npc_id]
 
 
 # Brilho dourado sobre as pistas que ainda não foram vistas, quando o controlado está perto.

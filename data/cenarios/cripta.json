@@ -7099,6 +7099,14 @@
    "tipo": "estado",
    "estados": {},
    "marca": "leticia_acordou"
+  },
+  {
+   "id": "subir_com_leticia",
+   "apos": "leticia",
+   "tipo": "ir",
+   "para": "fazenda_ordem",
+   "texto": "O grupo sobe com a Letícia. Lá em cima, a Ordem já tomou a fazenda.",
+   "provisorio": true
   }
  ],
  "zonas": [

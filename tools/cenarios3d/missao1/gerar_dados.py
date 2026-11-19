@@ -195,6 +195,38 @@ def fazenda(d, p, ret):
         d["inimigos"].append({"tipo": "atirador", "pos": p(x, z), "provisorio": True})
 
 
+AGENTES_ORDEM = [
+    # id, nome, ponto (m), cor da figura provisória, texto da conversa (provisório do Claude, 16/11)
+    ("ordem_marta", "Marta Lemos", (8.2, 10.6), "#3d5a4a",
+     "Marta Lemos, comandante da Ordem em Aurora: \"Chegamos tarde, mas chegamos. Isolamos a estrada e o celeiro. "
+     "O que desceu nesse poço não vai subir de novo. Vocês fizeram o que nenhum de nós conseguiu.\""),
+    ("ordem_leticia", "Letícia", (2.6, 10.4), None,
+     "Letícia está sentada numa caixa, enrolada numa manta da Ordem. O agente Teles confere o pulso dela e faz que sim: ela vai ficar bem."),
+    ("ordem_teles", "Agente Teles", (3.8, 10.0), "#5a4a3d",
+     "Agente Teles, médico de campo: \"Ferimentos feios, mas nada que descanso não resolva. Ela perguntou do Fernando "
+     "duas vezes. Ainda não tive coragem de responder.\""),
+    ("ordem_brito", "Agente Brito", (10.4, 7.0), "#3d4a5a",
+     "Agente Brito, no perímetro: \"As viaturas da Ordem fecharam a fazenda por todos os lados. Ninguém entra, ninguém sai. "
+     "A comandante quer falar com vocês antes de amanhecer.\""),
+]
+
+
+def fazenda_ordem(d, p, ret):
+    """Fazenda Ghular depois da cripta (Léo, 16/11: segunda versão da fazenda, com agentes da Ordem). Mesma cena 3D e
+    mesmo mapa; sem inimigos; os agentes da Ordem (do bem) esperam no celeiro e o grupo conversa com cada um.
+    Nomes, falas, posições e cores das figuras são provisórios do Claude (o roteiro do pós-combate é de outra frente)."""
+    d["inicio"]["npcs"] = [{"id": i, "pos": p(*pt), "nome": nome, "cor": cor, "provisorio": True} for i, nome, pt, cor, _ in AGENTES_ORDEM]
+    d["objetivos"] = [{"texto": "Falar com a comandante da Ordem", "pista": "ordem_marta", "provisorio": True},
+                      {"texto": "Ver como a Letícia está", "pista": "ordem_leticia"},
+                      {"texto": "Ouvir o agente Teles", "pista": "ordem_teles"},
+                      {"texto": "Ouvir o agente Brito", "pista": "ordem_brito"}]
+    for i, nome, pt, cor, texto in AGENTES_ORDEM:
+        _pista(d, p, i, pt[0], pt[1], texto, raio=90, bolinha=(0, -100))
+        d["gatilhos"].append({"id": i + "_falou", "apos": i, "tipo": "estado", "estados": {}, "marca": i + "_falou"})
+    # A cutscene fora do jogo que fecha o capítulo ainda não existe: a marca abaixo é o gancho dela.
+    d["fim_capitulo"] = {"requer": [i + "_falou" for i, *_ in AGENTES_ORDEM], "marca": "fim_capitulo_1", "provisorio": True}
+
+
 def cripta(d, p, ret):
     """Cripta sob o poço da Fazenda Ghular, modelo C (Fosso de sangue) escolhido pelo Léo em 14/11.
     Tudo o que o Léo não ditou (números, textos, faixas dos gatilhos) vai marcado como provisório."""
@@ -253,6 +285,9 @@ def cripta(d, p, ret):
                         "requer": "cripta_vencida", "texto_antes": "Letícia está sobre o altar, ferida e desmaiada. Não dá para chegar até ela agora.",
                         "texto": "Letícia abre os olhos devagar. Está ferida, mas viva.", "provisorio": True})
     d["gatilhos"].append({"id": "leticia_acorda", "apos": "leticia", "tipo": "estado", "estados": {}, "marca": "leticia_acordou"})
+    # Depois de acordar a Letícia o grupo sobe e encontra a Ordem na fazenda (Léo, 15/11 e 16/11).
+    d["gatilhos"].append({"id": "subir_com_leticia", "apos": "leticia", "tipo": "ir", "para": "fazenda_ordem",
+                          "texto": "O grupo sobe com a Letícia. Lá em cima, a Ordem já tomou a fazenda.", "provisorio": True})
     d["objetivos"] = [{"texto": "Explorar a cripta", "marca": "cripta_trecho4", "provisorio": True},
                       {"texto": "Derrotar Roberto Ghular", "marca": "dama_surgiu", "requer": "cripta_trecho4"},
                       {"texto": "Derrotar a Dama de Sangue", "marca": "cripta_vencida", "requer": "dama_surgiu"},
@@ -266,6 +301,7 @@ def main():
         ("subsolo", "subsolo", "subsolo", 21, "SUBSOLO", [(3.4, 2.6), (2.7, 2.9), (3.9, 3.3)], subsolo, None),
         ("biblioteca", "biblioteca", "biblioteca", 19, "BIBLIOTECA", [(12.7, 11.2), (12.0, 11.7), (13.4, 11.7)], biblioteca, (-0.15, -0.15, 18.15, 13.2)),
         ("fazenda", "fazenda", "fazenda", 23, "FAZENDA GHULAR", [(6.2, 17.8), (5.5, 18.3), (6.9, 18.4)], fazenda, (-3.5, -2.5, 16.0, 19.0)),
+        ("fazenda_ordem", "fazenda", "fazenda", 23, "FAZENDA GHULAR", [(6.2, 17.8), (5.5, 18.3), (6.9, 18.4)], fazenda_ordem, (-3.5, -2.5, 16.0, 19.0)),
         ("cripta", "cripta", "cripta", 23, "CRIPTA", [(-1.2, 53.8), (-2.8, 53.0), (-2.9, 54.7)], cripta, None),
     ]
     for cid, glb, col, hora, rotulo, grupo, extras, limite in lista:

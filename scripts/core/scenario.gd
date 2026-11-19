@@ -14,6 +14,7 @@ var extended_pos := Vector2.ZERO  # canto da imagem estendida, em px do fundo
 var screen_scale := Vector2.ZERO  # px de tela por unidade da sala, em x e em y
 var party_start: Array[Vector2] = []
 var npcs := {}  # id -> posição
+var npc_info := {}  # id -> {"nome", "cor"}: figuras provisórias que só o cenário conhece (agentes da Ordem na fazenda)
 var colliders := {}  # id -> Rect2
 var clues := {}  # id -> {"pos", "raio", "ordem", "texto", ...}
 var triggers := {}  # id -> gatilho
@@ -127,6 +128,8 @@ func _parse(data: Dictionary) -> void:
 		party_start.append(_vec(p))
 	for n in start.get("npcs", []):
 		npcs[n["id"]] = _vec(n["pos"])
+		if n.has("nome"):
+			npc_info[n["id"]] = {"nome": str(n["nome"]), "cor": Color(str(n.get("cor", "#885050"))) if n.get("cor") != null else Color("#885050")}
 	for c in data.get("colisoes", []):
 		var r: Array = c["rect"]
 		var rect := Rect2(r[0], r[1], r[2], r[3])

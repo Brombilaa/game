@@ -299,7 +299,7 @@ func _uniso(s: Vector2) -> Vector2:
 
 # Fora de casa (fazenda) o passo é de terra e grama; delegacia, biblioteca e cripta são piso duro.
 func _step_surface() -> String:
-	return "grass" if local_id == "fazenda" else "floor"
+	return "grass" if local_id.begins_with("fazenda") else "floor"
 
 
 func _place_label() -> String:
