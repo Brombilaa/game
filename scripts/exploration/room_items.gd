@@ -9,7 +9,7 @@ const KEYS := {
 	KEY_H: "granada_luz",
 	KEY_U: "sinalizador",
 }
-const KEY_LABELS := {"granada_luz": "H", "sinalizador": "U"}
+const KEY_LABELS := Atalhos.ITEM_KEYS  # os rótulos moram em Atalhos, que também alimenta o mapa de controles
 
 var room: TestRoom
 

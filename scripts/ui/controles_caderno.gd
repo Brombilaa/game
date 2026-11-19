@@ -4,8 +4,8 @@ extends Control
 # tons de pergaminho e tinta. Cada tecla usada mostra a função; passar o mouse (ou clicar) numa tecla abre a ficha no
 # pé da página com o que ela faz, quando vale e o custo. Os filtros Tudo, Explorar, Combate e Painéis apagam o resto,
 # para consultar só o que importa naquele momento. Só mostra; não remapeia as teclas.
-# Itens de combate e rituais vêm de Atalhos (teste de igualdade em tests/test_atalhos.gd) e de data/ (nome, PA,
-# SAN), então o mapa acompanha o balanceamento. Quem mudar uma tecla do jogo atualiza `Atalhos` e `mapa()`.
+# Itens de combate e rituais vêm de Atalhos e de data/ (nome, PA,
+# SAN), então o mapa acompanha o balanceamento. Quem mudar outra tecla do jogo atualiza `mapa()`.
 
 signal voltar  # botão direito: o menu volta um passo
 

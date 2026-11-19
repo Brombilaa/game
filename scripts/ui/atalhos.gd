@@ -1,9 +1,8 @@
 class_name Atalhos
 extends RefCounted
-# Teclas dos itens de combate e dos rituais, como o mapa de controles (ControlesCaderno) as mostra. É uma cópia
-# deliberada de RoomItems.KEY_LABELS, RoomActionBar.RITUAL_KEYS e RoomActionBar.ITEM_TIPS: aqueles scripts
-# dependem da sala inteira e carregá-los a partir do menu cria dependência circular. tests/test_atalhos.gd confere
-# que as cópias continuam iguais; quem trocar uma tecla no jogo atualiza aqui e o teste avisa se esquecer.
+# Teclas dos itens de combate e dos rituais: fonte única para a sala (RoomItems.KEY_LABELS, RoomActionBar) e para o
+# mapa de controles (ControlesCaderno). Fica num script sem dependências porque RoomItems e RoomActionBar dependem da
+# sala inteira, e carregá-los a partir do menu criava dependência circular de scripts. Troque as teclas aqui.
 
 const ITEM_KEYS := {"granada_luz": "H", "sinalizador": "U"}
 const RITUAL_KEYS := {"armadura_sangue": "Z", "amaldicoar_arma": "X", "eletrocussao": "T", "cicatrizacao": "Y"}

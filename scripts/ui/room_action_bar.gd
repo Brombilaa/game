@@ -22,11 +22,8 @@ const BAR_END_W := 92.0
 const BAR_BOTTOM := 532.0
 const RITUAL_GAP := 10.0  # vão (com um fio) entre as ações comuns e as casas de ritual (modelo A, Léo 16/11)
 # Dica curta dos itens de combate na barra (valores provisórios em combat.json, itens_combate).
-const ITEM_TIPS := {
-	"granada_luz": "atordoa os inimigos perto do ponto",
-	"sinalizador": "luz no chão: +acerto contra quem está nela",
-}
-const RITUAL_KEYS := {"armadura_sangue": "Z", "amaldicoar_arma": "X", "eletrocussao": "T", "cicatrizacao": "Y"}
+const ITEM_TIPS := Atalhos.ITEM_TIPS  # as dicas e as teclas moram em Atalhos, que também alimenta o mapa de controles
+const RITUAL_KEYS := Atalhos.RITUAL_KEYS
 
 
 # Ações do rodapé no turno do jogador: [ícone, título, detalhe, ativa]. A arma secundária
