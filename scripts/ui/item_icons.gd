@@ -259,6 +259,7 @@ const PIXEL_ROWS := {
 		"....orrrrrro....",
 		".....orrrro.....",
 		"......oooo......",
+	],
 	"granada_luz": [
 		"......ooo.......",
 		".....oaaao......",
