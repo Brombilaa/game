@@ -24,6 +24,8 @@ const TEMPO_POR_LETRA_SOLTA := 0.045
 const NOMES := {
 	"fernando": "Fernando", "nikolai": "Nikolai", "miguel": "Miguel",
 	"leticia": "Letícia", "caio": "Caio",
+	# Equipe de campo da Ordem, no celeiro (rascunho da PR #189, provisório até o Léo aprovar)
+	"marta": "Marta", "otavio": "Dr. Otávio", "ivo": "Ivo", "bia": "Bia",
 }
 const ARQUIVO_FALAS := "res://data/falas.json"
 

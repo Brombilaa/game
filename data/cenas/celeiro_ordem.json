@@ -1,0 +1,46 @@
+{
+	"_nota": "Pós-combate da missão 1 (Léo, 15/11/2026): a Dama de Sangue morta e a Letícia salva, o grupo (Nikolai e Miguel, sem o Fernando) sobe pelo poço e encontra a equipe de campo da Ordem no celeiro. Ordem da cena e falas a partir do rascunho da PR #189 (docs/personagens-ordem.md). Tudo provisório do Claude: falas, tempos, posições e quem fala o quê. Depois desta cena vem o fim do capítulo (cutscene externa e cartão AURORA), pelos dados do celeiro.",
+	"passos": [
+		{"faz": "cinema", "estado": "entrar", "tempo": 0.8, "junto": true},
+		{"faz": "camera", "em": "lider", "zoom": 1.35, "tempo": 0.6},
+		{"faz": "olhar", "quem": "bia", "para": "lider"},
+		{"faz": "legenda", "texto": "Uma lanterna vira para o grupo. A Ordem chegou.", "tempo": 2.2},
+		{"faz": "olhar", "quem": "Nikolai", "para": "marta"},
+		{"faz": "olhar", "quem": "Miguel", "para": "marta"},
+		{"faz": "andar", "quem": "marta", "ate": "lider", "perto": 70},
+		{"faz": "camera", "em": "marta", "tempo": 0.4},
+		{"faz": "dialogo", "falas": [
+			{"quem": "marta", "texto": "Cheguei tarde. Isso me pesa mais do que vocês imaginam."},
+			{"quem": "nikolai", "texto": "O Fernando ficou lá embaixo. Foi na frente, como sempre."},
+			{"quem": "marta", "texto": "Então sabia o que estava fazendo. Isso não diminui nada."}
+		]},
+		{"faz": "olhar", "quem": "otavio", "para": "leticia"},
+		{"faz": "andar", "quem": "otavio", "ate": "leticia", "perto": 34},
+		{"faz": "camera", "em": "leticia", "tempo": 0.4},
+		{"faz": "choque", "quem": "leticia", "sim": false},
+		{"faz": "dialogo", "falas": [
+			{"quem": "otavio", "texto": "Ela vai ficar bem do corpo. O resto leva mais tempo, e não depende de remédio."},
+			{"quem": "leticia", "texto": "O Caio... ele gritou o meu nome. Eu não consegui fazer nada."},
+			{"quem": "otavio", "texto": "Vocês dois estão sangrando e fingindo que não. Sentem. Agora."}
+		]},
+		{"faz": "olhar", "quem": "ivo", "para": [780, 690]},
+		{"faz": "camera", "em": "ivo", "tempo": 0.4},
+		{"faz": "dialogo", "falas": [
+			{"quem": "ivo", "texto": "Linha de sal, lacre de ferro, e rezar para o ferro aguentar. É o que eu sei fazer."},
+			{"quem": "ivo", "texto": "Aquele desenho na árvore não é de quem cultua. É de quem convoca."},
+			{"quem": "miguel", "texto": "Alguém abriu uma porta. E não fechou."}
+		]},
+		{"faz": "olhar", "quem": "bia", "para": [780, 690]},
+		{"faz": "camera", "em": "bia", "tempo": 0.4},
+		{"faz": "dialogo", "falas": [
+			{"quem": "bia", "texto": "Eu desço e cubro ele. Podem ir, eu ajeito a lona e fico até o fim."}
+		]},
+		{"faz": "camera", "em": "marta", "zoom": 1.25, "tempo": 0.5},
+		{"faz": "dialogo", "falas": [
+			{"quem": "marta", "texto": "Três semanas de barulho em Aurora e nenhuma viatura. Alguém escolheu não ver. Eu vou descobrir quem."},
+			{"quem": "marta", "texto": "Descansem. Amanhã eu conto o que vem depois de Aurora."}
+		]},
+		{"faz": "marca", "id": "celeiro_conversa"},
+		{"faz": "esperar", "tempo": 0.6}
+	]
+}

@@ -17,6 +17,7 @@ extends Node
 #   cair     {"quem": ator}                                          o corpo tomba e fica no chão
 #   fala     {"quem": "Letícia", "texto": "...", "tempo": s}         legenda com o nome de quem fala
 #   legenda  {"texto": "...", "tempo": s}
+#   dialogo  {"falas": [{"quem": id, "texto": "..."}, ...]}          conversa na caixa com retrato (CaixaFala); clique avança
 #   esperar  {"tempo": s}
 #   tremor   {"forca": px, "tempo": s}
 #   flash    {"forca": 0..1}                                         clarão vermelho na tela
@@ -143,6 +144,8 @@ func _executar(p: Dictionary) -> void:
 		"legenda":
 			cinema.legenda(str(p["texto"]), float(p.get("tempo", 2.4)))
 			await _esperar(float(p.get("tempo", 2.4)) + 1.1)
+		"dialogo":
+			await _dialogo(p.get("falas", []))
 		"esperar":
 			await _esperar(float(p.get("tempo", 1.0)))
 		"tremor":
@@ -241,6 +244,17 @@ func _andar(delta: float) -> void:
 		if nova.is_equal_approx(rota[0]):
 			rota.remove_at(0)
 		a["rota"] = rota
+
+
+# Conversa da cena na caixa com retrato (a mesma das pistas). A caixa sobe acima das barras do cinema enquanto fala.
+func _dialogo(falas: Array) -> void:
+	var caixa: CaixaFala = room.caixa
+	if caixa == null or falas.is_empty():
+		return
+	var camada := caixa.layer
+	caixa.layer = cinema.layer + 1
+	await caixa.sequencia(falas)
+	caixa.layer = camada
 
 
 func _sangue(ponto: Vector2, qtd: int) -> void:
