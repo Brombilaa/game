@@ -2,28 +2,15 @@ class_name RoomItems
 extends RefCounted
 # Itens de uso em combate na sala (granada de luz e sinalizador): escolhe o ponto ou o alvo, chama
 # ItemRules, tira o item da mochila e encena o resultado. Só em combate, na vez do controlado.
-# Teclas provisórias: H granada de luz, U sinalizador; também pela casa do item na barra de combate.
+# Atalho: a tecla numérica da casa do item na barra de combate (Léo, 19/11: 1 a 9 em ordem, sem letras).
 # Mira: o ponto sob o mouse, se der para alcançar; senão (ou clicando na barra) o melhor alvo automático.
 
-const KEYS := {
-	KEY_H: "granada_luz",
-	KEY_U: "sinalizador",
-}
-const KEY_LABELS := {"granada_luz": "H", "sinalizador": "U"}
 
 var room: TestRoom
 
 
 func _init(owner_room: TestRoom) -> void:
 	room = owner_room
-
-
-# Tecla de item: retorna true se a tecla é de item (mesmo que o uso seja recusado).
-func handle_key(keycode: int) -> bool:
-	if not KEYS.has(keycode) or room.mode != TestRoom.Mode.COMBAT:
-		return false
-	use(KEYS[keycode])
-	return true
 
 
 # Itens de combate que estão na mochila, na ordem de itens.json.
