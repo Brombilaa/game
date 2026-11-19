@@ -467,30 +467,174 @@ func _atualizar_diario() -> void:
 		col.add_child(_rotulo(str(cab["sub"]), 12, APAGADO))
 	var h := _rotulo(str(s["titulo"]), 19, VERMELHO, _negrito)
 	col.add_child(h)
-	for i in s["linhas"].size():
-		var l: Dictionary = s["linhas"][i]
-		col.add_child(_linha(str(l["t"]), 17 if l["maior"] else 15, false, i))
-	_mancha(_esq, CAFE, Vector2(_esq.size.x - 150, _esq.size.y - 140), 120, 0.0, 0.7)
-	# Página da direita: até três desenhos em lugares fixos, cada um com a legenda em vermelho.
-	var lugares := [[Vector2(18, 14), Vector2(296, 150), -2.0], [Vector2(14, 176), Vector2(150, 150), 3.0], [Vector2(168, 196), Vector2(140, 140), -3.0]]
-	if s["desenhos"].size() == 2:
-		lugares = [[Vector2(18, 14), Vector2(296, 170), -2.0], [Vector2(60, 200), Vector2(210, 170), 2.0]]
-	for i in mini(s["desenhos"].size(), lugares.size()):
-		var d: Dictionary = s["desenhos"][i]
-		var lug: Array = lugares[i]
-		var img := _esboco(DiarioMiguel.caminho(str(d["desenho"])), lug[1], lug[2])
-		img.position = lug[0]
-		_dir.add_child(img)
-		var leg := _rotulo(str(d["legenda"]), 14, VERMELHO)
-		leg.autowrap_mode = TextServer.AUTOWRAP_OFF
-		leg.position = lug[0] + Vector2(lug[1].x * 0.25, lug[1].y - 14)
-		leg.rotation = deg_to_rad(-3.0)
-		_dir.add_child(leg)
-	_mancha(_dir, SANGUE, Vector2(_dir.size.x - 92, _dir.size.y - 96), 70, 40.0, 0.5)
+	# O texto corre pela página dupla (esquerda e depois direita) com os desenhos no meio dele, como num
+	# caderno de verdade. Cada desenho entra depois de uma linha, espalhados por igual.
+	var linhas: Array = s["linhas"]
+	var desenhos: Array = s["desenhos"]
+	var depois := {}  # índice da linha -> desenho que vem junto dela
+	for i in desenhos.size():
+		depois[clampi(int(round(float(i) * linhas.size() / desenhos.size())), 0, maxi(linhas.size() - 1, 0))] = i
+	var usado := 0.0
+	for c in col.get_children():
+		usado += _altura_estimada(c) + 3.0
+	var cabe := _esq.size.y - 32.0
+	var blocos: Array[Control] = []
+	for i in linhas.size():
+		var l: Dictionary = linhas[i]
+		var tam := 17 if l["maior"] else 15
+		if depois.has(i):
+			blocos.append_array(_bloco_desenho(desenhos[depois[i]], depois[i], str(l["t"]), tam, i))
+		else:
+			blocos.append(_linha(str(l["t"]), tam, false, i))
+	# Divide o lugar entre as duas páginas: a esquerda leva mais ou menos metade (nunca mais do que cabe).
+	var total := usado
+	for bl in blocos:
+		total += _altura_estimada(bl) + 3.0
+	var alvo := minf(cabe, maxf(total * 0.55, usado + 60.0))
+	var atual := col
+	for bl in blocos:
+		var alt := _altura_estimada(bl)
+		if atual == col and usado + alt > alvo and usado > 0.0:
+			atual = _coluna(_dir)  # o texto continua na página da direita
+		atual.add_child(bl)
+		usado += alt + 3.0
+	_mancha(_esq, CAFE, Vector2(_esq.size.x - 150, _esq.size.y - 140), 120, 0.0, 0.5)
+	_mancha(_dir, SANGUE, Vector2(_dir.size.x - 92, _dir.size.y - 96), 70, 40.0, 0.4)
 	var pag := _rotulo("‹  %d de %d  ›" % [sel_pagina + 1, ss.size()], 14, APAGADO)
 	pag.autowrap_mode = TextServer.AUTOWRAP_OFF
 	pag.position = Vector2(_dir.size.x - 92, _dir.size.y - 26)
 	_dir.add_child(pag)
+
+
+# Três jeitos de misturar desenho e texto (Léo, 19/11: "desenhos entre os textos"), até ele escolher:
+# A corrido = desenho ao lado de uma frase (direita, depois esquerda) e um no meio do texto;
+# B colado = recortes de papel colados com fita, ao lado e no meio; C solto = desenhos grandes no meio do
+# texto, puxados para um lado, com a legenda e uma seta do outro.
+var modelo_diario := "A"
+
+
+func _bloco_desenho(d: Dictionary, n: int, texto: String, tam: int, semente: int, max_h := 150.0) -> Array[Control]:
+	var cam := DiarioMiguel.caminho(str(d["desenho"]))
+	var leg := str(d["legenda"])
+	var tex: Texture2D = load(cam) if cam != "" else null
+	var asp := float(tex.get_height()) / tex.get_width() if tex != null else 0.6
+	var lado := (n % 3) != 1  # 1º e 3º ao lado de uma frase, o 2º no meio do texto
+	var dir := n % 3 == 0
+	if modelo_diario == "C":
+		lado = false
+	var frase := _linha(texto, tam, false, semente)
+	if lado:
+		var larg := 118.0 if modelo_diario == "A" else 112.0
+		var fig := _figura(cam, Vector2(larg, minf(larg * asp, 120.0)), leg, 4.0 if dir else -4.0)
+		var hb := HBoxContainer.new()
+		hb.add_theme_constant_override("separation", 8)
+		hb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		frase.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		frase.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		if dir:
+			hb.add_child(frase)
+			hb.add_child(fig)
+		else:
+			hb.add_child(fig)
+			hb.add_child(frase)
+		return [hb]
+	var out: Array[Control] = [frase]
+	if modelo_diario == "C":
+		var larg := 190.0
+		var hb := HBoxContainer.new()
+		hb.add_theme_constant_override("separation", 6)
+		hb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var hh := minf(larg * asp, max_h)
+		var img := _esboco(cam, Vector2(hh / asp, hh), -2.0 if n % 2 == 0 else 2.0)
+		var nota_txt := ("[color=#8e1b12]← %s[/color]" % leg) if n % 2 == 0 else ("[color=#8e1b12]%s →[/color]" % leg)
+		var nota := _linha(nota_txt, 14, n % 2 == 1, semente)
+		nota.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		nota.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		if n % 2 == 0:
+			hb.add_child(img)
+			hb.add_child(nota)
+		else:
+			hb.add_child(nota)
+			hb.add_child(img)
+		out.append(hb)
+		return out
+	var larg2 := 200.0 if modelo_diario == "A" else 180.0
+	var cc := CenterContainer.new()
+	cc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var h2 := minf(larg2 * asp, minf(125.0, max_h - 24.0))
+	cc.add_child(_figura(cam, Vector2(h2 / asp, h2), leg, -2.0))
+	out.append(cc)
+	return out
+
+
+# Desenho com a legenda embaixo: solto no papel (A) ou num recorte colado com fita (B).
+func _figura(cam: String, tam: Vector2, leg: String, graus: float) -> Control:
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", -2)
+	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var img := _esboco(cam, tam, 0.0)
+	v.add_child(img)
+	var l := _rotulo(leg, 12, VERMELHO)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.custom_minimum_size.x = maxf(tam.x, 118.0)
+	v.add_child(l)
+	var raiz: Control = v
+	if modelo_diario == "B":
+		var p := PanelContainer.new()
+		var e := StyleBoxFlat.new()
+		e.bg_color = Color(0.96, 0.92, 0.82)
+		for m in ["left", "right", "top", "bottom"]:
+			e.set("content_margin_" + m, 4)
+		e.shadow_color = Color(0, 0, 0, 0.28)
+		e.shadow_size = 2
+		e.shadow_offset = Vector2(1, 2)
+		p.add_theme_stylebox_override("panel", e)
+		p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		p.add_child(v)
+		var fita := ColorRect.new()  # fita adesiva amarelada no topo (fora do container, que esticaria ela)
+		fita.color = Color(0.86, 0.8, 0.6, 0.7)
+		fita.size = Vector2(38, 10)
+		fita.position = Vector2(tam.x / 2.0 - 15, -5)
+		fita.rotation = deg_to_rad(-6)
+		fita.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		p.set_meta("fita", fita)
+		raiz = p
+	var c := Control.new()  # a rotação fica no filho; o container só vê o tamanho
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	c.custom_minimum_size = Vector2(maxf(tam.x, 118.0) + 8, tam.y + (30 if modelo_diario == "B" else 22))
+	c.add_child(raiz)
+	raiz.pivot_offset = c.custom_minimum_size / 2.0
+	raiz.rotation = deg_to_rad(graus)
+	if raiz.has_meta("fita"):
+		c.add_child(raiz.get_meta("fita"))
+	return c
+
+
+# Altura aproximada de um bloco antes do layout (para saber quando o texto passa para a página da direita).
+func _altura_estimada(c: Control) -> float:
+	var larg := _esq.size.x - 52.0
+	if c is RichTextLabel:
+		return _altura_texto(c, larg)
+	if c is HBoxContainer:
+		var h := 0.0
+		var resto := larg
+		for k in c.get_children():
+			if not k is RichTextLabel:
+				resto -= k.get_combined_minimum_size().x + 8.0
+				h = maxf(h, k.get_combined_minimum_size().y)
+		for k in c.get_children():
+			if k is RichTextLabel:
+				h = maxf(h, _altura_texto(k, resto))
+		return h
+	if c is Label:
+		return 20.0 if c.get_theme_font_size("font_size") < 20 else 36.0
+	return c.get_combined_minimum_size().y
+
+
+func _altura_texto(r: RichTextLabel, larg: float) -> float:
+	var plano := RegEx.create_from_string("\\[[^\\]]*\\]").sub(r.text, "", true)
+	var tam := r.get_theme_font_size("normal_font_size")
+	return MAO.get_multiline_string_size(plano, HORIZONTAL_ALIGNMENT_LEFT, larg, tam).y * 1.08
 
 
 # --- PISTAS ----------------------------------------------------------------------------------------------
