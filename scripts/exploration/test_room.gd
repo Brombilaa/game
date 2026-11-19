@@ -571,6 +571,7 @@ func _process(delta: float) -> void:
 	if (inv_panel and inv_panel.open) or (diario_panel and diario_panel.open):
 		return  # inventário ou diário aberto: o tempo para (GDD #23)
 	minimap._update_discovered()
+	_update_enemy_turn_speed()
 	fx.update(delta)
 	_apply_zoom_pulse()
 	camera.offset = fx.shake_offset()
@@ -859,6 +860,24 @@ func _check_detection() -> void:
 
 func _stealth_attack(target: Combatant) -> void:
 	room_combat._stealth_attack(target)
+
+
+# Acelerar a vez do inimigo (Léo, 15/11; PR #171, restaurado): segurando Shift enquanto os inimigos agem, o tempo
+# sobe para 4x (8x com o combate rápido ligado). Soltou, ou voltou a vez do grupo, o tempo volta ao normal.
+const ENEMY_TURN_BOOST := 2.0
+var enemy_turn_boost := false
+
+
+func _update_enemy_turn_speed() -> void:
+	if mode != Mode.COMBAT:
+		return
+	var enemy_acting: bool = busy and turns != null and turns.current != null and turns.current.side == Combatant.Side.ENEMY
+	var want: bool = enemy_acting and Input.is_key_pressed(KEY_SHIFT)
+	if want == enemy_turn_boost:
+		return
+	enemy_turn_boost = want
+	Engine.time_scale = (2.0 if options.values["fast_combat"] else 1.0) * (ENEMY_TURN_BOOST * 2.0 if want else 1.0)
+	queue_redraw()
 
 
 func _start_combat(surprise_side: int = -1) -> void:  # override
