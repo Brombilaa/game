@@ -188,7 +188,7 @@ func gear_use(m: Combatant, bag_index: int) -> String:
 	if id == TestRoom.KIT_ID:
 		return "O kit reanima um aliado caído (barra de combate)"
 	if room.item_rules.is_combat_item(id):
-		return "Use em combate (tecla %s ou barra de combate)" % RoomItems.KEY_LABELS.get(id, "?")
+		return "Use em combate, pela barra (tecla numérica da casa)"
 	var heal := effect == "curar_pv"
 	if not cures.has(effect) and not heal:
 		return "Sem efeito por enquanto"
