@@ -1261,7 +1261,7 @@
     0,
     -30
    ],
-   "texto": "A chave gira no armário do acervo restrito. Entre livros embrulhados em plástico, a bibliotecária guardava suprimentos de emergência.",
+   "texto": "A chave gira no armário do acervo restrito. Entre livros embrulhados em plástico, a bibliotecária guardava suprimentos de emergência e um relógio de bolso parado à meia-noite.",
    "provisorio": true,
    "da": [
     {
@@ -1275,6 +1275,10 @@
     {
      "item": "municao_escopeta",
      "qtd": 4
+    },
+    {
+     "item": "relogio_quebrado",
+     "qtd": 1
     }
    ],
    "chave": "chave_acervo",

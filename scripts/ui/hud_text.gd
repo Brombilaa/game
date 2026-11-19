@@ -7,6 +7,7 @@ extends RefCounted
 const REJECTION_MESSAGES := {
 	"no_pa": "PA insuficientes",
 	"no_san": "SAN insuficiente",
+	"no_component": "Sem componente",
 	"out_of_range": "Fora de alcance",
 	"no_line_of_sight": "Sem linha de visão",
 	"reloading": "Recarregando",

@@ -58,7 +58,7 @@ const EQUIP_LABELS := {"principal": "ARMA PRINCIPAL", "secundaria": "ARMA SECUND
 # Textos provisórios dos itens (o GDD ainda não os define).
 const BLURBS := {
 	"pulseira_amizade": "Acessório: amarra a mente ao que o Caio deixou.",
-	"crucifixo_velho": "Acessório: pesa no peito e segura o corpo de pé.",
+	"plaqueta_identificacao": "Acessório: a plaqueta de um agente antigo lembra que dá para aguentar mais um pouco.",
 	"pistola": "Arma curta de uso comum. Confiável à curta distância.",
 	"escopeta": "Dano alto à queima-roupa, gasta 2 PA por disparo.",
 	"espada": "Lâmina de corpo a corpo, forte nas mãos de quem aceita o risco.",
@@ -68,7 +68,20 @@ const BLURBS := {
 	"bandagem": "Estanca o sangramento de quem a usa.",
 	"antidoto": "Neutraliza o veneno em quem o toma.",
 	"curativo": "Cobre ferimentos leves.",
+	"granada_luz": "Clarão que atordoa os inimigos perto do ponto onde cai. Só em combate.",
+	"sinalizador": "Luz vermelha no chão por alguns turnos: o grupo acerta melhor quem está nela. Só em combate.",
 	"componente_ritual": "Material usado nos rituais.",
+	"sangue_coagulado": "Componente de Sangue. Tirado da Criatura de Sangue.",
+	"prego_enferrujado": "Componente de Sangue: a ferrugem lembra o sangue.",
+	"frasco_orgao": "Componente de Sangue.",
+	"bateria": "Componente de Energia.",
+	"maco_fios": "Componente de Energia.",
+	"celular_quebrado": "Componente de Energia.",
+	"ossos_pequenos": "Componente de Morte.",
+	"cinzas": "Componente de Morte.",
+	"relogio_quebrado": "Componente de Morte: o tempo parado.",
+	"anel_ouro": "Componente de Conhecimento.",
+	"tomo_antigo": "Componente de Conhecimento.",
 	"colete": "Protege reduzindo o dano recebido.",
 	"colete_leve": "Reduz o dano recebido em 10%.",
 	"colete_pesado": "Reduz o dano recebido em 20%, mas deixa o personagem mais lento.",
@@ -293,6 +306,8 @@ func _describe(id: String) -> Dictionary:
 		lines.append(["SAN máxima", "+%d" % int(it["valor"])])
 	if it.get("efeito") == "pv_max" and it.get("valor") != null:
 		lines.append(["PV máximo", "+%d" % int(it["valor"])])
+	if it.get("elemento") != null:
+		lines.append(["Elemento", RitualRules.element_name(str(it["elemento"]))])
 	return {"nome": it["nome"], "tipo": str(it["categoria"]).capitalize(), "texto": BLURBS.get(id, ""), "linhas": lines}
 
 

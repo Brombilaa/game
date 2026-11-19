@@ -77,6 +77,11 @@
         "item": "municao_fuzil_precisao",
         "qtd": 3,
         "chance": 0.1
+      },
+      {
+        "item": "sinalizador",
+        "qtd": 1,
+        "chance": 0.15
       }
     ]
   },
@@ -103,6 +108,11 @@
     "chefe": false,
     "fases": [],
     "drops": [
+      {
+        "item": "sangue_coagulado",
+        "qtd": 1,
+        "chance": 1.0
+      },
       {
         "item": "bandagem",
         "qtd": 1,

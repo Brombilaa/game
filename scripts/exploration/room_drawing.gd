@@ -36,6 +36,25 @@ func _draw_overwatch() -> void:
 		room.draw_polyline(edge, Color(blood, 0.55), 1.0)
 		var eye := room._iso(u.pos) + Vector2(0, -CharacterSheet.HEIGHT - 16)
 		ItemIcons.draw_rows(room, Rect2(eye - Vector2(8, 8), Vector2(16, 16)), ItemIcons.PIXEL_ROWS["vigilancia"], true)
+	_draw_flares()
+
+
+# Sinalizadores acesos (itens de combate): poça de luz vermelha no chão, com o raio do bônus de acerto,
+# que tremula de leve. Some quando os turnos de quem lançou acabam.
+func _draw_flares() -> void:
+	var flicker := 0.85 + 0.15 * sin(Time.get_ticks_msec() / 90.0)
+	for z: Dictionary in room.rules.lit_zones:
+		var rim := PackedVector2Array()
+		for i in 49:
+			rim.append(room._iso(z.pos + Vector2.from_angle(TAU * i / 48.0) * float(z.radius)))
+		for k in 4:  # anéis de dentro para fora, mais fracos na borda
+			var inner := PackedVector2Array()
+			var f := 1.0 - k / 4.0
+			for i in 48:
+				inner.append(room._iso(z.pos + Vector2.from_angle(TAU * i / 48.0) * float(z.radius) * f))
+			room.draw_colored_polygon(inner, Color(1.0, 0.25, 0.18, 0.06 * flicker))
+		room.draw_polyline(rim, Color(1.0, 0.45, 0.3, 0.6 * flicker), 1.0)
+		room.draw_circle(room._iso(z.pos), 2.5, Color(1.0, 0.85, 0.7, flicker))
 
 
 func _draw() -> void:

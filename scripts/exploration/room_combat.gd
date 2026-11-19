@@ -12,7 +12,7 @@ func _init(owner_room: TestRoom) -> void:
 	room = owner_room
 
 
-# Recarga (tecla G): fora do combate a animação trava o ataque por RELOAD_SECONDS (Léo, 13/11: "atira enquanto recarrega");
+# Recarga (casa da arma na barra, tecla 1, em combate; tecla G fora dele): fora do combate a animação trava o ataque por RELOAD_SECONDS (Léo, 13/11: "atira enquanto recarrega");
 # em combate o custo é só o 1 PA e a animação não bloqueia nada.
 func _reloading(u: Combatant) -> bool:
 	if room.mode == TestRoom.Mode.COMBAT:  # em combate a recarga custa 1 PA e pronto: sem espera (escassez, sugestão 7)
@@ -89,6 +89,7 @@ func _start_combat(surprise_side: int = -1) -> void:
 	room.audio.on_combat_started()
 	room.turns = TurnManager.new(int(room.cfg.value("pa_per_turn")))
 	room.turns.turn_effects = func(u: Combatant) -> bool:
+		room.item_rules.tick(u)  # sinalizadores de quem lançou perdem um turno
 		var fx := room.rules.start_turn_effects(u)
 		if fx.damage > 0:
 			_popup(u.pos, "-%d" % fx.damage, "damage")
@@ -133,6 +134,7 @@ func _on_combat_ended(result: TurnManager.Result) -> void:
 	room.hud.on_turn_ended()
 	room.audio.on_combat_ended()
 	RitualRules.clear_buffs(room.party)  # Armadura de Sangue e Amaldiçoar Arma acabam com o combate
+	room.item_rules.clear()  # sinalizadores apagam
 	if result == TurnManager.Result.VICTORY:
 		room.mode = TestRoom.Mode.EXPLORATION
 		room.hud.on_combat_ended()
@@ -181,7 +183,7 @@ func _combat_click(click: Vector2) -> void:
 		if _reloading(room.player):
 			_reject("reloading")
 			return
-		if room.rules.needs_reload(room.player):  # carregador vazio: recarrega sozinho (Léo); fora disso só com a tecla G
+		if room.rules.needs_reload(room.player):  # carregador vazio: recarrega sozinho (Léo); fora disso só com a tecla 1 (casa da arma) em combate ou G fora dele
 			_reload()
 			return
 		room._show_attack(room.player, target, room.rules.attack(room.player, target, room._sight_blockers(), room.covers))
@@ -358,7 +360,7 @@ func _player_delay() -> void:
 		room.hud.show_notice("Atrasou")
 
 
-# Vigilância (tecla F, Léo 15/11): paga os PA de um tiro e, no turno dos inimigos, atira no primeiro que se
+# Vigilância (casa da barra com tecla numérica; era a tecla F, Léo 15/11): paga os PA de um tiro e, no turno dos inimigos, atira no primeiro que se
 # mover à vista e ao alcance. Só em combate, na vez do controlado; dura até o próximo turno dele.
 func _overwatch() -> void:
 	if not room._player_ready():

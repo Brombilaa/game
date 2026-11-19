@@ -34,9 +34,9 @@ data.get_entry("armas", "pistola")["dano"]  # [3, 5]
 | `personagens.json` | Fernando, Rafael, Miguel, Nikolai: classe, atributos sugeridos (o jogador redistribui antes da campanha), arma inicial, árvores exclusivas. |
 | `condicoes.json` | As seis condições aprovadas: duração, efeito, acúmulo, remoção. |
 | `armas.json` | Tipo, dano, precisão base, alcance, distância ideal, carregador, reserva, efeitos críticos. |
-| `itens.json` | Categoria, tamanho na grade, pilha, custo em PA no combate, efeito e valor. |
+| `itens.json` | Categoria, tamanho na grade, pilha, custo em PA no combate, efeito, valor e `elemento` (só nos componentes de ritual: sangue, energia, morte ou conhecimento, categorias do Léo de 19/11). |
 | `inimigos.json` | PV, PA, iniciativa, precisão, defesa, ataques, comportamento, resistências, fraquezas, fases de chefe. |
-| `rituais.json` | Os quatro rituais do Miguel (Armadura de Sangue, Amaldiçoar Arma, Eletrocussão, Cicatrização): classe, alvo, custo de PA e SAN, alcance, efeito, duração. Regras em `scripts/core/ritual_rules.gd`; INT soma por `Ficha.bonus_ritual`. Todos provisórios. |
+| `rituais.json` | Os quatro rituais do Miguel (Armadura de Sangue, Amaldiçoar Arma, Eletrocussão, Cicatrização): classe, alvo, custo de PA e SAN, alcance, efeito, duração. `elemento` e `componentes`: cada conjuração gasta esse número de itens do elemento (qualquer um) da mochila; sem componente o ritual não sai. Regras em `scripts/core/ritual_rules.gd`; INT soma por `Ficha.bonus_ritual`. Todos provisórios. |
 | `arvores.json` | Cinco árvores compartilhadas (uma por atributo) e uma exclusiva por personagem do trio. |
 
 Estado de execução (PV atual, munição no carregador, condições ativas) não fica aqui: estes

@@ -131,7 +131,8 @@ var cfg := CombatConfig.load_file()
 
 var rules := CombatRules.new(cfg)
 var san := SanRules.new(cfg)  # SAN como medidor de terror: perda, ruptura e loucura (GDD #11)
-var rituals := RitualRules.new(cfg, rules, san)  # rituais do Ocultista (Miguel): custo de PA e SAN
+var rituals := RitualRules.new(cfg, rules, san)  # rituais do Ocultista (Miguel): custo de PA, SAN e componente
+var item_rules := ItemRules.new(cfg, rules)  # itens de combate: granada de luz e sinalizador (provisórios)
 
 # Grupo: Fernando, Nikolai e Miguel pelas fichas do GDD (classe e atributos; Ficha e personagens.json).
 var party: Array[Combatant] = [
@@ -154,7 +155,10 @@ var follow_rng := RandomNumberGenerator.new()
 var loot_rng := RandomNumberGenerator.new()  # sorteio dos itens largados pelos inimigos
 var pending_corpse: Combatant  # corpo que o controlado vai examinar ao chegar
 
-var inventory: Inventory  # mochila compartilhada do grupo (20 espaços)
+var inventory: Inventory:  # mochila compartilhada do grupo (20 espaços); os rituais tiram dela os componentes
+	set(v):
+		inventory = v
+		rituals.inventory = v
 
 var gear := {}  # membro -> {"principal", "secundaria", "colete", "acessorio"}: ids ("" = vazio)
 
@@ -235,6 +239,7 @@ var dicas_hud := RoomDicasHud.new(self)
 var room_combat := RoomCombat.new(self)
 var room_gear := RoomGear.new(self)
 var room_ritual := RoomRitual.new(self)
+var room_items := RoomItems.new(self)
 var room_party := RoomParty.new(self)
 var room_drawing := RoomDrawing.new(self)
 
@@ -395,18 +400,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			_player_pass()
 		elif event.pressed and event.keycode == KEY_TAB:
 			_switch_to(party[(party.find(player) + 1) % party.size()])
-		elif event.pressed and event.keycode >= KEY_1 and event.keycode < KEY_1 + party.size():
-			_switch_to(party[event.keycode - KEY_1])
-		elif event.pressed and event.keycode == KEY_D:
-			_player_delay()
-		elif event.pressed and event.keycode == KEY_Q:
+		elif event.pressed and not event.echo and mode == Mode.COMBAT and RoomActionBar.slot_for_key(event.keycode) >= 0:
+			action_bar.activate(RoomActionBar.slot_for_key(event.keycode))  # Léo, 19/11: a barra usa 1 a 9 em ordem, não letras
+		elif event.pressed and mode != Mode.COMBAT and event.keycode >= KEY_1 and event.keycode < KEY_1 + party.size():
+			_switch_to(party[event.keycode - KEY_1])  # fora do combate os números trocam o controlado
+		elif event.pressed and mode != Mode.COMBAT and event.keycode == KEY_Q:
 			_swap_weapon()
-		elif event.pressed and event.keycode == KEY_G:
+		elif event.pressed and mode != Mode.COMBAT and event.keycode == KEY_G:
 			_reload()
-		elif event.pressed and event.keycode == KEY_F:
-			_overwatch()
-		elif event.pressed and not event.echo and room_ritual.handle_key(event.keycode):
-			pass  # rituais do Miguel (Z, X, T, Y)
 		elif event.pressed and event.keycode == KEY_V:
 			use_3d = not use_3d
 			_popup(player.pos, "Nikolai 3D" if use_3d else "Nikolai 2D")
@@ -434,20 +435,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if _mouse_on_hud(screen):  # rodapé: o fim do turno passa a vez; os ícones não movem o personagem
 			var n := action_bar._action_slots().size()
-			var ritual_id := ""
-			for k in n:
-				if action_bar.ritual_at(k, n) != "" and action_bar._action_rect(k, n).has_point(screen):
-					ritual_id = action_bar.ritual_at(k, n)
-			if ritual_id != "":
-				room_ritual.cast(ritual_id)
-			elif action_bar._end_turn_rect(n).has_point(screen):
+			if action_bar._end_turn_rect(n).has_point(screen):
 				_player_pass()
-			elif _reserve_id() != "" and action_bar._action_rect(1, n).has_point(screen):
-				_swap_weapon()
-			elif action_bar._action_rect(action_bar.kit_index() + 1, n).has_point(screen):
-				_overwatch()
-			elif action_bar._action_rect(action_bar.kit_index(), n).has_point(screen):
-				_use_kit_button()
+				return
+			for k in n:  # a casa clicada faz o mesmo que a tecla dela (1 a 9 em ordem)
+				if action_bar._action_rect(k, n).has_point(screen):
+					action_bar.activate(k)
+					break
 			return
 		var click := _resolve_click(get_global_mouse_position())
 		if mode == Mode.EXPLORATION:

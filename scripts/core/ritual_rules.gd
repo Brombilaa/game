@@ -4,7 +4,10 @@ extends RefCounted
 # Os quatro rituais do Miguel estão em data/rituais.json (todos os números são provisórios do Claude, 15/11/2026).
 #   Armadura de Sangue: redução de dano em si por algumas rodadas.   Amaldiçoar Arma: dano extra por golpe.
 #   Eletrocussão: dano que não erra no inimigo à vista (+ chance de atordoar).   Cicatrização: cura e tira a ruptura.
-# Ordem de um ritual: validar (classe, PA, SAN, alvo, alcance, visão) -> pagar PA -> pagar SAN (sem resistência de PRE;
+# Componentes (Léo, 16/11 e 19/11): cada ritual gasta `componentes` itens do seu `elemento` (sangue, energia, morte,
+# conhecimento) da mochila. Sem componente não há ritual (não sai mais fraco). Qualquer item do elemento serve;
+# gasta primeiro o que a mochila tem mais. Elemento de cada ritual e quantidade: provisórios do Claude.
+# Ordem de um ritual: validar (classe, PA, SAN, componente, alvo, alcance, visão) -> pagar PA -> gastar componente -> pagar SAN (sem resistência de PRE;
 # se a SAN chega a 0 é ruptura, ou loucura na segunda vez no combate) -> aplicar o efeito.
 # Só regras: a sala mostra o resultado (textos flutuantes, registro) e passa a vez quando os PA acabam.
 
@@ -12,6 +15,7 @@ var cfg: CombatConfig
 var rules: CombatRules
 var san: SanRules
 var rng: RandomNumberGenerator
+var inventory: Inventory  # mochila do grupo, de onde saem os componentes; a sala entrega ao montar a mochila
 
 
 func _init(config: CombatConfig, combat_rules: CombatRules, san_rules: SanRules, random: RandomNumberGenerator = null) -> void:
@@ -47,13 +51,59 @@ func cost_san(id: String) -> int:
 	return int(ritual(id)["custo_san"])
 
 
+func element(id: String) -> String:
+	return str(ritual(id)["elemento"])
+
+
+func cost_components(id: String) -> int:
+	return int(ritual(id)["componentes"])
+
+
+# Itens componentes de um elemento, na ordem de itens.json.
+func component_items(elemento: String) -> Array[String]:
+	var out: Array[String] = []
+	for iid in cfg.game_data.ids("itens"):
+		var it := cfg.game_data.get_entry("itens", iid)
+		if it["categoria"] == "componente" and it.get("elemento") == elemento:
+			out.append(iid)
+	return out
+
+
+# Quantos componentes do elemento do ritual há na mochila (0 sem mochila).
+func components_available(id: String) -> int:
+	if inventory == null:
+		return 0
+	var total := 0
+	for iid in component_items(element(id)):
+		total += inventory.count(iid)
+	return total
+
+
+static func element_name(elemento: String) -> String:
+	return {"sangue": "Sangue", "energia": "Energia", "morte": "Morte", "conhecimento": "Conhecimento"}.get(elemento, elemento.capitalize())
+
+
+# Tira da mochila os componentes do ritual, do item que há mais (empate: o primeiro de itens.json). Retorna os ids gastos.
+func _spend_components(id: String) -> Array[String]:
+	var spent: Array[String] = []
+	for i in cost_components(id):
+		var best := ""
+		for iid in component_items(element(id)):
+			if inventory.count(iid) > (inventory.count(best) if best != "" else 0):
+				best = iid
+		if best == "" or not inventory.remove(best, 1):
+			break
+		spent.append(best)
+	return spent
+
+
 # Bônus de INT no dano ou na cura (Ficha.bonus_ritual).
 func int_bonus(caster: Combatant) -> int:
 	return Ficha.bonus_ritual(cfg.game_data, caster.atributos)
 
 
 # Motivo pelo qual o ritual não pode ser conjurado, ou "" se pode. Códigos do HUD (HudText.REJECTION_MESSAGES):
-# requirement (não conhece, morto, enlouquecido, alvo inválido), no_pa, no_san, out_of_range, no_line_of_sight.
+# requirement (não conhece, morto, enlouquecido, alvo inválido), no_pa, no_san, no_component, out_of_range, no_line_of_sight.
 # `target`: inimigo (eletrocussão) ou aliado (cicatrização); ignorado nos rituais em si.
 func blocker(caster: Combatant, id: String, target: Combatant = null, walls: Array[Rect2] = [], covers: Array = []) -> String:
 	if not caster.is_alive() or caster.insane or not known(caster).has(id):
@@ -63,6 +113,8 @@ func blocker(caster: Combatant, id: String, target: Combatant = null, walls: Arr
 		return "no_pa"
 	if caster.san < int(r["custo_san"]):
 		return "no_san"
+	if components_available(id) < int(r["componentes"]):
+		return "no_component"
 	match r["alvo"]:
 		"si":
 			return ""
@@ -85,16 +137,17 @@ func blocker(caster: Combatant, id: String, target: Combatant = null, walls: Arr
 			return ""
 
 
-# Conjura. Retorna {ok, reason, id, san (resultado de SanRules.lose), + o efeito: damage, stunned, resisted_stun,
+# Conjura. Retorna {ok, reason, id, components (ids gastos), san (resultado de SanRules.lose), + o efeito: damage, stunned, resisted_stun,
 # healed, cleared, rounds, defense, bonus}.
 func cast(caster: Combatant, id: String, target: Combatant = null, walls: Array[Rect2] = [], covers: Array = []) -> Dictionary:
-	var out := {"ok": false, "reason": "", "id": id, "san": {}, "damage": 0, "stunned": false, "resisted_stun": false, "healed": 0, "cleared": false, "tipo_dano": "", "afinidade": ""}
+	var out := {"ok": false, "reason": "", "id": id, "components": [], "san": {}, "damage": 0, "stunned": false, "resisted_stun": false, "healed": 0, "cleared": false, "tipo_dano": "", "afinidade": ""}
 	out.reason = blocker(caster, id, target, walls, covers)
 	if out.reason != "":
 		return out
 	out.ok = true
 	var r := ritual(id)
 	caster.pa -= int(r["custo_pa"])
+	out.components = _spend_components(id)  # gasto mesmo se o conjurador enlouquecer pagando a SAN
 	out.san = san.lose(caster, int(r["custo_san"]), false)  # custo de ritual: PRE não resiste
 	if not caster.is_alive() or caster.insane:
 		return out  # enlouqueceu pagando o custo: o ritual não sai
