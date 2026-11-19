@@ -7099,6 +7099,15 @@
    "tipo": "estado",
    "estados": {},
    "marca": "leticia_acordou"
+  },
+  {
+   "id": "subir_celeiro",
+   "apos": "leticia",
+   "tipo": "ir",
+   "para": "celeiro",
+   "chegada": "poco",
+   "texto": "O grupo sobe pelo poço carregando a Letícia. Há luzes no celeiro.",
+   "provisorio": true
   }
  ],
  "zonas": [

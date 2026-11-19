@@ -81,6 +81,7 @@ func _start_combat(surprise_side: int = -1) -> void:
 	room.combat_log.clear()
 	room.cam_pan = Vector2.ZERO
 	Engine.time_scale = 2.0 if room.options.values["fast_combat"] else 1.0  # P7: combate rápido (Opções)
+	room.enemy_turn_boost = false
 	room.path = PackedVector2Array()
 	room.moving_unit = null
 	room.pending_door = false
@@ -127,6 +128,7 @@ func _on_turn_started(unit: Combatant) -> void:
 
 func _on_combat_ended(result: TurnManager.Result) -> void:
 	Engine.time_scale = 1.0
+	room.enemy_turn_boost = false
 	room.hud.on_turn_ended()
 	room.audio.on_combat_ended()
 	RitualRules.clear_buffs(room.party)  # Armadura de Sangue e Amaldiçoar Arma acabam com o combate

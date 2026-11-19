@@ -253,10 +253,31 @@ def cripta(d, p, ret):
                         "requer": "cripta_vencida", "texto_antes": "Letícia está sobre o altar, ferida e desmaiada. Não dá para chegar até ela agora.",
                         "texto": "Letícia abre os olhos devagar. Está ferida, mas viva.", "provisorio": True})
     d["gatilhos"].append({"id": "leticia_acorda", "apos": "leticia", "tipo": "estado", "estados": {}, "marca": "leticia_acordou"})
+    # Pós-combate (Léo, 15/11): com a Letícia acordada o grupo sobe pelo poço e encontra a Ordem no celeiro. Texto provisório.
+    d["gatilhos"].append({"id": "subir_celeiro", "apos": "leticia", "tipo": "ir", "para": "celeiro", "chegada": "poco",
+                          "texto": "O grupo sobe pelo poço carregando a Letícia. Há luzes no celeiro.", "provisorio": True})
     d["objetivos"] = [{"texto": "Explorar a cripta", "marca": "cripta_trecho4", "provisorio": True},
                       {"texto": "Derrotar Roberto Ghular", "marca": "dama_surgiu", "requer": "cripta_trecho4"},
                       {"texto": "Derrotar a Dama de Sangue", "marca": "cripta_vencida", "requer": "dama_surgiu"},
                       {"texto": "Acordar a Letícia", "pista": "leticia", "requer": "cripta_vencida"}]
+
+
+def celeiro(d, p, ret):
+    """Pós-combate da missão 1 (Léo, 15/11): a Dama morta e a Letícia salva, o grupo sobe pelo poço e encontra a equipe
+    de campo da Ordem (do bem) dentro do celeiro da Fazenda Ghular. Mesma cena 3D e mesmas colisões da fazenda, sem
+    inimigos. Ao chegar toca a conversa (data/cenas/celeiro_ordem.json) e depois o fim do capítulo: a cutscene feita
+    fora do jogo (se o vídeo existir; sem ele, a cena da igreja na Itália feita no jogo) e o cartão AURORA (modelo A,
+    Léo 16/11). Posições, hora, textos e o caminho do vídeo são provisórios do Claude."""
+    # Elenco (Léo, 19/11): Tristan, sub-líder da Ordem; Mark, que sela o poço e conhece o Miguel de anos atrás;
+    # Júlia, namorada da Letícia e bibliotecária da cidade, que chega pela porta; a equipe médica cuida da Letícia.
+    d["inicio"]["npcs"] = [{"id": "leticia", "pos": p(5.4, 10.4)}, {"id": "medico", "pos": p(4.6, 10.9)},
+                           {"id": "tristan", "pos": p(8.2, 10.9)}, {"id": "mark", "pos": p(8.8, 9.8)},
+                           {"id": "julia", "pos": p(6.0, 13.0)}]
+    d["chegadas"] = {"poco": [p(6.0, 9.9), p(6.6, 10.4), p(7.2, 9.9)]}
+    d["objetivos"] = [{"texto": "Falar com a Ordem", "marca": "celeiro_conversa", "provisorio": True}]
+    d["cena_ao_chegar"] = {"cena": "celeiro_ordem", "marca": "celeiro_conversa"}
+    d["fim_capitulo"] = {"video": "fim_capitulo1", "titulo": "AURORA", "legenda": "CAPÍTULO 1",
+                         "marca": "capitulo1_fim", "provisorio": True}
 
 
 def main():
@@ -267,6 +288,7 @@ def main():
         ("biblioteca", "biblioteca", "biblioteca", 19, "BIBLIOTECA", [(12.7, 11.2), (12.0, 11.7), (13.4, 11.7)], biblioteca, (-0.15, -0.15, 18.15, 13.2)),
         ("fazenda", "fazenda", "fazenda", 23, "FAZENDA GHULAR", [(6.2, 17.8), (5.5, 18.3), (6.9, 18.4)], fazenda, (-3.5, -2.5, 16.0, 19.0)),
         ("cripta", "cripta", "cripta", 23, "CRIPTA", [(-1.2, 53.8), (-2.8, 53.0), (-2.9, 54.7)], cripta, None),
+        ("celeiro", "fazenda", "fazenda", 1, "CELEIRO", [(6.0, 9.9), (6.6, 10.4), (7.2, 9.9)], celeiro, (-3.5, -2.5, 16.0, 19.0)),
     ]
     for cid, glb, col, hora, rotulo, grupo, extras, limite in lista:
         dados = cenario(cid, glb, carregar(col), hora, rotulo, grupo, extras, limite)
