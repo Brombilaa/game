@@ -70,8 +70,9 @@ func _test_controles() -> void:
 	var m := ControlesCaderno.mapa()
 	for k in ["B", "J", "C", "Tab", "Esc", "Espaço", "D", "Q", "G", "F", "Z", "X", "T", "Y", "L", "E", "Shift"]:
 		_check(m.has(k), "o mapa de controles tem a tecla " + k)
-	for iid in RoomItems.KEY_LABELS:
-		_check(m.has(RoomItems.KEY_LABELS[iid]), "o mapa tem a tecla do item " + iid)
+	var item_keys: Dictionary = load("res://scripts/exploration/room_items.gd").KEY_LABELS
+	for iid in item_keys:
+		_check(m.has(item_keys[iid]), "o mapa tem a tecla do item " + iid)
 	var no_teclado := {}
 	for k in ControlesCaderno.LAYOUT:
 		no_teclado[k[0]] = true
