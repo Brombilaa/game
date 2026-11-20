@@ -239,6 +239,10 @@ func _fallen_at(p: Vector2) -> Combatant:
 
 
 func _player_move(click: Vector2) -> void:
+	if room.player.preso:  # Prisão de Tentáculos (Dama de Sangue): ataca e usa itens, mas não anda
+		_reject("requirement")
+		room.hud.show_notice("%s está preso pelos tentáculos" % room.player.name)
+		return
 	var full := room.pathfinder.find_path(room.player.pos, click, room._obstacles(room.player), room.player.radius)
 	if full.is_empty():
 		await _player_unstick(click)
@@ -469,6 +473,8 @@ func _on_fx_impact(job: Dictionary) -> void:
 		_log("%s atira em %s: bloqueado" % [attacker.name, target.name])
 	elif not r.get("hit", false):
 		_log("%s erra %s" % [attacker.name, target.name])
+	elif r.get("sem_efeito", false):
+		_log("%s acerta %s: sem efeito" % [attacker.name, target.name])
 	else:
 		_log("%s acerta %s: %d%s" % [attacker.name, target.name, int(r.damage), " (crítico)" if r.get("crit", false) else ""])
 	if not target.is_alive():
@@ -477,6 +483,8 @@ func _on_fx_impact(job: Dictionary) -> void:
 		_popup(target.pos, "BLOQUEADO", "blocked")
 	elif not r.get("hit", false):
 		_popup(target.pos, "ERROU", "miss")
+	elif r.get("sem_efeito", false):
+		_popup(target.pos, "SEM EFEITO", "blocked")  # flor da Dama que pede outra mecânica
 	else:
 		if target.pos != attacker.pos and target.is_alive():
 			room.facing8[target] = CharacterSheet.dir_from_vector(room._iso(attacker.pos) - room._iso(target.pos))  # o atingido vira para quem bateu

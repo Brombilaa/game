@@ -164,14 +164,15 @@
     "id": "dama_sangue",
     "nome": "Dama de Sangue",
     "provisorio": true,
-    "pv": 120,
+    "pv": 100,
     "pa": 3,
     "agi": 2,
     "percepcao_px": 450,
     "precisao": 0,
-    "defesa": 0.0,
+    "defesa": 0.1,
     "ataques": [
-      "garra_dama"
+      "pancada_dama",
+      "espinhos_dama"
     ],
     "comportamento": "cerca",
     "resistencias": [
@@ -183,6 +184,7 @@
     ],
     "chefe": true,
     "fases": [],
-    "drops": []
+    "drops": [],
+    "_comment": "Léo (20/11): 100 PV, pancada de tentáculo e disparar espinhos; as 7 flores, os corpos e as habilidades ficam em data/dama_sangue.json (ChefeDama). Defesa 10%, dano e PA provisórios do Claude."
   }
 ]

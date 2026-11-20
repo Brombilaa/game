@@ -101,6 +101,12 @@ func _show(caster: Combatant, id: String, target: Combatant, out: Dictionary) ->
 		"dano_arma":
 			room.room_combat._popup(caster.pos, "+%d DANO" % int(r["valor"]), "heal")
 		"dano":
+			if out.sem_efeito:
+				room.room_combat._popup(target.pos, "SEM EFEITO", "blocked")
+				room.room_combat._log("%s não faz efeito em %s" % [r["nome"], target.name])
+				room._apos_efeito(target)
+				room.queue_redraw()
+				return
 			room.room_combat._popup(target.pos, "-%d" % out.damage, "damage")
 			room.room_combat._afinidade(target, out)
 			room.room_combat._log("%s atinge %s: %d" % [r["nome"], target.name, out.damage])
@@ -115,6 +121,7 @@ func _show(caster: Combatant, id: String, target: Combatant, out: Dictionary) ->
 				if not target.looted:
 					target.looted = true
 					room._loot_enemy(target)
+			room._apos_efeito(target)
 		"cura":
 			room.room_combat._popup(target.pos, "+%d PV" % out.healed, "heal")
 			room.room_combat._log("%s cura %s: +%d PV" % [caster.name, target.name, out.healed])

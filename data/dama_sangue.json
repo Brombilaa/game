@@ -1,0 +1,64 @@
+{
+  "_comment": "Luta da Dama de Sangue (Léo, 20/11/2026: roteiro-missao1.md seção 5c, tabela das sete flores e decisões da luta). Lido por scripts/combat/chefe_dama.gd. A ficha básica (PV, PA, defesa, pancada e espinhos) fica em inimigos.json e armas.json. Tudo marcado provisorio é do Claude, para testar e ajustar.",
+  "fase2": {
+    "abaixo_de": 0.5,
+    "dano_mult": 1.25,
+    "texto": "A DAMA ABRE TODAS AS FLORES",
+    "registro": "A Dama de Sangue não tem mais o que devorar: todas as flores que restam se abrem.",
+    "provisorio": true,
+    "_efeito": "Fase 2 quando os corpos acabam (devorados ou salvos) ou a Dama cai a 50% do PV, o que vier primeiro. Todas as flores de pé se abrem e ficam vulneráveis até o fim; ela usa UMA habilidade (ação padrão, 2 PA) por turno e bate 25% mais forte."
+  },
+  "fase1": {
+    "pa_devorar": 3,
+    "_efeito": "Fase 1: devorar um corpo é a ação padrão do turno (Léo). Gasta o turno inteiro, abre a próxima flor da tabela, usa a habilidade dela e a flor fica vulnerável até o começo do próximo turno da Dama."
+  },
+  "pa_habilidade": 2,
+  "bonus_base": {
+    "_comment": "Bônus que a Dama tem enquanto as flores estão vivas e perde quando cada uma murcha (tabela do Léo). Conversão provisória: Luta/Pontaria 5 = 15% de acerto; Atributos 1 = +1 de dano e +5% de acerto; Defesa 5 = 5 pontos de redução de dano; Resistências 5 = resistência a corpo a corpo.",
+    "acerto_corpo": 0.15,
+    "acerto_distancia": 0.15,
+    "atributos_dano": 1,
+    "atributos_acerto": 0.05,
+    "provisorio": true
+  },
+  "corpos": {
+    "_comment": "Seis pendurados vivos (a sétima, Lisandra, já morreu na praça). Ordem de devorar: do mais jovem ao mais velho (roteiro, pelas fichas). Cada um é seguro por um tentáculo atacável; destruído antes do turno da Dama em que o corpo seria devorado, o corpo é salvo e a flor não abre naquela rodada (Léo, 20/11). Posições em cripta.json > chefe > corpos.",
+    "tentaculo_pv": 30,
+    "tentaculo_defesa": 0.1,
+    "nomes": ["Selena Schaefer", "Bruno Rouxinol", "Ramiro Turi", "Ruth Santos", "Jurema Couto", "Marcos Paixão"],
+    "provisorio": true
+  },
+  "flores": [
+    {"id": "laranja", "cor": "Laranja", "rgb": [0.95, 0.45, 0.08], "habilidade": "visao_macabra",
+     "mecanica": "corte", "aceita": ["espada"], "pv": 10, "dica": "Só um corte de lâmina faz a flor laranja murchar.",
+     "perde": {"pv_max": 20}, "provisorio": true},
+    {"id": "rosa", "cor": "Rosa", "rgb": [0.95, 0.42, 0.68], "habilidade": "agarrar_arremessar",
+     "mecanica": "fertilizante", "aceita": ["fertilizante"], "pv": 1, "dica": "A flor rosa murcha em contato com fertilizante.",
+     "perde": {"acerto_corpo": true}, "provisorio": true},
+    {"id": "roxa", "cor": "Roxa", "rgb": [0.55, 0.22, 0.8], "habilidade": "grito_confusao",
+     "mecanica": "bulbo", "aceita": ["bulbo_bravo_purpulis"], "pv": 1, "dica": "A flor roxa murcha ao ser alimentada com o bulbo de Bravo Purpulis.",
+     "perde": {"atributos": true}, "provisorio": true},
+    {"id": "amarela", "cor": "Amarela", "rgb": [0.98, 0.82, 0.12], "habilidade": "espinhos_sangue",
+     "mecanica": "fogo", "aceita": ["fogo"], "pv": 10, "dica": "Só fogo ou explosivo (10 de dano) faz a flor amarela murchar.",
+     "perde": {"acerto_distancia": true}, "provisorio": true},
+    {"id": "verde", "cor": "Verde", "rgb": [0.25, 0.75, 0.3], "habilidade": "prisao_tentaculos",
+     "mecanica": "agua", "aceita": ["garrafa_agua", "balde_agua"], "pv": 1, "dica": "A flor verde murcha molhada por água corrente.",
+     "perde": {"defesa": 0.05}, "provisorio": true},
+    {"id": "azul", "cor": "Azul", "rgb": [0.2, 0.45, 0.98], "habilidade": "miasma_fetido",
+     "mecanica": "energia", "aceita": ["ritual"], "pv": 1, "dica": "A flor azul murcha exposta a energia elétrica ou paranormal.",
+     "perde": {"pv_max": 20}, "provisorio": true},
+    {"id": "vermelha", "cor": "Vermelha", "rgb": [0.85, 0.05, 0.08], "habilidade": "chuva_sangue",
+     "mecanica": "agrotoxico", "aceita": ["agrotoxico"], "pv": 1, "dica": "A flor vermelha murcha em contato com o agrotóxico.",
+     "perde": {"resistencias": true}, "nasce_aberta": true, "provisorio": true}
+  ],
+  "habilidades": {
+    "_comment": "Números PROVISÓRIOS do Claude (roteiro, 20/11). Sem testes de resistência: área acerta todos no raio; a defesa (colete) reduz o dano como sempre. Distâncias em metros.",
+    "visao_macabra": {"nome": "Visão Macabra", "alvo": "um", "alcance_m": 8, "san": 4},
+    "agarrar_arremessar": {"nome": "Agarrar e Arremessar", "alvo": "um", "alcance_m": 2, "dano": [8, 10], "condicao": "derrubado", "arremesso_m": 4},
+    "grito_confusao": {"nome": "Grito de Confusão", "alvo": "em_volta", "raio_m": 6, "san": 3, "condicao": "confuso"},
+    "espinhos_sangue": {"nome": "Espinhos de Sangue", "alvo": "cone", "alcance_m": 8, "angulo_graus": 50, "dano": [6, 9], "condicao": "sangrando"},
+    "prisao_tentaculos": {"nome": "Prisão de Tentáculos", "alvo": "um", "alcance_m": 10, "condicao": "preso", "tentaculo_pv": 15},
+    "miasma_fetido": {"nome": "Miasma Fétido", "alvo": "ponto", "alcance_m": 10, "raio_m": 3, "condicao": "miasma"},
+    "chuva_sangue": {"nome": "Chuva de Sangue", "alvo": "ponto", "alcance_m": 12, "raio_m": 5, "dano": [6, 8], "condicao": "sangrando"}
+  }
+}

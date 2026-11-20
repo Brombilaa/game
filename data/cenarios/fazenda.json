@@ -8092,6 +8092,52 @@
    ]
   },
   {
+   "id": "prateleira_insumos",
+   "pos": [
+    742.4,
+    300.2
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Na prateleira do celeiro, entre ferramentas, sacos de fertilizante abertos e um frasco de agrotóxico com a caveira no rótulo. As mesmas marcas das pétalas da praça.",
+   "provisorio": true,
+   "da": [
+    {
+     "item": "fertilizante",
+     "qtd": 1
+    },
+    {
+     "item": "agrotoxico",
+     "qtd": 1
+    }
+   ]
+  },
+  {
+   "id": "balde_poco",
+   "pos": [
+    844.8,
+    748.8
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Um balde amarrado na manivela do poço. A água lá de baixo corre fria; o grupo enche o balde.",
+   "provisorio": true,
+   "da": [
+    {
+     "item": "balde_agua",
+     "qtd": 1
+    }
+   ]
+  },
+  {
    "id": "bau_celeiro",
    "pos": [
     620.2,
