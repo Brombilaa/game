@@ -13,7 +13,8 @@ func _init() -> void:
 	_check(audio.music_cues.has("combat"), "tabela de música carregada")
 
 	# Sem arquivos ainda: tudo fica mudo, sem erro.
-	_check(not audio.play_sfx("combat_start"), "efeito sem arquivo fica mudo")
+	_check(audio.play_sfx("combat_start"), "efeito com arquivo toca")
+	_check(not audio.play_sfx("clue_close"), "efeito sem arquivo fica mudo")
 	_check(not audio.play_sfx("nao_existe"), "evento desconhecido fica mudo")
 	_check(audio.play_music("combat"), "música de combate toca")
 	_check((audio.music_player.stream as AudioStreamOggVorbis).loop, "música de combate repete")
