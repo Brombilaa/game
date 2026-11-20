@@ -34,6 +34,11 @@ const BAR_SAN := Color(0.31, 0.56, 0.88)
 # Armas que o jogo trata como de curta distância (pedido do Léo, 30/10/2026): mostram só a faixa Curto.
 const SHORT_RANGE := ["pistola"]
 
+# Acessórios cujo bônus o jogo não anuncia: o item mostra só a descrição (matriz da missão 1, 20/11).
+const HIDDEN_BONUS := ["pulseira_amizade"]
+
+const TIPOS := {"missao": "Item de missão", "consumivel": "Consumível", "equipamento": "Equipamento", "componente": "Componente", "recurso": "Recurso"}
+
 const TABS := ["Tudo", "Armas", "Itens", "Coletes"]
 const EQUIP_SLOTS := ["principal", "secundaria", "colete", "acessorio"]
 const EQUIP_LABELS := {"principal": "ARMA", "secundaria": "RESERVA", "colete": "COLETE", "acessorio": "ACESSÓRIO"}
@@ -41,7 +46,13 @@ const GHOSTS := {"principal": "arma", "secundaria": "arma", "colete": "colete", 
 
 # Textos provisórios dos itens (o GDD ainda não os define).
 const BLURBS := {
-	"pulseira_amizade": "Acessório: amarra a mente ao que o Caio deixou.",
+	"pulseira_amizade": "Acessório: miçangas coloridas que amarram a mente ao que o Caio deixou.",
+	"livro_sanguis_orchid": "Livro do culto Sanguis Orchid, de páginas rasgadas.",
+	"fertilizante": "Saco de fertilizante tirado do celeiro.",
+	"agrotoxico": "Veneno de lavoura guardado no celeiro.",
+	"balde": "Balde do poço, serve para carregar água.",
+	"garrafa_agua": "Garrafa de água da delegacia.",
+	"coquetel": "Garrafa com pavio e líquido inflamável. Uso ainda a definir.",
 	"plaqueta_identificacao": "Acessório: a plaqueta de um agente antigo lembra que dá para aguentar mais um pouco.",
 	"pistola": "Arma curta de uso comum. Confiável à curta distância.",
 	"escopeta": "Dano alto à queima-roupa, gasta 2 PA por disparo.",
@@ -257,7 +268,9 @@ func _click(p: Vector2) -> void:
 func _act() -> void:
 	if sel.get("kind") == "bag":
 		var id := str(room.inventory.slots[int(sel["i"])]["id"])
-		if room.gear_is_equippable(id):
+		if _is_story(id):
+			_say("Item de missão: sem uso por enquanto.")
+		elif room.gear_is_equippable(id):
 			var slot := "colete" if room.gear_item_kind(id) == "colete" else "principal"
 			_say(room.gear_equip(_member(), slot, int(sel["i"])))
 			sel = {"kind": "eq", "slot": slot}
@@ -328,13 +341,13 @@ func _describe(id: String) -> Dictionary:
 		lines.append(["Em combate", "%d PA" % int(it["custo_pa_combate"])])
 	if it.get("efeito") == "defesa" and it.get("valor") != null:
 		lines.append(["Defesa", "%d%%" % roundi(float(it["valor"]) * 100.0)])
-	if it.get("efeito") == "san_max" and it.get("valor") != null:
+	if it.get("efeito") == "san_max" and it.get("valor") != null and id not in HIDDEN_BONUS:
 		lines.append(["SAN máxima", "+%d" % int(it["valor"])])
 	if it.get("efeito") == "pv_max" and it.get("valor") != null:
 		lines.append(["PV máximo", "+%d" % int(it["valor"])])
 	if it.get("elemento") != null:
 		lines.append(["Elemento", RitualRules.element_name(str(it["elemento"]))])
-	return {"nome": it["nome"], "tipo": str(it["categoria"]).capitalize(), "texto": BLURBS.get(id, ""), "linhas": lines}
+	return {"nome": it["nome"], "tipo": TIPOS.get(str(it["categoria"]), str(it["categoria"]).capitalize()), "texto": BLURBS.get(id, ""), "linhas": lines}
 
 
 # Curto, médio e longo a partir da regra de acerto (−5% a cada 2 m além da distância ideal):
@@ -579,8 +592,12 @@ func _draw_detail(font: Font) -> void:
 				draw_string(font, r.position + Vector2(12, y + 4), str(row[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 9, MUTED)
 				draw_string(font, r.position + Vector2(12, y + 4), str(row[1]), HORIZONTAL_ALIGNMENT_RIGHT, r.size.x - 24.0, 9, Color.WHITE)
 				y += 13.0
-	_draw_button(font, 0, "E  " + _act_label(), id != "")
+	_draw_button(font, 0, "E  " + _act_label(), id != "" and not _is_story(id))
 	_draw_button(font, 1, "Del  Descartar", sel.get("kind") == "bag")
+
+
+func _is_story(id: String) -> bool:
+	return str(room.cfg.game_data.get_entry("itens", id).get("categoria", "")) == "missao"
 
 
 # O que o E faz com o item escolhido.
