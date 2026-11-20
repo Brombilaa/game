@@ -787,6 +787,8 @@ func _hud_draw_scale() -> Vector2:
 # Placas do HUD com vidro fosco por trás (pixels da tela): ordem dos turnos e barra de ações, no combate.
 func _hud_blur_rects() -> Array[Rect2]:
 	var out: Array[Rect2] = []
+	if inv_panel and inv_panel.t > 0.0:  # inventário aberto: placa de vidro fosco
+		out.append(inv_panel.panel_rect())
 	if mode == Mode.COMBAT and turns:
 		out.append(party_hud.turn_order_rect())
 		if _player_ready():
