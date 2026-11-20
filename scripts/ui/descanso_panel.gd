@@ -1,6 +1,6 @@
 class_name DescansoPanel
 extends CanvasLayer
-# Painel do ponto de descanso (zona segura): abre com F perto do ponto (ou fecha com F, Esc e o X). Duas partes:
+# Painel do ponto de descanso (zona segura): abre com o clique no objeto do ponto (a Van; sem tecla) e fecha com Esc ou o X. Duas partes:
 #   DESCANSAR: PV e SAN do grupo ao máximo, tira a ruptura e salva o jogo (DescansoRules).
 #   PREPARAR RITUAIS: o Miguel combina componentes e deixa o ritual preparado; cada carga dispensa o componente na hora e reforça
 #   o efeito (RitualRules.prepare; tudo provisório, combat.json > preparo). Mostra o que cada preparo gasta e quanto há na mochila.
@@ -183,6 +183,6 @@ func _preparar(m: Combatant, id: String) -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if open and event is InputEventKey and event.pressed and not event.echo and event.keycode in [KEY_ESCAPE, KEY_F]:
+	if open and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
 		fechar()
 		get_viewport().set_input_as_handled()

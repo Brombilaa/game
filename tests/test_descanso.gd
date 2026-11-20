@@ -25,19 +25,29 @@ func _run() -> void:
 	_check(room.room_descanso.points.size() == 1 and room.room_descanso.points[0]["id"] == "van", "o parque tem a Van como ponto de descanso")
 	room.mode = room.Mode.EXPLORATION
 	room.player = miguel
+	var van: Rect2 = room.scenario.colliders["van"]
+	var sobre_van: Vector2 = room._iso(van.get_center()) + Vector2(0, -40)
+	_check(not room.room_descanso.point_under(sobre_van).is_empty(), "o mouse sobre o corpo da Van acerta o ponto")
+	_check(room.room_descanso.point_under(room._iso(Vector2(900, 300))).is_empty(), "o mouse longe da Van não acerta")
 	miguel.pos = Vector2(900, 300)
-	_check(not room.room_descanso.try_open(), "longe da Van a tecla F não abre")
+	_check(room.room_descanso.click(sobre_van) and room.room_descanso.pending == "van" and not room.descanso_panel.open, "longe da Van o clique manda o grupo andar até ela")
+	room.path = PackedVector2Array()
+	room.moving_unit = null
 	miguel.pos = Vector2(200, 740)
-	_check(not room.room_descanso.point_here().is_empty(), "perto da Van o controlado está no ponto")
+	room.room_descanso.tick()
+	_check(room.descanso_panel.open and room.room_descanso.pending == "", "ao chegar o painel abre sozinho")
+	room.descanso_panel.fechar()
+	_check(room.room_descanso.click(sobre_van) and room.descanso_panel.open, "já na área, o clique na Van abre o painel direto")
+	room.descanso_panel.fechar()
+	_check(not room.room_descanso.click(room._iso(Vector2(900, 300))), "clique fora da Van não é tratado")
 	miguel.pos = Vector2(900, 300)
 	room.room_descanso.load_points([{"id": "teste", "nome": "Sala segura", "ret": [0, 0, 100000, 100000]}])
 	_check(room.room_descanso.points.size() == 1 and not room.room_descanso.point_here().is_empty(), "ponto carregado dos dados")
-	room.room_descanso.tick()
-	_check(room.room_descanso._inside == "teste", "o aviso dispara ao entrar na área")
 
 	# Abre o painel
 	room.mode = room.Mode.EXPLORATION
-	_check(room.room_descanso.try_open() and room.descanso_panel.open, "perto do ponto, F abre o painel")
+	room.descanso_panel.abrir()
+	_check(room.descanso_panel.open, "o painel abre")
 	_check(not room.diario_pode_abrir(), "o diário não abre por cima")
 	room.descanso_panel.atualizar()
 	_check(_buttons(room.descanso_panel).any(func(b: Button) -> bool: return b.text == "DESCANSAR"), "o painel tem o botão DESCANSAR")

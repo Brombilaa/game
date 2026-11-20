@@ -878,6 +878,8 @@ func _draw_clue_hints() -> void:
 	var available := scenario.available_clues(seen_clues)
 	var pulse := 0.65 + 0.35 * sin(Time.get_ticks_msec() / 260.0)
 	var hover: String = hover_forcado if hover_forcado != "" else (_clue_under(get_global_mouse_position()) if not _dialogo_aberto() else "")
+	if hover == "" and not _dialogo_aberto():
+		room_descanso.draw_hint(get_global_mouse_position())
 	for cid in scenario.clues:
 		if seen_clues.has(cid):
 			if pista_malhas.has(cid) and not pista_malhas[cid].is_empty():
@@ -947,6 +949,9 @@ func _order_move(click: Vector2) -> void:
 	if _dialogo_aberto():
 		return
 	pending_clue = ""
+	room_descanso.pending = ""
+	if room_descanso.click(get_global_mouse_position()):  # a Van: clique abre descansar e preparar rituais (Léo, 20/11)
+		return
 	var cid := _clue_under(get_global_mouse_position()) if mode == Mode.EXPLORATION else ""
 	if cid != "":
 		_go_to_clue(cid)

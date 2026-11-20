@@ -421,8 +421,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			anim3d_pick = (anim3d_pick + 2) % (AnimSheet.NAMES.size() + 1) - 1
 			_popup(player.pos, "anim: automático" if anim3d_pick < 0 else "anim: " + AnimSheet.NAMES[anim3d_pick])
 			queue_redraw()
-		elif event.pressed and not event.echo and event.keycode == KEY_F and room_descanso.try_open():
-			get_viewport().set_input_as_handled()
 		elif event.pressed and event.keycode == KEY_C and (mode == Mode.EXPLORATION or _player_ready()):
 			_toggle_crouch()
 		return
