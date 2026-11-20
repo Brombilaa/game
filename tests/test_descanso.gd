@@ -21,9 +21,15 @@ func _run() -> void:
 	var miguel: Combatant = room.party[2]
 	_check(miguel.personagem == "miguel", "o terceiro do grupo é o Miguel")
 
-	# Sem ponto na sala: F não abre nada
+	# A Van do parque é o ponto de descanso (Léo, 20/11)
+	_check(room.room_descanso.points.size() == 1 and room.room_descanso.points[0]["id"] == "van", "o parque tem a Van como ponto de descanso")
+	room.mode = room.Mode.EXPLORATION
 	room.player = miguel
-	_check(not room.room_descanso.try_open(), "sem ponto de descanso a tecla F não abre")
+	miguel.pos = Vector2(900, 300)
+	_check(not room.room_descanso.try_open(), "longe da Van a tecla F não abre")
+	miguel.pos = Vector2(200, 740)
+	_check(not room.room_descanso.point_here().is_empty(), "perto da Van o controlado está no ponto")
+	miguel.pos = Vector2(900, 300)
 	room.room_descanso.load_points([{"id": "teste", "nome": "Sala segura", "ret": [0, 0, 100000, 100000]}])
 	_check(room.room_descanso.points.size() == 1 and not room.room_descanso.point_here().is_empty(), "ponto carregado dos dados")
 	room.room_descanso.tick()

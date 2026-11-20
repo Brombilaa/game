@@ -18,6 +18,7 @@ var colliders := {}  # id -> Rect2
 var clues := {}  # id -> {"pos", "raio", "ordem", "texto", ...}
 var triggers := {}  # id -> gatilho
 var objetivos: Array = []  # objetivos do HUD (formato em Objectives.from_data)
+var descansos: Array = []  # pontos de descanso (zona segura): {"id", "nome", "ret": [x, y, w, h]}; RoomDescanso.load_points
 var recortes: Array = []  # caixas do mundo 3D de onde se tiram triângulos (folhagem na frente de uma pista)
 var occluders: Array[Dictionary] = []  # {"id", "arquivo", "pos" (na imagem do fundo), "rect" (colisão de mesmo id)}
 var errors: PackedStringArray = []
@@ -120,6 +121,7 @@ func _parse(data: Dictionary) -> void:
 	extended_path = str(ext.get("arquivo", ""))
 	extended_pos = _vec(ext.get("pos"))
 	screen_scale = _vec(bg.get("escala_tela"))
+	descansos = data.get("descansos", [])
 	if id == "" or size == Vector2.ZERO or screen_scale == Vector2.ZERO:
 		errors.append("faltam id, tamanho ou escala_tela")
 	var start: Dictionary = data.get("inicio", {})

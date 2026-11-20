@@ -68,6 +68,7 @@ func _ready() -> void:
 	pathfinder = _novo_pathfinder()
 	scenario = Scenario.load_id(_scenario_id())
 	assert(scenario.ok(), "\n".join(scenario.errors))
+	room_descanso.load_points(scenario.descansos)  # a Van é o ponto de descanso (Léo, 20/11)
 	if scenario.backdrop_path != "":
 		backdrop = load(scenario.backdrop_path)
 	if scenario.extended_path != "":

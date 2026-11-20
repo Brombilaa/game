@@ -137,7 +137,6 @@ func _ready() -> void:
 		seen_clues.append("tapete")
 	for z in dados.get("zonas", []):
 		dentro_de[z["id"]] = _ret(z).has_point(player.pos)
-	room_descanso.load_points(dados.get("descansos", []))  # pontos de descanso (zona segura); a missão 1 não tem
 	_fernando_morto()
 	if dados.has("cena_ao_chegar") or dados.has("fim_capitulo"):
 		_pos_combate.call_deferred()

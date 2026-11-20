@@ -3,7 +3,7 @@ extends RefCounted
 # Ponto de descanso na sala (zona segura, GDD #25): quando o líder entra na área de um ponto aparece o aviso "F: descansar" e a tecla F
 # abre o DescansoPanel. Descansar cura o grupo (DescansoRules), salva o jogo e não gasta tempo; o Miguel também prepara rituais
 # ali (RitualRules.prepare, números provisórios em combat.json > preparo). Os pontos vêm dos dados do lugar (`descansos`:
-# [{"id", "nome", "ret": [x, y, w, h]}]); a missão 1 não tem nenhum (Léo, 16/11), então no jogo isto só aparece em lugares que ganharem um.
+# [{"id", "nome", "ret": [x, y, w, h]}], lidos por Scenario). Léo (20/11): a Van do parque é o ponto de descanso da missão 1.
 
 var room: TestRoom
 var points: Array[Dictionary] = []  # {"id", "nome", "ret": Rect2}
