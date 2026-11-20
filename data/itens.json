@@ -31,6 +31,5 @@
   {"id": "fertilizante", "nome": "Fertilizante", "provisorio": true, "categoria": "missao", "consumivel": false, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": null, "valor": null, "elemento": null},
   {"id": "agrotoxico", "nome": "Agrotóxico", "provisorio": true, "categoria": "missao", "consumivel": false, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": null, "valor": null, "elemento": null},
   {"id": "balde", "nome": "Balde", "provisorio": true, "categoria": "missao", "consumivel": false, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": null, "valor": null, "elemento": null},
-  {"id": "garrafa_agua", "nome": "Garrafa de água", "provisorio": true, "categoria": "missao", "consumivel": false, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": null, "valor": null, "elemento": null},
-  {"id": "coquetel", "nome": "Coquetel", "provisorio": true, "categoria": "missao", "consumivel": false, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": null, "valor": null, "elemento": null}
+  {"id": "garrafa_agua", "nome": "Garrafa de água", "provisorio": true, "categoria": "missao", "consumivel": false, "tamanho": null, "pilha_max": null, "custo_pa_combate": null, "efeito": null, "valor": null, "elemento": null}
 ]

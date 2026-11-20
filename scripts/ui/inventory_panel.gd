@@ -52,7 +52,6 @@ const BLURBS := {
 	"agrotoxico": "Veneno de lavoura guardado no celeiro.",
 	"balde": "Balde do poço, serve para carregar água.",
 	"garrafa_agua": "Garrafa de água da delegacia.",
-	"coquetel": "Garrafa com pavio e líquido inflamável. Uso ainda a definir.",
 	"plaqueta_identificacao": "Acessório: a plaqueta de um agente antigo lembra que dá para aguentar mais um pouco.",
 	"pistola": "Arma curta de uso comum. Confiável à curta distância.",
 	"escopeta": "Dano alto à queima-roupa, gasta 2 PA por disparo.",

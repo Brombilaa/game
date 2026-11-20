@@ -87,17 +87,6 @@ const PIXEL_ROWS := {
 		"...obbbbbbo.....",
 		"...oooooooo.....",
 	],
-	"coquetel": [
-		"......g.........",
-		".....grg........",
-		".....oro........",
-		"....oabbao.......",
-		"....oabbbo.......",
-		"...oabbbbbo......",
-		"...orrrrrrro.....",
-		"...orrrrrrro.....",
-		"...oooooooo.....",
-	],
 	"pulseira_amizade": [
 		"...gr.yg.ry.....",
 		"..ry......gr....",
