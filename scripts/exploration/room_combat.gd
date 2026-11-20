@@ -477,7 +477,7 @@ func _on_fx_impact(job: Dictionary) -> void:
 		_log("%s acerta %s: sem efeito" % [attacker.name, target.name])
 	else:
 		_log("%s acerta %s: %d%s" % [attacker.name, target.name, int(r.damage), " (crítico)" if r.get("crit", false) else ""])
-	if not target.is_alive():
+	if not target.is_alive() and not target.objeto:  # flor e tentáculo da Dama: o ChefeDama conta o que aconteceu
 		_log("%s %s" % [target.name, "foi abatido" if target.side == Combatant.Side.ENEMY else "caiu"])
 	if r.get("blocked", false):
 		_popup(target.pos, "BLOQUEADO", "blocked")
@@ -493,7 +493,7 @@ func _on_fx_impact(job: Dictionary) -> void:
 		room.hit_shake[target] = TestRoom.CRIT_SHAKE_SECONDS if r.crit else TestRoom.HIT_SHAKE_SECONDS
 		if target.is_alive() and room._sheet3d(target) != null and not room.enemies.has(target):
 			room.nikolai_clock[target] = {"anim": "hit", "start": Time.get_ticks_msec()}  # reação ao golpe (Nikolai 3D)
-	if not target.is_alive() and not target.insane:
+	if not target.is_alive() and not target.insane and not target.objeto:
 		_popup(target.pos, "ABATIDO" if target.side == Combatant.Side.ENEMY else "CAIU", "down")
 		if target.side == Combatant.Side.ENEMY and not target.looted:
 			target.looted = true

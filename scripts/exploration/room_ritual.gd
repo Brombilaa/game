@@ -111,6 +111,7 @@ func _show(caster: Combatant, id: String, target: Combatant, out: Dictionary) ->
 			room.room_combat._afinidade(target, out)
 			room.room_combat._log("%s atinge %s: %d" % [r["nome"], target.name, out.damage])
 			room.hit_shake[target] = TestRoom.HIT_SHAKE_SECONDS
+			room._apos_efeito(target)  # antes da queda: a Dama não morre antes da cena do fim
 			if out.stunned:
 				room.room_combat._popup(target.pos, "ATORDOADO", "info")
 			elif out.resisted_stun:
@@ -121,7 +122,6 @@ func _show(caster: Combatant, id: String, target: Combatant, out: Dictionary) ->
 				if not target.looted:
 					target.looted = true
 					room._loot_enemy(target)
-			room._apos_efeito(target)
 		"cura":
 			room.room_combat._popup(target.pos, "+%d PV" % out.healed, "heal")
 			room.room_combat._log("%s cura %s: +%d PV" % [caster.name, target.name, out.healed])

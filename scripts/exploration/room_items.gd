@@ -132,13 +132,13 @@ func _show(user: Combatant, id: String, target: Combatant, out: Dictionary) -> v
 					continue
 				room.room_combat._popup(u.pos, "-%d" % int(h.damage), "damage")
 				room.hit_shake[u] = TestRoom.HIT_SHAKE_SECONDS
+				room._apos_efeito(u)
 				if not u.is_alive() and not u.objeto:
 					room.room_combat._popup(u.pos, "ABATIDO", "down")
 					room.room_combat._log("%s foi abatido" % u.name)
 					if not u.looted:
 						u.looted = true
 						room._loot_enemy(u)
-				room._apos_efeito(u)
 			if out.hits.is_empty():
 				room.hud.show_notice("O fogo não pegou ninguém")
 		"flor":
