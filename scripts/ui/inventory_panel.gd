@@ -52,7 +52,7 @@ const BLURBS := {
 	"bandagem": "Estanca o sangramento de quem a usa.",
 	"antidoto": "Neutraliza o veneno em quem o toma.",
 	"curativo": "Cobre ferimentos leves.",
-	"granada_luz": "Clarão que atordoa os inimigos perto do ponto onde cai. Só em combate.",
+	"coquetel": "Garrafa com pano em chamas do Fernando: fogo onde cai, queima os inimigos perto. Só em combate, só ele arremessa.",
 	"sinalizador": "Luz vermelha no chão por alguns turnos: o grupo acerta melhor quem está nela. Só em combate.",
 	"componente_ritual": "Material usado nos rituais.",
 	"sangue_coagulado": "Componente de Sangue. Tirado da Criatura de Sangue.",

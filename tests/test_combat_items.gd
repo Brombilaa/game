@@ -1,5 +1,5 @@
 extends SceneTree
-# Teste headless dos itens de uso em combate (granada de luz e sinalizador). Rodar com:
+# Teste headless dos itens de uso em combate (coquetel do Fernando e sinalizador). Rodar com:
 #   godot --headless --path . -s tests/test_combat_items.gd
 
 var failures := 0
@@ -12,8 +12,8 @@ const NO_WALLS: Array[Rect2] = []
 func _init() -> void:
 	cfg = CombatConfig.load_file()
 	_test_data()
-	_test_flashbang()
-	_test_flashbang_range_and_walls()
+	_test_coquetel()
+	_test_range_and_walls()
 	_test_flare()
 	_test_cost()
 	print("Falhas: %d" % failures)
@@ -39,44 +39,59 @@ func _m(meters: float) -> float:
 
 func _test_data() -> void:
 	_fresh()
-	_check(items.combat_items() == ["granada_luz", "sinalizador"], "dois itens de combate em itens.json (sem sal, Léo 19/11)")
+	_check(items.combat_items() == ["coquetel", "sinalizador"], "dois itens de combate em itens.json: coquetel no lugar da granada (Léo 20/11), sem sal (Léo 19/11)")
 	for id in items.combat_items():
 		_check(items.cost(id) == 1, "%s custa 1 PA (custo de usar item)" % id)
 		_check(cfg.game_data.provisional.has("itens." + id), "%s marcado como provisório" % id)
 		_check(ItemIcons.has_icon(id), "%s tem ícone" % id)
 	_check(not items.is_combat_item("bandagem"), "bandagem não é item de arremesso")
-	_check(not cfg.game_data.has_entry("itens", "sal"), "o sal não existe no jogo (Léo, 19/11)")
+	_check(not cfg.game_data.has_entry("itens", "sal") and not cfg.game_data.has_entry("itens", "granada_luz"), "nem sal (Léo, 19/11) nem granada de luz (Léo, 20/11)")
 
 
-func _test_flashbang() -> void:
+func _test_coquetel() -> void:
 	_fresh()
 	var f := _agent()
 	var c1 := cfg.make_enemy("cultista", Vector2(_m(6), 0))
 	var c2 := cfg.make_enemy("cultista", Vector2(_m(6), _m(1.5)))
 	var far := cfg.make_enemy("cultista", Vector2(_m(6), _m(6)))
-	var dama := cfg.make_enemy("dama_sangue", Vector2(_m(7), 0))
 	var ally := _agent(Vector2(_m(6), -_m(1)))
-	var out := items.use(f, "granada_luz", 1, c1.pos, null, [f, c1, c2, far, dama, ally], NO_WALLS)
-	_check(out.ok, "granada de luz sai")
-	_check(f.pa == 2, "granada gasta 1 PA")
-	_check(c1.has_condition("atordoado") and c2.has_condition("atordoado"), "atordoa os inimigos no raio")
-	_check(not far.has_condition("atordoado"), "não atinge inimigo fora do raio")
-	_check(not dama.has_condition("atordoado") and out.immune.has(dama), "Dama de Sangue é imune a atordoar")
-	_check(not ally.has_condition("atordoado"), "não atinge aliados")
-	var fx := rules.start_turn_effects(c1)
-	_check(fx.skip, "atordoado perde o próximo turno")
-	_check(not c1.has_condition("atordoado"), "atordoado dura um turno")
+	for c in [c1, c2, far]:
+		c.max_pv = 100
+		c.pv = 100
+	var pv_ally := ally.pv
+	var out := items.use(f, "coquetel", 1, c1.pos, null, [f, c1, c2, far, ally], NO_WALLS)
+	_check(out.ok and f.pa == 2, "coquetel sai e gasta 1 PA")
+	_check(out.tipo_dano == "fogo", "o dano é de fogo")
+	_check(c1.pv <= 90 and c2.pv <= 90, "queima os inimigos no raio com 10 ou mais de dano (flor Amarela)")
+	_check(c1.has_condition("em_chamas") and c2.has_condition("em_chamas"), "deixa os inimigos em chamas")
+	_check(far.pv == 100 and not far.has_condition("em_chamas"), "não atinge inimigo fora do raio")
+	_check(ally.pv == pv_ally and not ally.has_condition("em_chamas"), "não atinge aliados")
+	for i in 30:  # o mínimo continua 10 ou mais mesmo com 10% de defesa
+		_fresh(i)
+		var d := cfg.make_enemy("dama_sangue", Vector2(_m(4), 0))
+		d.defense = 0.1
+		d.max_pv = 500
+		d.pv = 500
+		var u := _agent()
+		items.use(u, "coquetel", 1, d.pos, null, [u, d], NO_WALLS)
+		if d.pv > 490:
+			_check(false, "coquetel tirou menos de 10 da Dama com 10%% de defesa (semente %d)" % i)
+			break
+	var nik := cfg.make_agent("nikolai", Vector2.ZERO)
+	nik.pa = 3
+	_check(not items.can_throw(nik, "coquetel") and items.blocker(nik, "coquetel", 1, Vector2(_m(4), 0)) == "requirement", "só o Fernando arremessa o coquetel")
+	_check(items.can_throw(nik, "sinalizador"), "o sinalizador qualquer um usa")
 
 
-func _test_flashbang_range_and_walls() -> void:
+func _test_range_and_walls() -> void:
 	_fresh()
 	var f := _agent()
-	_check(items.blocker(f, "granada_luz", 1, Vector2(_m(9) + f.radius, 0)) == "out_of_range", "granada além de 8 m: fora de alcance")
+	_check(items.blocker(f, "coquetel", 1, Vector2(_m(9) + f.radius, 0)) == "out_of_range", "coquetel além de 8 m: fora de alcance")
 	var wall: Array[Rect2] = [Rect2(_m(2), -50, 10, 100)]
-	_check(items.blocker(f, "granada_luz", 1, Vector2(_m(4), 0), null, wall) == "no_line_of_sight", "parede bloqueia o arremesso")
-	_check(items.blocker(f, "granada_luz", 0, Vector2(_m(4), 0)) == "requirement", "sem o item na mochila não usa")
+	_check(items.blocker(f, "coquetel", 1, Vector2(_m(4), 0), null, wall) == "no_line_of_sight", "parede bloqueia o arremesso")
+	_check(items.blocker(f, "coquetel", 0, Vector2(_m(4), 0)) == "requirement", "sem o item na mochila não usa")
 	f.pa = 0
-	_check(items.blocker(f, "granada_luz", 1, Vector2(_m(4), 0)) == "no_pa", "sem PA não usa")
+	_check(items.blocker(f, "coquetel", 1, Vector2(_m(4), 0)) == "no_pa", "sem PA não usa")
 
 
 func _test_flare() -> void:
@@ -106,7 +121,7 @@ func _test_cost() -> void:
 	var f := _agent()
 	f.pa = 1
 	var c := cfg.make_enemy("cultista", Vector2(_m(4), 0))
-	_check(items.use(f, "granada_luz", 1, c.pos, null, [f, c], NO_WALLS).ok and f.pa == 0, "com 1 PA dá para usar")
+	_check(items.use(f, "coquetel", 1, c.pos, null, [f, c], NO_WALLS).ok and f.pa == 0, "com 1 PA dá para usar")
 	_check(items.use(f, "sinalizador", 1, c.pos, null, [f, c], NO_WALLS).reason == "no_pa", "sem PA, recusado")
 
 

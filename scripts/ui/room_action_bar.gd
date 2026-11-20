@@ -23,7 +23,7 @@ const BAR_BOTTOM := 532.0
 const RITUAL_GAP := 10.0  # vão (com um fio) entre as ações comuns e as casas de ritual (modelo A, Léo 16/11)
 # Dica curta dos itens de combate na barra (valores provisórios em combat.json, itens_combate).
 const ITEM_TIPS := {
-	"granada_luz": "atordoa os inimigos perto do ponto",
+	"coquetel": "fogo onde cai: 12 a 16 de dano e Em chamas (só o Fernando)",
 	"sinalizador": "luz no chão: +acerto contra quem está nela",
 }
 # Atalhos da barra em combate (Léo, 19/11): as casas usam as teclas numéricas em ordem, da esquerda para a
@@ -68,7 +68,7 @@ func _action_slots() -> Array:
 	slots.append(["kit", "Kit de primeiros socorros", "Reanimar · %d PA · %s · restam %d" % [int(kit["custo_pa_combate"]), key_text(slots.size()), room.inventory.count(room.KIT_ID)], room.inventory.count(room.KIT_ID) > 0])
 	slots.append(["vigilancia", "Vigilância", "%d PA · %s · atira no 1º inimigo que se mover no cone" % [int(room.player.weapon["pa_cost"]), key_text(slots.size())], room.rules.overwatch_blocker(room.player) == "" or room.player.overwatch])
 	slots.append(["atrasar", "Atrasar", "Age depois na rodada · %s" % key_text(slots.size()), true])
-	for iid in room.room_items.available():  # itens de combate na mochila (granada de luz e sinalizador)
+	for iid in room.room_items.available():  # itens de combate na mochila (coquetel, só do Fernando, e sinalizador)
 		var cost := room.item_rules.cost(iid)
 		var it := data.get_entry("itens", iid)
 		slots.append([iid, str(it["nome"]), "%d PA · %s · %s" % [cost, key_text(slots.size()), ITEM_TIPS.get(iid, "")],
