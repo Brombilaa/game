@@ -49,6 +49,12 @@ func _initialize() -> void:
 	# trocar de personagem pelo cartão
 	ip._click(ip._portrait_rect(1).get_center())
 	_check(ip.viewed == 1 and ip.sel.is_empty(), "cartão do grupo troca o personagem visto")
+	# itens novos da matriz da missão 1: existem nos dados, têm ícone e texto
+	for id in ["livro_sanguis_orchid", "fertilizante", "agrotoxico", "balde", "garrafa_agua", "coquetel", "pulseira_amizade", "chave_celeiro"]:
+		_check(not room.cfg.game_data.get_entry("itens", id).is_empty(), "%s existe nos dados" % id)
+		_check(ItemIcons.has_icon(id), "%s tem ícone" % id)
+	_check(ip._describe("pulseira_amizade")["nome"] == "Pulseira de miçangas", "pulseira com o nome novo")
+	_check(ip._describe("pulseira_amizade")["linhas"].is_empty(), "a pulseira não anuncia o bônus de SAN")
 	# fecha pelo X
 	ip._click(ip._close_rect().get_center())
 	for i in 300:
