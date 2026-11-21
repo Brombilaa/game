@@ -52,7 +52,7 @@ const BLURBS := {
 	"agrotoxico": "Veneno de lavoura guardado no celeiro.",
 	"balde": "Balde do poço, serve para carregar água.",
 	"garrafa_agua": "Garrafa de água da delegacia.",
-	"coquetel": "Garrafa com pavio e líquido inflamável do Fernando. Em combate, fogo num ponto que queima 2 turnos (a flor amarela da Dama murcha com ele). Só ele arremessa.",
+	"coquetel": "Garrafa com pavio e líquido inflamável do Fernando. Em combate, fogo num ponto que queima 1 ou 2 turnos (a flor amarela da Dama murcha com ele). Só ele arremessa.",
 	"bulbo_bravo_purpulis": "Bulbo roxo de Bravo Purpulis, arrancado das pedras da cripta.",
 	"plaqueta_identificacao": "Acessório: a plaqueta de um agente antigo lembra que dá para aguentar mais um pouco.",
 	"pistola": "Arma curta de uso comum. Confiável à curta distância.",

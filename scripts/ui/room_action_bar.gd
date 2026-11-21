@@ -23,7 +23,7 @@ const BAR_BOTTOM := 532.0
 const RITUAL_GAP := 10.0  # vão (com um fio) entre as ações comuns e as casas de ritual (modelo A, Léo 16/11)
 # Dica curta dos itens de combate na barra (valores provisórios em combat.json, itens_combate).
 const ITEM_TIPS := {
-	"coquetel": "fogo onde cai: 10 a 14 de dano e Em chamas por 2 turnos (só o Fernando)",
+	"coquetel": "fogo onde cai: 10 a 14 de dano e Em chamas por 1 ou 2 turnos (só o Fernando)",
 	"sinalizador": "luz no chão: +acerto contra quem está nela",
 }
 # Atalhos da barra em combate (Léo, 19/11): as casas usam as teclas numéricas em ordem, da esquerda para a

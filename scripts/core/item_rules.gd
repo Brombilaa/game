@@ -7,7 +7,7 @@ extends RefCounted
 # combat.json, bloco "itens_combate", e são todos PROVISÓRIOS do Claude.
 #   Sinalizador: luz no chão por alguns turnos de quem lançou; ataques do grupo contra inimigos na luz ganham acerto.
 #   Coquetel molotov (Léo, 20/11: material da flor Amarela, vem com o Fernando): fogo no ponto, dano de fogo e em chamas
-#   por 2 turnos (Léo, 20/11); só quem está em "so_personagem" (o Fernando) arremessa.
+#   por 1 ou 2 turnos, sorteado (Léo, 20/11); só quem está em "so_personagem" (o Fernando) arremessa.
 #   Flor (fertilizante, agrotóxico, água, bulbo; Léo, 20/11): jogado numa flor da Dama de Sangue; a flor certa murcha.
 # Só regras: a sala escolhe o alvo, tira o item da mochila e mostra o resultado.
 
@@ -114,8 +114,6 @@ func use(user: Combatant, id: String, have: int, point: Vector2, target: Combata
 				out.damage += final
 				if u.is_alive() and not u.objeto:
 					rules.apply_condition(u, "em_chamas")
-					if p.has("rodadas_chamas"):  # Léo (20/11): o fogo do coquetel queima 2 turnos, sem sorteio
-						u.conditions["em_chamas"].rounds = maxi(int(u.conditions["em_chamas"].rounds), int(p["rodadas_chamas"]))
 				out.hits.append({"unit": u, "damage": final, "sem_efeito": false})
 		"flor":  # a flor só murcha com o item que ela pede (aceita); com outro, nada acontece
 			if target.fere("", id):

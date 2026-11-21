@@ -66,12 +66,17 @@ func _test_coquetel() -> void:
 	_check(ally.pv == pv_ally and not ally.has_condition("em_chamas"), "não atinge aliados")
 	for u in [c1, c2]:
 		if u.is_alive():
-			_check(u.has_condition("em_chamas") and int(u.conditions["em_chamas"].rounds) == 2, "Em chamas por 2 turnos (Léo, 20/11)")
-	var burnt := c1 if c1.is_alive() else c2
-	rules.start_turn_effects(burnt)
-	_check(burnt.has_condition("em_chamas"), "ainda queima no segundo turno")
-	rules.start_turn_effects(burnt)
-	_check(not burnt.has_condition("em_chamas"), "apaga depois de 2 turnos")
+			_check(u.has_condition("em_chamas") and int(u.conditions["em_chamas"].rounds) in [1, 2], "Em chamas por 1 ou 2 turnos, sorteado (Léo, 20/11)")
+	var seen := {}
+	for s in 40:  # o sorteio dá os dois valores
+		_fresh(s)
+		var e := cfg.make_enemy("cultista", Vector2(_m(4), 0))
+		e.max_pv = 999
+		e.pv = 999
+		var g := _agent()
+		items.use(g, "coquetel", 1, e.pos, null, [g, e], NO_WALLS)
+		seen[int(e.conditions["em_chamas"].rounds)] = true
+	_check(seen.has(1) and seen.has(2) and seen.size() == 2, "o fogo sorteia 1 ou 2 turnos")
 	# só o Fernando arremessa
 	var n := cfg.make_agent("nikolai", Vector2.ZERO)
 	n.pa = 3
