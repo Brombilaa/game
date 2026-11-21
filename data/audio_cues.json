@@ -182,7 +182,9 @@
 		"faca_teste": "melee_knife",
 		"espada": "melee_knife",
 		"garra_criatura": "melee_knife",
-		"garra_dama": "melee_knife"
+		"garra_dama": "melee_knife",
+		"pancada_dama": "melee_punch",
+		"espinhos_dama": "melee_knife"
 	},
 	"areas": {
 		"parque": "parque",

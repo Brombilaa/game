@@ -101,10 +101,17 @@ func _show(caster: Combatant, id: String, target: Combatant, out: Dictionary) ->
 		"dano_arma":
 			room.room_combat._popup(caster.pos, "+%d DANO" % int(r["valor"]), "heal")
 		"dano":
+			if out.sem_efeito:
+				room.room_combat._popup(target.pos, "SEM EFEITO", "blocked")
+				room.room_combat._log("%s não faz efeito em %s" % [r["nome"], target.name])
+				room._apos_efeito(target)
+				room.queue_redraw()
+				return
 			room.room_combat._popup(target.pos, "-%d" % out.damage, "damage")
 			room.room_combat._afinidade(target, out)
 			room.room_combat._log("%s atinge %s: %d" % [r["nome"], target.name, out.damage])
 			room.hit_shake[target] = TestRoom.HIT_SHAKE_SECONDS
+			room._apos_efeito(target)  # antes da queda: a Dama não morre antes da cena do fim
 			if out.stunned:
 				room.room_combat._popup(target.pos, "ATORDOADO", "info")
 			elif out.resisted_stun:

@@ -39,6 +39,14 @@ var insane := false  # enlouqueceu: morte do personagem (GDD #11)
 var conditions: Dictionary = {}  # id -> {"stacks": int, "rounds": int (-1 = até remover)}  # PA da ficha; -1 usa o padrão do combate (3 para protagonistas)
 var em_ritual := false  # Léo (19/11): inimigo do salão da cripta focado no ritual; só luta depois de ser atacado (provoke)
 var buffs: Dictionary = {}  # id do ritual -> {"rounds": turnos restantes, "defesa": fração, "dano": extra por ataque}
+# Alvos sem turno da Dama de Sangue (flores, tentáculos que seguram os pendurados e prendem o grupo): atacáveis,
+# não agem, não seguram o combate nem flanqueiam (ChefeDama).
+var objeto := false
+var aceita: Array = []  # objeto: só o ferem estes tipos de dano, armas ou itens (vazio = qualquer um)
+var protegido := false  # objeto que não pode ser ferido agora (flor fora da janela de vulnerabilidade)
+var pa_menos := 0  # PA a menos neste turno (confuso, derrubado), contados no início do turno
+var preso := false  # não anda neste turno (Prisão de Tentáculos)
+var sem_resistencias := false  # perdeu as resistências da ficha (Dama de Sangue com a flor Vermelha murcha)
 
 
 func is_alive() -> bool:
@@ -73,3 +81,10 @@ func damage_bonus() -> int:
 	for b: Dictionary in buffs.values():
 		d += int(b.get("dano", 0))
 	return d
+
+
+# O dano deste tipo (Fraquezas: balistico, corpo_a_corpo, ritual, fogo) vindo desta origem (id da arma ou do item) fere?
+func fere(tipo: String, origem := "") -> bool:
+	if protegido:
+		return false
+	return aceita.is_empty() or aceita.has(tipo) or (origem != "" and aceita.has(origem))

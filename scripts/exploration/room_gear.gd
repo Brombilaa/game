@@ -224,6 +224,7 @@ func _setup_gear() -> void:
 	var items := [[TestRoom.KIT_ID, 1], ["colete_leve", 1], ["colete_pesado", 1]] if scarce else [[TestRoom.KIT_ID, 1], ["bandagem", 2], ["antidoto", 1], ["colete_leve", 1], ["colete_pesado", 1]]
 	# Itens de combate (sugestão 5, provisório do Claude): a Ordem manda o grupo com uma granada de luz e um sinalizador.
 	items += [["granada_luz", 1], ["sinalizador", 1]] if scarce else [["granada_luz", 2], ["sinalizador", 2]]
+	items += [["coquetel", 1]]  # Léo (20/11): o coquetel da flor Amarela da Dama vem com o Fernando
 	# Componentes de ritual (19/11, provisório do Claude): o Miguel sai com uma bateria e um relógio quebrado, para
 	# Eletrocussão e Cicatrização no parque; Sangue só depois da primeira Criatura. A sala de teste traz de todos.
 	items += [["bateria", 1], ["relogio_quebrado", 1]] if scarce else [["sangue_coagulado", 3], ["bateria", 3], ["relogio_quebrado", 3]]

@@ -16,7 +16,7 @@ func _init() -> void:
 		pv[p] = cfg.make_agent(p, Vector2.ZERO).max_pv
 	_check(pv == {"fernando": 23, "nikolai": 18, "miguel": 14}, "PV do grupo vêm das classes do GDD (%s)" % pv)
 	_check(cfg.make_enemy("cultista", Vector2.ZERO).max_pv == 20 and cfg.make_enemy("atirador", Vector2.ZERO).max_pv == 14
-		and cfg.make_enemy("dama_sangue", Vector2.ZERO).max_pv == 120, "PV dos inimigos do GDD (cultista 20, atirador 14, Dama 120)")
+		and cfg.make_enemy("dama_sangue", Vector2.ZERO).max_pv == 100, "PV dos inimigos do GDD (cultista 20, atirador 14, Dama 100, Léo 20/11)")
 	for id in ["parque", "delegacia", "fazenda", "corredor"]:
 		var r := sim.rodar(id, 150)
 		_check(r.vitoria >= 0.9, "%s: o grupo vence quase sempre (%d%%)" % [id, roundi(r.vitoria * 100)])

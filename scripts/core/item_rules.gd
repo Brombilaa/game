@@ -6,9 +6,12 @@ extends RefCounted
 # combat.json, bloco "itens_combate", e são todos PROVISÓRIOS do Claude.
 #   Granada de luz: atordoa os inimigos no raio do ponto (quem resiste a atordoar fica imune); não atinge aliados.
 #   Sinalizador: luz no chão por alguns turnos de quem lançou; ataques do grupo contra inimigos na luz ganham acerto.
+#   Coquetel molotov (Léo, 20/11: material da flor Amarela, vem com o Fernando): fogo no ponto, dano de fogo e em chamas.
+#   Flor (fertilizante, agrotóxico, água, bulbo; Léo, 20/11): jogado numa flor da Dama de Sangue; a flor certa murcha.
 # Só regras: a sala escolhe o alvo, tira o item da mochila e mostra o resultado.
 
-const EFFECTS := ["granada_luz", "sinalizador"]  # valor de "efeito" em itens.json
+const EFFECTS := ["granada_luz", "sinalizador", "molotov", "flor"]  # valor de "efeito" em itens.json
+const FOGO := "fogo"  # tipo de dano do molotov (fraquezas.json já reservava)
 
 var cfg: CombatConfig
 var rules: CombatRules
@@ -57,9 +60,11 @@ func radius_px(id: String) -> float:
 
 
 # Motivo pelo qual `user` não pode usar o item, ou "" se pode. Códigos do HUD (HudText.REJECTION_MESSAGES).
-# `point`: centro do arremesso; `target`: reservado para item com alvo único (hoje nenhum).
+# `point`: centro do arremesso; `target`: alvo único (efeito "flor": uma flor aberta da Dama de Sangue).
 func blocker(user: Combatant, id: String, have: int, point: Vector2, target: Combatant = null, walls: Array[Rect2] = []) -> String:
 	if not user.is_alive() or user.insane or not is_combat_item(id) or have <= 0:
+		return "requirement"
+	if effect(id) == "flor" and (target == null or not target.objeto or target.aceita.is_empty() or not target.is_alive() or target.protegido or target.side == user.side):
 		return "requirement"
 	if user.pa < cost(id):
 		return "no_pa"
@@ -74,7 +79,7 @@ func blocker(user: Combatant, id: String, have: int, point: Vector2, target: Com
 # Usa o item. Retorna {ok, reason, id, effect, point, stunned: [Combatant], immune: [Combatant], damage, flare}.
 # Não mexe na mochila: quem chama tira o item quando ok.
 func use(user: Combatant, id: String, have: int, point: Vector2, target: Combatant = null, units: Array = [], walls: Array[Rect2] = []) -> Dictionary:
-	var out := {"ok": false, "reason": "", "id": id, "effect": effect(id), "point": point, "stunned": [], "immune": [], "damage": 0, "flare": {}}
+	var out := {"ok": false, "reason": "", "id": id, "effect": effect(id), "point": point, "stunned": [], "immune": [], "damage": 0, "flare": {}, "hits": [], "murchou": false, "sem_efeito": false}
 	out.reason = blocker(user, id, have, point, target, walls)
 	if out.reason != "":
 		return out
@@ -95,6 +100,28 @@ func use(user: Combatant, id: String, have: int, point: Vector2, target: Combata
 		"sinalizador":
 			out.flare = {"pos": point, "radius": radius_px(id), "rounds": int(p["rodadas"]), "owner": user, "bonus": float(p["bonus_acerto"])}
 			rules.lit_zones.append(out.flare)
+		"molotov":  # hits: [{unit, damage, sem_efeito}] dos inimigos no raio
+			for u: Combatant in units:
+				if u.side == user.side or not u.is_alive() or u.pos.distance_to(point) > radius_px(id) + u.radius:
+					continue
+				u.provoke()
+				if not u.fere(FOGO, id):
+					out.hits.append({"unit": u, "damage": 0, "sem_efeito": true})
+					continue
+				var dmg := rng.randi_range(int(p["dano"][0]), int(p["dano"][1]))
+				var af := Fraquezas.afinidade(cfg.game_data, u.kind, FOGO)
+				var final := rules.damage_after_defense(float(dmg) * Fraquezas.multiplicador(af), u.defense_total())
+				u.take_damage(final)
+				out.damage += final
+				if u.is_alive() and not u.objeto:
+					rules.apply_condition(u, "em_chamas")
+				out.hits.append({"unit": u, "damage": final, "sem_efeito": false})
+		"flor":  # a flor só murcha com o item que ela pede (aceita); com outro, nada acontece
+			if target.fere("", id):
+				target.pv = 0
+				out.murchou = true
+			else:
+				out.sem_efeito = true
 	return out
 
 

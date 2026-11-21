@@ -52,7 +52,8 @@ const BLURBS := {
 	"agrotoxico": "Veneno de lavoura guardado no celeiro.",
 	"balde": "Balde do poço, serve para carregar água.",
 	"garrafa_agua": "Garrafa de água da delegacia.",
-	"coquetel": "Garrafa com pavio e líquido inflamável. Uso ainda a definir.",
+	"coquetel": "Garrafa com pavio e líquido inflamável. Em combate, fogo num ponto (a flor amarela da Dama murcha com ele).",
+	"bulbo_bravo_purpulis": "Bulbo roxo de Bravo Purpulis, arrancado das pedras da cripta.",
 	"plaqueta_identificacao": "Acessório: a plaqueta de um agente antigo lembra que dá para aguentar mais um pouco.",
 	"pistola": "Arma curta de uso comum. Confiável à curta distância.",
 	"escopeta": "Dano alto à queima-roupa, gasta 2 PA por disparo.",
@@ -269,7 +270,8 @@ func _act() -> void:
 	if sel.get("kind") == "bag":
 		var id := str(room.inventory.slots[int(sel["i"])]["id"])
 		if _is_story(id):
-			_say("Item de missão: sem uso por enquanto.")
+			var usa_em_combate: bool = room.cfg.game_data.get_entry("itens", id).get("efeito") != null
+			_say("Item de missão: usa-se em combate, pela barra de ações." if usa_em_combate else "Item de missão: sem uso por enquanto.")
 		elif room.gear_is_equippable(id):
 			var slot := "colete" if room.gear_item_kind(id) == "colete" else "principal"
 			_say(room.gear_equip(_member(), slot, int(sel["i"])))
