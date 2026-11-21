@@ -16,6 +16,7 @@ func _run() -> void:
 	_cleanup()
 	_test_intro()
 	_test_options()
+	_test_controles()
 	await _test_sem_save()
 	await _test_scene()
 	_cleanup()
@@ -65,6 +66,28 @@ func _test_options() -> void:
 	back.apply()  # headless: só mexe no áudio
 
 
+func _test_controles() -> void:
+	var m := ControlesCaderno.mapa()
+	for k in ["B", "J", "C", "Tab", "Esc", "Espaço", "Q", "G", "L", "E", "Shift", "1", "2", "9", "0", "-", "="]:
+		_check(m.has(k), "o mapa de controles tem a tecla " + k)
+	var no_teclado := {}
+	for k in ControlesCaderno.LAYOUT:
+		no_teclado[k[0]] = true
+	for k in m:
+		if k.begins_with("M:"):
+			continue
+		_check(no_teclado.has(k), "a tecla %s aparece desenhada no teclado" % k)
+	for k in m:
+		_check(str(m[k]["titulo"]) != "" and str(m[k]["texto"]) != "", "a tecla %s tem ficha com título e texto" % k)
+	_check(str(m["1"]["titulo"]).contains("barra") and str(m["1"]["titulo"]).contains("personagem"), "o número 1 tem as duas funções: personagem e casa da barra")
+	var mapa := ControlesCaderno.new()
+	mapa.size = mapa.custom_minimum_size
+	_check(mapa._target_at(mapa._key_rect(["Q", 1.5, 2, 1.0]).get_center()) == "Q", "o mouse sobre a tecla acha a tecla")
+	mapa.filter = "painel"
+	_check(mapa._active("B") and not mapa._active("Q"), "o filtro Painéis apaga o combate")
+	_check(mapa.custom_minimum_size.y <= 540.0 and mapa.custom_minimum_size.x <= 960.0, "a página do mapa cabe na tela")
+
+
 func _test_scene() -> void:
 	SaveSlots.save(SaveSlots.manual(2), {"current_area": "test_room"}, DIR)
 	SaveSlots.save(SaveSlots.AUTO, {"current_area": "test_room"}, DIR)
@@ -101,13 +124,18 @@ func _test_scene() -> void:
 
 	menu.activate("opts")
 	_check(menu.panel == "opts", "Opções abre o painel")
-	_check(menu.panel_rows.size() == MainMenu.OPTION_ROWS.size() + 1, "uma linha por opção, mais Fechar")
+	_check(menu.panel_rows.size() == MainMenu.OPTION_ROWS.size() + 2, "uma linha por opção, mais Controles e Fechar")
 	var vs: bool = menu.options.values["vsync"]
 	menu.change_option("vsync", 0.0)
 	_check(menu.options.values["vsync"] != vs, "sincronia vertical liga e desliga")
 	_check(GameOptions.load_from(OPTIONS_PATH).values["vsync"] == menu.options.values["vsync"], "a opção é gravada na hora")
 	menu.change_option("vsync", 0.0)
 	await process_frame
+	menu._open("controls")
+	_check(menu.panel == "controls" and menu.panel_body.get_child(0) is ControlesCaderno, "Controles abre o mapa de controles")
+	await process_frame
+	menu._back()
+	_check(menu.panel == "opts", "Esc no mapa de controles volta às Opções")
 	menu._back()
 	_check(menu.panel == "", "Esc ou botão direito fecham o painel")
 
