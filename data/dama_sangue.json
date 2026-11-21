@@ -42,7 +42,7 @@
      "mecanica": "fogo", "aceita": ["fogo"], "pv": 10, "dica": "Só fogo ou explosivo (10 de dano) faz a flor amarela murchar.",
      "perde": {"acerto_distancia": true}, "provisorio": true},
     {"id": "verde", "cor": "Verde", "rgb": [0.25, 0.75, 0.3], "habilidade": "prisao_tentaculos",
-     "mecanica": "agua", "aceita": ["garrafa_agua", "balde_agua"], "pv": 1, "dica": "A flor verde murcha molhada por água corrente.",
+     "mecanica": "agua", "aceita": ["garrafa_agua", "balde"], "pv": 1, "dica": "A flor verde murcha molhada por água corrente.",
      "perde": {"defesa": 0.05}, "provisorio": true},
     {"id": "azul", "cor": "Azul", "rgb": [0.2, 0.45, 0.98], "habilidade": "miasma_fetido",
      "mecanica": "energia", "aceita": ["ritual"], "pv": 1, "dica": "A flor azul murcha exposta a energia elétrica ou paranormal.",

@@ -219,7 +219,7 @@ def fazenda(d, p, ret):
            da=[("fertilizante", 1), ("agrotoxico", 1)])
     _pista(d, p, "balde_poco", 7.2, 8.7,
            "Um balde amarrado na manivela do poço. A água lá de baixo corre fria; o grupo enche o balde.",
-           da=[("balde_agua", 1)])
+           da=[("balde", 1)])
     _pista(d, p, "bau_celeiro", 3.69, 10.75,
            "O cadeado do baú do celeiro cede. Dentro, enrolado num pano, um kit de primeiros socorros, cartuchos de escopeta e um saquinho de ossos de passarinho.",
            da=[("kit_primeiros_socorros", 1), ("municao_escopeta", 6), ("ossos_pequenos", 2)],

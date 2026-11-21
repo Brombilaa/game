@@ -39,8 +39,8 @@ func _m(meters: float) -> float:
 
 func _test_data() -> void:
 	_fresh()
-	_check(items.combat_items() == ["granada_luz", "sinalizador", "coquetel_molotov", "fertilizante", "agrotoxico", "garrafa_agua", "balde_agua", "bulbo_bravo_purpulis"],
-		"itens de combate em itens.json: granada, sinalizador e os das flores da Dama (sem sal, Léo 19/11)")
+	_check(items.combat_items() == ["granada_luz", "sinalizador", "bulbo_bravo_purpulis", "fertilizante", "agrotoxico", "balde", "garrafa_agua", "coquetel"],
+		"itens de combate: granada, sinalizador e os das flores da Dama (sem sal, Léo 19/11)")
 	for id in items.combat_items():
 		_check(items.cost(id) == 1, "%s custa 1 PA (custo de usar item)" % id)
 		_check(cfg.game_data.provisional.has("itens." + id), "%s marcado como provisório" % id)
