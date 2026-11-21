@@ -1,13 +1,12 @@
 {
 	"_comentario": "Fraquezas e resistências dos inimigos (sugestão 6 da segunda leva, aprovada pelo Léo em 16/11). Quais inimigos têm o quê fica em inimigos.json (campos 'fraquezas' e 'resistencias', com os tipos de dano abaixo; 'atordoado' em resistencias continua sendo imunidade a atordoar). Aqui ficam os multiplicadores e como o grupo descobre cada uma. TUDO PROVISÓRIO do Claude, para o Léo revisar jogando.",
 	"provisorio": true,
-	"_tipos": "tipos de dano: 'balistico' (armas de fogo), 'corpo_a_corpo' (soco, espada, faca, garra) e 'ritual' (Eletrocussão). 'fogo' e 'sal' ficam reservados para os itens de uso em combate.",
+	"_tipos": "tipos de dano: 'balistico' (armas de fogo), 'corpo_a_corpo' (soco, espada, faca, garra) e 'ritual' (Eletrocussão). 'fogo' é o dano do coquetel do Fernando (item de uso em combate). Sem 'sal': o jogo não usa sal nem cruzes (Léo, 19/11).",
 	"tipos": {
 		"balistico": "balas",
 		"corpo_a_corpo": "golpes de perto",
 		"ritual": "rituais",
-		"fogo": "fogo",
-		"sal": "sal"
+		"fogo": "fogo"
 	},
 	"_multiplicadores": "dano multiplicado antes da defesa (colete, Armadura de Sangue). Fraqueza = +50%, resistência = -50%.",
 	"fraqueza": 1.5,
