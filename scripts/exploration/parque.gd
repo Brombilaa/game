@@ -836,7 +836,18 @@ func _objectives() -> Array[Dictionary]:
 	return Objectives.from_data(scenario.objetivos, seen_clues, Missao1.tem, mode == Mode.COMBAT)
 
 
-# Caio tem a folha de parado em 3D; a Letícia ainda é figura provisória (corpo, cabeça e nome).
+# Animação da Letícia (Léo, 21/11): parada nos mapas; na cripta, no altar (Laying Nodding) até a luta com a Dama e deitada
+# (Sleeping Idle) durante a luta e na cena depois dela. Duração de cada clipe em segundos (leticia.res).
+const LETICIA_DURACAO := {"idle": 6.0, "laying_nodding": 2.83, "sleeping_idle": 6.87}
+
+
+func _anim_leticia() -> String:
+	if _scenario_id() != "cripta":
+		return "idle"
+	return "sleeping_idle" if mode == Mode.COMBAT or Missao1.tem("cripta_vencida") else "laying_nodding"
+
+
+# Caio e a Letícia têm modelo 3D; os outros NPCs ainda são figura provisória (corpo, cabeça e nome).
 func _draw_npc(font: Font, npc_id: String) -> void:
 	if npc_fora.has(npc_id):
 		return
@@ -861,6 +872,15 @@ func _draw_npc(font: Font, npc_id: String) -> void:
 		drawing_key = null
 		queue_redraw()  # a respiração anima
 		return
+	if npc_id == "leticia" and _modelos_3d() and Agente3D.tem_modelo("leticia3d"):  # Letícia 3D (Léo, 21/11)
+		drawing_key = npc_id
+		var anim := _anim_leticia()
+		var fase := fmod(Time.get_ticks_msec() / 1000.0 / float(LETICIA_DURACAO[anim]), 1.0)
+		var ok := _model3d("leticia3d", at, anim, fase, npc_dir.get(npc_id, CharacterSheet.Dir.SE))
+		drawing_key = null
+		if ok:
+			queue_redraw()  # a respiração anima
+			return
 	draw_rect(Rect2(at + Vector2(-11, -66), Vector2(22, 60)), NPC_COLORS[npc_id])
 	draw_rect(Rect2(at + Vector2(-8, -86), Vector2(16, 18)), Color("#d6b292"))
 	var name_text: String = NPC_NAMES[npc_id]
