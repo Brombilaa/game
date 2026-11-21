@@ -20,6 +20,12 @@ const FONTE_CRIATURA := "res://assets/3d/animacoes/fonte_criatura/cr_%s.fbx"
 const SAIDA_CRIATURA := "res://assets/3d/animacoes/criatura.res"
 const NOMES_CRIATURA := ["idle", "transition", "walk", "attack", "death"]
 const LACO_CRIATURA := ["idle", "walk"]
+# Cultista F (Léo, 21/11; Hunyuan + Mixamo, malha de 80 mil): idle com faca, andar, golpe de faca e morte, em
+# fonte_cultista/cu_<nome>.fbx (With Skin do Mixamo, fora do Git):
+#   godot --headless --path . -s tools/mixamo_biblioteca.gd -- cultista
+const FONTE_CULTISTA := "res://assets/3d/animacoes/fonte_cultista/cu_%s.fbx"
+const SAIDA_CULTISTA := "res://assets/3d/animacoes/cultista.res"
+const NOMES_CULTISTA := ["idle", "walk", "attack", "death"]
 const SAIDA_CAIO := "res://assets/3d/animacoes/caio.res"
 # Miguel (Léo, 08/11): como o Caio, Breathing Idle do próprio FBX e as outras animações do Nikolai/Fernando, com as
 # posições na escala dele (as rotações locais do Mixamo valem para qualquer esqueleto do Mixamo).
@@ -40,16 +46,17 @@ func _escala(modelo: String, a: Animation) -> float:
 
 
 func _initialize() -> void:
+	var cultista := "cultista" in OS.get_cmdline_user_args()
 	var criatura := "criatura" in OS.get_cmdline_user_args()
 	var miguel := "miguel" in OS.get_cmdline_user_args()
 	var caio := "caio" in OS.get_cmdline_user_args() or miguel  # o Miguel segue o mesmo caminho do Caio
 	var modelo := MODELO_MIGUEL if miguel else MODELO_CAIO
-	var fonte := FONTE_CRIATURA if criatura else FONTE
-	var saida := SAIDA_CRIATURA if criatura else (SAIDA_MIGUEL if miguel else (SAIDA_CAIO if caio else SAIDA))
+	var fonte := FONTE_CULTISTA if cultista else (FONTE_CRIATURA if criatura else FONTE)
+	var saida := SAIDA_CULTISTA if cultista else SAIDA_CRIATURA if criatura else (SAIDA_MIGUEL if miguel else (SAIDA_CAIO if caio else SAIDA))
 	var escala := 1.0  # posições (quadril) na unidade do esqueleto do modelo
-	var laco: Array = LACO_CRIATURA if criatura else LACO
+	var laco: Array = LACO_CRIATURA if (criatura or cultista) else LACO
 	var lib := AnimationLibrary.new()
-	for nome in (NOMES_CRIATURA if criatura else NOMES):
+	for nome in (NOMES_CULTISTA if cultista else (NOMES_CRIATURA if criatura else NOMES)):
 		# Caio e Miguel: o idle vem do próprio FBX (Léo, 08/11: com o idle do Nikolai ficava corcunda e com as mãos para frente,
 		# porque a pose de repouso do esqueleto dele é outra). Já está na escala do modelo, então não reescala.
 		var proprio: bool = caio and nome == "idle"

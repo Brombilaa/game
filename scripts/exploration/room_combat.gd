@@ -451,6 +451,8 @@ func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void
 func _attack_aim(attacker: Combatant) -> float:
 	if room._has_creatures() and room.enemies.has(attacker):
 		return TestRoom.CREATURE_ATTACK_SECONDS
+	if room.has_method("_model3d") and room.enemies.has(attacker) and room._enemy_variant(room.enemies.find(attacker)) == "cultista":
+		return TestRoom.CULTISTA_ATTACK_SECONDS  # golpe de faca do Cultista F em 3D
 	if room.use_3d and room._sheet3d(attacker) != null:
 		return TestRoom.NIKOLAI_ATTACK_SECONDS
 	return CombatFx.AIM_SECONDS

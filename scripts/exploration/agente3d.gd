@@ -26,8 +26,12 @@ const MODELOS := {
 	# Caio: remodelado pelo Léo (08/11, versão corrigida v2, só com o idle do Mixamo; as outras animações vêm da biblioteca).
 	"caio3d": {"modelo": "res://assets/3d/personagens/caio.fbx", "biblioteca": "res://assets/3d/animacoes/caio.res"},  # versão corrigida v2 (08/11): já de frente, posições na escala dele (caio.res)
 	# Léo, 08/11: Criatura e Caio no mesmo nível do Nikolai e do Fernando. Textura A (aprovada em 05/11); 2,0 m contra 1,8 m dos agentes.
-	"criatura": {"modelo": "res://assets/3d/personagens/criatura.fbx", "biblioteca": "res://assets/3d/animacoes/criatura.res",
+	# Criatura nova (Léo, 21/11): malha de 80 mil e animações do Mixamo (criatura.res); textura de 512 px, 16 bits (PC antigo).
+	"criatura": {"modelo": "res://assets/3d/personagens/criatura.scn", "biblioteca": "res://assets/3d/animacoes/criatura.res",
 		"textura": "res://assets/3d/personagens/criatura_textura.png", "altura": 2.45},
+	# Cultista F (Léo, 21/11): malha de 80 mil; idle com faca, andar, golpe de faca e morte (cultista.res).
+	"cultista3d": {"modelo": "res://assets/3d/personagens/cultista.scn", "biblioteca": "res://assets/3d/animacoes/cultista.res",
+		"textura": "res://assets/3d/personagens/cultista_textura.png", "altura": 2.1},
 }
 # Distância (unidades 3D) de um ciclo completo de cada caminhada, medida pelo pé de cada modelo (Léo, 08/11: "algumas
 # animações estão rápidas ao caminhar e outras lentas"). O ciclo anda pela distância percorrida no chão, então o pé não
