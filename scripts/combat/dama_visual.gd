@@ -15,7 +15,7 @@ const ESTILOS := ["A", "B", "C"]
 const FONTE := preload("res://assets/fonts/SpecialElite-Regular.ttf")
 const SANGUE := Color(0.55, 0.03, 0.05)
 const VINHA := Color(0.22, 0.05, 0.06)
-const PELE := Color(0.62, 0.5, 0.44)
+const PELE := Color(0.86, 0.72, 0.62)
 const MURCHA := Color(0.24, 0.17, 0.1)
 
 static var estilo := "A"  # provisório até a escolha do Léo
@@ -48,11 +48,11 @@ func _em3d(p: Vector2, alto := 0.0) -> Vector3:
 	return Vector3(p.x / 64.0, room._altura(p) + alto, p.y / 64.0)
 
 
-static func _mat(cor: Color, brilho := 0.0, unshaded := false) -> StandardMaterial3D:
+static func _mat(cor: Color, brilho := 0.0, unshaded := true) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = cor
 	m.roughness = 0.85
-	if unshaded:
+	if unshaded:  # padrão: a luz vermelha e fraca da cripta deixa o material sombreado quase preto
 		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	if brilho > 0.0:
 		m.emission_enabled = true
@@ -192,7 +192,7 @@ func _criar_flor(f: Dictionary) -> Node3D:
 	n.name = "Flor_%s" % f["dados"]["id"]
 	raiz.add_child(n)
 	var base := _em3d(chefe.dama.pos, 0.6)
-	var topo := _em3d(chefe.pos_flor(int(f["indice"])), 1.7 if estilo != "C" else 1.3)
+	var topo := _em3d(chefe.pos_flor(int(f["indice"])), 2.3 if estilo != "C" else 1.8)
 	n.position = topo
 	var meio := (base + topo) * 0.5 + Vector3(0, 0.6, 0)
 	var talo := _tentaculo([base - topo, meio - topo, Vector3.ZERO], 0.09 if estilo != "C" else 0.05, 0.05)
@@ -201,6 +201,10 @@ func _criar_flor(f: Dictionary) -> Node3D:
 	var cab := Node3D.new()
 	cab.name = "cabeca"
 	n.add_child(cab)
+	var miolo := Node3D.new()  # tamanho da flor (provisório: 2x, para ler de longe na câmera do combate)
+	miolo.scale = Vector3.ONE * 2.0
+	cab.add_child(miolo)
+	cab = miolo
 	var cor := _cor(f)
 	match estilo:
 		"A":  # orquídea: cinco pétalas abertas e o miolo
@@ -211,7 +215,9 @@ func _criar_flor(f: Dictionary) -> Node3D:
 				p.scale = Vector3(1.4, 1.0, 0.8)
 				p.rotation.y = -TAU * i / 5.0
 				cab.add_child(p)
-			cab.add_child(_peca(_esfera(0.08), _mat(Color(0.95, 0.85, 0.6), 1.5), Vector3(0, 0.04, 0)))
+			var nucleo := _peca(_esfera(0.08), _mat(Color(0.95, 0.85, 0.6), 1.0), Vector3(0, 0.04, 0))
+			nucleo.name = "nucleo"
+			cab.add_child(nucleo)
 		"B":  # boca: cabeça redonda com coroa de espinhos
 			var b := _peca(_esfera(0.2), _mat(cor, 0.5), Vector3.ZERO)
 			b.name = "petala0"
@@ -245,14 +251,19 @@ func _criar_flor(f: Dictionary) -> Node3D:
 func _aplicar_flor(f: Dictionary, no: Node3D, estado: String, vuln: bool) -> void:
 	var cab: Node3D = no.get_node("cabeca")
 	var cor := _cor(f)
+	var nucleo := no.find_child("nucleo", true, false)
+	if nucleo:
+		nucleo.visible = estado == "aberta"
 	match estado:
-		"fechada":  # botão escuro e pequeno
-			cab.scale = Vector3.ONE * 0.45
-			_pintar(cab, cor.darkened(0.65), 0.0)
+		"fechada":  # botão pequeno, fechado, na cor apagada
+			cab.scale = Vector3.ONE * 0.5
+			_pintar(cab, cor.darkened(0.45), 0.0)
 		"aberta":
 			var tw: Tween = room.create_tween()
 			tw.tween_property(cab, "scale", Vector3.ONE, 0.5).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-			_pintar(cab, cor, 1.6 if vuln else 0.35)
+			_pintar(cab, cor, 0.8 if vuln else 0.0)
+			if not vuln:
+				_pintar(cab, cor.darkened(0.25), 0.0)
 		"murcha":
 			var tw: Tween = room.create_tween()
 			tw.tween_property(cab, "scale", Vector3(0.7, 0.35, 0.7), 0.8)
@@ -265,6 +276,7 @@ func _aplicar_flor(f: Dictionary, no: Node3D, estado: String, vuln: bool) -> voi
 
 func _pintar(n: Node, cor: Color, brilho: float) -> void:
 	for c in n.get_children():
+		_pintar(c, cor, brilho)
 		if c is MeshInstance3D and str(c.name).begins_with("petala"):
 			var m: StandardMaterial3D = (c as MeshInstance3D).material_override
 			m.albedo_color = cor
@@ -309,11 +321,12 @@ func _sync_corpo(c: Dictionary) -> void:
 func _figura() -> Node3D:
 	var f := Node3D.new()
 	f.name = "corpo"
-	var tronco := _peca(_cilindro(0.17, 0.2, 0.75), _mat(Color(0.32, 0.28, 0.26)), Vector3(0, 0.0, 0))
+	f.scale = Vector3.ONE * 1.3
+	var tronco := _peca(_cilindro(0.17, 0.2, 0.75), _mat(Color(0.66, 0.6, 0.52)), Vector3(0, 0.0, 0))  # roupa clara e suja
 	f.add_child(tronco)
 	f.add_child(_peca(_esfera(0.14), _mat(PELE), Vector3(0, 0.52, 0)))
-	f.add_child(_peca(_cilindro(0.07, 0.07, 0.7), _mat(Color(0.2, 0.18, 0.2)), Vector3(-0.09, -0.7, 0)))
-	f.add_child(_peca(_cilindro(0.07, 0.07, 0.7), _mat(Color(0.2, 0.18, 0.2)), Vector3(0.09, -0.7, 0)))
+	f.add_child(_peca(_cilindro(0.07, 0.07, 0.7), _mat(Color(0.36, 0.32, 0.36)), Vector3(-0.09, -0.7, 0)))
+	f.add_child(_peca(_cilindro(0.07, 0.07, 0.7), _mat(Color(0.36, 0.32, 0.36)), Vector3(0.09, -0.7, 0)))
 	return f
 
 
@@ -379,14 +392,16 @@ func habilidade(_id: String) -> void:
 
 
 # Área de Miasma ou Chuva: um disco que aparece e some no chão.
-func zona(p: Vector2, raio_px: float, id: String) -> void:
+func zona(p: Vector2, raio_px: float, id: String, dura := 0.9) -> void:
 	if not _garantir_raiz():
 		return
 	var cor := Color(0.35, 0.55, 0.2, 0.55) if id == "miasma_fetido" else Color(0.7, 0.03, 0.05, 0.6)
-	var m := _peca(_cilindro(raio_px / 64.0, raio_px / 64.0, 0.02), _mat_transp(cor), _em3d(p, 0.05))
+	var mat := _mat_transp(cor)
+	mat.no_depth_test = true  # por cima do chão de qualquer altura (ponte, degrau); os personagens são desenhados depois
+	var m := _peca(_cilindro(raio_px / 64.0, raio_px / 64.0, 0.02), mat, _em3d(p, 0.05))
 	raiz.add_child(m)
 	var tw: Tween = room.create_tween()
-	tw.tween_interval(0.9)
+	tw.tween_interval(dura)
 	tw.tween_property(m.material_override, "albedo_color:a", 0.0, 0.8)
 	tw.tween_callback(m.queue_free)
 
@@ -407,7 +422,9 @@ func cone(origem: Vector2, eixo: Vector2, alcance_px: float, angulo: float) -> v
 		im.surface_add_vertex(_em3d(p0, 0.06) - c)
 		im.surface_add_vertex(_em3d(p1, 0.06) - c)
 	im.surface_end()
-	var m := _peca(im, _mat_transp(Color(0.85, 0.05, 0.08, 0.5)), c)
+	var mc := _mat_transp(Color(0.85, 0.05, 0.08, 0.5))
+	mc.no_depth_test = true
+	var m := _peca(im, mc, c)
 	(m.material_override as StandardMaterial3D).cull_mode = BaseMaterial3D.CULL_DISABLED
 	raiz.add_child(m)
 	var tw: Tween = room.create_tween()

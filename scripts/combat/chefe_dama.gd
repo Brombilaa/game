@@ -18,7 +18,7 @@ extends RefCounted
 
 const ID := "dama_sangue"
 const ARQUIVO := "res://data/dama_sangue.json"
-const RAIO_FLORES := 52.0  # px do centro da Dama até cada flor (provisório)
+const RAIO_FLORES := 80.0  # px do centro da Dama até cada flor (provisório)
 
 var room  # sala de combate (local3d.gd); sem tipo para não criar dependência circular
 var dama: Combatant
