@@ -13,7 +13,9 @@
       "faca_cultista"
     ],
     "comportamento": "cerca",
-    "resistencias": [],
+    "resistencias": [
+      "ritual"
+    ],
     "fraquezas": [],
     "chefe": false,
     "fases": [],
@@ -50,7 +52,9 @@
     ],
     "comportamento": "atirador",
     "resistencias": [],
-    "fraquezas": [],
+    "fraquezas": [
+      "corpo_a_corpo"
+    ],
     "chefe": false,
     "fases": [],
     "drops": [
@@ -95,8 +99,12 @@
       "garra_criatura"
     ],
     "comportamento": "cerca",
-    "resistencias": [],
-    "fraquezas": [],
+    "resistencias": [
+      "balistico"
+    ],
+    "fraquezas": [
+      "ritual"
+    ],
     "chefe": false,
     "fases": [],
     "drops": [
@@ -121,18 +129,22 @@
     "id": "roberto_ghular",
     "nome": "Roberto Ghular",
     "provisorio": true,
-    "pv": 40,
+    "pv": 24,
     "pa": 3,
     "agi": 2,
     "percepcao_px": 450,
     "precisao": 0,
-    "defesa": 0.1,
+    "defesa": 0.0,
     "ataques": [
       "tiro_atirador"
     ],
     "comportamento": "atirador",
-    "resistencias": [],
-    "fraquezas": [],
+    "resistencias": [
+      "corpo_a_corpo"
+    ],
+    "fraquezas": [
+      "ritual"
+    ],
     "chefe": true,
     "fases": [],
     "drops": [
@@ -152,22 +164,27 @@
     "id": "dama_sangue",
     "nome": "Dama de Sangue",
     "provisorio": true,
-    "pv": 120,
+    "pv": 100,
     "pa": 3,
     "agi": 2,
     "percepcao_px": 450,
     "precisao": 0,
     "defesa": 0.1,
     "ataques": [
-      "garra_dama"
+      "pancada_dama",
+      "espinhos_dama"
     ],
     "comportamento": "cerca",
     "resistencias": [
-      "atordoado"
+      "atordoado",
+      "corpo_a_corpo"
     ],
-    "fraquezas": [],
+    "fraquezas": [
+      "ritual"
+    ],
     "chefe": true,
     "fases": [],
-    "drops": []
+    "drops": [],
+    "_comment": "Léo (20/11): 100 PV, pancada de tentáculo e disparar espinhos; as 7 flores, os corpos e as habilidades ficam em data/dama_sangue.json (ChefeDama). Defesa 10%, dano e PA provisórios do Claude."
   }
 ]

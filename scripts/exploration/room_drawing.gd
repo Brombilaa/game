@@ -633,8 +633,9 @@ func _draw_hud(font: Font) -> void:
 	for i in room.party.size():
 		room.party_hud._draw_sheet(font, room.party[i], i, to_world)
 	room.party_hud._draw_links(font, to_world)
-	room.minimap._draw_minimap(font, to_world)
-	room.objectives_hud._draw_objectives(font, to_world, room._objectives())
+	if not (room.inv_panel and room.inv_panel.t > 0.0):  # o inventário (vidro fosco) cobre o radar e os objetivos
+		room.minimap._draw_minimap(font, to_world)
+		room.objectives_hud._draw_objectives(font, to_world, room._objectives())
 	room.dicas_hud._draw_dica(font, to_world)
 	if room.mode == TestRoom.Mode.COMBAT and room.turns:
 		room.party_hud._draw_turn_order(font, to_world)

@@ -1,5 +1,6 @@
 {
 	"_comment": "Valores do protótipo. Acerto, crítico, cobertura e metros por PA seguem as decisões do Léo (29/10/2026, provisórias até testar); o resto é provisório do Claude.",
+	"_balanceamento": "Passada de 19/11/2026 (Claude, PROVISÓRIA até o Léo jogar), com os PV do GDD no grupo (Fernando 23, Nikolai 18, Miguel 14) e nos inimigos (cultista 20, atirador 14, Dama 120): faca do cultista e garra da Criatura 3-5 -> 2-4; tiro do atirador 5-8 -> 4-7; Roberto Ghular 40 -> 24 PV e defesa 10% -> 0; Dama de Sangue garra 8-12 -> 5-8 e defesa 10% -> 0; Roberto vira a Dama a 50% (era 25%); a cena do Fernando toca com a Dama a 20% (era 30%). Salão da cripta (Léo, 19/11): os 7 inimigos ficam, mas os 6 em volta do Roberto seguem o ritual e só lutam se forem atacados (\"ritual\": true em cripta.json, Combatant.em_ritual); quando a Dama morre, quem ainda estava no ritual cai junto (provisório do Claude). Medido com BalancoSim (scripts/core/balanco_sim.gd, relatório em tools/balanceamento_missao1.gd).",
 	"pa_per_turn": 3,
 	"pixels_per_pa": 160,
 	"free_move_px": 160,
@@ -77,9 +78,10 @@
 		"_estagios": "Claude: abaixo de 50% = abalado, abaixo de 25% = à beira, 0 = ruptura. Usado por tela, som e falas."
 	},
 	"itens_combate": {
-		"_comment": "Itens de uso em combate (sugestão 5, aprovada pelo Léo em 16/11/2026; o sal saiu, Léo 19/11: o jogo não usa sal nem cruzes, os inimigos não são demônios). Custo: 1 PA (custo de usar item, provisório). Todos os números abaixo são PROVISÓRIOS do Claude até testar. Distâncias em metros, da borda de quem usa até o centro do ponto.",
-		"granada_luz": { "alcance_m": 8, "raio_m": 2.5, "rodadas": 1, "_efeito": "Clarão no ponto: atordoa (perde o próximo turno) os inimigos no raio; quem resiste a atordoar (Dama de Sangue) fica imune. Não atinge aliados. Precisa de linha de visão até o ponto." },
-		"sinalizador": { "alcance_m": 10, "raio_m": 3, "rodadas": 3, "bonus_acerto": 0.15, "_efeito": "Luz vermelha no chão por 3 turnos de quem lançou: ataques do grupo contra inimigos dentro do raio ganham +15% de acerto." }
+		"_comment": "Itens de uso em combate (sugestão 5, aprovada pelo Léo em 16/11/2026; o sal saiu, Léo 19/11: o jogo não usa sal nem cruzes, os inimigos não são demônios; a granada de luz saiu e o coquetel molotov do Fernando ficou no lugar, Léo 20/11). Custo: 1 PA (custo de usar item, provisório). Todos os números abaixo são PROVISÓRIOS do Claude até testar. Distâncias em metros, da borda de quem usa até o centro do ponto.",
+		"sinalizador": { "alcance_m": 10, "raio_m": 3, "rodadas": 3, "bonus_acerto": 0.15, "_efeito": "Luz vermelha no chão por 3 turnos de quem lançou: ataques do grupo contra inimigos dentro do raio ganham +15% de acerto." },
+		"molotov": { "alcance_m": 8, "raio_m": 2, "dano": [10, 14], "so_personagem": "fernando", "_efeito": "Coquetel molotov (Léo, 20/11: o material da flor Amarela vem com o Fernando; só ele arremessa). Fogo no ponto: 10 a 14 de dano de fogo nos inimigos do raio (defesa reduz) e deixa em chamas por 1 ou 2 turnos, sorteado (Léo, 20/11). Não atinge aliados. Dano e alcance provisórios do Claude." },
+		"flor": { "alcance_m": 6, "_efeito": "Fertilizante, agrotóxico, água e o bulbo (Léo, 20/11): jogados numa flor da Dama de Sangue aberta e vulnerável ao alcance. Na flor certa ela murcha; na errada não acontece nada (o item é gasto). Provisório do Claude." }
 	},
 	"units": {
 		"agente": { "side": "player", "pv": 30, "san": 12, "agi": 2, "defense": 0.0, "weapon": "pistola", "radius": 10 }

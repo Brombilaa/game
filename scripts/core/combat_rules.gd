@@ -148,7 +148,7 @@ func flanker(attacker: Combatant, target: Combatant) -> Combatant:
 	if to_attacker.length() < 0.001:
 		return null
 	for u: Combatant in units:
-		if u == attacker or u == target or not u.is_alive() or u.side != attacker.side:
+		if u == attacker or u == target or not u.is_alive() or u.side != attacker.side or u.objeto:
 			continue
 		var to_ally := u.pos - target.pos
 		if to_ally.length() > reach or to_ally.length() < 0.001:
@@ -168,8 +168,8 @@ func _range_penalty(w: Dictionary, distance: float) -> float:
 # Motivo pelo qual o ataque não pode ser feito, ou "" se pode. Os códigos são os
 # mesmos do HUD (HudText.REJECTION_MESSAGES).
 func attack_blocker(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers: Array = []) -> String:
-	if not attacker.is_alive() or not target.is_alive():
-		return "requirement"
+	if not attacker.is_alive() or not target.is_alive() or target.protegido:
+		return "requirement"  # protegido: flor da Dama fora da janela de vulnerabilidade
 	if attacker.pa < int(attacker.weapon["pa_cost"]):
 		return "no_pa"
 	if needs_reload(attacker):
@@ -193,13 +193,15 @@ func needs_reload(u: Combatant) -> bool:
 
 # Resolve o ataque, gasta PA e aplica dano. Coberturas não são destruídas (Léo: ainda não).
 # stealth: ataque furtivo contra inimigo sem alerta (bônus de acerto e multiplicador de dano).
-# Retorna {ok, reason, chance, hit, blocked, crit, damage, cover}.
+# Retorna {ok, reason, chance, hit, blocked, crit, damage, cover, flank, tipo_dano, afinidade ("fraqueza"/"resistencia"/""), sem_efeito}.
+# sem_efeito: acertou um alvo que só este tipo de dano não fere (flor da Dama de Sangue que pede outra mecânica).
 func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers: Array, stealth := false) -> Dictionary:
-	var result := {"ok": false, "reason": "", "chance": 0.0, "hit": false, "blocked": false, "crit": false, "damage": 0, "cover": "", "flank": false}
+	var result := {"ok": false, "reason": "", "chance": 0.0, "hit": false, "blocked": false, "crit": false, "damage": 0, "cover": "", "flank": false, "tipo_dano": "", "afinidade": "", "sem_efeito": false}
 	result.reason = attack_blocker(attacker, target, walls, covers)
 	if result.reason != "":
 		return result
 	result.ok = true
+	target.provoke()  # quem estava no ritual (cripta) acorda até com o tiro que erra
 	attacker.pa -= int(attacker.weapon["pa_cost"])
 	if int(attacker.weapon.get("mag_size", 0)) > 0 and attacker.mag.has(attacker.weapon["id"]):
 		attacker.mag[attacker.weapon["id"]] = int(attacker.mag[attacker.weapon["id"]]) - 1  # cada tiro gasta 1 bala
@@ -221,6 +223,14 @@ func attack(attacker: Combatant, target: Combatant, walls: Array[Rect2], covers:
 		dmg *= cfg.value("stealth_damage_multiplier")
 	if attacker.ruptured:
 		dmg *= 1.0 - float(cfg.san("ruptura_dano"))
+	result.tipo_dano = Fraquezas.tipo_da_arma(attacker.weapon)
+	result.afinidade = Fraquezas.afinidade(cfg.game_data, target.kind, result.tipo_dano)  # fraqueza/resistência (provisório)
+	if target.sem_resistencias and result.afinidade == "resistencia":
+		result.afinidade = ""
+	dmg *= Fraquezas.multiplicador(result.afinidade)
+	if not target.fere(result.tipo_dano, str(attacker.weapon.get("id", ""))):
+		result.sem_efeito = true  # flor da Dama: só a mecânica certa a fere
+		return result
 	result.damage = damage_after_defense(dmg, target.defense_total())
 	target.take_damage(result.damage)
 	if result.crit and target.is_alive():
@@ -314,6 +324,7 @@ func light_factor(target: Combatant) -> float:
 # Léo: sangrando, atordoado, em chamas e envenenado. Percentuais e durações em condicoes.json.
 
 func apply_condition(unit: Combatant, id: String) -> void:
+	unit.provoke()
 	var c := cfg.condition(id)
 	var rounds := -1
 	if c["duracao"] == "rodadas":
@@ -337,6 +348,8 @@ func remove_condition(unit: Combatant, id: String) -> bool:
 # Retorna {damage, skip}: skip = a unidade perde este turno (atordoado).
 func start_turn_effects(unit: Combatant) -> Dictionary:
 	var out := {"damage": 0, "skip": false}
+	unit.pa_menos = 0
+	unit.preso = false
 	for id in unit.buffs.keys():  # rituais: contam os turnos do próprio conjurador
 		unit.buffs[id].rounds -= 1
 		if unit.buffs[id].rounds <= 0:
@@ -349,8 +362,15 @@ func start_turn_effects(unit: Combatant) -> Dictionary:
 			var dmg: int = maxi(floori(unit.max_pv * pct + 0.0001), int(cfg.value("min_damage")))
 			unit.take_damage(dmg)
 			out.damage += dmg
+		if c.get("dano_fixo") != null and int(c["dano_fixo"]) > 0:  # miasma (Dama de Sangue)
+			unit.take_damage(int(c["dano_fixo"]))
+			out.damage += int(c["dano_fixo"])
 		if c["pula_turno"]:
 			out.skip = true
+		if c.get("pa_menos") != null:  # vale neste turno, mesmo que a condição acabe agora
+			unit.pa_menos += int(c["pa_menos"])
+		if c.get("imobiliza") == true:
+			unit.preso = true
 		if state.rounds > 0:
 			state.rounds -= 1
 			if state.rounds == 0:

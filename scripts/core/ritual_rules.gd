@@ -122,7 +122,7 @@ func blocker(caster: Combatant, id: String, target: Combatant = null, walls: Arr
 		"si":
 			return ""
 		"inimigo":
-			if target == null or not target.is_alive() or target.side == caster.side:
+			if target == null or not target.is_alive() or target.side == caster.side or target.protegido:
 				return "requirement"
 			if CombatRules.gap(caster, target) > float(r["alcance_m"]) * cfg.value("pixels_per_meter"):
 				return "out_of_range"
@@ -143,7 +143,7 @@ func blocker(caster: Combatant, id: String, target: Combatant = null, walls: Arr
 # Conjura. Retorna {ok, reason, id, components (ids gastos), san (resultado de SanRules.lose), + o efeito: damage, stunned, resisted_stun,
 # healed, cleared, rounds, defense, bonus}.
 func cast(caster: Combatant, id: String, target: Combatant = null, walls: Array[Rect2] = [], covers: Array = []) -> Dictionary:
-	var out := {"ok": false, "reason": "", "id": id, "components": [], "san": {}, "damage": 0, "stunned": false, "resisted_stun": false, "healed": 0, "cleared": false, "prepared": false}
+	var out := {"ok": false, "reason": "", "id": id, "components": [], "san": {}, "damage": 0, "stunned": false, "resisted_stun": false, "healed": 0, "cleared": false, "tipo_dano": "", "afinidade": "", "sem_efeito": false, "prepared": false}
 	out.reason = blocker(caster, id, target, walls, covers)
 	if out.reason != "":
 		return out
@@ -168,7 +168,12 @@ func cast(caster: Combatant, id: String, target: Combatant = null, walls: Array[
 		"dano":
 			var dmg := rng.randi_range(int(r["dano"][0]), int(r["dano"][1])) + int_bonus(caster)
 			dmg = _boost(float(dmg), out.prepared)
-			out.damage = rules.damage_after_defense(float(dmg), target.defense_total())
+			out.tipo_dano = Fraquezas.RITUAL
+			out.afinidade = Fraquezas.afinidade(cfg.game_data, target.kind, Fraquezas.RITUAL)  # fraqueza/resistência (provisório)
+			if not target.fere(Fraquezas.RITUAL, id):
+				out.sem_efeito = true  # flor da Dama que pede outra mecânica
+				return out
+			out.damage = rules.damage_after_defense(float(dmg) * Fraquezas.multiplicador(out.afinidade), target.defense_total())
 			target.take_damage(out.damage)
 			if target.is_alive() and rng.randf() < float(r["chance_atordoar"] if r["chance_atordoar"] != null else 0.0):
 				if _resists_stun(target):

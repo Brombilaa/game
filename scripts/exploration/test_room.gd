@@ -132,7 +132,7 @@ var cfg := CombatConfig.load_file()
 var rules := CombatRules.new(cfg)
 var san := SanRules.new(cfg)  # SAN como medidor de terror: perda, ruptura e loucura (GDD #11)
 var rituals := RitualRules.new(cfg, rules, san)  # rituais do Ocultista (Miguel): custo de PA, SAN e componente
-var item_rules := ItemRules.new(cfg, rules)  # itens de combate: granada de luz e sinalizador (provisórios)
+var item_rules := ItemRules.new(cfg, rules)  # itens de combate: coquetel do Fernando e sinalizador (provisórios)
 
 # Grupo: Fernando, Nikolai e Miguel pelas fichas do GDD (classe e atributos; Ficha e personagens.json).
 var party: Array[Combatant] = [
@@ -728,6 +728,11 @@ func _flash_in_3d(_u: Combatant) -> bool:
 	return false
 
 
+# Gancho depois de um ritual ou item de combate atingir `alvo` (a cripta confere a Dama de Sangue e as flores dela).
+func _apos_efeito(_alvo: Combatant) -> void:
+	pass
+
+
 # Gancho para a sala encenar o golpe por conta própria (o parque 3D toca a animação do modelo).
 func _attack_started(_attacker: Combatant, _target: Combatant, _aim: float) -> void:
 	pass
@@ -793,6 +798,8 @@ func _hud_draw_scale() -> Vector2:
 # Placas do HUD com vidro fosco por trás (pixels da tela): ordem dos turnos e barra de ações, no combate.
 func _hud_blur_rects() -> Array[Rect2]:
 	var out: Array[Rect2] = []
+	if inv_panel and inv_panel.t > 0.0:  # inventário aberto: placa de vidro fosco
+		out.append(inv_panel.panel_rect())
 	if mode == Mode.COMBAT and turns:
 		out.append(party_hud.turn_order_rect())
 		if _player_ready():
