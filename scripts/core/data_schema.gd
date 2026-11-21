@@ -12,6 +12,10 @@ const TABLES := ["regras", "atributos", "classes", "personagens", "condicoes", "
 
 const PERCENT := {"t": "num", "nulo": true, "min": 0.0, "max": 1.0}
 const PA := {"t": "int", "nulo": true, "min": 0}
+# Elementos dos componentes de ritual (Léo, 19/11): sangue = fluidos, sangue, órgãos, ferrugem; energia = eletricidade,
+# tecnologia, fogo, celulares, fios, baterias; morte = ossos de bichos pequenos, cinzas, relógio quebrado, o tempo;
+# conhecimento = ouro, joias, livros, escrituras, tomos antigos.
+const ELEMENTOS := ["sangue", "energia", "morte", "conhecimento"]
 
 const FIELDS := {
 	"regras": {
@@ -79,6 +83,9 @@ const FIELDS := {
 		"acumulo_max": {"t": "int", "nulo": true, "min": 1},
 		"remocao": {"t": "texto", "nulo": true},  # item que remove a condição
 		"pula_turno": {"t": "bool", "nulo": false},
+		"pa_menos": {"t": "int", "nulo": true, "min": 0},  # PA a menos no turno em que a condição está ativa (confuso, derrubado)
+		"imobiliza": {"t": "bool", "nulo": true},  # não anda enquanto durar (preso)
+		"dano_fixo": {"t": "int", "nulo": true, "min": 0},  # PV perdidos no início do turno, além do percentual (miasma)
 	},
 	"armas": {
 		"id": {"t": "texto", "nulo": false},
@@ -98,13 +105,14 @@ const FIELDS := {
 	"itens": {
 		"id": {"t": "texto", "nulo": false},
 		"nome": {"t": "texto", "nulo": false},
-		"categoria": {"t": "texto", "nulo": false, "valores": ["consumivel", "equipamento", "missao", "recurso"]},
+		"categoria": {"t": "texto", "nulo": false, "valores": ["consumivel", "equipamento", "missao", "recurso", "componente"]},
 		"consumivel": {"t": "bool", "nulo": false},
 		"tamanho": {"t": "tamanho", "nulo": true},
 		"pilha_max": {"t": "int", "nulo": true, "min": 1},
 		"custo_pa_combate": PA,
 		"efeito": {"t": "texto", "nulo": true},
 		"valor": {"t": "num", "nulo": true},
+		"elemento": {"t": "texto", "nulo": true, "valores": ELEMENTOS},  # componente de ritual: elemento que ele alimenta
 	},
 	"inimigos": {
 		"id": {"t": "texto", "nulo": false},
@@ -139,6 +147,8 @@ const FIELDS := {
 		"rodadas": {"t": "int", "nulo": true, "min": 1},  # duração do efeito, em turnos do conjurador
 		"chance_atordoar": PERCENT,
 		"limpa_ruptura": {"t": "bool", "nulo": false},  # sai da ruptura de SAN (GDD #11: ritual de cura)
+		"elemento": {"t": "texto", "nulo": false, "valores": ELEMENTOS},  # que componentes o ritual gasta (Léo, 19/11)
+		"componentes": {"t": "int", "nulo": false, "min": 0},  # quantos componentes do elemento cada conjuração gasta
 	},
 	"arvores": {
 		"id": {"t": "texto", "nulo": false},

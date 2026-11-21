@@ -131,8 +131,8 @@ var cfg := CombatConfig.load_file()
 
 var rules := CombatRules.new(cfg)
 var san := SanRules.new(cfg)  # SAN como medidor de terror: perda, ruptura e loucura (GDD #11)
-var rituals := RitualRules.new(cfg, rules, san)  # rituais do Ocultista (Miguel): custo de PA e SAN
-var item_rules := ItemRules.new(cfg, rules)  # itens de combate: granada de luz e sinalizador (provisórios)
+var rituals := RitualRules.new(cfg, rules, san)  # rituais do Ocultista (Miguel): custo de PA, SAN e componente
+var item_rules := ItemRules.new(cfg, rules)  # itens de combate: coquetel do Fernando e sinalizador (provisórios)
 
 # Grupo: Fernando, Nikolai e Miguel pelas fichas do GDD (classe e atributos; Ficha e personagens.json).
 var party: Array[Combatant] = [
@@ -155,7 +155,10 @@ var follow_rng := RandomNumberGenerator.new()
 var loot_rng := RandomNumberGenerator.new()  # sorteio dos itens largados pelos inimigos
 var pending_corpse: Combatant  # corpo que o controlado vai examinar ao chegar
 
-var inventory: Inventory  # mochila compartilhada do grupo (20 espaços)
+var inventory: Inventory:  # mochila compartilhada do grupo (20 espaços); os rituais tiram dela os componentes
+	set(v):
+		inventory = v
+		rituals.inventory = v
 
 var gear := {}  # membro -> {"principal", "secundaria", "colete", "acessorio"}: ids ("" = vazio)
 
@@ -397,20 +400,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			_player_pass()
 		elif event.pressed and event.keycode == KEY_TAB:
 			_switch_to(party[(party.find(player) + 1) % party.size()])
-		elif event.pressed and event.keycode >= KEY_1 and event.keycode < KEY_1 + party.size():
-			_switch_to(party[event.keycode - KEY_1])
-		elif event.pressed and event.keycode == KEY_D:
-			_player_delay()
-		elif event.pressed and event.keycode == KEY_Q:
+		elif event.pressed and not event.echo and mode == Mode.COMBAT and RoomActionBar.slot_for_key(event.keycode) >= 0:
+			action_bar.activate(RoomActionBar.slot_for_key(event.keycode))  # Léo, 19/11: a barra usa 1 a 9 em ordem, não letras
+		elif event.pressed and mode != Mode.COMBAT and event.keycode >= KEY_1 and event.keycode < KEY_1 + party.size():
+			_switch_to(party[event.keycode - KEY_1])  # fora do combate os números trocam o controlado
+		elif event.pressed and mode != Mode.COMBAT and event.keycode == KEY_Q:
 			_swap_weapon()
-		elif event.pressed and event.keycode == KEY_G:
+		elif event.pressed and mode != Mode.COMBAT and event.keycode == KEY_G:
 			_reload()
-		elif event.pressed and event.keycode == KEY_F:
-			_overwatch()
-		elif event.pressed and not event.echo and room_ritual.handle_key(event.keycode):
-			pass  # rituais do Miguel (Z, X, T, Y)
-		elif event.pressed and not event.echo and room_items.handle_key(event.keycode):
-			pass  # itens de combate (H granada de luz, U sinalizador)
 		elif event.pressed and event.keycode == KEY_V:
 			use_3d = not use_3d
 			_popup(player.pos, "Nikolai 3D" if use_3d else "Nikolai 2D")
@@ -438,25 +435,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if _mouse_on_hud(screen):  # rodapé: o fim do turno passa a vez; os ícones não movem o personagem
 			var n := action_bar._action_slots().size()
-			var ritual_id := ""
-			var item_id := ""
-			for k in n:
-				if action_bar.ritual_at(k, n) != "" and action_bar._action_rect(k, n).has_point(screen):
-					ritual_id = action_bar.ritual_at(k, n)
-				if action_bar.item_at(k) != "" and action_bar._action_rect(k, n).has_point(screen):
-					item_id = action_bar.item_at(k)
-			if ritual_id != "":
-				room_ritual.cast(ritual_id)
-			elif item_id != "":
-				room_items.use(item_id)
-			elif action_bar._end_turn_rect(n).has_point(screen):
+			if action_bar._end_turn_rect(n).has_point(screen):
 				_player_pass()
-			elif _reserve_id() != "" and action_bar._action_rect(1, n).has_point(screen):
-				_swap_weapon()
-			elif action_bar._action_rect(action_bar.kit_index() + 1, n).has_point(screen):
-				_overwatch()
-			elif action_bar._action_rect(action_bar.kit_index(), n).has_point(screen):
-				_use_kit_button()
+				return
+			for k in n:  # a casa clicada faz o mesmo que a tecla dela (1 a 9 em ordem)
+				if action_bar._action_rect(k, n).has_point(screen):
+					action_bar.activate(k)
+					break
 			return
 		var click := _resolve_click(get_global_mouse_position())
 		if mode == Mode.EXPLORATION:
@@ -737,6 +722,11 @@ func _flash_in_3d(_u: Combatant) -> bool:
 	return false
 
 
+# Gancho depois de um ritual ou item de combate atingir `alvo` (a cripta confere a Dama de Sangue e as flores dela).
+func _apos_efeito(_alvo: Combatant) -> void:
+	pass
+
+
 # Gancho para a sala encenar o golpe por conta própria (o parque 3D toca a animação do modelo).
 func _attack_started(_attacker: Combatant, _target: Combatant, _aim: float) -> void:
 	pass
@@ -802,6 +792,8 @@ func _hud_draw_scale() -> Vector2:
 # Placas do HUD com vidro fosco por trás (pixels da tela): ordem dos turnos e barra de ações, no combate.
 func _hud_blur_rects() -> Array[Rect2]:
 	var out: Array[Rect2] = []
+	if inv_panel and inv_panel.t > 0.0:  # inventário aberto: placa de vidro fosco
+		out.append(inv_panel.panel_rect())
 	if mode == Mode.COMBAT and turns:
 		out.append(party_hud.turn_order_rect())
 		if _player_ready():

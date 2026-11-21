@@ -2,10 +2,9 @@ class_name ControlesCaderno
 extends Control
 # Mapa de controles nas Opções (Léo, 19/11/2026): teclado e mouse desenhados numa página do caderno de campo, em
 # tons de pergaminho e tinta. Cada tecla usada mostra a função; passar o mouse (ou clicar) numa tecla abre a ficha no
-# pé da página com o que ela faz, quando vale e o custo. Os filtros Tudo, Explorar, Combate e Painéis apagam o resto,
+# pé da página com o que ela faz, quando vale e, quando há, o custo. Os filtros Tudo, Explorar, Combate e Painéis apagam o resto,
 # para consultar só o que importa naquele momento. Só mostra; não remapeia as teclas.
-# Itens de combate e rituais vêm de Atalhos e de data/ (nome, PA,
-# SAN), então o mapa acompanha o balanceamento. Quem mudar outra tecla do jogo atualiza `mapa()`.
+# Quem mudar uma tecla do jogo atualiza `mapa()` e, se for tecla nova, `LAYOUT`.
 
 signal voltar  # botão direito: o menu volta um passo
 
@@ -31,7 +30,7 @@ const CARD_H := 104.0
 const LAYOUT := [
 	["Esc", 0.0, 0, 1.0], ["F3", 2.0, 0, 1.0],
 	["1", 0.0, 1, 1.0], ["2", 1.0, 1, 1.0], ["3", 2.0, 1, 1.0], ["4", 3.0, 1, 1.0], ["5", 4.0, 1, 1.0],
-	["6", 5.0, 1, 1.0], ["7", 6.0, 1, 1.0], ["8", 7.0, 1, 1.0], ["9", 8.0, 1, 1.0], ["0", 9.0, 1, 1.0],
+	["6", 5.0, 1, 1.0], ["7", 6.0, 1, 1.0], ["8", 7.0, 1, 1.0], ["9", 8.0, 1, 1.0], ["0", 9.0, 1, 1.0], ["-", 10.0, 1, 1.0], ["=", 11.0, 1, 1.0],
 	["Tab", 0.0, 2, 1.5], ["Q", 1.5, 2, 1.0], ["W", 2.5, 2, 1.0], ["E", 3.5, 2, 1.0], ["R", 4.5, 2, 1.0],
 	["T", 5.5, 2, 1.0], ["Y", 6.5, 2, 1.0], ["U", 7.5, 2, 1.0], ["I", 8.5, 2, 1.0], ["O", 9.5, 2, 1.0], ["P", 10.5, 2, 1.0],
 	["A", 1.75, 3, 1.0], ["S", 2.75, 3, 1.0], ["D", 3.75, 3, 1.0], ["F", 4.75, 3, 1.0], ["G", 5.75, 3, 1.0],
@@ -43,10 +42,6 @@ const LAYOUT := [
 ]
 # Botões do mouse (retângulos relativos ao desenho do mouse): [id, x, y, w, h].
 const MOUSE_PARTS := [["Esq", 2.0, 2.0, 32.0, 40.0], ["Dir", 36.0, 2.0, 32.0, 40.0], ["Meio", 30.0, 10.0, 10.0, 22.0], ["Roda", 0.0, 46.0, 70.0, 56.0]]
-
-const SHORT := {"granada_luz": "granada", "sinalizador": "sinal", "armadura_sangue": "armadura", "amaldicoar_arma": "maldição", "eletrocussao": "choque", "cicatrizacao": "curar"}
-
-static var _data: GameData
 
 var mapped := {}  # rótulo -> ficha
 var filter := "all"
@@ -60,15 +55,7 @@ func _init() -> void:
 	custom_minimum_size = Vector2(PAGE_W, PAGE_H)
 
 
-# Dados de balanceamento (custos), carregados uma vez.
-static func data() -> GameData:
-	if _data == null:
-		_data = GameData.new()
-		_data.load_dir()
-	return _data
-
-
-# Ficha: {cat, curto, titulo, quando, texto, custo}. `cat` decide o filtro: mover, combate ou painel.
+# Ficha: {cat, curto, titulo, quando, texto, custo}. `cat` decide o filtro: mover, combate, painel ou dual (os dois).
 static func _ficha(cat: String, curto: String, titulo: String, quando: String, texto: String, custo := "") -> Dictionary:
 	return {"cat": cat, "curto": curto, "titulo": titulo, "quando": quando, "texto": texto, "custo": custo}
 
@@ -88,27 +75,18 @@ static func mapa() -> Dictionary:
 	_add(m, "L", _ficha("mover", "lanterna", "Lanterna", "À noite, explorando", "Liga e desliga a lanterna do líder. No diário, L abre o modo de ligar pistas."))
 	_add(m, "Tab", _ficha("mover", "trocar", "Trocar de personagem", "Explorar e combate", "Passa o controle para o próximo do grupo. Os outros seguem o controlado."))
 	for n in ["1", "2", "3"]:
-		_add(m, n, _ficha("mover", "escolher", "Escolher o personagem " + n, "Explorar e combate", "Passa o controle direto para o personagem " + n + " do grupo."))
+		_add(m, n, _ficha("mover", "escolher", "Escolher o personagem " + n, "Fora do combate", "Passa o controle direto para o personagem " + n + " do grupo."))
 	_add(m, "C", _ficha("mover", "agachar", "Agachar", "Explorar; em combate na sua vez", "Alterna agachado. Agachado, os inimigos só percebem o grupo na metade da distância, e um ataque sem alerta ganha bônus."))
 	_add(m, "Home", _ficha("combate", "câmera", "Recentrar a câmera", "Combate", "Traz a câmera de volta ao grupo depois de arrastá-la com o botão do meio."))
-	var rules := data()
 	_add(m, "Espaço", _ficha("combate", "passar turno", "Passar o turno", "Combate", "Encerra o turno do personagem controlado. Fora do combate, avança as falas."))
-	_add(m, "D", _ficha("combate", "atrasar", "Atrasar", "Combate", "Adia a vez do personagem para mais tarde na mesma rodada."))
-	_add(m, "Q", _ficha("combate", "trocar arma", "Trocar de arma", "Combate", "Alterna entre a arma principal e a reserva.", _pa(rules.rule("custo_trocar_arma_pa"))))
-	_add(m, "G", _ficha("combate", "recarga", "Recarregar", "Combate", "Enche o pente com a munição da mochila.", _pa(rules.rule("custo_recarga_pa"))))
-	_add(m, "F", _ficha("combate", "vigia", "Vigilância", "Combate", "Fica de guarda e atira no primeiro inimigo que se mover dentro do cone.", "mesmo PA do ataque da arma"))
 	_add(m, "Shift", _ficha("combate", "acelerar", "Acelerar o turno inimigo", "Combate", "Segure durante a jogada dos inimigos para vê-la mais rápido."))
-	var item_keys := Atalhos.ITEM_KEYS
-	var ritual_keys := Atalhos.RITUAL_KEYS
-	var item_tips := Atalhos.ITEM_TIPS
-	for iid in item_keys:
-		var item := rules.get_entry("itens", iid)
-		var custo := _pa(item.get("custo_pa_combate"))
-		_add(m, item_keys[iid], _ficha("combate", SHORT.get(iid, str(item.get("nome", iid)).to_lower()), str(item.get("nome", iid)), "Combate, na sua vez", _cap(str(item_tips.get(iid, "item de uso em combate"))) + ".", custo))
-	for rid in ritual_keys:
-		var r := rules.get_entry("rituais", rid)
-		var curto: String = SHORT.get(rid, str(r.get("nome", rid)).to_lower())
-		_add(m, ritual_keys[rid], _ficha("combate", curto, str(r.get("nome", rid)), "Combate · só o Ocultista", str(r.get("descricao", "")), "%s · %s SAN" % [_pa(r.get("custo_pa")), str(r.get("custo_san", "?"))]))
+	_add(m, "Q", _ficha("mover", "trocar arma", "Trocar de arma", "Fora do combate", "Alterna entre a arma principal e a reserva. Em combate, a troca é uma casa da barra."))
+	_add(m, "G", _ficha("mover", "recarregar", "Recarregar", "Fora do combate", "Enche o pente com a munição da mochila. Em combate, recarregar é a casa 1 da barra."))
+	# Casas da barra de combate: a casa k usa a k-ésima tecla desta lista, da esquerda para a direita (Léo, 19/11).
+	var barra := "Atalho da casa %s da barra de combate, contando da esquerda: atacar ou recarregar, trocar arma, kit, vigilância, atrasar, itens e rituais."
+	var ordinais := ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="]
+	for i in ordinais.size():
+		_add(m, ordinais[i], _ficha("combate", "barra %d" % (i + 1), "Casa %d da barra de combate" % (i + 1), "Combate, na sua vez", barra % str(i + 1)))
 	m["M:Esq"] = _ficha("mover", "", "Botão esquerdo", "Explorar e combate", "Move o grupo, examina objetos e abre portas. Em combate move, ataca o inimigo sob o cursor ou escolhe o alvo. Clicar num retrato troca de personagem.")
 	m["M:Dir"] = _ficha("painel", "", "Botão direito", "Menus", "Volta um passo nos menus e painéis.")
 	m["M:Meio"] = _ficha("combate", "", "Botão do meio", "Combate", "Arraste para mover a câmera. Clicar (ou Home) recentra.")
@@ -120,17 +98,13 @@ static func _cap(t: String) -> String:
 	return t.substr(0, 1).to_upper() + t.substr(1)
 
 
-static func _pa(v: Variant) -> String:
-	return "%s PA" % (str(int(v)) if v != null else "?")
-
-
 static func _add(m: Dictionary, key: String, f: Dictionary) -> void:
 	if not m.has(key):
 		m[key] = f
 		return
 	var old: Dictionary = m[key]  # a mesma tecla serve a duas coisas: junta as duas na ficha
-	m[key] = _ficha(old["cat"], str(old["curto"]) + " · " + str(f["curto"]), str(old["titulo"]) + " / " + str(f["titulo"]), str(old["quando"]) + " · " + str(f["quando"]),
-		str(old["texto"]) + " | " + str(f["texto"]), str(old["custo"]) + (" · " if old["custo"] != "" and f["custo"] != "" else "") + str(f["custo"]))
+	m[key] = _ficha(old["cat"] if old["cat"] == f["cat"] else "dual", str(old["curto"]) + " · " + str(f["curto"]), str(old["titulo"]) + " / " + str(f["titulo"]), str(old["quando"]) + " · " + str(f["quando"]),
+		str(old["texto"]) + " " + str(f["texto"]), str(old["custo"]) + (" · " if old["custo"] != "" and f["custo"] != "" else "") + str(f["custo"]))
 
 
 func _kx(col: float) -> float:
@@ -161,7 +135,7 @@ func _card_rect() -> Rect2:
 func _active(id: String) -> bool:
 	if not mapped.has(id):
 		return false
-	return filter == "all" or mapped[id]["cat"] == filter or (filter == "combate" and mapped[id]["cat"] == "uso")
+	return filter == "all" or mapped[id]["cat"] == filter or mapped[id]["cat"] == "dual"  # "dual": a tecla serve a dois grupos
 
 
 # Quem está sob o mouse: rótulo de tecla ou "M:parte".

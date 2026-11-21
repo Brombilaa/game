@@ -1,31 +1,35 @@
 [
   {
-    "_status": "GDD #11 (Léo, 29/10/2026): rituais custam SAN e PA; INT soma ao dano e à cura. Os quatro rituais do Miguel e todos os números abaixo são PROVISÓRIOS do Claude (15/11/2026), aguardando revisão do Léo.",
+    "_status": "GDD #11 (Léo, 29/10/2026): rituais custam SAN e PA; INT soma ao dano e à cura. Léo (16/11 e 19/11): cada ritual gasta também componentes do seu elemento (sangue, energia, morte, conhecimento); sem componente não há ritual. Quantidade de componentes e o elemento de cada ritual são provisórios do Claude. Os quatro rituais do Miguel e todos os números abaixo são PROVISÓRIOS do Claude (15/11/2026), aguardando revisão do Léo.",
     "id": "armadura_sangue", "nome": "Armadura de Sangue", "provisorio": true,
     "descricao": "O sangue endurece sobre o corpo: o conjurador recebe menos dano por algumas rodadas.",
     "classe": "ocultista", "alvo": "si", "tipo": "defesa",
     "custo_pa": 1, "custo_san": 2, "alcance_m": null,
-    "valor": 0.2, "dano": null, "cura_percentual": null, "rodadas": 3, "chance_atordoar": null, "limpa_ruptura": false
+    "valor": 0.2, "dano": null, "cura_percentual": null, "rodadas": 3, "chance_atordoar": null, "limpa_ruptura": false,
+    "elemento": "sangue", "componentes": 1
   },
   {
     "id": "amaldicoar_arma", "nome": "Amaldiçoar Arma de Sangue", "provisorio": true,
     "descricao": "Sangue na lâmina: cada golpe do conjurador causa dano extra por algumas rodadas.",
     "classe": "ocultista", "alvo": "si", "tipo": "dano_arma",
     "custo_pa": 1, "custo_san": 2, "alcance_m": null,
-    "valor": 2, "dano": null, "cura_percentual": null, "rodadas": 3, "chance_atordoar": null, "limpa_ruptura": false
+    "valor": 2, "dano": null, "cura_percentual": null, "rodadas": 3, "chance_atordoar": null, "limpa_ruptura": false,
+    "elemento": "sangue", "componentes": 1
   },
   {
     "id": "eletrocussao", "nome": "Eletrocussão", "provisorio": true,
     "descricao": "Descarga que atinge o inimigo à vista sem errar. Pode atordoar.",
     "classe": "ocultista", "alvo": "inimigo", "tipo": "dano",
     "custo_pa": 2, "custo_san": 4, "alcance_m": 6,
-    "valor": null, "dano": [8, 12], "cura_percentual": null, "rodadas": null, "chance_atordoar": 0.25, "limpa_ruptura": false
+    "valor": null, "dano": [8, 12], "cura_percentual": null, "rodadas": null, "chance_atordoar": 0.25, "limpa_ruptura": false,
+    "elemento": "energia", "componentes": 1
   },
   {
     "id": "cicatrizacao", "nome": "Cicatrização", "provisorio": true,
     "descricao": "Fecha as feridas de um aliado encostado (ou do próprio conjurador) e acalma a mente: tira a ruptura de SAN.",
     "classe": "ocultista", "alvo": "aliado", "tipo": "cura",
     "custo_pa": 2, "custo_san": 3, "alcance_m": 0.5,
-    "valor": null, "dano": null, "cura_percentual": 0.3, "rodadas": null, "chance_atordoar": null, "limpa_ruptura": true
+    "valor": null, "dano": null, "cura_percentual": 0.3, "rodadas": null, "chance_atordoar": null, "limpa_ruptura": true,
+    "elemento": "morte", "componentes": 1
   }
 ]

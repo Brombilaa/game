@@ -22,8 +22,30 @@ const BAR_END_W := 92.0
 const BAR_BOTTOM := 532.0
 const RITUAL_GAP := 10.0  # vão (com um fio) entre as ações comuns e as casas de ritual (modelo A, Léo 16/11)
 # Dica curta dos itens de combate na barra (valores provisórios em combat.json, itens_combate).
-const ITEM_TIPS := Atalhos.ITEM_TIPS  # as dicas e as teclas moram em Atalhos, que também alimenta o mapa de controles
-const RITUAL_KEYS := Atalhos.RITUAL_KEYS
+const ITEM_TIPS := {
+	"coquetel": "fogo onde cai: 10 a 14 de dano e Em chamas por 1 ou 2 turnos (só o Fernando)",
+	"sinalizador": "luz no chão: +acerto contra quem está nela",
+}
+# Atalhos da barra em combate (Léo, 19/11): as casas usam as teclas numéricas em ordem, da esquerda para a
+# direita (1 a 9, depois 0, - e =), e não letras. A casa k (contando de 0) usa SLOT_KEYS[k].
+const SLOT_KEYS := [KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0, KEY_MINUS, KEY_EQUAL]
+const SLOT_KEYS_PAD := [KEY_KP_1, KEY_KP_2, KEY_KP_3, KEY_KP_4, KEY_KP_5, KEY_KP_6, KEY_KP_7, KEY_KP_8, KEY_KP_9, KEY_KP_0]
+const SLOT_LABELS := ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="]
+
+
+# Casa da barra ligada à tecla, ou -1.
+static func slot_for_key(keycode: int) -> int:
+	var k := SLOT_KEYS.find(keycode)
+	return k if k >= 0 else SLOT_KEYS_PAD.find(keycode)
+
+
+static func key_label(k: int) -> String:
+	return SLOT_LABELS[k] if k >= 0 and k < SLOT_LABELS.size() else ""
+
+
+# Texto da tecla da casa `k` para as dicas ("tecla 3"), ou "" se a casa não tem tecla.
+static func key_text(k: int) -> String:
+	return "tecla %s" % key_label(k) if key_label(k) != "" else "só pelo clique"
 
 
 # Ações do rodapé no turno do jogador: [ícone, título, detalhe, ativa]. A arma secundária
@@ -35,28 +57,31 @@ func _action_slots() -> Array:
 	var ammo := room.ammo_of(room.player)  # [carregador, reserva] ou [] se a arma não usa munição
 	var attack := "Atacar · %d PA · clique no inimigo" % int(room.player.weapon["pa_cost"])
 	if not ammo.is_empty():
-		attack = "Atacar · %d PA · G recarrega (%d PA)" % [int(room.player.weapon["pa_cost"]), int(room.cfg.regra("custo_recarga_pa", 1))]
+		attack = "Atacar · %d PA · clique no inimigo · tecla 1 ou clique aqui recarrega (%d PA)" % [int(room.player.weapon["pa_cost"]), int(room.cfg.regra("custo_recarga_pa", 1))]
 	var slots := [[id, str(data.get_entry("armas", id).get("nome", id)), attack, true, ammo]]
 	var second := room._reserve_id()
 	if second != "":
 		var second_ammo := []
 		if int(room.cfg.weapon(second)["mag_size"]) > 0:
 			second_ammo = [int(room.player.mag.get(second, 0)), room.inventory.count(room.ammo_item(second))]
-		slots.append([second, str(data.get_entry("armas", second).get("nome", second)), "Trocar arma · %d PA · tecla Q" % int(room.cfg.regra("custo_trocar_arma_pa", 1)), room.player.pa >= int(room.cfg.regra("custo_trocar_arma_pa", 1)), second_ammo])
-	slots.append(["kit", "Kit de primeiros socorros", "Reanimar · %d PA · restam %d" % [int(kit["custo_pa_combate"]), room.inventory.count(room.KIT_ID)], room.inventory.count(room.KIT_ID) > 0])
-	slots.append(["vigilancia", "Vigilância", "%d PA · tecla F · atira no 1º inimigo que se mover no cone" % int(room.player.weapon["pa_cost"]), room.rules.overwatch_blocker(room.player) == "" or room.player.overwatch])
-	slots.append(["atrasar", "Atrasar", "Age depois na rodada · tecla D", true])
-	for iid in room.room_items.available():  # itens de combate na mochila (granada de luz e sinalizador)
+		slots.append([second, str(data.get_entry("armas", second).get("nome", second)), "Trocar arma · %d PA · tecla 2" % int(room.cfg.regra("custo_trocar_arma_pa", 1)), room.player.pa >= int(room.cfg.regra("custo_trocar_arma_pa", 1)), second_ammo])
+	slots.append(["kit", "Kit de primeiros socorros", "Reanimar · %d PA · %s · restam %d" % [int(kit["custo_pa_combate"]), key_text(slots.size()), room.inventory.count(room.KIT_ID)], room.inventory.count(room.KIT_ID) > 0])
+	slots.append(["vigilancia", "Vigilância", "%d PA · %s · atira no 1º inimigo que se mover no cone" % [int(room.player.weapon["pa_cost"]), key_text(slots.size())], room.rules.overwatch_blocker(room.player) == "" or room.player.overwatch])
+	slots.append(["atrasar", "Atrasar", "Age depois na rodada · %s" % key_text(slots.size()), true])
+	for iid in room.room_items.available():  # itens de combate na mochila (coquetel, só do Fernando, e sinalizador)
 		var cost := room.item_rules.cost(iid)
 		var it := data.get_entry("itens", iid)
-		slots.append([iid, str(it["nome"]), "%d PA · tecla %s · %s" % [cost, RoomItems.KEY_LABELS.get(iid, "?"), ITEM_TIPS.get(iid, "")],
+		slots.append([iid, str(it["nome"]), "%d PA · %s · %s" % [cost, key_text(slots.size()), ITEM_TIPS.get(iid, "")],
 			room.player.is_alive() and room.player.pa >= cost, [], {}, room.inventory.count(iid)])
 	for rid in _rituals():  # rituais do controlado (Miguel): uma casa por ritual, com etiqueta de PA e SAN
 		var r := room.rituals.ritual(rid)
 		var pa := int(r["custo_pa"])
 		var san := int(r["custo_san"])
-		slots.append([rid, str(r["nome"]), "%d PA · %d SAN · tecla %s · %s" % [pa, san, RITUAL_KEYS.get(rid, "?"), str(r["descricao"])],
-			room.player.is_alive() and room.player.pa >= pa and room.player.san >= san, [], {"pa": pa, "san": san}])
+		var need := room.rituals.cost_components(rid)
+		var have := room.rituals.components_available(rid)
+		var elem := RitualRules.element_name(room.rituals.element(rid))
+		slots.append([rid, str(r["nome"]), "%d PA · %d SAN · %d de %s (tem %d) · %s · %s" % [pa, san, need, elem, have, key_text(slots.size()), str(r["descricao"])],
+			room.player.is_alive() and room.player.pa >= pa and room.player.san >= san and have >= need, [], {"pa": pa, "san": san, "elemento": room.rituals.element(rid), "tem": have}])
 	return slots
 
 
@@ -134,6 +159,7 @@ func _draw_actions(font: Font, to_world: Transform2D) -> void:
 		if hover:
 			tip = k
 		_draw_slot(font, Rect2(to_world * screen.position, screen.size), slots[k], k == 0, hover)
+		_draw_key_tag(font, Rect2(to_world * screen.position, screen.size), k)
 	var end := _end_turn_rect(n)
 	var er := Rect2(to_world * end.position, end.size)
 	var over_end := end.has_point(mouse)
@@ -187,6 +213,8 @@ func _draw_slot(font: Font, r: Rect2, slot: Array, selected: bool, hover: bool) 
 		room.draw_rect(r, Color(1, 1, 1, 0.08))
 	if slot.size() > 5 and not slot[5].is_empty():
 		_draw_cost_tag(font, r, int(slot[5]["pa"]), int(slot[5]["san"]), enabled)
+		if slot[5].has("elemento"):
+			_draw_component_tag(font, r, str(slot[5]["elemento"]), int(slot[5]["tem"]))
 	if slot.size() > 6:
 		_draw_qty_tag(font, r, int(slot[6]))
 	if slot.size() > 4 and not slot[4].is_empty():
@@ -204,6 +232,41 @@ func _draw_ammo_tag(font: Font, r: Rect2, mag: int, reserve: int, mag_size: int)
 	var ink := Color(0.91, 0.38, 0.33) if low else Color(0.94, 0.91, 0.84)
 	room.draw_string(font, tag.position + Vector2(3.0, 9.0), str(mag), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, ink)
 	room.draw_string(font, tag.position + Vector2(0, 9.0), "/%d" % reserve, HORIZONTAL_ALIGNMENT_RIGHT, tag.size.x - 2.5, 6, Color(0.67, 0.63, 0.56))
+
+
+# Número da tecla no canto de cima, à esquerda, de cada casa (Léo, 19/11: atalhos em ordem numérica).
+func _draw_key_tag(font: Font, r: Rect2, k: int) -> void:
+	var label := key_label(k)
+	if label == "":
+		return
+	var tag := Rect2(r.position + Vector2(1.0, 1.0), Vector2(9.0, 10.0))
+	room.draw_rect(tag, Color(0, 0, 0, 0.72))
+	room.draw_string(font, tag.position + Vector2(0, 8.0), label, HORIZONTAL_ALIGNMENT_CENTER, tag.size.x, 8, Color(0.94, 0.91, 0.84))
+
+
+# Ação da casa `k` (contando de 0), a mesma do clique: arma atual = recarregar, arma de reserva = trocar,
+# kit, vigilância, atrasar, itens de combate e rituais. Retorna false se não existe casa `k`.
+func activate(k: int) -> bool:
+	var n := _action_slots().size()
+	if k < 0 or k >= n:
+		return false
+	var rid := ritual_at(k, n)
+	var iid := item_at(k)
+	if rid != "":
+		room.room_ritual.cast(rid)
+	elif iid != "":
+		room.room_items.use(iid)
+	elif k == 0:
+		room._reload()
+	elif k == 1 and room._reserve_id() != "":
+		room._swap_weapon()
+	elif k == kit_index():
+		room._use_kit_button()
+	elif k == kit_index() + 1:
+		room._overwatch()
+	elif k == kit_index() + 2:
+		room._player_delay()
+	return true
 
 
 # Quantidade na mochila no canto de baixo da casa dos itens de combate.
@@ -224,6 +287,19 @@ func _draw_cost_tag(font: Font, r: Rect2, pa: int, san: int, enabled: bool) -> v
 	var dim := 1.0 if enabled else 0.55
 	room.draw_string(font, tag.position + Vector2(3.0, 9.0), str(pa), HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(0.94, 0.91, 0.84, dim))
 	room.draw_string(font, tag.position + Vector2(10.0, 9.0), str(san), HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(0.66, 0.5, 0.92, dim))
+
+
+# Componentes do ritual na mochila, no canto de baixo à esquerda: o número na cor do elemento, vermelho no zero.
+const ELEMENT_INK := {"sangue": Color(0.86, 0.24, 0.24), "energia": Color(0.95, 0.8, 0.3), "morte": Color(0.78, 0.78, 0.74), "conhecimento": Color(0.55, 0.75, 0.95)}
+
+
+func _draw_component_tag(font: Font, r: Rect2, elemento: String, have: int) -> void:
+	var tag := Rect2(Vector2(r.position.x + 1.0, r.end.y - 12.0 - 1.0), Vector2(12.0, 12.0))
+	room.draw_rect(tag.grow(1.0), Color.BLACK)
+	room.draw_rect(tag, Color(0.075, 0.062, 0.052, 0.94))
+	room.draw_rect(Rect2(tag.position, Vector2(tag.size.x, 2.0)), ELEMENT_INK.get(elemento, Color.WHITE))
+	var ink: Color = Color(0.91, 0.38, 0.33) if have <= 0 else Color(0.94, 0.91, 0.84)
+	room.draw_string(font, tag.position + Vector2(0, 10.0), str(mini(have, 9)), HORIZONTAL_ALIGNMENT_CENTER, tag.size.x, 8, ink)
 
 
 # Fim do turno: botão carmesim chapado com a ampulheta. Estados: normal, sob o mouse (mais claro),

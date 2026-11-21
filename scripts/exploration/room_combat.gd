@@ -12,7 +12,7 @@ func _init(owner_room: TestRoom) -> void:
 	room = owner_room
 
 
-# Recarga (tecla G): fora do combate a animação trava o ataque por RELOAD_SECONDS (Léo, 13/11: "atira enquanto recarrega");
+# Recarga (casa da arma na barra, tecla 1, em combate; tecla G fora dele): fora do combate a animação trava o ataque por RELOAD_SECONDS (Léo, 13/11: "atira enquanto recarrega");
 # em combate o custo é só o 1 PA e a animação não bloqueia nada.
 func _reloading(u: Combatant) -> bool:
 	if room.mode == TestRoom.Mode.COMBAT:  # em combate a recarga custa 1 PA e pronto: sem espera (escassez, sugestão 7)
@@ -111,6 +111,7 @@ func _start_combat(surprise_side: int = -1) -> void:
 	room.turns.start(units, surprise_side)
 	for e in room.enemies:  # o grupo vê quem entrou no combate: o primeiro de cada tipo assusta
 		if e.is_alive():
+			Fraquezas.ver(e.kind)  # entra na seção CRIATURAS do diário
 			_san_report(room.san.enemy_seen(e, room.party), "vê %s" % e.name)
 	room.queue_redraw()
 
@@ -182,7 +183,7 @@ func _combat_click(click: Vector2) -> void:
 		if _reloading(room.player):
 			_reject("reloading")
 			return
-		if room.rules.needs_reload(room.player):  # carregador vazio: recarrega sozinho (Léo); fora disso só com a tecla G
+		if room.rules.needs_reload(room.player):  # carregador vazio: recarrega sozinho (Léo); fora disso só com a tecla 1 (casa da arma) em combate ou G fora dele
 			_reload()
 			return
 		room._show_attack(room.player, target, room.rules.attack(room.player, target, room._sight_blockers(), room.covers))
@@ -238,6 +239,10 @@ func _fallen_at(p: Vector2) -> Combatant:
 
 
 func _player_move(click: Vector2) -> void:
+	if room.player.preso:  # Prisão de Tentáculos (Dama de Sangue): ataca e usa itens, mas não anda
+		_reject("requirement")
+		room.hud.show_notice("%s está preso pelos tentáculos" % room.player.name)
+		return
 	var full := room.pathfinder.find_path(room.player.pos, click, room._obstacles(room.player), room.player.radius)
 	if full.is_empty():
 		await _player_unstick(click)
@@ -359,7 +364,7 @@ func _player_delay() -> void:
 		room.hud.show_notice("Atrasou")
 
 
-# Vigilância (tecla F, Léo 15/11): paga os PA de um tiro e, no turno dos inimigos, atira no primeiro que se
+# Vigilância (casa da barra com tecla numérica; era a tecla F, Léo 15/11): paga os PA de um tiro e, no turno dos inimigos, atira no primeiro que se
 # mover à vista e ao alcance. Só em combate, na vez do controlado; dura até o próximo turno dele.
 func _overwatch() -> void:
 	if not room._player_ready():
@@ -468,22 +473,27 @@ func _on_fx_impact(job: Dictionary) -> void:
 		_log("%s atira em %s: bloqueado" % [attacker.name, target.name])
 	elif not r.get("hit", false):
 		_log("%s erra %s" % [attacker.name, target.name])
+	elif r.get("sem_efeito", false):
+		_log("%s acerta %s: sem efeito" % [attacker.name, target.name])
 	else:
 		_log("%s acerta %s: %d%s" % [attacker.name, target.name, int(r.damage), " (crítico)" if r.get("crit", false) else ""])
-	if not target.is_alive():
+	if not target.is_alive() and not target.objeto:  # flor e tentáculo da Dama: o ChefeDama conta o que aconteceu
 		_log("%s %s" % [target.name, "foi abatido" if target.side == Combatant.Side.ENEMY else "caiu"])
 	if r.get("blocked", false):
 		_popup(target.pos, "BLOQUEADO", "blocked")
 	elif not r.get("hit", false):
 		_popup(target.pos, "ERROU", "miss")
+	elif r.get("sem_efeito", false):
+		_popup(target.pos, "SEM EFEITO", "blocked")  # flor da Dama que pede outra mecânica
 	else:
 		if target.pos != attacker.pos and target.is_alive():
 			room.facing8[target] = CharacterSheet.dir_from_vector(room._iso(attacker.pos) - room._iso(target.pos))  # o atingido vira para quem bateu
 		_popup(target.pos, "-%d" % r.damage, "crit" if r.crit else "damage")
+		_afinidade(target, r)
 		room.hit_shake[target] = TestRoom.CRIT_SHAKE_SECONDS if r.crit else TestRoom.HIT_SHAKE_SECONDS
 		if target.is_alive() and room._sheet3d(target) != null and not room.enemies.has(target):
 			room.nikolai_clock[target] = {"anim": "hit", "start": Time.get_ticks_msec()}  # reação ao golpe (Nikolai 3D)
-	if not target.is_alive() and not target.insane:
+	if not target.is_alive() and not target.insane and not target.objeto:
 		_popup(target.pos, "ABATIDO" if target.side == Combatant.Side.ENEMY else "CAIU", "down")
 		if target.side == Combatant.Side.ENEMY and not target.looted:
 			target.looted = true
@@ -522,6 +532,16 @@ func _san_report(results: Dictionary, cause: String) -> void:
 
 # `at` é um ponto da sala; o texto nasce na altura da cabeça e sobe enquanto some.
 # kind: damage, crit, miss, blocked, down, heal ou info (estilos em POPUP_STYLES).
+# Golpe que pegou fraqueza ou resistência do inimigo: mostra FRAQUEZA/RESISTE e, na primeira vez, anota no diário.
+func _afinidade(target: Combatant, r: Dictionary) -> void:
+	var f := Fraquezas.ao_acertar(room.rules.cfg.game_data, target, r)
+	if f["popup"] == "":
+		return
+	_popup(target.pos, f["popup"], "crit" if f["popup"] == "FRAQUEZA" else "blocked")
+	if f["nova"]:
+		_log("Diário: %s" % Fraquezas.titulo(room.rules.cfg.game_data, target.kind, str(r["tipo_dano"])))
+
+
 func _popup(at: Vector2, text: String, kind := "info") -> void:
 	var stacked := room.popups.filter(func(p: Dictionary) -> bool: return p.anchor.distance_to(at) < 1.0).size()
 	room.popups.append({"anchor": at, "pos": room._iso(at) + Vector2(0, -CharacterSheet.HEIGHT - 14 - 18 * stacked), "text": text, "kind": kind, "time": TestRoom.POPUP_SECONDS})

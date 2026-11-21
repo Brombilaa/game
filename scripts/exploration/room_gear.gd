@@ -188,7 +188,7 @@ func gear_use(m: Combatant, bag_index: int) -> String:
 	if id == TestRoom.KIT_ID:
 		return "O kit reanima um aliado caído (barra de combate)"
 	if room.item_rules.is_combat_item(id):
-		return "Use em combate (tecla %s ou barra de combate)" % RoomItems.KEY_LABELS.get(id, "?")
+		return "Use em combate, pela barra (tecla numérica da casa)"
 	var heal := effect == "curar_pv"
 	if not cures.has(effect) and not heal:
 		return "Sem efeito por enquanto"
@@ -222,8 +222,12 @@ func _setup_gear() -> void:
 	room.inventory = Inventory.new(room.cfg.game_data)
 	var scarce := room._gear_scarce()
 	var items := [[TestRoom.KIT_ID, 1], ["colete_leve", 1], ["colete_pesado", 1]] if scarce else [[TestRoom.KIT_ID, 1], ["bandagem", 2], ["antidoto", 1], ["colete_leve", 1], ["colete_pesado", 1]]
-	# Itens de combate (sugestão 5, provisório do Claude): a Ordem manda o grupo com uma granada de luz e um sinalizador.
-	items += [["granada_luz", 1], ["sinalizador", 1]] if scarce else [["granada_luz", 2], ["sinalizador", 2]]
+	# Itens de combate (sugestão 5, provisório do Claude): a Ordem manda um sinalizador (a granada de luz saiu, Léo 20/11).
+	items += [["sinalizador", 1]] if scarce else [["sinalizador", 2]]
+	items += [["coquetel", 1]]  # Léo (20/11): o coquetel da flor Amarela da Dama vem com o Fernando
+	# Componentes de ritual (19/11, provisório do Claude): o Miguel sai com uma bateria e um relógio quebrado, para
+	# Eletrocussão e Cicatrização no parque; Sangue só depois da primeira Criatura. A sala de teste traz de todos.
+	items += [["bateria", 1], ["relogio_quebrado", 1]] if scarce else [["sangue_coagulado", 3], ["bateria", 3], ["relogio_quebrado", 3]]
 	for item in items:
 		room.inventory.add(item[0], item[1])
 	var reserves := {"pistola": 12, "escopeta": 0, "fuzil_precisao": 5} if scarce else {"pistola": 24, "escopeta": 12, "fuzil_precisao": 12}

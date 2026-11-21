@@ -21,6 +21,7 @@ func _init() -> void:
 	_test_stun_immunity()
 	_test_heal()
 	_test_san_edge()
+	_test_components()
 	print("Falhas: %d" % failures)
 	quit(1 if failures > 0 else 0)
 
@@ -39,7 +40,15 @@ func _miguel(int_value := 3) -> Combatant:
 	var m := cfg.make_agent("miguel", Vector2.ZERO, attrs)
 	m.pa = 3
 	san.start_combat([m])
+	_refill()
 	return m
+
+
+# Mochila nova com 5 componentes de Sangue, Energia e Morte (cada Miguel novo do teste começa abastecido).
+func _refill() -> void:
+	rit.inventory = Inventory.new(cfg.game_data)
+	for iid in ["sangue_coagulado", "bateria", "relogio_quebrado"]:
+		rit.inventory.add(iid, 5)
 
 
 func _test_data() -> void:
@@ -121,7 +130,7 @@ func _test_curse() -> void:
 func _test_electrocution() -> void:
 	_fresh()
 	var m := _miguel(3)
-	var e := cfg.make_enemy("cultista", Vector2(100, 0))
+	var e := cfg.make_enemy("atirador", Vector2(100, 0))  # sem fraqueza nem resistência a ritual (o cultista resiste)
 	e.defense = 0.0
 	e.pv = 100
 	e.max_pv = 100
@@ -144,7 +153,7 @@ func _test_electrocution() -> void:
 	_check(rit.blocker(m, "eletrocussao", m, NO_WALLS, []) == "requirement", "não vale contra aliado")
 	var stuns := 0
 	for i in 200:
-		var t := cfg.make_enemy("cultista", Vector2(100, 0))
+		var t := cfg.make_enemy("atirador", Vector2(100, 0))
 		t.pv = 100
 		t.max_pv = 100
 		var mm := _miguel()
@@ -191,6 +200,42 @@ func _test_heal() -> void:
 	var full := cfg.make_agent("nikolai", Vector2(20, 0))
 	var o := rit.cast(m, "cicatrizacao", full)
 	_check(o.ok and o.healed == 0, "cura nunca passa do PV máximo")
+
+
+func _test_components() -> void:
+	_fresh()
+	var m := _miguel()
+	var data := cfg.game_data
+	_check(rit.element("armadura_sangue") == "sangue" and rit.element("amaldicoar_arma") == "sangue", "Armadura e Amaldiçoar são de Sangue")
+	_check(rit.element("eletrocussao") == "energia" and rit.element("cicatrizacao") == "morte", "Eletrocussão é Energia, Cicatrização é Morte")
+	for id in data.ids("rituais"):
+		_check(rit.cost_components(id) == 1, "%s gasta 1 componente" % id)
+	for el in ["sangue", "energia", "morte", "conhecimento"]:
+		_check(rit.component_items(el).size() >= 2, "há componentes de %s" % el)
+	_check(data.get_entry("itens", "celular_quebrado")["elemento"] == "energia" and data.get_entry("itens", "ossos_pequenos")["elemento"] == "morte"
+		and data.get_entry("itens", "prego_enferrujado")["elemento"] == "sangue" and data.get_entry("itens", "tomo_antigo")["elemento"] == "conhecimento",
+		"itens nas categorias do Léo")
+	var drops: Array = data.get_entry("inimigos", "criatura_sangue")["drops"]
+	_check(drops.any(func(d: Dictionary) -> bool: return d["item"] == "sangue_coagulado" and float(d["chance"]) >= 1.0), "a Criatura sempre larga sangue coagulado")
+
+	var out := rit.cast(m, "armadura_sangue")
+	_check(out.ok and out.components == ["sangue_coagulado"] and rit.inventory.count("sangue_coagulado") == 4, "o ritual gasta um componente do elemento")
+	rit.inventory.remove("sangue_coagulado", 4)
+	m.pa = 3
+	var san_before := m.san
+	_check(rit.blocker(m, "amaldicoar_arma") == "no_component", "sem componente de Sangue: recusado")
+	var no := rit.cast(m, "amaldicoar_arma")
+	_check(not no.ok and no.reason == "no_component" and m.pa == 3 and m.san == san_before and not m.buffs.has("amaldicoar_arma"), "sem componente nada é gasto e o ritual não sai")
+	rit.inventory.add("prego_enferrujado", 1)
+	rit.inventory.add("frasco_orgao", 2)
+	var alt := rit.cast(m, "amaldicoar_arma")
+	_check(alt.ok and alt.components == ["frasco_orgao"], "qualquer item do elemento serve, gasta o que há mais")
+	_check(rit.components_available("armadura_sangue") == 2, "conta todos os itens do elemento (%d)" % rit.components_available("armadura_sangue"))
+	m.pa = 0
+	_check(rit.blocker(m, "armadura_sangue") == "no_pa", "PA continua sendo checado antes")
+	rit.inventory = null
+	m.pa = 3
+	_check(rit.blocker(m, "armadura_sangue") == "no_component", "sem mochila não há componente")
 
 
 func _test_san_edge() -> void:

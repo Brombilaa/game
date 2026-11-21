@@ -2,31 +2,31 @@
 	"_nota": "Eventos sonoros do jogo. Caminho vazio = som ainda não existe e o evento fica mudo. Um evento aceita \"path\" (um arquivo) ou \"paths\" (variações sorteadas). Volumes em dB, provisórios. \"weapons\" liga o id da arma ao evento de tiro/golpe; \"ambience\" são laços por lugar.",
 	"sfx": {
 		"combat_start": {
-			"path": "",
+			"path": "res://assets/audio/sfx/combat_start.ogg",
 			"volume_db": 0.0
 		},
 		"turn_start": {
-			"path": "",
+			"path": "res://assets/audio/sfx/turn_start.ogg",
 			"volume_db": -4.0
 		},
 		"action_rejected": {
-			"path": "",
+			"path": "res://assets/audio/sfx/action_rejected.ogg",
 			"volume_db": -6.0
 		},
 		"door_open": {
-			"path": "",
+			"path": "res://assets/audio/sfx/door_open.ogg",
 			"volume_db": -4.0
 		},
 		"door_open_iron": {
-			"path": "",
+			"path": "res://assets/audio/sfx/door_open_iron.ogg",
 			"volume_db": -4.0
 		},
 		"key_turn": {
-			"path": "",
+			"path": "res://assets/audio/sfx/key_turn.ogg",
 			"volume_db": -4.0
 		},
 		"clue_found": {
-			"path": "",
+			"path": "res://assets/audio/sfx/clue_found.ogg",
 			"volume_db": -6.0
 		},
 		"clue_close": {
@@ -34,7 +34,7 @@
 			"volume_db": -8.0
 		},
 		"enemy_spotted": {
-			"path": "",
+			"path": "res://assets/audio/sfx/enemy_spotted.ogg",
 			"volume_db": -2.0
 		},
 		"shot_generic": {
@@ -42,19 +42,19 @@
 			"volume_db": -2.0
 		},
 		"shot_pistol": {
-			"path": "",
+			"path": "res://assets/audio/sfx/shot_pistol.ogg",
 			"volume_db": -2.0
 		},
 		"shot_shotgun": {
-			"path": "",
+			"path": "res://assets/audio/sfx/shot_shotgun.ogg",
 			"volume_db": 0.0
 		},
 		"shot_rifle": {
-			"path": "",
+			"path": "res://assets/audio/sfx/shot_rifle.ogg",
 			"volume_db": 0.0
 		},
 		"shot_blocked": {
-			"path": "",
+			"path": "res://assets/audio/sfx/shot_blocked.ogg",
 			"volume_db": -6.0
 		},
 		"melee_generic": {
@@ -62,75 +62,75 @@
 			"volume_db": -4.0
 		},
 		"melee_punch": {
-			"path": "",
+			"path": "res://assets/audio/sfx/melee_punch.ogg",
 			"volume_db": -4.0
 		},
 		"melee_knife": {
-			"path": "",
+			"path": "res://assets/audio/sfx/melee_knife.ogg",
 			"volume_db": -4.0
 		},
 		"miss": {
-			"path": "",
+			"path": "res://assets/audio/sfx/miss.ogg",
 			"volume_db": -8.0
 		},
 		"hit_flesh": {
-			"path": "",
+			"path": "res://assets/audio/sfx/hit_flesh.ogg",
 			"volume_db": -4.0
 		},
 		"hit_crit": {
-			"path": "",
+			"path": "res://assets/audio/sfx/hit_crit.ogg",
 			"volume_db": -2.0
 		},
 		"hit_vest": {
-			"path": "",
+			"path": "res://assets/audio/sfx/hit_vest.ogg",
 			"volume_db": -6.0
 		},
 		"pain": {
-			"path": "",
+			"path": "res://assets/audio/sfx/pain.ogg",
 			"volume_db": -6.0
 		},
 		"body_fall": {
-			"path": "",
+			"path": "res://assets/audio/sfx/body_fall.ogg",
 			"volume_db": -4.0
 		},
 		"reload": {
-			"path": "",
+			"path": "res://assets/audio/sfx/reload.ogg",
 			"volume_db": -4.0
 		},
 		"blood_call": {
-			"path": "",
+			"path": "res://assets/audio/sfx/blood_call.ogg",
 			"volume_db": -2.0
 		},
 		"item_use": {
-			"path": "",
+			"path": "res://assets/audio/sfx/item_use.ogg",
 			"volume_db": -6.0
 		},
 		"step_floor": {
-			"path": "",
+			"path": "res://assets/audio/sfx/step_floor.ogg",
 			"volume_db": -12.0
 		},
 		"step_grass": {
-			"path": "",
+			"path": "res://assets/audio/sfx/step_grass.ogg",
 			"volume_db": -12.0
 		},
 		"step_crouch": {
-			"path": "",
+			"path": "res://assets/audio/sfx/step_crouch.ogg",
 			"volume_db": -18.0
 		},
 		"heartbeat": {
-			"path": "",
+			"path": "res://assets/audio/sfx/heartbeat.ogg",
 			"volume_db": -6.0
 		},
 		"ui_click": {
-			"path": "",
+			"path": "res://assets/audio/sfx/ui_click.ogg",
 			"volume_db": -10.0
 		},
 		"ui_back": {
-			"path": "",
+			"path": "res://assets/audio/sfx/ui_back.ogg",
 			"volume_db": -10.0
 		},
 		"ui_confirm": {
-			"path": "",
+			"path": "res://assets/audio/sfx/ui_confirm.ogg",
 			"volume_db": -8.0
 		}
 	},
@@ -150,23 +150,23 @@
 	},
 	"ambience": {
 		"delegacia": {
-			"path": "",
+			"path": "res://assets/audio/sfx/amb_delegacia.ogg",
 			"volume_db": -14.0
 		},
 		"parque": {
-			"path": "",
+			"path": "res://assets/audio/sfx/amb_parque.ogg",
 			"volume_db": -14.0
 		},
 		"biblioteca": {
-			"path": "",
+			"path": "res://assets/audio/sfx/amb_biblioteca.ogg",
 			"volume_db": -14.0
 		},
 		"fazenda": {
-			"path": "",
+			"path": "res://assets/audio/sfx/amb_fazenda.ogg",
 			"volume_db": -14.0
 		},
 		"cripta": {
-			"path": "",
+			"path": "res://assets/audio/sfx/amb_cripta.ogg",
 			"volume_db": -14.0
 		}
 	},
@@ -182,7 +182,9 @@
 		"faca_teste": "melee_knife",
 		"espada": "melee_knife",
 		"garra_criatura": "melee_knife",
-		"garra_dama": "melee_knife"
+		"garra_dama": "melee_knife",
+		"pancada_dama": "melee_punch",
+		"espinhos_dama": "melee_knife"
 	},
 	"areas": {
 		"parque": "parque",

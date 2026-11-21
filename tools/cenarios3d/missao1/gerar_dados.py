@@ -90,7 +90,7 @@ def _pista(d, p, cid, x, z, texto, da=None, raio=75, bolinha=(0, -30), chave=Non
     Baú ou esconderijo com saque (16/11): `da` é o saque; `chave` (um item) o deixa trancado até o grupo ter a chave na
     mochila, com `trancado` como aviso; `trecho` o esconde até esse trecho da cripta ser revelado."""
     c = {"id": cid, "pos": p(x, z), "raio": raio, "ordem": 1, "bolinha": list(bolinha), "texto": texto, "provisorio": True}
-    if da:
+    if da:  # componentes de ritual (19/11, provisório) entram no mesmo saque
         c["da"] = [{"item": i, "qtd": q} for i, q in da]
     if chave:
         c["chave"] = chave
@@ -111,8 +111,8 @@ def delegacia17(d, p, ret):
     _pista(d, p, "agenda_ghular", 14.0, 3.4,
            "Na agenda do delegado Ghular, as datas estão riscadas. Só uma linha sobrou legível: \"Roberto voltou da fazenda. Não parece mais ele.\"")
     _pista(d, p, "gaveta_provas", 14.8, 9.8,
-           "A gaveta da sala de provas foi forçada. Dentro, entre papéis manchados, ainda restam algumas balas soltas.",
-           da=[("municao_pistola", 6)])
+           "A gaveta da sala de provas foi forçada. Dentro, entre papéis manchados, ainda restam algumas balas soltas e um celular de tela rachada, num saco de provas.",
+           da=[("municao_pistola", 6), ("celular_quebrado", 1)])
     _pista(d, p, "ficha_desaparecidos", 2.7, 4.8,
            "No arquivo, uma pasta cheia de fichas de desaparecidos de Aurora. Todas têm a mesma anotação a lápis: \"visto pela última vez perto da fazenda\".")
     _pista(d, p, "cela_arranhoes", 1.5, 8.2,
@@ -126,8 +126,12 @@ def delegacia17(d, p, ret):
     d["objetivos"].insert(1, {"texto": "Achar a chave do escritório", "pista": "chaveiro_recepcao", "provisorio": True})
     # Cofre do delegado, dentro do escritório trancado: o saque é a razão de achar a chave (provisório, 16/11).
     _pista(d, p, "cofre_ghular", 12.2, 1.4,
-           "Atrás da estante do escritório há um cofre de parede. A combinação está colada por baixo da gaveta da escrivaninha, e dentro ficam um colete e munição guardados pelo delegado.",
-           da=[("colete_leve", 1), ("municao_pistola", 6)])
+           "Atrás da estante do escritório há um cofre de parede. A combinação está colada por baixo da gaveta da escrivaninha, e dentro ficam um colete, munição e duas baterias de rádio guardados pelo delegado.",
+           da=[("colete_leve", 1), ("municao_pistola", 6), ("bateria", 2)])
+    # Garrafa de água (Léo, 20/11: material da flor Verde, junto com o balde do poço). Posição e texto provisórios.
+    _pista(d, p, "bebedouro_recepcao", 5.0, 15.0,
+           "Ao lado do bebedouro da recepção, uma garrafa de água fechada. Pode servir.",
+           da=[("garrafa_agua", 1)])
     _pista(d, p, "kit_recepcao", 3.0, 15.0,
            "Debaixo de um banco da recepção, esquecido por alguém com pressa, há um kit com curativos e uma bandagem.",
            da=[("curativo", 1), ("bandagem", 1)])
@@ -190,8 +194,8 @@ def biblioteca(d, p, ret):
            "Na gaveta do balcão de empréstimos, junto de carimbos secos, há uma chave pequena com uma etiqueta: \"Acervo restrito\".",
            da=[("chave_acervo", 1)])
     _pista(d, p, "armario_acervo", 15.7, 8.5,
-           "A chave gira no armário do acervo restrito. Entre livros embrulhados em plástico, a bibliotecária guardava suprimentos de emergência.",
-           da=[("bandagem", 2), ("antidoto", 1), ("municao_escopeta", 4)],
+           "A chave gira no armário do acervo restrito. Entre livros embrulhados em plástico, a bibliotecária guardava suprimentos de emergência e um relógio de bolso parado à meia-noite.",
+           da=[("bandagem", 2), ("antidoto", 1), ("municao_escopeta", 4), ("relogio_quebrado", 1)],
            chave="chave_acervo", trancado="Trancado. O armário do acervo restrito precisa de uma chave.")
     d["zonas"].append({"id": "saida", "ret": ret(-1.5, 12.4, 22.5, 2.1), "acao": "ir", "para": "delegacia_21h",
                        "texto": "O grupo volta para a delegacia.", "provisorio": True})
@@ -207,11 +211,18 @@ def fazenda(d, p, ret):
            "Pendurada num prego do mourão, uma chave de cadeado com a etiqueta \"Celeiro\", enferrujada, mas inteira.",
            da=[("chave_celeiro", 1)])
     _pista(d, p, "caixote_ferramentas", 8.06, 1.69,
-           "Atrás de um fardo de feno, um caixote de ferramentas arrombado. Sobraram um curativo e algumas balas.",
-           da=[("curativo", 1), ("municao_pistola", 4)])
+           "Atrás de um fardo de feno, um caixote de ferramentas arrombado. Sobraram um curativo, algumas balas, pregos enferrujados e um maço de fios.",
+           da=[("curativo", 1), ("municao_pistola", 4), ("prego_enferrujado", 2), ("maco_fios", 1)])
+    # Materiais das flores da Dama (Léo, 20/11): fertilizante e agrotóxico no celeiro; balde de água no poço. Posições e textos provisórios.
+    _pista(d, p, "prateleira_insumos", 5.6, 1.69,
+           "Na prateleira do celeiro, entre ferramentas, sacos de fertilizante abertos e um frasco de agrotóxico com a caveira no rótulo. As mesmas marcas das pétalas da praça.",
+           da=[("fertilizante", 1), ("agrotoxico", 1)])
+    _pista(d, p, "balde_poco", 7.2, 8.7,
+           "Um balde amarrado na manivela do poço. A água lá de baixo corre fria; o grupo enche o balde.",
+           da=[("balde", 1)])
     _pista(d, p, "bau_celeiro", 3.69, 10.75,
-           "O cadeado do baú do celeiro cede. Dentro, enrolado num pano, um kit de primeiros socorros e cartuchos de escopeta.",
-           da=[("kit_primeiros_socorros", 1), ("municao_escopeta", 6)],
+           "O cadeado do baú do celeiro cede. Dentro, enrolado num pano, um kit de primeiros socorros, cartuchos de escopeta e um saquinho de ossos de passarinho.",
+           da=[("kit_primeiros_socorros", 1), ("municao_escopeta", 6), ("ossos_pequenos", 2)],
            chave="chave_celeiro", trancado="Trancado. O baú do celeiro tem um cadeado, e a chave deve estar por perto.")
     # Cripta (Léo, 14/11): depois de examinar o poço, o grupo desce pela corda.
     d["gatilhos"].append({"id": "descer_poco", "apos": "poco", "tipo": "ir", "para": "cripta",
@@ -268,14 +279,22 @@ def cripta(d, p, ret):
              "olha": [round(math.sin(i["ry"]), 3), round(math.cos(i["ry"]), 3)], "provisorio": True}
         if i["desprevenido"]:
             e["percepcao_fator"] = 0.5  # de costas: percebe a metade da distância (provisório)
+        if e["grupo"] == "salao":
+            e["ritual"] = True  # Léo (19/11): focados no ritual, só lutam se forem atacados
         d["inimigos"].append(e)
     d["inimigos"].append({"tipo": "roberto_ghular", "pos": p(*P["roberto"]), "trecho": 4, "grupo": "salao"})
-    # Roberto se mata com pouca vida e a Dama de Sangue surge dele (Léo). O limite de 25% é provisório.
-    d["chefe"] = {"tipo": "roberto_ghular", "limite": 0.25, "vira": "dama_sangue", "marca": "dama_surgiu",
-                  "texto": "Roberto Ghular crava a adaga no próprio peito. Do sangue dele se ergue a Dama de Sangue.", "provisorio": True}
-    # Fim da missão 1 (Léo, 15/11): com a Dama em ~30% de vida toca a cutscene do tentáculo que atravessa o Fernando,
+    # Roberto se mata com pouca vida e a Dama de Sangue surge dele (Léo). O limite de 50% é provisório
+    # (passada de balanceamento de 19/11; era 25%).
+    d["chefe"] = {"tipo": "roberto_ghular", "limite": 0.5, "vira": "dama_sangue", "marca": "dama_surgiu",
+                  "texto": "Roberto Ghular crava a adaga no próprio peito. Do sangue dele se ergue a Dama de Sangue.", "provisorio": True,
+                  # Os seis pendurados vivos (Léo, 20/11; ChefeDama), na ordem em que ela devora (do mais jovem ao mais velho):
+                  # fora do fosso, aos pares entre as três pontes, a 9,5 x 8,5 m do centro do altar. Posições provisórias.
+                  "corpos": [p(31 + 9.5 * math.cos(math.radians(a)), 15 + 8.5 * math.sin(math.radians(a))) for a in (6, 46, 126, 166, 242, 282)]}
+    # Fim da missão 1 (Léo, 15/11): com a Dama em ~20% de vida toca a cutscene do tentáculo que atravessa o Fernando,
     # e a morte dele; o combate continua (Dama, Letícia, celeiro e cutscene de fim de capítulo vêm depois). Limite e legenda são provisórios do Claude.
-    d["fim"] = {"limite": 0.30, "legenda": "Fernando não se levanta.", "provisorio": True}
+    # Passada de balanceamento (19/11): 20% em vez de 30%, para Nikolai e Miguel não ficarem com 36 PV de Dama sozinhos.
+    # Léo (20/11): a morte do Fernando dispara com a Dama em 15% de PV ou menos, logo depois do turno dele, sempre.
+    d["fim"] = {"limite": 0.15, "legenda": "Fernando não se levanta.", "provisorio": True}
     d["grupos"] = {"corredor": {"marca": "cripta_corredor_limpo"}, "salao": {"marca": "cripta_vencida", "requer": "dama_surgiu"}}
     # Letícia ferida e desmaiada no altar: só acorda ao interagir depois do combate com a Dama (Léo). Textos provisórios.
     alt = [g for g in P["gatilhos"] if g["nome"].startswith("altar")][0]["ret"]
@@ -288,9 +307,13 @@ def cripta(d, p, ret):
            "Ao pé da corda há uma mochila encharcada, de alguém dos fichários da delegacia. Dentro: um curativo e uma chave de ferro com um osso entalhado no cabo.",
            da=[("curativo", 1), ("chave_ossuario", 1)])
     _pista(d, p, "ossuario", 24.0, 12.56,
-           "A chave de osso abre a tampa do ossuário. Entre restos que ninguém deveria ter mexido, ficaram suprimentos de quem veio antes.",
-           da=[("kit_primeiros_socorros", 1), ("curativo", 2), ("municao_pistola", 6)], raio=90,
+           "A chave de osso abre a tampa do ossuário. Entre restos que ninguém deveria ter mexido, ficaram suprimentos de quem veio antes, um punhado de cinzas e um frasco com um órgão boiando.",
+           da=[("kit_primeiros_socorros", 1), ("curativo", 2), ("municao_pistola", 6), ("cinzas", 2), ("frasco_orgao", 1)], raio=90,
            chave="chave_ossuario", trancado="Trancado. A tampa do ossuário tem uma fechadura de ferro.", trecho=4)
+    # Bulbo de Bravo Purpulis (Léo, 20/11: a planta roxa na pedra do cenário alimenta a flor Roxa da Dama). Posição e texto provisórios.
+    _pista(d, p, "pedra_bravo_purpulis", 31 + 7.6 * math.cos(math.radians(320)), 15 + 6.6 * math.sin(math.radians(320)),
+           "Entre as pedras escuras do salão nasce uma planta roxa, rasteira, de bulbo inchado. Bravo Purpulis, como no livro de botânica. O grupo arranca um bulbo.",
+           da=[("bulbo_bravo_purpulis", 1)], trecho=4)
     d["gatilhos"].append({"id": "leticia_acorda", "apos": "leticia", "tipo": "estado", "estados": {}, "marca": "leticia_acordou"})
     # Pós-combate (Léo, 15/11): com a Letícia acordada o grupo sobe pelo poço e encontra a Ordem no celeiro. Texto provisório.
     d["gatilhos"].append({"id": "subir_celeiro", "apos": "leticia", "tipo": "ir", "para": "celeiro", "chegada": "poco",

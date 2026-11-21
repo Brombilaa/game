@@ -68,11 +68,8 @@ func _test_options() -> void:
 
 func _test_controles() -> void:
 	var m := ControlesCaderno.mapa()
-	for k in ["B", "J", "C", "Tab", "Esc", "Espaço", "D", "Q", "G", "F", "Z", "X", "T", "Y", "L", "E", "Shift"]:
+	for k in ["B", "J", "C", "Tab", "Esc", "Espaço", "Q", "G", "L", "E", "Shift", "1", "2", "9", "0", "-", "="]:
 		_check(m.has(k), "o mapa de controles tem a tecla " + k)
-	var item_keys := Atalhos.ITEM_KEYS
-	for iid in item_keys:
-		_check(m.has(item_keys[iid]), "o mapa tem a tecla do item " + iid)
 	var no_teclado := {}
 	for k in ControlesCaderno.LAYOUT:
 		no_teclado[k[0]] = true
@@ -82,7 +79,7 @@ func _test_controles() -> void:
 		_check(no_teclado.has(k), "a tecla %s aparece desenhada no teclado" % k)
 	for k in m:
 		_check(str(m[k]["titulo"]) != "" and str(m[k]["texto"]) != "", "a tecla %s tem ficha com título e texto" % k)
-	_check(str(m["Q"]["custo"]) == "1 PA" and str(m["Z"]["custo"]).contains("SAN"), "os custos vêm dos dados do jogo")
+	_check(str(m["1"]["titulo"]).contains("barra") and str(m["1"]["titulo"]).contains("personagem"), "o número 1 tem as duas funções: personagem e casa da barra")
 	var mapa := ControlesCaderno.new()
 	mapa.size = mapa.custom_minimum_size
 	_check(mapa._target_at(mapa._key_rect(["Q", 1.5, 2, 1.0]).get_center()) == "Q", "o mouse sobre a tecla acha a tecla")

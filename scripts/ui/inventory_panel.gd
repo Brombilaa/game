@@ -1,63 +1,59 @@
 class_name InventoryPanel
 extends Node2D
-# Inventário em painel lateral (Léo, 30/10/2026, sobre o conceito do ChatGPT): abre com a tecla B
-# (ou fecha com B e com o X), desliza da direita em ~0,2 s enquanto o cenário escurece um pouco e
-# deixa o grupo visível à esquerda. Mostra a mochila compartilhada (20 espaços), os três
-# personagens para ver o equipamento de cada um, o detalhe do item e os 4 espaços de equipamento.
-# Só desenha e lê o mouse e o teclado; as regras de equipar, usar e descartar ficam em `room`
-# (gear_equip, gear_unequip, gear_use e gear_discard) e a mochila em `room.inventory`.
+# Inventário no vidro fosco (Léo, 19/11/2026, modelo N2 "cartões de item"): abre com a tecla B (ou fecha com B,
+# Esc e o X); o cenário escurece um pouco e fica desfocado atrás da placa (o desfoque vem de HudBlur, que lê
+# `panel_rect()` por `room._hud_blur_rects()`). À esquerda os três cartões do grupo e os 4 espaços de
+# equipamento do personagem escolhido; no meio a mochila compartilhada (20 espaços) como cartões de item, só os
+# espaços ocupados, com a roda do mouse para rolar; à direita o detalhe do item escolhido, com os botões Equipar e
+# Descartar. Os 20 espaços aparecem como uma barra de marcas. Só desenha e lê o mouse e o teclado; as regras de
+# equipar, usar e descartar ficam em `room` (gear_equip, gear_unequip, gear_use e gear_discard) e a mochila em
+# `room.inventory`. O tempo para com o inventário aberto (GDD #23).
 
-const PW := 480.0
-const PH := 516.0
-const MARGIN := Vector2(16, 12)  # folga até a borda direita e a de cima
-const PORTRAIT := 55.0  # 48 + 15% (pedido do Léo, 30/10/2026)
-const CELL := 40.0
-const GAP := 3.0
-const COLS := 5
+const PW := 790.0
+const PH := 492.0
+const PANEL_POS := Vector2(150, 24)
 const OPEN_SECONDS := 0.2
-const DIM := 0.38
-const GOLD := Color(0.839, 0.678, 0.361)
-const BRONZE := Color(0.612, 0.455, 0.22)
-const BRONZE_DARK := Color(0.353, 0.255, 0.149)
-const PLATE := Color(0.05, 0.037, 0.03, 0.97)
-const SLOT_FILL := Color(0.055, 0.042, 0.035, 0.96)
+const DIM := 0.3
+const ROW_H := 50.0
+const ROW_STEP := 56.0
+const VISIBLE_ROWS := 6
+const COL_X := [190.0, 390.0]
+const CARD_W := 190.0
+const CARD_H := 66.0
+const CARD_STEP := 75.0
+const SLOT := 65.0
+const PLATE := Color(0.04, 0.035, 0.03, 0.62)
+const SLOT_FILL := Color(0, 0, 0, 0.42)
+const HAIR := Color(1, 1, 1, 0.2)
 const MUTED := Color(0.66, 0.6, 0.49)
 const TEXT := Color(0.91, 0.87, 0.79)
-const CRIMSON := Color(0.62, 0.09, 0.11)
+const WHITE_SOFT := Color(0.85, 0.81, 0.74)
+const BAR_PV := Color(0.82, 0.23, 0.27)
+const BAR_SAN := Color(0.31, 0.56, 0.88)
 
 # Armas que o jogo trata como de curta distância (pedido do Léo, 30/10/2026): mostram só a faixa Curto.
 const SHORT_RANGE := ["pistola"]
 
-# Moldura pintada pelo Léo (ChatGPT, 30/10/2026): 1278x1230, centro transparente. Desenhada em faixas
-# (cantos fixos, trechos retos esticados) um pouco maior que a área do conteúdo.
-const FRAME_TEX := preload("res://assets/sprites/ui/inv/moldura.png")
-const FRAME_SCALE := 0.33
-const FRAME_PAD := Vector2(16, 0)  # quanto a moldura sai do conteúdo à esquerda e em cima
-const FRAME_SIZE := Vector2(506, 516)
+# Acessórios cujo bônus o jogo não anuncia: o item mostra só a descrição (matriz da missão 1, 20/11).
+const HIDDEN_BONUS := ["pulseira_amizade"]
 
-# Peças pintadas pelo Léo (30/10/2026), já em tamanho nativo; a tela interna é ampliada 2x.
-const INV_ART := "res://assets/sprites/ui/inv/"
-const TEX_TAB := preload(INV_ART + "aba.png")
-const TEX_TAB_GLOW := preload(INV_ART + "aba_brilho.png")
-const TEX_EQUIP_FRAME := preload(INV_ART + "quadro_equipamento.png")
-const TEX_CELL := preload(INV_ART + "casa.png")
-const TEX_CELL_GLOW := preload(INV_ART + "casa_brilho.png")
-const TEX_PORTRAIT := preload(INV_ART + "retrato.png")
-const TEX_PORTRAIT_GLOW := preload(INV_ART + "retrato_brilho.png")
-const TEX_EQUIP := preload(INV_ART + "equip.png")
-const TEX_EQUIP_GLOW := preload(INV_ART + "equip_brilho.png")
-const TEX_KEY := preload(INV_ART + "tecla.png")
-const TEX_KEY_WIDE := preload(INV_ART + "tecla_larga.png")
-const TEX_DETAIL := preload(INV_ART + "detalhe.png")
-const GLOW_PAD := 4.0  # 8 px nativos de halo em volta das peças brilhantes
+const TIPOS := {"missao": "Item de missão", "consumivel": "Consumível", "equipamento": "Equipamento", "componente": "Componente", "recurso": "Recurso"}
 
-const TABS := ["TUDO", "ARMAS", "ITENS", "COLETES"]
+const TABS := ["Tudo", "Armas", "Itens", "Coletes"]
 const EQUIP_SLOTS := ["principal", "secundaria", "colete", "acessorio"]
-const EQUIP_LABELS := {"principal": "ARMA PRINCIPAL", "secundaria": "ARMA SECUNDÁRIA", "colete": "COLETE", "acessorio": "ACESSÓRIO"}
+const EQUIP_LABELS := {"principal": "ARMA", "secundaria": "RESERVA", "colete": "COLETE", "acessorio": "ACESSÓRIO"}
+const GHOSTS := {"principal": "arma", "secundaria": "arma", "colete": "colete", "acessorio": "anel"}
 
 # Textos provisórios dos itens (o GDD ainda não os define).
 const BLURBS := {
-	"pulseira_amizade": "Acessório: amarra a mente ao que o Caio deixou.",
+	"pulseira_amizade": "Acessório: miçangas coloridas que amarram a mente ao que o Caio deixou.",
+	"livro_sanguis_orchid": "Livro do culto Sanguis Orchid, de páginas rasgadas.",
+	"fertilizante": "Saco de fertilizante tirado do celeiro.",
+	"agrotoxico": "Veneno de lavoura guardado no celeiro.",
+	"balde": "Balde do poço, serve para carregar água.",
+	"garrafa_agua": "Garrafa de água da delegacia.",
+	"coquetel": "Garrafa com pavio e líquido inflamável do Fernando. Em combate, fogo num ponto que queima 1 ou 2 turnos (a flor amarela da Dama murcha com ele). Só ele arremessa.",
+	"bulbo_bravo_purpulis": "Bulbo roxo de Bravo Purpulis, arrancado das pedras da cripta.",
 	"plaqueta_identificacao": "Acessório: a plaqueta de um agente antigo lembra que dá para aguentar mais um pouco.",
 	"pistola": "Arma curta de uso comum. Confiável à curta distância.",
 	"escopeta": "Dano alto à queima-roupa, gasta 2 PA por disparo.",
@@ -68,9 +64,19 @@ const BLURBS := {
 	"bandagem": "Estanca o sangramento de quem a usa.",
 	"antidoto": "Neutraliza o veneno em quem o toma.",
 	"curativo": "Cobre ferimentos leves.",
-	"granada_luz": "Clarão que atordoa os inimigos perto do ponto onde cai. Só em combate.",
 	"sinalizador": "Luz vermelha no chão por alguns turnos: o grupo acerta melhor quem está nela. Só em combate.",
 	"componente_ritual": "Material usado nos rituais.",
+	"sangue_coagulado": "Componente de Sangue. Tirado da Criatura de Sangue.",
+	"prego_enferrujado": "Componente de Sangue: a ferrugem lembra o sangue.",
+	"frasco_orgao": "Componente de Sangue.",
+	"bateria": "Componente de Energia.",
+	"maco_fios": "Componente de Energia.",
+	"celular_quebrado": "Componente de Energia.",
+	"ossos_pequenos": "Componente de Morte.",
+	"cinzas": "Componente de Morte.",
+	"relogio_quebrado": "Componente de Morte: o tempo parado.",
+	"anel_ouro": "Componente de Conhecimento.",
+	"tomo_antigo": "Componente de Conhecimento.",
 	"colete": "Protege reduzindo o dano recebido.",
 	"colete_leve": "Reduz o dano recebido em 10%.",
 	"colete_pesado": "Reduz o dano recebido em 20%, mas deixa o personagem mais lento.",
@@ -84,7 +90,8 @@ var tab := 0
 var sel := {}  # {"kind": "bag", "i": n} ou {"kind": "eq", "slot": nome}
 var toast := ""
 var toast_time := 0.0
-var close_glow := 0.0  # 0..1, acende e apaga suavemente com o mouse sobre o X
+var scroll := 0  # primeira fileira de cartões visível
+var _meta := {}  # id -> {nome, tipo}, cache dos textos fixos dos cartões
 
 
 func toggle() -> void:
@@ -95,6 +102,7 @@ func toggle() -> void:
 		viewed = maxi(room.party.find(room.player), 0)
 		sel = {}
 		toast = ""
+		scroll = 0
 		set_process(true)
 
 
@@ -105,51 +113,80 @@ func close() -> void:
 
 func _process(delta: float) -> void:
 	var goal := 1.0 if open else 0.0
+	var before := t
 	t = move_toward(t, goal, delta / OPEN_SECONDS)
+	if t != before:
+		room.queue_redraw()  # a sala não redesenha sozinha com o tempo parado: o radar e os objetivos somem/voltam
 	toast_time = maxf(toast_time - delta, 0.0)
-	var over := open and _close_rect().has_point(get_viewport().get_mouse_position())
-	close_glow = move_toward(close_glow, 1.0 if over else 0.0, delta / 0.15)
+	modulate.a = _ease()
 	queue_redraw()
 	if t == 0.0 and not open:
 		set_process(false)
 
 
-# Posição do painel; durante a animação ele entra deslizando pela direita.
+func _ease() -> float:
+	return 1.0 - pow(1.0 - t, 3.0)
+
+
+# Posição da placa; ao abrir ela sobe de leve enquanto aparece.
 func _origin() -> Vector2:
-	var e := 1.0 - pow(1.0 - t, 3.0)
-	return Vector2(960.0 - PW - MARGIN.x + (1.0 - e) * (PW + 30.0), MARGIN.y)
+	return PANEL_POS + Vector2(0, (1.0 - _ease()) * 14.0)
+
+
+# Placa em pixels da tela (vazia com o inventário fechado): HudBlur desfoca o mundo por trás dela.
+func panel_rect() -> Rect2:
+	if t <= 0.0:
+		return Rect2()
+	return Rect2(_origin(), Vector2(PW, PH))
 
 
 # --- Áreas clicáveis (as mesmas do desenho) ---------------------------------
 
-func _frame_rect() -> Rect2:
-	return Rect2(_origin() - FRAME_PAD, FRAME_SIZE)
-
-
-# O X vem pintado na moldura (canto superior direito).
 func _close_rect() -> Rect2:
-	var f := _frame_rect()
-	return Rect2(f.end.x - 41, f.position.y + 20, 24, 24)
+	return Rect2(_origin() + Vector2(PW - 28, 8), Vector2(18, 18))
 
 
-func _portrait_rect(i: int) -> Rect2:
-	return Rect2(_origin() + Vector2(14, 64 + i * 78), Vector2(PORTRAIT, PORTRAIT))
+func _portrait_rect(i: int) -> Rect2:  # o cartão do personagem inteiro
+	return Rect2(_origin() + Vector2(15, 21 + i * CARD_STEP), Vector2(150, CARD_H))
 
 
 func _tab_rect(k: int) -> Rect2:
-	return Rect2(_origin() + Vector2(PW - 16 - TABS.size() * 50 + k * 50, 64), Vector2(46, 24))
-
-
-func _grid_rect(i: int) -> Rect2:
-	return Rect2(_origin() + Vector2(76, 104) + Vector2(i % COLS, i / COLS) * (CELL + GAP), Vector2(CELL, CELL))
-
-
-func _detail_rect() -> Rect2:
-	return Rect2(_origin() + Vector2(300, 96), Vector2(164, 204))
+	return Rect2(_origin() + Vector2(350 + k * 58, 14), Vector2(54, 20))
 
 
 func _equip_rect(k: int) -> Rect2:
-	return Rect2(_origin() + Vector2(98 + k * 92, 356), Vector2(56, 56))
+	return Rect2(_origin() + Vector2(15 + (k % 2) * 75, 271 + (k / 2) * 90), Vector2(SLOT, SLOT))
+
+
+# Espaços ocupados que passam pelo filtro da aba, na ordem da mochila.
+func _visible_slots() -> Array[int]:
+	var out: Array[int] = []
+	for i in room.inventory.size:
+		var s: Dictionary = room.inventory.slots[i]
+		if not s.is_empty() and _tab_match(str(s["id"])):
+			out.append(i)
+	return out
+
+
+func _max_scroll() -> int:
+	return maxi(ceili(_visible_slots().size() / 2.0) - VISIBLE_ROWS, 0)
+
+
+# Cartão da posição `n` da lista visível (já descontada a rolagem), ou vazio fora da janela.
+func _row_rect(n: int) -> Rect2:
+	var row := n / 2 - scroll
+	if row < 0 or row >= VISIBLE_ROWS:
+		return Rect2()
+	return Rect2(_origin() + Vector2(COL_X[n % 2], 48 + row * ROW_STEP), Vector2(CARD_W, ROW_H))
+
+
+func _detail_rect() -> Rect2:
+	return Rect2(_origin() + Vector2(595, 48), Vector2(180, 340))
+
+
+func _button_rect(k: int) -> Rect2:
+	var d := _detail_rect()
+	return Rect2(d.position + Vector2(12 + k * 80, d.size.y - 34), Vector2(74 if k == 0 else 82, 22))
 
 
 func _member() -> Combatant:
@@ -174,8 +211,13 @@ func _input(event: InputEvent) -> void:
 		return
 	if not open:
 		return
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_click(get_viewport().get_mouse_position())
+	if event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			_click(get_viewport().get_mouse_position())
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			scroll = mini(scroll + 1, _max_scroll())
+		elif event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			scroll = maxi(scroll - 1, 0)
 	if event is InputEventMouseButton or event is InputEventMouseMotion:
 		get_viewport().set_input_as_handled()
 
@@ -192,18 +234,24 @@ func _click(p: Vector2) -> void:
 	for k in TABS.size():
 		if _tab_rect(k).has_point(p):
 			tab = k
+			scroll = 0
 			return
-	for i in room.inventory.size:
-		if _grid_rect(i).has_point(p):
-			if not room.inventory.slots[i].is_empty():
-				# clicar de novo no item já escolhido equipa ou usa (atalho do E)
-				var again: bool = sel.get("kind") == "bag" and sel.get("i") == i
-				sel = {"kind": "bag", "i": i}
-				if again:
-					_act()
-			else:
-				sel = {}
+	var slots := _visible_slots()
+	for n in slots.size():
+		if _row_rect(n).has_point(p):
+			var i := slots[n]
+			# clicar de novo no item já escolhido equipa ou usa (atalho do E)
+			var again: bool = sel.get("kind") == "bag" and sel.get("i") == i
+			sel = {"kind": "bag", "i": i}
+			if again:
+				_act()
 			return
+	if _button_rect(0).has_point(p):
+		_act()
+		return
+	if _button_rect(1).has_point(p):
+		_discard()
+		return
 	for k in EQUIP_SLOTS.size():
 		if _equip_rect(k).has_point(p):
 			var slot: String = EQUIP_SLOTS[k]
@@ -220,7 +268,10 @@ func _click(p: Vector2) -> void:
 func _act() -> void:
 	if sel.get("kind") == "bag":
 		var id := str(room.inventory.slots[int(sel["i"])]["id"])
-		if room.gear_is_equippable(id):
+		if _is_story(id):
+			var usa_em_combate: bool = room.cfg.game_data.get_entry("itens", id).get("efeito") != null
+			_say("Item de missão: usa-se em combate, pela barra de ações." if usa_em_combate else "Item de missão: sem uso por enquanto.")
+		elif room.gear_is_equippable(id):
 			var slot := "colete" if room.gear_item_kind(id) == "colete" else "principal"
 			_say(room.gear_equip(_member(), slot, int(sel["i"])))
 			sel = {"kind": "eq", "slot": slot}
@@ -291,11 +342,13 @@ func _describe(id: String) -> Dictionary:
 		lines.append(["Em combate", "%d PA" % int(it["custo_pa_combate"])])
 	if it.get("efeito") == "defesa" and it.get("valor") != null:
 		lines.append(["Defesa", "%d%%" % roundi(float(it["valor"]) * 100.0)])
-	if it.get("efeito") == "san_max" and it.get("valor") != null:
+	if it.get("efeito") == "san_max" and it.get("valor") != null and id not in HIDDEN_BONUS:
 		lines.append(["SAN máxima", "+%d" % int(it["valor"])])
 	if it.get("efeito") == "pv_max" and it.get("valor") != null:
 		lines.append(["PV máximo", "+%d" % int(it["valor"])])
-	return {"nome": it["nome"], "tipo": str(it["categoria"]).capitalize(), "texto": BLURBS.get(id, ""), "linhas": lines}
+	if it.get("elemento") != null:
+		lines.append(["Elemento", RitualRules.element_name(str(it["elemento"]))])
+	return {"nome": it["nome"], "tipo": TIPOS.get(str(it["categoria"]), str(it["categoria"]).capitalize()), "texto": BLURBS.get(id, ""), "linhas": lines}
 
 
 # Curto, médio e longo a partir da regra de acerto (−5% a cada 2 m além da distância ideal):
@@ -337,183 +390,236 @@ func _draw() -> void:
 	var font := ThemeDB.fallback_font
 	draw_rect(Rect2(Vector2.ZERO, Vector2(960, 540)), Color(0, 0, 0, DIM * t))
 	var o := _origin()
-	_backdrop(_frame_rect())
-	var f := _frame_rect()
-	draw_string(font, Vector2(f.position.x, f.position.y + 36), "%d / %d" % [room.inventory.used(), room.inventory.size], HORIZONTAL_ALIGNMENT_RIGHT, FRAME_SIZE.x - 62, 12, MUTED)
-	_draw_close()
+	_fosco(Rect2(o, Vector2(PW, PH)))
 	for i in room.party.size():
-		_draw_portrait(font, i)
-	_draw_tabs(font)
-	_draw_grid(font)
-	_draw_detail(font)
+		_draw_card(font, i)
 	_draw_equipment(font)
+	draw_string(font, o + Vector2(190, 30), "MOCHILA", HORIZONTAL_ALIGNMENT_LEFT, -1, 23, Color.WHITE)
+	_draw_tabs(font)
+	_draw_close()
+	_draw_rows(font)
+	_draw_pips(font)
+	_draw_detail(font)
 	_draw_hints(font)
 
 
-# Fundo escuro com a moldura pintada por cima.
-func _backdrop(r: Rect2) -> void:
-	draw_rect(r.grow(-6.0), PLATE)
-	_vignette(r.grow(-6.0), Color(0, 0, 0, 0.5))
-	var sc := FRAME_SCALE
-	# faixas da imagem (px): x e y de corte; destino em tela interna
-	var w := 1278.0
-	var h := 1230.0
-	var xl := 400.0  # no topo, o canto esquerdo leva o título
-	var xr := 1150.0  # e o direito leva o X
-	var bl := 130.0  # embaixo, os cantos levam os medalhões
-	var br := 1148.0
-	var side := 65.0
-	var top := 160.0
-	var bot := 1160.0
-	var dl := xl * sc
-	var dr := (w - xr) * sc
-	var dt := top * sc
-	var db := (h - bot) * sc
-	var ds := side * sc
-	_part(Rect2(xl, 0, xr - xl, top), Rect2(r.position.x + dl, r.position.y, r.size.x - dl - dr, dt))
-	_part(Rect2(0, 0, xl, top), Rect2(r.position.x, r.position.y, dl, dt))
-	_part(Rect2(xr, 0, w - xr, top), Rect2(r.end.x - dr, r.position.y, dr, dt))
-	_part(Rect2(0, top, side, bot - top), Rect2(r.position.x, r.position.y + dt, ds, r.size.y - dt - db))
-	_part(Rect2(w - side, top, side, bot - top), Rect2(r.end.x - ds, r.position.y + dt, ds, r.size.y - dt - db))
-	_part(Rect2(bl, bot, br - bl, h - bot), Rect2(r.position.x + bl * sc, r.end.y - db, r.size.x - (bl + w - br) * sc, db))
-	_part(Rect2(0, bot, bl, h - bot), Rect2(r.position.x, r.end.y - db, bl * sc, db))
-	_part(Rect2(br, bot, w - br, h - bot), Rect2(r.end.x - (w - br) * sc, r.end.y - db, (w - br) * sc, db))
-
-
-func _part(src: Rect2, dst: Rect2) -> void:
-	draw_texture_rect_region(FRAME_TEX, dst, src)
-
-
-func _vignette(r: Rect2, color: Color) -> void:
-	for i in 14:
-		draw_rect(r.grow(-i * 2.0), Color(color, color.a * pow(1.0 - i / 14.0, 2.0) * 0.5), false, 2.0)
-
-
-# Moldura como a do HUD: placa escura, filete duplo de bronze, cantoneiras e losango.
-func _frame(r: Rect2, accent := GOLD, thin := false) -> void:
-	draw_rect(r, Color(PLATE, 0.62))
-	var lit := thin and r.has_point(get_viewport().get_mouse_position())
-	draw_rect(r.grow(-0.5), GOLD if lit else BRONZE, false, 1.0)
-	if lit:
-		_glow(r, 0.35)
-	draw_rect(r.grow(-3.0 if thin else -4.0), Color(BRONZE_DARK, 0.8), false, 0.5)
-	if thin:
-		return
+# Placa de vidro fosco: o desfoque vem de HudBlur; aqui ficam a tinta, o contorno preto, a linha clara e os cantos.
+func _fosco(r: Rect2) -> void:
+	for k in 3:
+		draw_rect(Rect2(r.position + Vector2(0, 2), r.size).grow(2.0 + k * 2.0), Color(0, 0, 0, 0.08), false, 2.0)
+	draw_rect(r, PLATE)
+	draw_rect(r.grow(1.0), Color.BLACK, false, 1.0)
+	draw_rect(r.grow(-0.5), HAIR, false, 0.5)
+	draw_line(r.position + Vector2(1, 1.0), Vector2(r.end.x - 1, r.position.y + 1.0), Color(1, 1, 1, 0.16), 0.5)
 	for corner in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)]:
 		var c: Vector2 = r.position + corner * r.size
 		var d := Vector2(1.0 - corner.x * 2.0, 1.0 - corner.y * 2.0)
-		draw_polyline(PackedVector2Array([c + Vector2(1.5, 11) * d, c + Vector2(1.5, 1.5) * d, c + Vector2(11, 1.5) * d]), accent, 1.0)
-		_diamond(c + Vector2(6, 6) * d, 1.8, accent)
-	_diamond(Vector2(r.get_center().x, r.position.y + 0.5), 3.0, accent)
-	_diamond(Vector2(r.get_center().x, r.end.y - 0.5), 3.0, accent)
+		draw_polyline(PackedVector2Array([c + Vector2(2.5, 6.5) * d, c + Vector2(2.5, 2.5) * d, c + Vector2(6.5, 2.5) * d]), Color(1, 1, 1, 0.5), 0.5)
 
 
-# Brilho dourado na borda: anéis cada vez mais fracos para fora e uma luz suave por dentro.
-func _glow(r: Rect2, strength: float) -> void:
-	for i in 5:
-		draw_rect(r.grow(0.5 + i * 1.1), Color(GOLD, (0.34 - i * 0.065) * strength), false, 1.0)
-	draw_rect(r.grow(-1.5), Color(GOLD, 0.1 * strength), false, 2.0)
+# Casa escura com contorno preto e fio claro; anel branco (entre dois pretos) quando escolhida.
+func _cell(r: Rect2, selected := false, hover := false, fill := SLOT_FILL) -> void:
+	draw_rect(r, Color(fill, minf(fill.a + (0.18 if hover else 0.0) + (0.12 if selected else 0.0), 0.9)))
+	draw_rect(r.grow(1.0), Color.BLACK, false, 1.0)
+	draw_rect(r.grow(-0.5), Color(1, 1, 1, 0.12), false, 0.5)
+	if selected:
+		draw_rect(r.grow(3.0), Color.BLACK, false, 1.0)
+		draw_rect(r.grow(2.0), Color.WHITE, false, 1.0)
+		draw_rect(r.grow(1.0), Color.BLACK, false, 1.0)
 
 
-func _diamond(c: Vector2, r: float, color: Color) -> void:
-	draw_colored_polygon(PackedVector2Array([c + Vector2(0, -r), c + Vector2(r, 0), c + Vector2(0, r), c + Vector2(-r, 0)]), color)
+func _hover(r: Rect2) -> bool:
+	return r.has_point(get_viewport().get_mouse_position())
 
 
-func _draw_close() -> void:
-	if close_glow <= 0.0:
-		return
-	var r := _close_rect()
-	var e := close_glow * close_glow * (3.0 - 2.0 * close_glow)
-	draw_rect(r, Color(1.0, 0.45, 0.3, 0.16 * e))
-	_glow(r, 0.9 * e)
-
-
-func _draw_portrait(font: Font, i: int) -> void:
+func _draw_card(font: Font, i: int) -> void:
 	var r := _portrait_rect(i)
 	var m: Combatant = room.party[i]
 	var on := i == viewed
-	draw_rect(r, Color(0.16, 0.12, 0.09))
-	room.agent_sheets[room.looks.get(m, 0)].draw_portrait(self, r.grow(-3), m.is_alive() and float(m.pv) / maxf(1.0, float(m.max_pv)) <= CharacterSheet.HURT_BELOW)
+	_cell(r, on, _hover(r), Color(0, 0, 0, 0.5))
+	var face := Rect2(r.position + Vector2(5, 5), Vector2(CARD_H - 10, CARD_H - 10))
+	draw_rect(face, Color(0.16, 0.12, 0.09))
+	room.agent_sheets[room.looks.get(m, 0)].draw_portrait(self, face, m.is_alive() and float(m.pv) / maxf(1.0, float(m.max_pv)) <= CharacterSheet.HURT_BELOW)
 	if not m.is_alive():
-		draw_rect(r, Color(0.4, 0, 0, 0.5))
-	var hover := r.has_point(get_viewport().get_mouse_position())
-	if on or hover:
-		draw_texture_rect(TEX_PORTRAIT_GLOW, r.grow(GLOW_PAD), false, Color(1, 1, 1, 1.0 if on else 0.75))
-	else:
-		draw_texture_rect(TEX_PORTRAIT, r, false)
-	draw_string(font, r.position + Vector2(0, PORTRAIT + 11), m.name.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 9, GOLD if on else MUTED)
+		draw_rect(face, Color(0.4, 0, 0, 0.5))
+	draw_rect(face.grow(0.5), Color.BLACK, false, 1.0)
+	var x := face.end.x + 7.0
+	var w := r.end.x - x - 6.0
+	draw_string(font, Vector2(x, r.position.y + 15), m.name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, w, 11, Color.WHITE if on else Color(0.8, 0.75, 0.66))
+	_bar(font, Rect2(x, r.position.y + 22, w, 11), m.pv, m.max_pv, BAR_PV)
+	_bar(font, Rect2(x, r.position.y + 36, w, 11), m.san, m.max_san, BAR_SAN)
+	var status := "caído" if not m.is_alive() else ("líder" if m == room.player else "seguindo")
+	draw_string(font, Vector2(x, r.end.y - 6), status, HORIZONTAL_ALIGNMENT_LEFT, w, 8, MUTED)
+
+
+func _bar(font: Font, r: Rect2, v: int, vmax: int, color: Color) -> void:
+	draw_rect(r.grow(1.0), Color.BLACK)
+	draw_rect(Rect2(r.position, Vector2(r.size.x * clampf(float(v) / maxf(1.0, float(vmax)), 0.0, 1.0), r.size.y)), color)
+	draw_string(font, r.position + Vector2(0, 8.5), "%d/%d" % [v, vmax], HORIZONTAL_ALIGNMENT_RIGHT, r.size.x - 3.0, 8, Color.WHITE)
 
 
 func _draw_tabs(font: Font) -> void:
-	var o := _origin()
-	var m := _member()
-	draw_string(font, o + Vector2(76, 82), m.name.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, GOLD)
-	draw_string(font, o + Vector2(76, 96), "PV %d/%d  ·  SAN %d/%d" % [m.pv, m.max_pv, m.san, m.max_san], HORIZONTAL_ALIGNMENT_LEFT, -1, 8, MUTED)
 	for k in TABS.size():
 		var r := _tab_rect(k)
 		var on := k == tab
-		var hover := r.has_point(get_viewport().get_mouse_position())
-		draw_rect(r.grow(-3.0), Color(0.2, 0.05, 0.05) if on else (Color(0.12, 0.09, 0.06) if hover else SLOT_FILL))
-		if on or hover:
-			draw_texture_rect(TEX_TAB_GLOW, r.grow(GLOW_PAD), false, Color(1, 1, 1, 1.0 if on else 0.7))
+		draw_rect(r, Color.WHITE if on else Color(0, 0, 0, 0.35))
+		draw_rect(r.grow(1.0), Color.BLACK, false, 1.0)
+		if not on:
+			draw_rect(r.grow(-0.5), Color(1, 1, 1, 0.14 + (0.16 if _hover(r) else 0.0)), false, 0.5)
+		draw_string(font, r.position + Vector2(0, 14), TABS[k], HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 10, Color.BLACK if on else MUTED.lightened(0.15))
+
+
+func _draw_close() -> void:
+	var r := _close_rect()
+	var col := Color.WHITE if _hover(r) else MUTED
+	draw_line(r.position + Vector2(4, 4), r.end - Vector2(4, 4), col, 1.5)
+	draw_line(Vector2(r.end.x - 4, r.position.y + 4), Vector2(r.position.x + 4, r.end.y - 4), col, 1.5)
+
+
+func _draw_equipment(font: Font) -> void:
+	var o := _origin()
+	draw_string(font, o + Vector2(15, 262), "EQUIPAMENTO", HORIZONTAL_ALIGNMENT_LEFT, -1, 9, MUTED)
+	for k in EQUIP_SLOTS.size():
+		var slot: String = EQUIP_SLOTS[k]
+		var r := _equip_rect(k)
+		var id: String = room.gear_slot_id(_member(), slot)
+		_cell(r, sel.get("kind") == "eq" and sel.get("slot") == slot, _hover(r))
+		if id != "":
+			ItemIcons.draw(self, r, id, true, 46.0)
 		else:
-			draw_texture_rect(TEX_TAB, r, false)
-		draw_string(font, r.position + Vector2(0, 16), TABS[k], HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 8, TEXT if on else MUTED)
+			_ghost(r.grow(-15.0), str(GHOSTS[slot]))
+		draw_string(font, r.position + Vector2(-6, SLOT + 12), EQUIP_LABELS[slot], HORIZONTAL_ALIGNMENT_CENTER, SLOT + 12, 8, MUTED)
 
 
-func _slot(font: Font, r: Rect2, id: String, qty: int, selected: bool, dim: bool) -> void:
-	draw_rect(r, SLOT_FILL)
-	draw_rect(Rect2(r.position + Vector2(1, 1), Vector2(r.size.x - 2, r.size.y * 0.45)), Color(1, 0.9, 0.7, 0.04))
-	var hover := r.has_point(get_viewport().get_mouse_position())
-	var big := r.size.x > 50.0
-	if selected or hover:
-		draw_rect(r.grow(-3), Color(1, 0.9, 0.7, 0.07))
-		draw_texture_rect(TEX_EQUIP_GLOW if big else TEX_CELL_GLOW, r.grow(GLOW_PAD), false, Color(1, 1, 1, 1.0 if selected else 0.7))
-	else:
-		draw_texture_rect(TEX_EQUIP if big else TEX_CELL, r, false)
-	if id == "":
+# Silhueta fraca do que cabe no espaço vazio.
+func _ghost(r: Rect2, kind: String) -> void:
+	var col := Color(1, 1, 1, 0.28)
+	var pts: Array = []
+	match kind:
+		"arma":
+			pts = [Vector2(0.05, 0.3), Vector2(0.85, 0.3), Vector2(0.85, 0.5), Vector2(0.55, 0.5), Vector2(0.48, 0.9), Vector2(0.3, 0.9), Vector2(0.36, 0.5), Vector2(0.05, 0.5)]
+		"colete":
+			pts = [Vector2(0.18, 0.1), Vector2(0.38, 0.2), Vector2(0.62, 0.2), Vector2(0.82, 0.1), Vector2(0.96, 0.34), Vector2(0.8, 0.46), Vector2(0.8, 0.92), Vector2(0.2, 0.92), Vector2(0.2, 0.46), Vector2(0.04, 0.34)]
+		_:
+			var c := r.position + r.size * Vector2(0.5, 0.64)
+			var ring := PackedVector2Array()
+			for k in 25:
+				ring.append(c + Vector2(cos(TAU * k / 24.0), sin(TAU * k / 24.0)) * r.size.x * 0.3)
+			draw_polyline(ring, col, 1.0)
+			draw_polyline(PackedVector2Array([r.position + r.size * Vector2(0.38, 0.14), r.position + r.size * Vector2(0.62, 0.14), r.position + r.size * Vector2(0.7, 0.3), r.position + r.size * Vector2(0.3, 0.3), r.position + r.size * Vector2(0.38, 0.14)]), col, 1.0)
+			return
+	var out := PackedVector2Array()
+	for p in pts:
+		out.append(r.position + r.size * p)
+	out.append(out[0])
+	draw_polyline(out, col, 1.0)
+
+
+# Nome e tipo de cada item (dados fixos, guardados para não refazer a conta a cada quadro).
+func _meta_of(id: String) -> Dictionary:
+	if not _meta.has(id):
+		var d := _describe(id)
+		_meta[id] = {"nome": str(d.get("nome", id)), "tipo": str(d.get("tipo", ""))}
+	return _meta[id]
+
+
+func _draw_rows(font: Font) -> void:
+	var slots := _visible_slots()
+	if slots.is_empty():
+		draw_string(font, _origin() + Vector2(190, 120), "Nada nesta aba.", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, MUTED)
 		return
-	var side := roundf(r.size.x * 0.62)  # folga em volta do ícone, longe da moldura
-	ItemIcons.draw(self, r, id, not dim, side)
-	if qty > 1:
-		draw_string(font, r.position + Vector2(0, r.size.y - 6), "%d" % qty, HORIZONTAL_ALIGNMENT_RIGHT, r.size.x - 6, 9, GOLD)
+	for n in slots.size():
+		var r := _row_rect(n)
+		if r.size == Vector2.ZERO:
+			continue
+		var i := slots[n]
+		var slot: Dictionary = room.inventory.slots[i]
+		var id := str(slot["id"])
+		var chosen: bool = sel.get("kind") == "bag" and sel.get("i") == i
+		_cell(r, chosen, _hover(r), Color(0, 0, 0, 0.38))
+		ItemIcons.draw(self, Rect2(r.position + Vector2(6, 7), Vector2(36, 36)), id, true, 32.0)
+		var meta := _meta_of(id)
+		var size := 11
+		while size > 8 and font.get_string_size(meta["nome"], HORIZONTAL_ALIGNMENT_LEFT, -1, size).x > r.size.x - 58.0:
+			size -= 1  # nome comprido encolhe para caber no cartão
+		draw_string(font, r.position + Vector2(52, 21), meta["nome"], HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 58.0, size, Color.WHITE)
+		draw_string(font, r.position + Vector2(52, 36), meta["tipo"], HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 58.0, 8, MUTED)
+		if int(slot["qty"]) > 1:
+			draw_string(font, r.position + Vector2(0, r.size.y - 6), "x%d" % int(slot["qty"]), HORIZONTAL_ALIGNMENT_RIGHT, r.size.x - 7.0, 12, Color.WHITE)
+	if _max_scroll() > 0:  # barra de rolagem fina ao lado dos cartões
+		var top := _origin().y + 48.0
+		var track := VISIBLE_ROWS * ROW_STEP - 6.0
+		var rows := ceili(slots.size() / 2.0)
+		var h := track * float(VISIBLE_ROWS) / float(rows)
+		var x := _origin().x + COL_X[1] + CARD_W + 5.0
+		draw_rect(Rect2(x, top, 2, track), Color(1, 1, 1, 0.1))
+		draw_rect(Rect2(x, top + (track - h) * float(scroll) / float(_max_scroll()), 2, h), Color(1, 1, 1, 0.5))
 
 
-func _draw_grid(font: Font) -> void:
+# Os 20 espaços da mochila como marcas: cheias para as ocupadas.
+func _draw_pips(font: Font) -> void:
+	var o := _origin()
 	for i in room.inventory.size:
-		var s: Dictionary = room.inventory.slots[i]
-		var id := "" if s.is_empty() else str(s["id"])
-		_slot(font, _grid_rect(i), id, 0 if s.is_empty() else int(s["qty"]), sel.get("kind") == "bag" and sel.get("i") == i, not _tab_match(id))
+		var r := Rect2(o + Vector2(190 + i * 17, 394), Vector2(14, 13))
+		draw_rect(r, WHITE_SOFT if i < room.inventory.used() else Color(1, 1, 1, 0.09))
+		draw_rect(r.grow(0.5), Color.BLACK, false, 1.0)
+	var free: int = room.inventory.size - room.inventory.used()
+	draw_string(font, o + Vector2(190, 426), "%d espaço%s livre%s" % [free, "" if free == 1 else "s", "" if free == 1 else "s"], HORIZONTAL_ALIGNMENT_LEFT, -1, 10, MUTED)
 
 
 func _draw_detail(font: Font) -> void:
 	var r := _detail_rect()
-	draw_rect(r.grow(-5.0), Color(PLATE, 0.8))
-	draw_texture_rect(TEX_DETAIL, r, false)
+	_cell(r, false, false, Color(0, 0, 0, 0.5))
 	var id := _item_id(sel)
 	if id == "":
-		draw_string(font, r.position + Vector2(0, 100), "Escolha um item", HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 10, MUTED)
-		return
-	var d := _describe(id)
-	if d.is_empty():
-		return
-	ItemIcons.draw(self, Rect2(r.position + Vector2(13, 14), Vector2(39, 37)), id, true, 28.0)
-	draw_string(font, r.position + Vector2(58, 31), str(d["nome"]), HORIZONTAL_ALIGNMENT_LEFT, 92, 12, TEXT)
-	draw_string(font, r.position + Vector2(58, 43), str(d["tipo"]), HORIZONTAL_ALIGNMENT_LEFT, 92, 8, MUTED)
-	var y := 68.0
-	for line in str(d["texto"]).split("\n"):
-		y = _wrap(font, line, r.position + Vector2(18, y), 128.0, 9) - r.position.y + 3.0
-	var faixas: Array = d.get("faixas", [])
-	var fy := 148.0 - 11.0 * faixas.size() - 4.0
-	for row in faixas:
-		draw_string(font, r.position + Vector2(18, fy), str(row[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 8, GOLD)
-		draw_string(font, r.position + Vector2(18, fy), str(row[1]), HORIZONTAL_ALIGNMENT_RIGHT, 128.0, 8, MUTED)
-		fy += 11.0
-	var rows: Array = d["linhas"]
-	var base := [158.0, 173.5, 188.0]
-	for k in mini(rows.size(), 3):
-		draw_string(font, r.position + Vector2(17, base[k]), str(rows[k][0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 9, GOLD)
-		draw_string(font, r.position + Vector2(17, base[k]), str(rows[k][1]), HORIZONTAL_ALIGNMENT_RIGHT, 130.0, 9, TEXT)
+		draw_string(font, r.position + Vector2(0, 110), "Escolha um item", HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 10, MUTED)
+	else:
+		var d := _describe(id)
+		if not d.is_empty():
+			ItemIcons.draw(self, Rect2(r.position + Vector2(r.size.x * 0.5 - 35, 12), Vector2(70, 70)), id, true, 56.0)
+			draw_string(font, r.position + Vector2(0, 102), str(d["nome"]), HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 15, Color.WHITE)
+			draw_string(font, r.position + Vector2(0, 117), str(d["tipo"]).to_upper(), HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 8, MUTED)
+			var y := 136.0
+			for line in str(d["texto"]).split("\n"):
+				y = _wrap(font, line, r.position + Vector2(12, y), r.size.x - 24.0, 9) - r.position.y + 3.0
+			y = maxf(y + 10.0, 150.0)
+			draw_line(r.position + Vector2(12, y - 6), r.position + Vector2(r.size.x - 12, y - 6), Color(1, 1, 1, 0.18), 0.5)
+			var rows: Array = []
+			rows.append_array(d.get("faixas", []))
+			rows.append_array(d["linhas"])
+			for row in rows:
+				if y > r.size.y - 44.0:
+					break
+				draw_string(font, r.position + Vector2(12, y + 4), str(row[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 9, MUTED)
+				draw_string(font, r.position + Vector2(12, y + 4), str(row[1]), HORIZONTAL_ALIGNMENT_RIGHT, r.size.x - 24.0, 9, Color.WHITE)
+				y += 13.0
+	_draw_button(font, 0, "E  " + _act_label(), id != "" and not _is_story(id))
+	_draw_button(font, 1, "Del  Descartar", sel.get("kind") == "bag")
+
+
+func _is_story(id: String) -> bool:
+	return str(room.cfg.game_data.get_entry("itens", id).get("categoria", "")) == "missao"
+
+
+# O que o E faz com o item escolhido.
+func _act_label() -> String:
+	if sel.get("kind") == "eq":
+		return "Guardar"
+	var id := _item_id(sel)
+	if id != "" and not room.gear_is_equippable(id):
+		return "Usar"
+	return "Equipar"
+
+
+func _draw_button(font: Font, k: int, label: String, enabled: bool) -> void:
+	var r := _button_rect(k)
+	var on := k == 0
+	draw_rect(r, (Color.WHITE if enabled else Color(1, 1, 1, 0.3)) if on else Color(0, 0, 0, 0.35))
+	draw_rect(r.grow(1.0), Color.BLACK, false, 1.0)
+	if not on:
+		draw_rect(r.grow(-0.5), Color(1, 1, 1, 0.2 if enabled else 0.08), false, 0.5)
+	var col := Color.BLACK if on else (Color(0.9, 0.86, 0.78) if enabled else Color(0.5, 0.46, 0.4))
+	draw_string(font, r.position + Vector2(0, 15), label, HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 10, col)
 
 
 # Quebra `text` em linhas de até `width`; devolve o y da linha seguinte.
@@ -523,38 +629,25 @@ func _wrap(font: Font, text: String, at: Vector2, width: float, size: int) -> fl
 	for word in text.split(" "):
 		var next := word if line == "" else line + " " + word
 		if font.get_string_size(next, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x > width and line != "":
-			draw_string(font, Vector2(at.x, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, size, MUTED.lightened(0.15))
+			draw_string(font, Vector2(at.x, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(0.84, 0.79, 0.68))
 			y += size + 3.0
 			line = word
 		else:
 			line = next
-	draw_string(font, Vector2(at.x, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, size, MUTED.lightened(0.15))
+	draw_string(font, Vector2(at.x, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(0.84, 0.79, 0.68))
 	return y + size
-
-
-func _draw_equipment(font: Font) -> void:
-	var o := _origin()
-	var fr := Rect2(o + Vector2(72, 296), Vector2(392, 140))
-	draw_rect(fr.grow(-4.0), Color(PLATE, 0.62))
-	draw_texture_rect(TEX_EQUIP_FRAME, fr, false)
-	draw_string(font, o + Vector2(100, 330), "EQUIPAMENTO", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, GOLD)
-	for k in EQUIP_SLOTS.size():
-		var slot: String = EQUIP_SLOTS[k]
-		var r := _equip_rect(k)
-		draw_string(font, r.position + Vector2(-18, -5), EQUIP_LABELS[slot], HORIZONTAL_ALIGNMENT_CENTER, r.size.x + 36, 7, MUTED)
-		_slot(font, r, room.gear_slot_id(_member(), slot), 0, sel.get("kind") == "eq" and sel.get("slot") == slot, false)
 
 
 func _draw_hints(font: Font) -> void:
 	var o := _origin()
-	var keys := [["E", "Equipar / usar / trocar"], ["Del", "Descartar"], ["B", "Fechar"]]
-	var x := 76.0
-	for kv in keys:
-		var w := 22.0 if kv[0].length() == 1 else 30.0
-		var kr := Rect2(o + Vector2(x, 466), Vector2(w, 22))
-		draw_texture_rect(TEX_KEY if kv[0].length() == 1 else TEX_KEY_WIDE, kr, false)
-		draw_string(font, kr.position + Vector2(0, 15), kv[0], HORIZONTAL_ALIGNMENT_CENTER, w, 10, TEXT)
-		draw_string(font, kr.position + Vector2(w + 6, 15), kv[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 10, MUTED)
-		x += w + 18.0 + font.get_string_size(kv[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x
+	var x := 190.0
+	for kv in [["E", "Equipar / usar / trocar"], ["Del", "Descartar"], ["B", "Fechar"]]:
+		var w := 14.0 if kv[0].length() == 1 else 22.0
+		var kr := Rect2(o + Vector2(x, 462), Vector2(w, 14))
+		draw_rect(kr, Color(0, 0, 0, 0.4))
+		draw_rect(kr.grow(0.5), Color(1, 1, 1, 0.3), false, 0.5)
+		draw_string(font, kr.position + Vector2(0, 10.5), kv[0], HORIZONTAL_ALIGNMENT_CENTER, w, 9, Color.WHITE)
+		draw_string(font, kr.position + Vector2(w + 5, 10.5), kv[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(0.75, 0.7, 0.6))
+		x += w + 16.0 + font.get_string_size(kv[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 9).x
 	if toast_time > 0.0 and toast != "":
-		draw_string(font, o + Vector2(24, PH - 14), toast, HORIZONTAL_ALIGNMENT_CENTER, PW - 48, 10, Color(1, 0.8, 0.5, minf(toast_time, 1.0)))
+		draw_string(font, o + Vector2(190, 446), toast, HORIZONTAL_ALIGNMENT_LEFT, 380, 10, Color(1, 0.8, 0.5, minf(toast_time, 1.0)))

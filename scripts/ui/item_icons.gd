@@ -13,6 +13,7 @@ const ICON_COLORS := {
 	"o": Color(0.05, 0.035, 0.03), "a": Color(0.8, 0.76, 0.68), "b": Color(0.52, 0.48, 0.43),
 	"c": Color(0.3, 0.27, 0.24), "w": Color(0.47, 0.28, 0.15), "g": Color(0.84, 0.68, 0.36),
 	"r": Color(0.74, 0.11, 0.13), "y": Color(0.88, 0.72, 0.42),
+	"u": Color(0.32, 0.55, 0.82), "p": Color(0.55, 0.28, 0.72), "v": Color(0.38, 0.62, 0.3),  # água, bulbo roxo, agrotóxico
 }
 # Ícones pintados do Léo (ChatGPT, 30/10/2026), recortados em 64×64 por tools/sprites/icones_acoes.py.
 # Quem não tem arte usa o pixel art provisório de PIXEL_ROWS.
@@ -34,6 +35,88 @@ const CONDITION_ART := {
 	"envenenado": preload("res://assets/sprites/ui/condicoes/envenenado.png"),
 }
 const PIXEL_ROWS := {
+	"livro_sanguis_orchid": [
+		"..oooooooooo..",
+		".orrrrrrrrrro.",
+		".orrggggggrro.",
+		".orrrrrrrrrro.",
+		".orrrrggrrrro.",
+		".orrrrrrrrrro.",
+		".oyyyyyyyyyyo.",
+		".oyyyyyyyyyyo.",
+		"..oooooooooo..",
+	],
+	"balde": [
+		"...oooooooooo...",
+		"..o..........o..",
+		".ooaaaaaaaaaaoo.",
+		"..obbbbbbbbbbo..",
+		"..obbbbbbbbbbo..",
+		"...obbbbbbbbo...",
+		"...occcccccco...",
+		"....oooooooo....",
+	],
+	"garrafa_agua": [
+		"......oooo......",
+		".....oabbao.....",
+		".....oabbao.....",
+		"....oaabbbao....",
+		"....oabbbbbo....",
+		"....oabbbbbo....",
+		"....oabbbbbo....",
+		"....occcccco....",
+		".....oooooo.....",
+	],
+	"fertilizante": [
+		"..oooooooooooo..",
+		"..oyyyyyyyyyyo..",
+		".oyyyyyyyyyyyyo.",
+		".oyyggggggggyyo.",
+		".oyyggwwwwggyyo.",
+		".oyyggggggggyyo.",
+		".oyyyyyyyyyyyyo.",
+		"..oooooooooooo..",
+	],
+	"agrotoxico": [
+		"....oooooo......",
+		"....occcco......",
+		"...obbbbbbo.....",
+		"...orrrrrro.....",
+		"...orggggro.....",
+		"...orrrrrro.....",
+		"...obbbbbbo.....",
+		"...obbbbbbo.....",
+		"...oooooooo.....",
+	],
+	"pulseira_amizade": [
+		"...gr.yg.ry.....",
+		"..ry......gr....",
+		".g..........y...",
+		".y..........g...",
+		".r..........r...",
+		"..gy......yg....",
+		"...rg.yg.gr.....",
+	],
+	"plaqueta_identificacao": [
+		"...oooooooooo...",
+		"..oaaaaaaaaaao..",
+		"..oabbbbbbbbbo..",
+		"..oabccccccbbo..",
+		"..oabbbbbbbbbo..",
+		"..oabccccbbbbo..",
+		"...oobbbbbboo...",
+		"....oooooooo....",
+	],
+	"chave": [
+		".ooo............",
+		"oggggo..........",
+		"og..go..........",
+		"oggggooooooooooo",
+		".oooo.gggggggggo",
+		"......oooooooogo",
+		"............ogo.",
+		"............ooo.",
+	],
 	"pistola": [
 		"..oooooooooooo..",
 		".oaaaaaaaaaabbo.",
@@ -260,17 +343,19 @@ const PIXEL_ROWS := {
 		".....orrrro.....",
 		"......oooo......",
 	],
-	"granada_luz": [
-		"......ooo.......",
-		".....oaaao......",
-		"....ooobooo.....",
-		"...ocbbbbbco....",
-		"..ocbbaabbbco...",
-		"..obbaabbbbbo...",
-		"..obbbbbbbbbo...",
-		"..ocbbbbbbbco...",
-		"...ocbbbbbco....",
-		"....ooooooo.....",
+	"coquetel": [  # garrafa com pano em chamas (Léo, 20/11)
+		".......y........",
+		"......gyr.......",
+		"......ryg.......",
+		".......a........",
+		"......oao.......",
+		"......owo.......",
+		".....owwwo......",
+		"....owwwwwo.....",
+		"....owgwwwo.....",
+		"....owgwwwo.....",
+		"....owwwwwo.....",
+		".....ooooo......",
 	],
 	"sinalizador": [
 		"......ogo.......",
@@ -284,11 +369,29 @@ const PIXEL_ROWS := {
 		".....occco......",
 		".....ooooo......",
 	],
+	# Bulbo da flor Roxa da Dama de Sangue (Léo, 20/11): pixel art provisório do Claude.
+	"bulbo_bravo_purpulis": [
+		".......vo.......",
+		"......vvo.......",
+		".....oppo.......",
+		"....oppppo......",
+		"...opppappo.....",
+		"...oppppppo.....",
+		"....oppppo......",
+		".....owwo.......",
+		"....ow..wo......",
+	],
 }
 
 
 # Ids das tabelas de dados que usam o ícone de outro id.
-const ALIASES := {"kit_primeiros_socorros": "kit", "colete": "colete_leve"}
+# Componentes de ritual (19/11): o relógio quebrado usa o relógio de bolso; os outros, a pedra carmesim provisória.
+const ALIASES := {"chave_escritorio": "chave", "chave_acervo": "chave", "chave_celeiro": "chave", "chave_ossuario": "chave",
+	"kit_primeiros_socorros": "kit", "colete": "colete_leve", "relogio_quebrado": "atrasar",
+	"sangue_coagulado": "componente_ritual", "prego_enferrujado": "componente_ritual", "frasco_orgao": "componente_ritual",
+	"bateria": "componente_ritual", "maco_fios": "componente_ritual", "celular_quebrado": "componente_ritual",
+	"ossos_pequenos": "componente_ritual", "cinzas": "componente_ritual", "anel_ouro": "componente_ritual",
+	"tomo_antigo": "componente_ritual"}
 
 
 static func has_icon(id: String) -> bool:

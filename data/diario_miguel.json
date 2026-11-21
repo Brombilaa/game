@@ -1,0 +1,326 @@
+{
+	"_comentario": "Aba DIÁRIO do caderno do Miguel (modelo B1 'couro costurado', Léo 19/11/2026): o relato da missão 1 escrito por ele, um lugar por página dupla (texto à esquerda, desenhos à direita). A seção aparece quando o grupo esteve no lugar (marca 'esteve_<area>'). 'requer' numa linha ou desenho: 'pista:<id>' (a pista está no diário) ou 'marca:<nome>' (Missao1.marcas). Linhas aceitam BBCode do Godot: [s] riscado, [u] sublinhado, [color=#8e1b12] tinta vermelha. 'notas' = anotações soltas no pé da página, com 'rabisco' (assets/sprites/diario/rabiscos). 'desenho' = nome em assets/sprites/diario/esbocos. Textos PROVISÓRIOS do Claude; é a primeira missão oficial do grupo como agentes da Ordem.",
+	"provisorio": true,
+	"cabecalho": {
+		"titulo": "Aurora, RS",
+		"sub": "dia 1 · primeira missão oficial"
+	},
+	"secoes": [
+		{
+			"id": "parque",
+			"areas": [
+				"parque"
+			],
+			"titulo": "16h · parque",
+			"linhas": [
+				{
+					"t": "Primeira vez como agentes da Ordem [u]de verdade[/u]."
+				},
+				{
+					"t": "[s]Achei[/s] A gente achou que seria simples: um desaparecimento numa cidade pequena. O Fernando até fez piada no caminho."
+				},
+				{
+					"t": "O Caio e a Letícia vieram junto. Na árvore tinha um símbolo, e ele [color=#8e1b12]sangrava[/color]. [s]Não sei[/s] Ainda não consigo escrever o que saiu do mato."
+				},
+				{
+					"t": "[u]O Caio não levantou mais.[/u]",
+					"requer": "pista:caio",
+					"maior": true
+				},
+				{
+					"t": "Marcas de pneu até a rua. Levaram alguma coisa daqui. [color=#8e1b12]Ou alguém.[/color]",
+					"requer": "pista:marcas_pneu"
+				}
+			],
+			"desenhos": [
+				{
+					"desenho": "parque",
+					"legenda": "o parque, antes de tudo"
+				},
+				{
+					"desenho": "simbolo",
+					"legenda": "ainda vejo quando fecho os olhos",
+					"requer": "pista:arvore_simbolo"
+				},
+				{
+					"desenho": "caio",
+					"legenda": "Caio. Desculpa.",
+					"requer": "pista:caio"
+				}
+			],
+			"notas": [
+				{
+					"t": "16h40. O sangue na árvore estava [u]quente[/u].",
+					"requer": "pista:arvore_simbolo",
+					"rabisco": "estrela"
+				},
+				{
+					"t": "perguntar pra Ordem: esse símbolo já apareceu antes?",
+					"rabisco": "seta"
+				},
+				{
+					"t": "Caio. Quem avisa a família?",
+					"requer": "pista:caio",
+					"rabisco": "x"
+				}
+			]
+		},
+		{
+			"id": "delegacia_17h",
+			"areas": [
+				"delegacia_17h"
+			],
+			"titulo": "17h · delegacia",
+			"linhas": [
+				{
+					"t": "Ninguém na recepção. A Ordem disse que a polícia ia ajudar. [s]Mentira[/s] Não tem polícia nenhuma aqui."
+				},
+				{
+					"t": "[color=#8e1b12]Três semanas[/color] de \"barulho na Fazenda Ghular\" no livro e nenhuma viatura.",
+					"requer": "pista:livro_ocorrencias"
+				},
+				{
+					"t": "O mesmo símbolo do parque, desenhado na parede da cela. Arranhado [u]de dentro para fora[/u].",
+					"requer": "pista:cela_arranhoes"
+				},
+				{
+					"t": "\"Roberto voltou da fazenda. Não parece mais ele.\" Quem é Roberto?",
+					"requer": "pista:agenda_ghular"
+				},
+				{
+					"t": "[color=#8e1b12]alguém sabia.[/color]",
+					"maior": true
+				}
+			],
+			"desenhos": [
+				{
+					"desenho": "delegacia",
+					"legenda": "a delegacia vazia"
+				},
+				{
+					"desenho": "celas",
+					"legenda": "a cela do símbolo",
+					"requer": "pista:cela_arranhoes"
+				}
+			],
+			"notas": [
+				{
+					"t": "nenhuma viatura na garagem também",
+					"rabisco": "x"
+				},
+				{
+					"t": "Roberto Ghular = parente do delegado??",
+					"requer": "pista:agenda_ghular",
+					"rabisco": "olho"
+				},
+				{
+					"t": "FAZENDA !!!",
+					"requer": "pista:livro_ocorrencias",
+					"rabisco": "estrela"
+				}
+			]
+		},
+		{
+			"id": "biblioteca",
+			"areas": [
+				"biblioteca"
+			],
+			"titulo": "biblioteca",
+			"linhas": [
+				{
+					"t": "Silêncio de biblioteca, mas pesado. Alguém saiu daqui com pressa."
+				},
+				{
+					"t": "Antes da cidade, a fazenda era terra de um [u]culto[/u]. Está no livro de história, sublinhado por outra pessoa.",
+					"requer": "pista:mesa_leitura"
+				},
+				{
+					"t": "A ficha dos Ghular foi arrancada. Sobrou uma palavra: [color=#8e1b12]poço[/color].",
+					"requer": "pista:fichario"
+				},
+				{
+					"t": "\"A Letícia ainda estava viva lá embaixo.\" [u]Viva.[/u] Então a gente ainda pode chegar a tempo.",
+					"requer": "pista:diario_bibliotecaria",
+					"maior": true
+				}
+			],
+			"desenhos": [
+				{
+					"desenho": "biblioteca",
+					"legenda": "a mesa de leitura"
+				},
+				{
+					"desenho": "arquivo",
+					"legenda": "o arquivo onde ela escondeu o diário",
+					"requer": "pista:diario_bibliotecaria"
+				}
+			],
+			"notas": [
+				{
+					"t": "pacto = ? com quem?",
+					"requer": "pista:diario_bibliotecaria",
+					"rabisco": "espiral"
+				},
+				{
+					"t": "achar o livro que falta",
+					"rabisco": "seta"
+				}
+			]
+		},
+		{
+			"id": "delegacia_21h",
+			"areas": [
+				"delegacia_21h",
+				"subsolo"
+			],
+			"titulo": "21h · delegacia de novo",
+			"linhas": [
+				{
+					"t": "Voltamos de noite. A delegacia parecia mais escura do que devia."
+				},
+				{
+					"t": "Tinha gente esperando a gente lá dentro. [s]cultistas[/s] Vizinhos de capuz.",
+					"requer": "marca:invasao_vencida"
+				},
+				{
+					"t": "Embaixo do tapete, um alçapão. Ninguém tinha mexido nele à toa.",
+					"requer": "pista:tapete"
+				},
+				{
+					"t": "Na mesa do subsolo, a marca limpa de um livro grosso que [color=#8e1b12]não está mais lá[/color].",
+					"requer": "pista:livro_faltando"
+				}
+			],
+			"desenhos": [
+				{
+					"desenho": "subsolo",
+					"legenda": "o subsolo",
+					"requer": "marca:alcapao"
+				}
+			],
+			"notas": [
+				{
+					"t": "[s]dormir aqui[/s] não dormir aqui",
+					"rabisco": "x"
+				},
+				{
+					"t": "capuzes: 4? 5? contar de novo",
+					"requer": "marca:invasao_vencida",
+					"rabisco": "olho"
+				}
+			]
+		},
+		{
+			"id": "fazenda",
+			"areas": [
+				"fazenda"
+			],
+			"titulo": "Fazenda Ghular",
+			"linhas": [
+				{
+					"t": "A fazenda que ninguém foi ver. Agora a gente entende por quê."
+				},
+				{
+					"t": "O poço desce para o escuro. Tem uma corda presa na borda. [u]Alguém desce ali.[/u]",
+					"requer": "pista:poco"
+				},
+				{
+					"t": "Se eu não voltar, [s]que[/s] alguém da Ordem leia isto.",
+					"maior": true
+				}
+			],
+			"desenhos": [
+				{
+					"desenho": "fazenda",
+					"legenda": "a fazenda, de longe"
+				},
+				{
+					"desenho": "poco",
+					"legenda": "o poço",
+					"requer": "pista:poco"
+				}
+			],
+			"notas": [
+				{
+					"t": "corda nova. Alguém desceu [u]hoje[/u].",
+					"requer": "pista:poco",
+					"rabisco": "estrela"
+				},
+				{
+					"t": "a lanterna aguenta?",
+					"rabisco": "espiral"
+				}
+			]
+		},
+		{
+			"id": "cripta",
+			"areas": [
+				"cripta"
+			],
+			"titulo": "embaixo da fazenda",
+			"linhas": [
+				{
+					"t": "Pedra antiga, velas e um cheiro de ferro que não sai da roupa."
+				},
+				{
+					"t": "[color=#8e1b12]Ela estava esperando a gente.[/color]",
+					"requer": "marca:dama_surgiu",
+					"maior": true
+				},
+				{
+					"t": "A Letícia abriu os olhos. [u]Viva.[/u]",
+					"requer": "marca:leticia_acordou"
+				}
+			],
+			"desenhos": [
+				{
+					"desenho": "cripta",
+					"legenda": "o salão"
+				},
+				{
+					"desenho": "dama",
+					"legenda": "a Senhora do Sangue",
+					"requer": "marca:dama_surgiu"
+				}
+			],
+			"notas": [
+				{
+					"t": "não olhar nos olhos dela",
+					"requer": "marca:dama_surgiu",
+					"rabisco": "olho"
+				},
+				{
+					"t": "sair daqui com a Letícia",
+					"rabisco": "seta"
+				}
+			]
+		}
+	],
+	"_desenhos_pistas": "desenho mostrado na aba PISTAS para a pista aberta (sem desenho, aparece a imagem de inspeção da pista, se tiver)",
+	"desenhos_pistas": {
+		"marcas_pneu": "parque",
+		"balanco": "parque",
+		"banco_quebrado": "parque",
+		"banco_velho": "parque",
+		"caio": "caio",
+		"arvore_simbolo": "simbolo",
+		"livro_ocorrencias": "delegacia",
+		"cela_arranhoes": "celas",
+		"agenda_ghular": "delegacia",
+		"ficha_desaparecidos": "delegacia",
+		"mesa_leitura": "biblioteca",
+		"fichario": "biblioteca",
+		"mapa_antigo": "biblioteca",
+		"diario_bibliotecaria": "biblioteca",
+		"tapete": "subsolo",
+		"livro_faltando": "subsolo",
+		"poco": "poco",
+		"leticia": "cripta",
+		"caixa_arquivo": "arquivo"
+	},
+	"_desenhos_criaturas": "desenho de cada criatura na aba CRIATURAS (sem desenho, usa o retrato de fraquezas.json)",
+	"desenhos_criaturas": {
+		"criatura_sangue": "criatura",
+		"dama_sangue": "dama"
+	}
+}

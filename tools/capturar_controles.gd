@@ -36,10 +36,10 @@ func _run() -> void:
 		menu._open("controls")
 		await _save("controles")
 		var caderno: ControlesCaderno = menu.panel_body.get_child(0)
-		caderno.selected = "Z"
+		caderno.selected = "2"
 		caderno.queue_redraw()
 		await _save("controles_ficha")
-		caderno.selected = "Q"
+		caderno.selected = "1"
 		caderno.filter = "combate"
 		caderno.queue_redraw()
 		await _save("controles_combate")
