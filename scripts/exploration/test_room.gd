@@ -65,6 +65,9 @@ const WALK_FRAME_PIXELS := 20.0  # Fernando e demais folhas 2D de 6 quadros: cic
 const NIKOLAI_WALK_CYCLE_PIXELS := 144.0  # Nikolai 3D: 0,8 s por passo completo (antes 0,5 s)
 const CREATURE_WALK_CYCLE_PIXELS := 180.0  # Criatura de Sangue: 1,0 s por ciclo (antes 0,5 s)
 const NIKOLAI_ATTACK_SECONDS := 0.8  # mira/golpe do Nikolai (antes 0,6 s)
+const CULTISTA_WALK_CYCLE_PIXELS := 150.0  # Cultista F em 3D: pixels de chão por ciclo de passo
+const CULTISTA_ATTACK_SECONDS := 1.0  # golpe de faca do Cultista F em 3D (a fase vai até o primeiro golpe da animação)
+const CULTISTA_DEATH_SECONDS := 2.6  # queda do Cultista F em 3D
 const CREATURE_ATTACK_SECONDS := 1.2  # golpe da Criatura, 16 quadros (antes 0,6 s = 27 quadros/s)
 
 const IDLE_FRAME_SECONDS := 0.9  # antes 0,7

@@ -332,6 +332,8 @@ func _draw_unit(u: Combatant) -> void:
 		var variant := room._enemy_variant(i)
 		if variant == TestRoom.CREATURE_VARIANT:
 			room._draw_creature(u, at, walking, room.walk_dist.get(u, 0.0))
+		elif variant == "cultista" and _draw_cultista3d(u, at, walking, room.walk_dist.get(u, 0.0)):
+			pass  # Cultista F em 3D (parque 3D e locais 3D)
 		elif room.enemy_sheets.has(variant):
 			var frames: Array = CharacterSheet.WALK_FRAMES if walking else CharacterSheet.IDLE_FRAMES
 			var n := walk_n % frames.size() if walking else room.idle_frame
@@ -390,6 +392,35 @@ func _nikolai_pose(u: Combatant) -> Array:
 			var n := sheet.frame_count(attack)
 			return [attack, mini(int(CombatFx.aim_progress(job) * n), n - 1)]
 	return []
+
+
+# Cultista F em 3D (Léo, 21/11): escolhe a animação (morte, golpe durante a mira, andar por distância ou parada) e a fase
+# dela. Só existe nos mundos 3D (o `_model3d` é do parque); a sala 2D segue com a folha antiga.
+func _draw_cultista3d(u: Combatant, at: Vector2, walking: bool, dist: float) -> bool:
+	if not room.has_method("_model3d"):
+		return false
+	var now := Time.get_ticks_msec()
+	var dir: CharacterSheet.Dir = room.facing8.get(u, CharacterSheet.Dir.SW)
+	var anim := "idle"
+	var fase := fposmod(now / 1000.0 / 4.5, 1.0)
+	if not u.is_alive():
+		if not room.creature_clock.has(u):
+			room.creature_clock[u] = now
+		anim = "death"
+		fase = minf((now - room.creature_clock[u]) / 1000.0 / TestRoom.CULTISTA_DEATH_SECONDS, 1.0) * 0.6  # cai e fica no chão
+	else:
+		room.creature_clock.erase(u)
+		var atacando := false
+		for job in room.fx.jobs:
+			if job["attacker"] == u:
+				anim = "attack"
+				fase = CombatFx.aim_progress(job) * 0.55  # até o primeiro golpe da animação
+				atacando = true
+				break
+		if not atacando and walking:
+			anim = "walk"
+			fase = fposmod(dist / TestRoom.CULTISTA_WALK_CYCLE_PIXELS, 1.0)
+	return room._model3d("cultista3d", at, anim, fase, dir)
 
 
 func _has_creatures() -> bool:
