@@ -187,5 +187,49 @@
     "reserva_maxima": 0,
     "efeitos_criticos": [],
     "bonus_mira": null
+  },
+  {
+    "id": "pancada_dama",
+    "nome": "Pancada de tentáculo",
+    "provisorio": true,
+    "tipo": "corpo_a_corpo",
+    "arma_longa": false,
+    "dano": [
+      8,
+      12
+    ],
+    "custo_pa": 2,
+    "precisao_base": 0.75,
+    "alcance_maximo": 2.0,
+    "distancia_ideal": [
+      0.0,
+      2.0
+    ],
+    "carregador": 0,
+    "reserva_maxima": 0,
+    "efeitos_criticos": [],
+    "bonus_mira": null
+  },
+  {
+    "id": "espinhos_dama",
+    "nome": "Disparar espinhos",
+    "provisorio": true,
+    "tipo": "distancia",
+    "arma_longa": false,
+    "dano": [
+      6,
+      9
+    ],
+    "custo_pa": 2,
+    "precisao_base": 0.75,
+    "alcance_maximo": 8.0,
+    "distancia_ideal": [
+      0.0,
+      4.0
+    ],
+    "carregador": 0,
+    "reserva_maxima": 0,
+    "efeitos_criticos": [],
+    "bonus_mira": null
   }
 ]

@@ -1,16 +1,18 @@
 class_name ItemRules
 extends RefCounted
-# Itens de uso em combate (sugestão 5, aprovada pelo Léo em 16/11/2026): coquetel molotov e sinalizador.
-# O sal saiu (Léo, 19/11): o jogo não usa sal nem cruzes, os inimigos não são demônios. A granada de luz virou o
-# coquetel do Fernando (Léo, 20/11, matriz da missão 1: fogo de 10 ou mais derruba a flor Amarela da Dama).
+# Itens de uso em combate (sugestão 5, aprovada pelo Léo em 16/11/2026): coquetel molotov, sinalizador e itens das flores.
+# O sal saiu (Léo, 19/11): o jogo não usa sal nem cruzes, os inimigos não são demônios. A granada de luz saiu e o
+# coquetel do Fernando ficou no lugar (Léo, 20/11).
 # Custam o PA de usar item (custo_pa_combate em itens.json; 1 PA, provisório). Alcance, raio, dano e duração ficam em
 # combat.json, bloco "itens_combate", e são todos PROVISÓRIOS do Claude.
-#   Coquetel: fogo em área; dano em cada inimigo no raio (com fraqueza/resistência a fogo) e Em chamas em quem sobra;
-#   não atinge aliados; só quem está em "so_personagem" (o Fernando) arremessa.
 #   Sinalizador: luz no chão por alguns turnos de quem lançou; ataques do grupo contra inimigos na luz ganham acerto.
+#   Coquetel molotov (Léo, 20/11: material da flor Amarela, vem com o Fernando): fogo no ponto, dano de fogo e em chamas
+#   por 2 turnos (Léo, 20/11); só quem está em "so_personagem" (o Fernando) arremessa.
+#   Flor (fertilizante, agrotóxico, água, bulbo; Léo, 20/11): jogado numa flor da Dama de Sangue; a flor certa murcha.
 # Só regras: a sala escolhe o alvo, tira o item da mochila e mostra o resultado.
 
-const EFFECTS := ["coquetel", "sinalizador"]  # valor de "efeito" em itens.json
+const EFFECTS := ["sinalizador", "molotov", "flor"]  # valor de "efeito" em itens.json
+const FOGO := "fogo"  # tipo de dano do molotov (fraquezas.json já reservava)
 
 var cfg: CombatConfig
 var rules: CombatRules
@@ -67,9 +69,11 @@ func can_throw(user: Combatant, id: String) -> bool:
 
 
 # Motivo pelo qual `user` não pode usar o item, ou "" se pode. Códigos do HUD (HudText.REJECTION_MESSAGES).
-# `point`: centro do arremesso; `target`: reservado para item com alvo único (hoje nenhum).
+# `point`: centro do arremesso; `target`: alvo único (efeito "flor": uma flor aberta da Dama de Sangue).
 func blocker(user: Combatant, id: String, have: int, point: Vector2, target: Combatant = null, walls: Array[Rect2] = []) -> String:
 	if not user.is_alive() or user.insane or not is_combat_item(id) or have <= 0 or not can_throw(user, id):
+		return "requirement"
+	if effect(id) == "flor" and (target == null or not target.objeto or target.aceita.is_empty() or not target.is_alive() or target.protegido or target.side == user.side):
 		return "requirement"
 	if user.pa < cost(id):
 		return "no_pa"
@@ -81,11 +85,10 @@ func blocker(user: Combatant, id: String, have: int, point: Vector2, target: Com
 	return ""
 
 
-# Usa o item. Retorna {ok, reason, id, effect, point, hits: [{unit, damage, afinidade}], burning: [Combatant],
-# tipo_dano, flare}.
+# Usa o item. Retorna {ok, reason, id, effect, point, damage, flare, hits, murchou, sem_efeito}.
 # Não mexe na mochila: quem chama tira o item quando ok.
 func use(user: Combatant, id: String, have: int, point: Vector2, target: Combatant = null, units: Array = [], walls: Array[Rect2] = []) -> Dictionary:
-	var out := {"ok": false, "reason": "", "id": id, "effect": effect(id), "point": point, "hits": [], "burning": [], "tipo_dano": "", "flare": {}}
+	var out := {"ok": false, "reason": "", "id": id, "effect": effect(id), "point": point, "damage": 0, "flare": {}, "hits": [], "murchou": false, "sem_efeito": false}
 	out.reason = blocker(user, id, have, point, target, walls)
 	if out.reason != "":
 		return out
@@ -93,23 +96,33 @@ func use(user: Combatant, id: String, have: int, point: Vector2, target: Combata
 	user.pa -= cost(id)
 	var p := params(id)
 	match effect(id):
-		"coquetel":
-			out.tipo_dano = str(p.get("tipo_dano", "fogo"))
+		"sinalizador":
+			out.flare = {"pos": point, "radius": radius_px(id), "rounds": int(p["rodadas"]), "owner": user, "bonus": float(p["bonus_acerto"])}
+			rules.lit_zones.append(out.flare)
+		"molotov":  # hits: [{unit, damage, sem_efeito}] dos inimigos no raio
 			for u: Combatant in units:
 				if u.side == user.side or not u.is_alive() or u.pos.distance_to(point) > radius_px(id) + u.radius:
 					continue
 				u.provoke()
-				var af := Fraquezas.afinidade(cfg.game_data, u.kind, out.tipo_dano)
-				var dmg := float(rng.randi_range(int(p["dano_min"]), int(p["dano_max"]))) * Fraquezas.multiplicador(af)
-				var hit := rules.damage_after_defense(dmg, u.defense_total())
-				u.take_damage(hit)
-				out.hits.append({"unit": u, "damage": hit, "afinidade": af})
-				if u.is_alive() and str(p.get("condicao", "")) != "":
-					rules.apply_condition(u, str(p["condicao"]))
-					out.burning.append(u)
-		"sinalizador":
-			out.flare = {"pos": point, "radius": radius_px(id), "rounds": int(p["rodadas"]), "owner": user, "bonus": float(p["bonus_acerto"])}
-			rules.lit_zones.append(out.flare)
+				if not u.fere(FOGO, id):
+					out.hits.append({"unit": u, "damage": 0, "sem_efeito": true})
+					continue
+				var dmg := rng.randi_range(int(p["dano"][0]), int(p["dano"][1]))
+				var af := Fraquezas.afinidade(cfg.game_data, u.kind, FOGO)
+				var final := rules.damage_after_defense(float(dmg) * Fraquezas.multiplicador(af), u.defense_total())
+				u.take_damage(final)
+				out.damage += final
+				if u.is_alive() and not u.objeto:
+					rules.apply_condition(u, "em_chamas")
+					if p.has("rodadas_chamas"):  # Léo (20/11): o fogo do coquetel queima 2 turnos, sem sorteio
+						u.conditions["em_chamas"].rounds = maxi(int(u.conditions["em_chamas"].rounds), int(p["rodadas_chamas"]))
+				out.hits.append({"unit": u, "damage": final, "sem_efeito": false})
+		"flor":  # a flor só murcha com o item que ela pede (aceita); com outro, nada acontece
+			if target.fere("", id):
+				target.pv = 0
+				out.murchou = true
+			else:
+				out.sem_efeito = true
 	return out
 
 

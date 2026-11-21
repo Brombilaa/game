@@ -83,6 +83,9 @@ const FIELDS := {
 		"acumulo_max": {"t": "int", "nulo": true, "min": 1},
 		"remocao": {"t": "texto", "nulo": true},  # item que remove a condição
 		"pula_turno": {"t": "bool", "nulo": false},
+		"pa_menos": {"t": "int", "nulo": true, "min": 0},  # PA a menos no turno em que a condição está ativa (confuso, derrubado)
+		"imobiliza": {"t": "bool", "nulo": true},  # não anda enquanto durar (preso)
+		"dano_fixo": {"t": "int", "nulo": true, "min": 0},  # PV perdidos no início do turno, além do percentual (miasma)
 	},
 	"armas": {
 		"id": {"t": "texto", "nulo": false},

@@ -26,10 +26,13 @@ const ENCONTROS := {
 	"corredor": {"nome": "Cripta, corredor: 2 cultistas", "inimigos": ["cultista", "cultista"], "dist_m": 7.0, "surpresa": -1},
 	# Salão (Léo: 7 inimigos contando Roberto). Léo (19/11): os 6 em volta do Roberto seguem o ritual e só lutam
 	# se forem atacados ("ritual": quantos dos primeiros da lista começam em ritual). Limites como em cripta.json.
-	"salao": {"nome": "Cripta, salão: 4 cultistas e 2 atiradores no ritual, Roberto e a Dama", "inimigos": ["cultista", "cultista", "cultista", "cultista", "atirador", "atirador", "roberto_ghular"], "ritual": 6, "dist_m": 9.0, "surpresa": -1, "chefe": {"de": "roberto_ghular", "limite": 0.5, "vira": "dama_sangue", "fim": 0.2}},
+	"salao": {"nome": "Cripta, salão: 4 cultistas e 2 atiradores no ritual, Roberto e a Dama", "inimigos": ["cultista", "cultista", "cultista", "cultista", "atirador", "atirador", "roberto_ghular"], "ritual": 6, "dist_m": 9.0, "surpresa": -1, "chefe": {"de": "roberto_ghular", "limite": 0.5, "vira": "dama_sangue", "fim": 0.15}},
 }
 
 const MAX_RODADAS := 40
+# Dano médio em PV da habilidade de cada flor que abre na fase 1 da Dama (Laranja, Rosa, Roxa, Amarela, Verde, Azul;
+# dama_sangue.json): Visão, Grito e Prisão não tiram PV; Espinhos e Miasma contados num alvo só.
+const DANO_FLORES_FASE1 := [0, 10, 0, 9, 0, 8]
 
 var cfg: CombatConfig
 var rng := RandomNumberGenerator.new()
@@ -98,6 +101,8 @@ func lutar(e: Dictionary) -> Dictionary:
 	var chefe: Dictionary = e.get("chefe", {})
 	var dama: Combatant = null
 	var fim := false
+	var fase_dama := 1
+	var dama_turnos := 0
 	var roteirizado: Combatant = null  # Fernando morto pela cena (não conta como caído)
 	var atacantes := {}  # alvo -> quantos inimigos o atacaram nesta rodada
 	var rodada := 0
@@ -111,6 +116,19 @@ func lutar(e: Dictionary) -> Dictionary:
 		if u.em_ritual:
 			turns.end_turn()  # segue o ritual (só luta depois de ser atacado)
 			continue
+		if u == dama and fase_dama == 1:
+			# Dama (Léo, 20/11; ChefeDama): na fase 1 cada turno é devorar um pendurado e usar a habilidade da flor que
+			# abre. Aqui só o dano em PV, sem flores murchando (o grupo da simulação não usa itens nem rituais).
+			if dama_turnos < DANO_FLORES_FASE1.size() and dama.pv > 0.5 * dama.max_pv:
+				var vitima := _alvo(u, units, {})
+				if vitima:
+					vitima.take_damage(rules.damage_after_defense(float(DANO_FLORES_FASE1[dama_turnos]), vitima.defense_total()))
+				dama_turnos += 1
+				turns.end_turn()
+				continue
+			fase_dama = 2  # corpos acabaram ou ela caiu a 50%: bate 25% mais forte
+			dama.weapon["damage_min"] = int(round(int(dama.weapon["damage_min"]) * 1.25))
+			dama.weapon["damage_max"] = int(round(int(dama.weapon["damage_max"]) * 1.25))
 		var guard := 0
 		while turns.is_turn_of(u) and u.pa > 0 and guard < 12:
 			guard += 1

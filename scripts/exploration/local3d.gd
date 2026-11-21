@@ -11,7 +11,9 @@ extends "res://scripts/exploration/parque.gd"
 #   - visao: o que barra a visão quando é menos do que o que barra o passo (parapeito, fosso, altar);
 #   - niveis: áreas elevadas; só mudam a altura em que cada um é desenhado (e o clique acha o piso certo);
 #   - chefe: Roberto Ghular se mata com pouca vida e a Dama de Sangue surge dele, no mesmo combate;
-#   - fim: com a Dama em ~20% de vida (limite em cripta.json) toca a cutscene da morte do Fernando pelo tentáculo (cena_tentaculo.gd);
+#   - a luta da Dama (7 flores, pendurados, fases) é do ChefeDama (scripts/combat/chefe_dama.gd);
+#   - fim: com a Dama em 15% de vida ou menos (limite em cripta.json), logo depois do turno do Fernando, toca a cutscene
+#     da morte dele pelo tentáculo (cena_tentaculo.gd);
 #   - grupos: marca gravada quando todos os inimigos de um grupo caem (não voltam ao carregar o save).
 # O lugar aberto vem de Missao1.local (ou de `local_id`, para abrir a cena direto no editor).
 
@@ -27,6 +29,7 @@ var niveis: Array = []  # áreas elevadas: {"h", "rampa", "ret": Rect2 + "dir"} 
 var adormecidos := {}  # trecho -> fichas dos inimigos que esperam o trecho ser revelado
 var ficha_de := {}  # inimigo -> a ficha dele nos dados (grupo, trecho)
 var chefe_virou := false  # a Dama de Sangue já surgiu
+var chefe_dama: ChefeDama  # a luta da Dama (flores, pendurados, fases); nulo até ela surgir
 var portas := {}  # id -> {"rect": Rect2, "chave": item, "no": MeshInstance3D}: portas trancadas que ainda não abriram
 var porta_avisada := ""  # a porta cujo aviso "Trancada" já apareceu nesta aproximação
 var fim_tocou := false  # a cutscene do tentáculo (fim da missão 1) já começou
@@ -249,6 +252,8 @@ func _por_inimigo(spec: Dictionary) -> Combatant:
 		tipo = str(chefe["vira"])  # save feito depois de a Dama surgir: ela já está no lugar dele
 		chefe_virou = true
 	var u := cfg.make_enemy(tipo, Vector2(p[0], p[1]))
+	if chefe_virou and tipo == str(chefe.get("vira", "")):
+		chefe_dama = ChefeDama.new(self, u, chefe.get("corpos", []))  # save depois de ela surgir: a luta recomeça inteira
 	u.perception *= float(spec.get("percepcao_fator", 1.0))
 	u.em_ritual = bool(spec.get("ritual", false))  # salão da cripta: só luta se for atacado (Léo, 19/11)
 	if spec.has("olha"):
@@ -376,6 +381,8 @@ func _proximo_apos_vitoria() -> String:
 
 func _process(delta: float) -> void:
 	super(delta)
+	if chefe_dama != null:
+		chefe_dama.visual.sync()
 	if mode == Mode.EXPLORATION and indo_para == "" and not _dialogo_aberto():
 		_zonas()
 		_portas()
@@ -486,6 +493,8 @@ func _invasao(inv: Dictionary) -> void:
 
 
 func _on_combat_ended(result: TurnManager.Result) -> void:
+	if result == TurnManager.Result.VICTORY and chefe_dama != null:
+		chefe_dama.encerrar()  # flores, tentáculos e prisões que sobraram somem
 	super(result)
 	var inv: Dictionary = dados.get("invasao", {})
 	if result == TurnManager.Result.VICTORY and not inv.is_empty():
@@ -520,6 +529,17 @@ func _marcar_grupos() -> void:
 # foi resolvido pelas regras quando chega aqui, então a troca acontece antes de o combate conferir se acabou.
 func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void:
 	super(attacker, target, r)
+	_depois_do_dano(target)
+
+
+# Ritual ou item de combate que atingiu alguém: as mesmas conferências do golpe, e as flores e tentáculos da Dama.
+func _apos_efeito(alvo: Combatant) -> void:
+	_depois_do_dano(alvo)
+	if chefe_dama != null:
+		chefe_dama.ao_impacto(alvo)
+
+
+func _depois_do_dano(target: Combatant) -> void:
 	if _e_a_dama(target) and not target.is_alive() and not dados.get("fim", {}).is_empty() and not fim_tocou:
 		target.pv = 1  # a Dama não morre antes da cutscene do fim (Léo, 15/11): um golpe que a mataria a deixa por um fio
 	if _e_a_dama(target) and not target.is_alive():
@@ -540,6 +560,7 @@ func _show_attack(attacker: Combatant, target: Combatant, r: Dictionary) -> void
 	Missao1.marcar(str(chefe["marca"]))
 	if mode == Mode.COMBAT and turns != null:
 		turns.add_unit(dama)
+	chefe_dama = ChefeDama.new(self, dama, chefe.get("corpos", []))  # pendurados e flor Vermelha surgem com ela
 	_log(str(chefe["texto"]))
 	_popup(target.pos, "A DAMA DE SANGUE SURGE", "down")
 	audio.on_boss_appeared()
@@ -564,17 +585,45 @@ func _e_a_dama(u: Combatant) -> bool:
 	return enemies.has(u) and u.name == "Dama de Sangue"  # surgida de Roberto ou já no lugar dele (save)
 
 
-# Fim da missão 1 (Léo, 15/11): quando o golpe acerta e a Dama fica com ~20% de vida ou menos (fim.limite de cripta.json), o combate para e toca a
-# cutscene do tentáculo (CenaTentaculo). Roda no impacto, quando a barra de vida já mostra o valor novo.
+# Cada impacto pode murchar uma flor, salvar um pendurado, soltar um preso ou levar a Dama à fase 2.
 func _on_fx_impact(job: Dictionary) -> void:
 	super(job)
+	if chefe_dama != null:
+		chefe_dama.ao_impacto(job["target"])
+
+
+func _run_enemy_turn(unit: Combatant) -> void:
+	if chefe_dama != null and unit == chefe_dama.dama:
+		await chefe_dama.run_turn()
+		return
+	await super(unit)
+
+
+func _start_combat(surprise_side: int = -1) -> void:
+	super(surprise_side)
+	if turns != null and not turns.turn_ended.is_connected(_ao_fim_do_turno):
+		turns.turn_ended.connect(_ao_fim_do_turno)
+
+
+# Fim da missão 1 (Léo, 20/11): com a Dama em 15% de vida ou menos (fim.limite de cripta.json), a cutscene do
+# tentáculo toca logo depois do turno do Fernando, sempre; se ele está caído, no fim do turno em que ela chegou lá.
+func _ao_fim_do_turno(u: Combatant) -> void:
 	var fim: Dictionary = dados.get("fim", {})
-	var alvo: Combatant = job["target"]
-	if fim.is_empty() or fim_tocou or mode != Mode.COMBAT or not _e_a_dama(alvo) or not alvo.is_alive():
+	if fim.is_empty() or fim_tocou or mode != Mode.COMBAT:
 		return
-	if float(alvo.pv) > float(fim["limite"]) * float(alvo.max_pv):
+	var dama: Combatant = null
+	for e in enemies:
+		if _e_a_dama(e) and e.is_alive():
+			dama = e
+	if dama == null or float(dama.pv) > float(fim["limite"]) * float(dama.max_pv):
 		return
-	iniciar_fim(alvo)
+	var fernando: Combatant = null
+	for m in party:
+		if m.name == "Fernando":
+			fernando = m
+	if fernando != null and fernando.is_alive() and u != fernando:
+		return
+	iniciar_fim(dama)
 
 
 func iniciar_fim(dama: Combatant) -> void:
@@ -588,6 +637,15 @@ func iniciar_fim(dama: Combatant) -> void:
 func _draw_hud(font: Font) -> void:
 	if mode != Mode.CUTSCENE:
 		super(font)
+
+
+# Flores e tentáculos da Dama: o objeto 3D é do DamaVisual; aqui só a barra de vida de quem dá para ferir agora.
+func _draw_unit(u: Combatant) -> void:
+	if not u.objeto:
+		super(u)
+		return
+	if mode == Mode.COMBAT and u.is_alive() and not u.protegido:
+		_draw_health_bar(u, _iso(u.pos))
 
 
 func _draw_health_bar(u: Combatant, at: Vector2) -> void:

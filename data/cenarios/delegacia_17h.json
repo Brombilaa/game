@@ -1431,6 +1431,27 @@
    ]
   },
   {
+   "id": "bebedouro_recepcao",
+   "pos": [
+    416.0,
+    1056.0
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Ao lado do bebedouro da recepção, uma garrafa de água fechada. Pode servir.",
+   "provisorio": true,
+   "da": [
+    {
+     "item": "garrafa_agua",
+     "qtd": 1
+    }
+   ]
+  },
+  {
    "id": "kit_recepcao",
    "pos": [
     288.0,

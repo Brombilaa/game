@@ -405,7 +405,8 @@ func _cinema_e_tentaculo() -> void:
 	t.free()
 
 
-# Fim da missão 1 (Léo, 15/11): a Dama não morre antes da cena; a cena só começa no impacto que a deixa em ~30% ou menos.
+# Fim da missão 1 (Léo, 20/11): a Dama não morre antes da cena; a cena começa com ela em 15% ou menos, logo depois do
+# turno do Fernando (ou no fim de qualquer turno, se ele estiver caído).
 func _fim_da_missao() -> void:
 	Missao1.reiniciar()
 	for m in ["cripta_trecho2", "cripta_trecho3", "cripta_trecho4", "dama_surgiu"]:
@@ -416,24 +417,29 @@ func _fim_da_missao() -> void:
 		if e.name == "Dama de Sangue":
 			dama = e
 	_check(dama != null and not room.dados.get("fim", {}).is_empty(), "fim: a Dama está na cripta e os dados trazem o fim")
+	_check(is_equal_approx(float(room.dados["fim"]["limite"]), 0.15), "fim: limite de 15% (Léo, 20/11)")
 	room._start_combat()
 	var acerto := {"ok": true, "hit": true, "damage": 3, "crit": false, "blocked": false}
-	# Acima do limite do fim (20%): o combate segue.
+	var fernando: Combatant = room.party[0]
+	var outro: Combatant = room.party[1]
+	# Acima do limite: o turno do Fernando acaba e o combate segue.
 	dama.pv = int(dama.max_pv * 0.6)
-	room._on_fx_impact({"attacker": room.player, "target": dama, "r": acerto, "from_pv": dama.pv + 3})
+	room._ao_fim_do_turno(fernando)
 	_check(not room.fim_tocou and room.mode == room.Mode.COMBAT, "fim: com a Dama acima do limite a cena não toca")
 	# Um golpe que a mataria a deixa por um fio.
 	dama.pv = 0
 	room._show_attack(room.player, dama, acerto)
 	_check(dama.pv == 1, "fim: a Dama não morre antes da cena")
-	# No impacto com ~20% ou menos, a cena começa e congela o combate.
-	room._on_fx_impact({"attacker": room.player, "target": dama, "r": acerto, "from_pv": 4})
-	_check(room.fim_tocou and room.mode == room.Mode.CUTSCENE, "fim: abaixo do limite (20%) a cutscene começa")
+	# Abaixo do limite, mas o turno que acaba não é o do Fernando (de pé): espera a vez dele.
+	room._ao_fim_do_turno(outro)
+	_check(not room.fim_tocou, "fim: com a Dama a 15% a cena espera o turno do Fernando")
+	room._ao_fim_do_turno(fernando)
+	_check(room.fim_tocou and room.mode == room.Mode.CUTSCENE, "fim: depois do turno do Fernando a cutscene começa")
 	_check(room.turns.state == TurnManager.State.ENDED, "fim: o combate fica congelado")
 	_check(not room.can_pause(), "fim: não se pausa durante a cutscene")
 	# Só toca uma vez.
 	var filhos := room.get_child_count()
-	room._on_fx_impact({"attacker": room.player, "target": dama, "r": acerto, "from_pv": 4})
+	room._ao_fim_do_turno(fernando)
 	_check(room.get_child_count() == filhos, "fim: a cutscene não recomeça")
 	# A cena acaba e o combate continua sem o Fernando (Léo: depois dele a Dama morre, a Letícia é salva...).
 	var cena: CenaTentaculo = null
@@ -443,7 +449,6 @@ func _fim_da_missao() -> void:
 	Engine.time_scale = 8.0  # a cena dura ~20 s de jogo
 	await cena.terminou
 	Engine.time_scale = 1.0
-	var fernando: Combatant = room.party[0]
 	_check(room.mode == room.Mode.COMBAT and room.turns.state == TurnManager.State.ACTIVE, "fim: depois da cena o combate volta")
 	_check(fernando.name == "Fernando" and fernando.dead and not fernando.is_alive() and Missao1.tem("fernando_morreu"), "fim: o Fernando morre de vez")
 	_check(room.player != fernando and room.player.is_alive(), "fim: o controle passa a alguém de pé")

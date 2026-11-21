@@ -222,9 +222,9 @@ func _setup_gear() -> void:
 	room.inventory = Inventory.new(room.cfg.game_data)
 	var scarce := room._gear_scarce()
 	var items := [[TestRoom.KIT_ID, 1], ["colete_leve", 1], ["colete_pesado", 1]] if scarce else [[TestRoom.KIT_ID, 1], ["bandagem", 2], ["antidoto", 1], ["colete_leve", 1], ["colete_pesado", 1]]
-	# Itens de combate (sugestão 5, provisório do Claude): o coquetel é do Fernando (Léo, 20/11; quantidade em aberto, 1 na
-	# escassez e 2 fora dela, provisório) e a Ordem manda um sinalizador.
-	items += [["coquetel", 1], ["sinalizador", 1]] if scarce else [["coquetel", 2], ["sinalizador", 2]]
+	# Itens de combate (sugestão 5, provisório do Claude): a Ordem manda um sinalizador (a granada de luz saiu, Léo 20/11).
+	items += [["sinalizador", 1]] if scarce else [["sinalizador", 2]]
+	items += [["coquetel", 1]]  # Léo (20/11): o coquetel da flor Amarela da Dama vem com o Fernando
 	# Componentes de ritual (19/11, provisório do Claude): o Miguel sai com uma bateria e um relógio quebrado, para
 	# Eletrocussão e Cicatrização no parque; Sangue só depois da primeira Criatura. A sala de teste traz de todos.
 	items += [["bateria", 1], ["relogio_quebrado", 1]] if scarce else [["sangue_coagulado", 3], ["bateria", 3], ["relogio_quebrado", 3]]

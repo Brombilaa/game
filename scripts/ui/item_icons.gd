@@ -13,6 +13,7 @@ const ICON_COLORS := {
 	"o": Color(0.05, 0.035, 0.03), "a": Color(0.8, 0.76, 0.68), "b": Color(0.52, 0.48, 0.43),
 	"c": Color(0.3, 0.27, 0.24), "w": Color(0.47, 0.28, 0.15), "g": Color(0.84, 0.68, 0.36),
 	"r": Color(0.74, 0.11, 0.13), "y": Color(0.88, 0.72, 0.42),
+	"u": Color(0.32, 0.55, 0.82), "p": Color(0.55, 0.28, 0.72), "v": Color(0.38, 0.62, 0.3),  # água, bulbo roxo, agrotóxico
 }
 # Ícones pintados do Léo (ChatGPT, 30/10/2026), recortados em 64×64 por tools/sprites/icones_acoes.py.
 # Quem não tem arte usa o pixel art provisório de PIXEL_ROWS.
@@ -367,6 +368,18 @@ const PIXEL_ROWS := {
 		".....orrro......",
 		".....occco......",
 		".....ooooo......",
+	],
+	# Bulbo da flor Roxa da Dama de Sangue (Léo, 20/11): pixel art provisório do Claude.
+	"bulbo_bravo_purpulis": [
+		".......vo.......",
+		"......vvo.......",
+		".....oppo.......",
+		"....oppppo......",
+		"...opppappo.....",
+		"...oppppppo.....",
+		"....oppppo......",
+		".....owwo.......",
+		"....ow..wo......",
 	],
 }
 

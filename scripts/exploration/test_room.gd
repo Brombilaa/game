@@ -722,6 +722,11 @@ func _flash_in_3d(_u: Combatant) -> bool:
 	return false
 
 
+# Gancho depois de um ritual ou item de combate atingir `alvo` (a cripta confere a Dama de Sangue e as flores dela).
+func _apos_efeito(_alvo: Combatant) -> void:
+	pass
+
+
 # Gancho para a sala encenar o golpe por conta própria (o parque 3D toca a animação do modelo).
 func _attack_started(_attacker: Combatant, _target: Combatant, _aim: float) -> void:
 	pass
