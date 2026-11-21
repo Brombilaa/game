@@ -22,6 +22,7 @@ func _init() -> void:
 	_test_heal()
 	_test_san_edge()
 	_test_components()
+	_test_preparo()
 	print("Falhas: %d" % failures)
 	quit(1 if failures > 0 else 0)
 
@@ -236,6 +237,48 @@ func _test_components() -> void:
 	rit.inventory = null
 	m.pa = 3
 	_check(rit.blocker(m, "armadura_sangue") == "no_component", "sem mochila não há componente")
+
+
+func _test_preparo() -> void:
+	_fresh()
+	var m := _miguel()
+	_check(rit.prepare_extra() == 1 and rit.prepare_max() == 2 and is_equal_approx(float(cfg.preparo("bonus")), 0.25), "preparo: 1 extra, até 2 cargas, +25% (provisório)")
+	var out := rit.prepare(m, "armadura_sangue")
+	_check(out.ok and rit.prepared_charges(m, "armadura_sangue") == 1, "prepara uma carga")
+	_check(out.components.size() == 2 and out.components[0] == "sangue_coagulado" and rit.component_items("sangue").find(out.components[1]) < 0, "gasta o do elemento e um de OUTRO elemento")
+	_check(rit.inventory.count("sangue_coagulado") == 4 and rit.extras_available("armadura_sangue") == 9, "a mochila perde os dois componentes")
+	rit.prepare(m, "armadura_sangue")
+	_check(rit.prepare_blocker(m, "armadura_sangue") == "max_charges" and not rit.prepare(m, "armadura_sangue").ok, "máximo de cargas por ritual")
+	var antes := rit.inventory.count("sangue_coagulado")
+	var c := rit.cast(m, "armadura_sangue")
+	_check(c.ok and c.prepared and c.components.is_empty() and rit.inventory.count("sangue_coagulado") == antes, "conjurar com carga não gasta componente")
+	_check(is_equal_approx(float(m.buffs["armadura_sangue"]["defesa"]), 0.25) and rit.prepared_charges(m, "armadura_sangue") == 1, "carga reforça a defesa a 25% e sobra uma")
+	m.pa = 3
+	var c2 := rit.cast(m, "armadura_sangue")
+	_check(c2.prepared and rit.prepared_charges(m, "armadura_sangue") == 0 and not m.prepared.has("armadura_sangue"), "a segunda carga acaba e some do dicionário")
+	m.pa = 3
+	var c3 := rit.cast(m, "armadura_sangue")
+	_check(c3.ok and not c3.prepared and c3.components == ["sangue_coagulado"] and is_equal_approx(float(m.buffs["armadura_sangue"]["defesa"]), 0.2), "sem carga volta ao componente e ao efeito normal")
+	# Dano extra e cura reforçados
+	m.pa = 3
+	rit.prepare(m, "amaldicoar_arma")
+	rit.cast(m, "amaldicoar_arma")
+	_check(int(m.buffs["amaldicoar_arma"]["dano"]) == 3, "Amaldiçoar preparado: +2 vira +3 (arredonda para cima)")
+	m.pa = 3
+	m.san = m.max_san
+	var ally := _miguel()
+	ally.max_pv = 40
+	ally.pv = 10
+	rit.prepare(m, "cicatrizacao")
+	var h := rit.cast(m, "cicatrizacao", ally)
+	_check(h.ok and h.prepared and h.healed >= 15, "Cicatrização preparada cura mais (%d)" % h.healed)
+	# Sem componente de outro elemento não combina
+	rit.inventory = Inventory.new(cfg.game_data)
+	rit.inventory.add("sangue_coagulado", 3)
+	_check(rit.prepare_blocker(m, "armadura_sangue") == "no_extra", "sem outro elemento: falta a combinação")
+	rit.inventory.remove("sangue_coagulado", 3)
+	_check(rit.prepare_blocker(m, "armadura_sangue") == "no_component", "sem o do elemento: recusado")
+	_check(rit.prepare_blocker(cfg.make_agent("fernando", Vector2.ZERO), "armadura_sangue") == "requirement", "quem não conhece não prepara")
 
 
 func _test_san_edge() -> void:

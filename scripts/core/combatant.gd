@@ -37,6 +37,7 @@ var ruptured := false  # SAN chegou a 0: debuffs até ritual de cura, perk ou zo
 var ruptures_in_combat := 0  # vezes que chegou a 0 neste combate; 2 = loucura
 var insane := false  # enlouqueceu: morte do personagem (GDD #11)
 var conditions: Dictionary = {}  # id -> {"stacks": int, "rounds": int (-1 = até remover)}  # PA da ficha; -1 usa o padrão do combate (3 para protagonistas)
+var prepared: Dictionary = {}  # id do ritual -> cargas preparadas no ponto de descanso (dispensam o componente e reforçam o efeito)
 var em_ritual := false  # Léo (19/11): inimigo do salão da cripta focado no ritual; só luta depois de ser atacado (provoke)
 var buffs: Dictionary = {}  # id do ritual -> {"rounds": turnos restantes, "defesa": fração, "dano": extra por ataque}
 # Alvos sem turno da Dama de Sangue (flores, tentáculos que seguram os pendurados e prendem o grupo): atacáveis,

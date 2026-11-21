@@ -18,6 +18,9 @@
 		"grupo": [[450, 690], [510, 660], [545, 610]],
 		"npcs": [{"id": "caio", "pos": [330, 740]}, {"id": "leticia", "pos": [390, 705]}]
 	},
+	"descansos": [
+		{"id": "van", "nome": "A Van", "ret": [0, 690, 450, 105], "clique": "van", "provisorio": true, "_nota": "Léo, 20/11: a Van é o ponto de descanso (zona segura): clicar nela abre as opções. ret = onde o grupo precisa estar (faixa em frente à van, provisória); clique = colisão que cobre o corpo da van."}
+	],
 	"colisoes": [
 		{"id": "van", "rect": [0, 790, 410, 170], "_nota": "parede: o retângulo cobre o corpo rotacionado da van"},
 		{"id": "lago", "rect": [0, 0, 372, 100], "_nota": "lago maior do cenário 3D (6/11); a grade de ferro acompanha a borda inclinada, por isso são quatro retângulos em degraus, por dentro da grade"},
