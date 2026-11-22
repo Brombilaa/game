@@ -1,10 +1,10 @@
 {
 	"_comentario": "Fraquezas e resistências dos inimigos (sugestão 6 da segunda leva, aprovada pelo Léo em 16/11). Quais inimigos têm o quê fica em inimigos.json (campos 'fraquezas' e 'resistencias', com os tipos de dano abaixo; 'atordoado' em resistencias continua sendo imunidade a atordoar). Aqui ficam os multiplicadores e como o grupo descobre cada uma. TUDO PROVISÓRIO do Claude, para o Léo revisar jogando.",
 	"provisorio": true,
-	"_tipos": "tipos de dano: 'balistico' (armas de fogo), 'corpo_a_corpo' (soco, espada, faca, garra) e 'ritual' (Eletrocussão). 'fogo' é o dano do coquetel do Fernando (item de uso em combate). Sem 'sal': o jogo não usa sal nem cruzes (Léo, 19/11).",
+	"_tipos": "tipos de dano: 'balistico' (qualquer arma de fogo, mesmo a queima-roupa), 'corpo_a_corpo' (soco, espada, faca, garra; \"de perto\" aqui nunca inclui tiro) e 'ritual' (Eletrocussão). 'fogo' é o dano do coquetel do Fernando (item de uso em combate). Sem 'sal': o jogo não usa sal nem cruzes (Léo, 19/11).",
 	"tipos": {
 		"balistico": "balas",
-		"corpo_a_corpo": "golpes de perto",
+		"corpo_a_corpo": "golpes corpo a corpo",
 		"ritual": "rituais",
 		"fogo": "fogo"
 	},
@@ -39,7 +39,7 @@
 			"pistas": [
 				"cela_arranhoes"
 			],
-			"texto": "O símbolo desenhado na cela é o mesmo que os cultistas carregam marcado na pele. Ele protege quem o usa: rituais pegam mais fraco nos cultistas.",
+			"texto": "O símbolo desenhado na cela é o mesmo que os cultistas carregam marcado na pele. Se ele protege quem o usa, rituais pegam mais fraco nos cultistas.",
 			"combate": "A marca de sangue na pele do cultista brilha e engole parte do ritual.",
 			"miguel": "A marca na pele deles bebe o ritual. Contra cultista, prefiro que o Fernando resolva no chumbo."
 		},
@@ -49,7 +49,7 @@
 			"pistas": [
 				"gaveta_provas"
 			],
-			"texto": "As balas soltas na gaveta são de fuzil de caça, iguais às dos atiradores do culto. Arma longa e pesada: de perto, quem atira com ela fica exposto. Atiradores apanham mais em golpes de perto.",
+			"texto": "Levaram da gaveta de provas o fuzil de caça, igual ao dos atiradores do culto. Arma longa e pesada: de perto, quem atira com ela fica exposto. Atiradores apanham mais de golpes corpo a corpo (soco, espada, faca).",
 			"combate": "De perto o atirador não consegue usar o fuzil e fica sem defesa.",
 			"miguel": "Fuzil longo não serve de perto. Se alguém chegar colado no atirador, ele não tem o que fazer."
 		},
@@ -59,7 +59,7 @@
 			"pistas": [
 				"agenda_ghular"
 			],
-			"texto": "Todo sábado da agenda do delegado diz apenas \"treino\". Quem treina assim, há anos, aguenta pancadas que derrubariam um homem: golpes de perto quase não afetam Roberto Ghular.",
+			"texto": "Todo sábado da agenda do delegado diz apenas \"treino\". Quem treina assim, semana após semana, aguenta pancada que derrubaria um homem: golpes corpo a corpo quase não afetam Roberto Ghular.",
 			"combate": "Roberto Ghular nem sente o golpe. O que está dentro dele aguenta pancada.",
 			"miguel": "Roberto não sente pancada. Não é mais o corpo de um homem que está ali."
 		},
@@ -69,7 +69,7 @@
 			"pistas": [
 				"diario_bibliotecaria"
 			],
-			"texto": "O delegado levou da biblioteca o livro do pacto sem registrar o caso. Quem se entrega a esse pacto também fica preso a ele: rituais ferem Roberto Ghular mais que armas.",
+			"texto": "Juliana sabia o que o Sanguis Orchid diz, e o delegado levou o livro sem registrar o caso. Quem se entrega a esse pacto também fica preso a ele: rituais ferem Roberto Ghular mais que armas.",
 			"combate": "O ritual arranca um grito de Roberto Ghular que não é a voz dele.",
 			"miguel": "O pacto que tomou Roberto ainda o prende. Ritual dói nele de um jeito que bala não dói."
 		},
@@ -79,7 +79,7 @@
 			"pistas": [
 				"livro_faltando"
 			],
-			"texto": "Entre as páginas do Sanguis Orchid, uma nota solta: \"A Senhora do Sangue não se toca com as mãos. Quem chega perto dela sangra antes de ferir.\" A Dama de Sangue resiste a golpes de perto.",
+			"texto": "Entre as páginas do Sanguis Orchid, uma nota solta: \"A Senhora do Sangue não se toca com as mãos. Quem chega perto dela sangra antes de ferir.\" A Dama de Sangue resiste a golpes corpo a corpo.",
 			"combate": "O golpe afunda no sangue da Dama como em água. De perto ela quase não se fere.",
 			"miguel": "Quem chega perto dela sangra antes de ferir. De longe, sempre de longe."
 		},
