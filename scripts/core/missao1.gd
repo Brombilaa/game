@@ -28,6 +28,7 @@ static func reiniciar() -> void:
 	chegada = ""
 	marcas.clear()
 	diario.clear()
+	TestePericia.reiniciar()
 
 
 static func marcar(nome: String) -> void:

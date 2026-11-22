@@ -3555,7 +3555,15 @@
    "apos": "geraldo_1977",
    "tipo": "cena",
    "cena": "geraldo_1977",
-   "marca": "geraldo_1977"
+   "marca": "geraldo_1977",
+   "teste": {
+    "pericias": [
+     "diplomacia",
+     "intimidacao"
+    ],
+    "dt": 15,
+    "cena_falha": "geraldo_1977_pouco"
+   }
   },
   {
    "id": "despedida",

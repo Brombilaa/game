@@ -1,5 +1,5 @@
 {
-	"_nota": "Primeira conversa com o Geraldo (roteiro 3c, Léo 20/11). Ele começa Inamistoso e, quando o grupo mostra interesse de verdade, fica Indiferente e conta que também investigou um caso parecido em 1977 e pegou o livro Sanguis Orchid. O teste de Diplomacia (DT 20) do roteiro ainda não existe no jogo: a subida de atitude é fixa (provisório). Falas do grupo provisórias do Claude.",
+	"_nota": "Primeira conversa com o Geraldo (roteiro 3c, Léo 20/11). Ele começa Inamistoso e, quando o grupo mostra interesse de verdade, fica Indiferente e conta que também investigou um caso parecido em 1977 e pegou o livro Sanguis Orchid. O teste do roteiro (Diplomacia ou Intimidação, DT 15 no mapa provisório) agora é rolado na cena seguinte (geraldo_1977); a subida de atitude é fixa (provisório). Falas do grupo provisórias do Claude.",
 	"passos": [
 		{
 			"faz": "cinema",

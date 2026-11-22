@@ -1,0 +1,35 @@
+{
+	"_nota": "Versão curta do caso de 1977 (roteiro 3c, Léo 20/11): quando o teste de Diplomacia/Intimidação (DT 15) falha, o Geraldo conta pouco. Texto provisório do Claude.",
+	"passos": [
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.7,
+			"junto": true
+		},
+		{
+			"faz": "legenda",
+			"texto": "Atitude do Geraldo: Indiferente.",
+			"tempo": 1.6
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "geraldo",
+					"texto": "1977? Foi há muito tempo. Era um caso, eu era policial. Não deu em nada."
+				},
+				{
+					"quem": "geraldo",
+					"texto": "Peguei um livro, o Sanguis Orchid, e acabou. Não tenho mais nada para dizer."
+				}
+			]
+		},
+		{
+			"faz": "cinema",
+			"estado": "sair",
+			"tempo": 0.6,
+			"junto": true
+		}
+	]
+}

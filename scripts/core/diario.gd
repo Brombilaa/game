@@ -31,6 +31,7 @@ const TITULOS := {
 	"caixa_arquivo": "Caixa de arquivo",
 	# Necrotério e casa do Velho Geraldo (22/11)
 	"tutu_corpo": "O corpo do Tutu",
+	"tutu_pescoco": "Pontos no pescoço do Tutu",
 	"mesa_legista": "A mesa do legista",
 	"gaveta_zumbi": "A gaveta do zumbi",
 	"armario_instrumentos": "Armário de instrumentos",

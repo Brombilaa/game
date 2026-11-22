@@ -453,7 +453,29 @@ func _inspect(cid: String) -> void:
 	if _trancada(c):
 		_show_dialog("", c.texto_trancado, "")
 		return
+	for bruto in dados.get("pistas", []):  # "teste": camada com teste de perícia (d20); passou = texto completo, falhou = o superficial
+		if str(bruto["id"]) == cid and bruto.has("teste"):
+			var t: Dictionary = bruto["teste"]
+			if not t.has("texto_base"):
+				t["texto_base"] = c["texto"]  # o texto do cenário é o superficial; guarda para não trocar duas vezes
+			var r := _tentar_teste("%s_%s" % [local_id, cid], t)
+			c["texto"] = ("%s\n\n%s" % [TestePericia.texto(r), str(t["completo"]) if r.get("passou", false) else str(t["texto_base"])])
+			break
 	_show_dialog(c.inspecao, c.texto, cid)
+
+
+# Rola (uma vez) o teste de `t` ({"pericias": [...], "dt": n}) com o grupo atual. Resultado salvo nas marcas.
+func _tentar_teste(id: String, t: Dictionary) -> Dictionary:
+	var grupo: Array = []
+	for u in party:
+		grupo.append({"nome": u.name, "atributos": u.atributos, "ocultista": Ficha.classe_de(rules.cfg.game_data, u.personagem) == "ocultista"})
+	return TestePericia.tentar(id, t.get("pericias", []), int(t.get("dt", 12)), grupo, _rng_teste())
+
+
+func _rng_teste() -> RandomNumberGenerator:
+	var g := RandomNumberGenerator.new()
+	g.randomize()
+	return g
 
 
 # Baú num trecho que ainda não foi revelado (cripta) fica invisível até o líder pisar na faixa do trecho.
@@ -471,6 +493,13 @@ func _run_trigger(trigger: Dictionary) -> void:
 		if CenaRoteiro.existe(cena_id) and (m == "" or not Missao1.tem(m)):
 			if m != "":
 				Missao1.marcar(m)
+			if trigger.has("teste"):  # a cena depende de um teste de perícia (Geraldo): falhou = a versão curta ("cena_falha")
+				var r := _tentar_teste("%s_%s" % [local_id, cena_id], trigger["teste"])
+				_show_dialog("", TestePericia.texto(r), "")
+				while dialog_layer.visible:
+					await get_tree().process_frame
+				if not r.get("passou", false) and CenaRoteiro.existe(str(trigger["teste"].get("cena_falha", ""))):
+					cena_id = str(trigger["teste"]["cena_falha"])
 			await tocar_cena(cena_id)
 		return
 	if str(trigger["tipo"]) == "ir":  # depois da pista, o grupo segue para outro lugar (o poço leva à cripta)

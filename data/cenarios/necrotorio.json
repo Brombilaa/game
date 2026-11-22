@@ -981,6 +981,28 @@
    "inspecao": "res://assets/sprites/cenario/necrotorio/pagina_caladenia_flavum.png"
   },
   {
+   "id": "tutu_pescoco",
+   "pos": [
+    691.2,
+    422.4
+   ],
+   "raio": 60,
+   "ordem": 2,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "No pescoço do Tutu há uma fileira de pontos escuros e pequenos, como marcas de agulha. Ninguém aqui saberia dizer de quê.",
+   "provisorio": true,
+   "teste": {
+    "pericias": [
+     "ocultismo"
+    ],
+    "dt": 12,
+    "completo": "Os pontos no pescoço foram marcados por rituais de Sangue e de Morte, feitos para o corpo se levantar de novo. Quem fez isso sabia exatamente o que fazia."
+   }
+  },
+  {
    "id": "leticia_despedida",
    "pos": [
     313.6,

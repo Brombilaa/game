@@ -254,6 +254,13 @@ def necrotorio(d, p, ret):
         _pista(d, p, pid, x, z, texto, raio=45, bolinha=(0, -36))
         d["pistas"][-1]["ordem"] = 2
         d["pistas"][-1]["inspecao"] = "res://assets/sprites/cenario/necrotorio/%s.png" % pid
+    # Pontos no pescoço dos corpos (roteiro 3b): Ocultismo (INT) DT 12, mapa provisório do Claude (20/11). Falhou = só o que se vê.
+    _pista(d, p, "tutu_pescoco", 9.3, 5.1,
+           "No pescoço do Tutu há uma fileira de pontos escuros e pequenos, como marcas de agulha. Ninguém aqui saberia dizer de quê.",
+           raio=60, bolinha=(0, -30))
+    d["pistas"][-1]["ordem"] = 2
+    d["pistas"][-1]["teste"] = {"pericias": ["ocultismo"], "dt": 12,
+                                "completo": "Os pontos no pescoço foram marcados por rituais de Sangue e de Morte, feitos para o corpo se levantar de novo. Quem fez isso sabia exatamente o que fazia."}
     _pista(d, p, "leticia_despedida", *P["leticia_dentro"],
            "Letícia está sentada na cadeira do legista, pálida. Talvez seja hora de se despedir.", raio=110, bolinha=(0, -96))
     d["pistas"][-1]["requer"] = "necrotorio_depois"
@@ -286,7 +293,9 @@ def casa_geraldo(d, p, ret):
            "Com o Geraldo mais calmo, vale perguntar sobre 1977.", raio=70, bolinha=(0, -90))
     d["pistas"][-1]["requer"] = "geraldo_conversa"
     d["pistas"][-1]["texto_antes"] = "O Geraldo ainda não quer falar. Melhor começar por uma conversa."
-    d["gatilhos"].append({"id": "conversa_2", "apos": "geraldo_1977", "tipo": "cena", "cena": "geraldo_1977", "marca": "geraldo_1977"})
+    d["gatilhos"].append({"id": "conversa_2", "apos": "geraldo_1977", "tipo": "cena", "cena": "geraldo_1977", "marca": "geraldo_1977",
+                         # Teste único do roteiro 3c (Léo 20/11; mapa provisório: Diplomacia ou Intimidação, PRE, DT 15): falhou = ele conta pouco
+                         "teste": {"pericias": ["diplomacia", "intimidacao"], "dt": 15, "cena_falha": "geraldo_1977_pouco"}})
     _pista(d, p, "geraldo_despedida", 12.0, 8.8,
            "Geraldo voltou a se balançar, perdido nos pensamentos.", raio=60, bolinha=(0, -80))
     d["pistas"][-1]["requer"] = "geraldo_1977"
