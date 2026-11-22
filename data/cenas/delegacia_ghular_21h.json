@@ -1,5 +1,5 @@
 {
-	"_nota": "Volta à delegacia às 21h (roteiro 3d): o escrivão Túlio liga para o delegado, o Ghular chega com a história de que a Letícia está envolvida e sai para buscar 'provas', e o grupo, sozinho, decide olhar a sala dele. Dá o motivo de voltar ao escritório (antes o grupo só ia ao tapete, sem razão). O ataque, a morte do Túlio e o plot twist do livro ainda não têm cena. Falas provisórias do Claude a partir dos textos do Léo.",
+	"_nota": "Volta à delegacia às 21h (roteiro 3d): o escrivão Túlio liga para o delegado, o Ghular chega com a história de que a Letícia está envolvida e sai para buscar 'provas', e o grupo, sozinho, decide olhar a sala dele. Dá o motivo de voltar ao escritório (antes o grupo só ia ao tapete, sem razão). A morte do Túlio está em delegacia_tulio_morte.json. Falas provisórias do Claude a partir dos textos do Léo.",
 	"passos": [
 		{
 			"faz": "cinema",

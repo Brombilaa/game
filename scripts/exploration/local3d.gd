@@ -488,6 +488,10 @@ func _invasao(inv: Dictionary) -> void:
 	if invadindo:
 		return
 	invadindo = true
+	var cena_morte := str(inv.get("cena_antes", ""))  # a morte do Túlio: porta trancada por fora, tiros e vidros, antes da flashbang
+	if cena_morte != "" and CenaRoteiro.existe(cena_morte) and not Missao1.tem(cena_morte):
+		Missao1.marcar(cena_morte)
+		await tocar_cena(cena_morte)
 	busy = true
 	path = PackedVector2Array()
 	moving_unit = null
