@@ -242,10 +242,11 @@ func _ir_para(local: String, chegada: String, texto: String, espera := 0.0) -> v
 	t.tween_property(rotulo, "theme_override_colors/font_color:a", 1.0, 0.4)
 	t.tween_interval(1.1)
 	await t.finished
-	Missao1.local = local
+	var ao_parque := local == "parque"  # o bar leva à praça: o parque é a cena própria, sem lugar em Missao1.local
+	Missao1.local = "" if ao_parque else local
 	Missao1.chegada = chegada
 	if is_inside_tree() and get_tree().current_scene == self:
-		Scenes.go(get_tree(), Missao1.CENA_LOCAL)
+		Scenes.go(get_tree(), Missao1.CENA_PARQUE if ao_parque else Missao1.CENA_LOCAL)
 
 
 # Paredes e coberturas a partir das colisões do cenário; o grupo começa na entrada.
@@ -673,6 +674,36 @@ func tocar_cena(cena_id: String) -> void:
 	mode = antes if antes != Mode.COMBAT else Mode.EXPLORATION
 	busy = false
 	queue_redraw()
+
+
+# Conversa por perguntas (data/conversas.json, ex.: o bar): a lista fica na tela até o jogador encerrar. Cada pergunta é
+# dita pelo controlado, a resposta toca na caixa de fala e vira entrada do diário (Conversa.registrar). `camada`: a
+# camada do painel (a cena de cinema fica acima do jogo, então ela passa uma maior).
+func conversa(conversa_id: String, camada := 97) -> void:
+	var dados_c := Conversa.carregar(conversa_id)
+	if dados_c.is_empty():
+		return
+	var painel := ConversaPerguntas.new()
+	add_child(painel)
+	painel.abrir(conversa_id, dados_c)
+	painel.layer = camada
+	while true:
+		var esc: String = await painel.escolheu
+		if esc == "":
+			break
+		var perg := Conversa.pergunta(dados_c, esc)
+		var primeira := Conversa.registrar(conversa_id, dados_c, esc, _diario_lugar())
+		painel.visible = false
+		var falas: Array = [{"quem": player.name.to_lower(), "texto": str(perg["texto"])}]
+		falas.append_array(perg.get("respostas", []))
+		await caixa.sequencia(falas)
+		if primeira:
+			audio.play_sfx("clue_found")
+		painel.atualizar()
+		painel.visible = true
+		if not CaixaFala.pular:
+			painel.botoes[painel.ids.find(esc)].grab_focus()
+	painel.queue_free()
 
 
 func cena_pos(quem: Variant) -> Vector2:
