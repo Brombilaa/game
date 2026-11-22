@@ -10886,12 +10886,14 @@
     2622.4,
     299.9
    ]
-  ]
+  ],
+  "cena": "dama_transformacao"
  },
  "fim": {
   "limite": 0.15,
   "legenda": "Fernando não se levanta.",
-  "provisorio": true
+  "provisorio": true,
+  "cena_morte": "dama_morte"
  },
  "grupos": {
   "corredor": {

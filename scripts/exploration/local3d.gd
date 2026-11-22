@@ -519,6 +519,7 @@ func _invasao(inv: Dictionary) -> void:
 func _on_combat_ended(result: TurnManager.Result) -> void:
 	if result == TurnManager.Result.VICTORY and chefe_dama != null:
 		chefe_dama.encerrar()  # flores, tentáculos e prisões que sobraram somem
+	var dama_morreu := result == TurnManager.Result.VICTORY and chefe_dama != null
 	super(result)
 	var inv: Dictionary = dados.get("invasao", {})
 	if result == TurnManager.Result.VICTORY and not inv.is_empty():
@@ -530,6 +531,13 @@ func _on_combat_ended(result: TurnManager.Result) -> void:
 		Missao1.marcar("ligacao_juliana")
 		await get_tree().create_timer(1.0).timeout  # o último golpe termina antes de a cena começar
 		await tocar_cena(depois)
+	# Morte da Dama (Léo, 22/11; roteiro 5d): a narração do Léo e as falas do grupo, antes de a Letícia poder ser acordada.
+	var morte := str((dados.get("fim", {}) as Dictionary).get("cena_morte", ""))
+	if dama_morreu and morte != "" and not Missao1.tem("dama_morreu"):
+		Missao1.marcar("dama_morreu")
+		if not CenaNarrada.pular:
+			await get_tree().create_timer(1.2).timeout  # o último golpe termina antes de a cena começar
+		await CenaNarrada.tocar(self, morte)
 
 
 # Grupo vencido: todos os inimigos dele em cena caíram e nenhum espera num trecho escondido.
@@ -596,6 +604,10 @@ func _depois_do_dano(target: Combatant) -> void:
 	fx.shake_time = 0.5
 	fx.shake_px = 6.0
 	queue_redraw()
+	# Transformação (Léo, 22/11; roteiro 5b): o jogo congela e toca a narração do Léo. Em combate fica pausado no meio do
+	# golpe e volta exatamente de onde estava; sem janela (testes) passa direto.
+	if str(chefe.get("cena", "")) != "":
+		CenaNarrada.tocar(self, str(chefe["cena"]))
 
 
 # A Dama morreu: quem ainda estava no ritual (Léo, 19/11: só luta se for atacado) cai junto e o combate acaba.

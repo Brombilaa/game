@@ -296,6 +296,7 @@ def cripta(d, p, ret):
     # (passada de balanceamento de 19/11; era 25%).
     d["chefe"] = {"tipo": "roberto_ghular", "limite": 0.5, "vira": "dama_sangue", "marca": "dama_surgiu",
                   "texto": "Roberto Ghular crava a adaga no próprio peito. Do sangue dele se ergue a Dama de Sangue.", "provisorio": True,
+                  "cena": "dama_transformacao",  # narração do Léo (roteiro 5b) + reação do grupo: data/cenas/dama_transformacao.json
                   # Os seis pendurados vivos (Léo, 20/11; ChefeDama), na ordem em que ela devora (do mais jovem ao mais velho):
                   # fora do fosso, aos pares entre as três pontes, a 9,5 x 8,5 m do centro do altar. Posições provisórias.
                   "corpos": [p(31 + 9.5 * math.cos(math.radians(a)), 15 + 8.5 * math.sin(math.radians(a))) for a in (6, 46, 126, 166, 242, 282)]}
@@ -303,7 +304,7 @@ def cripta(d, p, ret):
     # e a morte dele; o combate continua (Dama, Letícia, celeiro e cutscene de fim de capítulo vêm depois). Limite e legenda são provisórios do Claude.
     # Passada de balanceamento (19/11): 20% em vez de 30%, para Nikolai e Miguel não ficarem com 36 PV de Dama sozinhos.
     # Léo (20/11): a morte do Fernando dispara com a Dama em 15% de PV ou menos, logo depois do turno dele, sempre.
-    d["fim"] = {"limite": 0.15, "legenda": "Fernando não se levanta.", "provisorio": True}
+    d["fim"] = {"limite": 0.15, "legenda": "Fernando não se levanta.", "cena_morte": "dama_morte", "provisorio": True}  # cena_morte: roteiro 5d
     d["grupos"] = {"corredor": {"marca": "cripta_corredor_limpo"}, "salao": {"marca": "cripta_vencida", "requer": "dama_surgiu"}}
     # Letícia ferida e desmaiada no altar: só acorda ao interagir depois do combate com a Dama (Léo). Textos provisórios.
     alt = [g for g in P["gatilhos"] if g["nome"].startswith("altar")][0]["ret"]
