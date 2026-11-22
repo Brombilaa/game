@@ -1,5 +1,5 @@
 {
-	"_nota": "Depois do combate do parque (roteiro da missão 1, 'Após o combate da Praça'; Léo 20/11): a Letícia lamenta, entrega a chave da delegacia e fica para cuidar do corpo do Caio e da cena do crime. Antes desta cena não havia nenhuma fala entre o fim do combate e a viagem. A pulseira e a escopeta já foram dadas pelo próprio Caio na pista dele (o jogo não deixa examinar o corpo: a viagem é automática). Falas e tempos provisórios do Claude.",
+	"_nota": "Depois do combate do parque (roteiro da missão 1, 'Após o combate da Praça'; Léo 20/11): a Letícia lamenta, entrega a chave da delegacia e fica para cuidar do corpo do Caio e da cena do crime. Antes desta cena não havia nenhuma fala entre o fim do combate e a viagem. A pulseira e a escopeta já foram dadas pelo próprio Caio na pista dele (o jogo não deixa examinar o corpo: a viagem é automática). Ligação do Tristan ao celular do Caio (Léo, roteiro seção 1; texto do Léo adaptado; o roteiro deixa em ABERTO se é opcional; provisório do Claude: automática). Falas e tempos provisórios do Claude.",
 	"passos": [
 		{
 			"faz": "cinema",
@@ -48,6 +48,40 @@
 				{
 					"quem": "fernando",
 					"texto": "Ele nos mandou ficar juntos. Então vamos ficar juntos."
+				}
+			]
+		},
+		{
+			"faz": "legenda",
+			"texto": "No casaco do Caio, o celular vibra. Na tela, um nome: Tristan.",
+			"tempo": 2.6
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "leticia",
+					"texto": "É o superior dele na Ordem. O Caio avisou que ligaria assim que a praça estivesse limpa. Atendam vocês."
+				},
+				{
+					"quem": "tristan",
+					"texto": "Alô? ...Caio?"
+				},
+				{
+					"quem": "nikolai",
+					"texto": "Não. Aqui é um dos recrutas. O Caio morreu na praça, protegendo a gente."
+				},
+				{
+					"quem": "tristan",
+					"texto": "O quê? Isso não pode... Eu entendo. Ele era um Agente incrível e uma pessoa tão incrível quanto. Vou ter que organizar algumas coisas em relação à filha dele."
+				},
+				{
+					"quem": "tristan",
+					"texto": "Mas agora, mais do que nunca, vocês precisam continuar. O sacrifício dele não pode ter sido em vão. Eu sei como isso assusta, e eu acredito em vocês."
+				},
+				{
+					"quem": "tristan",
+					"texto": "Tenham força e mantenham os olhos sempre abertos. A Ordem precisa de vocês. Quando acabar, eu mesmo vou até aí."
 				}
 			]
 		},
