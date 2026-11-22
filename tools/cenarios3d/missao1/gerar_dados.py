@@ -307,6 +307,8 @@ def cripta(d, p, ret):
     d["grupos"] = {"corredor": {"marca": "cripta_corredor_limpo"}, "salao": {"marca": "cripta_vencida", "requer": "dama_surgiu"}}
     # Letícia ferida e desmaiada no altar: só acorda ao interagir depois do combate com a Dama (Léo). Textos provisórios.
     alt = [g for g in P["gatilhos"] if g["nome"].startswith("altar")][0]["ret"]
+    # Letícia 3D deitada no altar (Léo, 21/11): Laying Nodding até a luta, Sleeping Idle durante e depois (parque.gd, _anim_leticia).
+    d["inicio"]["npcs"] = [{"id": "leticia", "pos": p((alt[0] + alt[2]) / 2, (alt[1] + alt[3]) / 2)}]
     d["pistas"].append({"id": "leticia", "pos": p((alt[0] + alt[2]) / 2, (alt[1] + alt[3]) / 2), "raio": 150, "ordem": 1, "bolinha": [0, -96],
                         "requer": "cripta_vencida", "texto_antes": "Letícia está sobre o altar, ferida e desmaiada. Não dá para chegar até ela agora.",
                         "texto": "Letícia abre os olhos devagar. Está ferida, mas viva.", "provisorio": True})
