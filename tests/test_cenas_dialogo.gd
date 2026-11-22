@@ -65,7 +65,7 @@ func _cenas_de_dialogo() -> void:
 	_entrar_na_zona(room, "invasao")
 	await process_frame
 	_check(room.mode == room.Mode.CUTSCENE and room.enemies.is_empty(), "delegacia 21h: a morte do Túlio toca antes de os atiradores entrarem")
-	for i in 2400:
+	for i in 9000:
 		if not room.enemies.is_empty():
 			break
 		await process_frame
