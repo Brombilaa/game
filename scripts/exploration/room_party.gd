@@ -97,7 +97,7 @@ func _link_at(screen: Vector2) -> int:
 
 
 const FOLLOW_REPATH := 0.3  # s: no máximo uma rota nova por seguidor a cada 0,3 s (o líder anda 180 px/s)
-const FOLLOW_ARRIVE := 14.0  # px: chegou ao lugar, para
+const FOLLOW_ARRIVE := 10.0  # px: chegou ao lugar, para
 const FOLLOW_STALE := 40.0  # px: a rota só é refeita quando o lugar andou mais que isto
 const FOLLOW_BLOCKED := 0.35  # s esperando alguém sair da frente antes de pedir rota que contorne
 
@@ -115,7 +115,8 @@ func _update_followers(delta: float) -> void:
 		var slot: Dictionary = _slots.get(m, {})
 		var fim := route[route.size() - 1] if not route.is_empty() else m.pos
 		var velho := route.is_empty() or fim.distance_to(alvo) > FOLLOW_STALE
-		if velho and float(_espera[m]) >= FOLLOW_REPATH:
+		# Sem rota (chegou ao lugar antigo) o seguidor já corrige para o lugar novo; com rota, só a cada FOLLOW_REPATH.
+		if velho and float(_espera[m]) >= (0.1 if route.is_empty() else FOLLOW_REPATH):
 			if slot.is_empty() or (slot["alvo"] as Vector2).distance_to(alvo) > FOLLOW_STALE * 0.5:
 				slot = {"alvo": alvo, "livre": _slot_livre(m, alvo)}
 				_slots[m] = slot
