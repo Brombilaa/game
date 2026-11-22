@@ -127,7 +127,7 @@ def delegacia17(d, p, ret):
     _pista(d, p, "ficha_desaparecidos", 2.7, 4.8,
            "No arquivo, uma pasta com sete fichas de desaparecidos de Aurora. Nada liga uma à outra: idades, bairros e lugares do sumiço são todos diferentes. A mais recente é de ontem à noite: Lisandra de Sá, 38 anos, funcionária de farmácia, vista pela última vez perto da praça.",
            inspecoes=[{"arquivo": "ficha_%02d" % f["n"], "titulo": "Ficha %d/7 · %s" % (f["n"], f["nome"]),
-                       "texto": "%s, %d anos, %s (%s). Visto pela última vez: %s, em %s." % (f["nome"], f["idade"], f["prof"].lower(), f["bairro"], f["local"][0].lower() + f["local"][1:], f["data"])}
+                       "texto": "%s, %d anos, %s (%s). Sumiu em %s: %s." % (f["nome"], f["idade"], f["prof"].lower(), f["bairro"], f["data"], f["local"][0].lower() + f["local"][1:])}
                       for f in DESAPARECIDOS])
     _pista(d, p, "cela_arranhoes", 1.5, 8.2,
            "As paredes da cela estão marcadas por arranhões fundos, feitos de dentro para fora. Desenhado com o que parece sangue, o mesmo símbolo da árvore do parque.")
@@ -324,6 +324,8 @@ def cripta(d, p, ret):
     d["grupos"] = {"corredor": {"marca": "cripta_corredor_limpo"}, "salao": {"marca": "cripta_vencida", "requer": "dama_surgiu"}}
     # Letícia ferida e desmaiada no altar: só acorda ao interagir depois do combate com a Dama (Léo). Textos provisórios.
     alt = [g for g in P["gatilhos"] if g["nome"].startswith("altar")][0]["ret"]
+    # Letícia 3D deitada no altar (Léo, 21/11): Laying Nodding até a luta, Sleeping Idle durante e depois (parque.gd, _anim_leticia).
+    d["inicio"]["npcs"] = [{"id": "leticia", "pos": p((alt[0] + alt[2]) / 2, (alt[1] + alt[3]) / 2)}]
     d["pistas"].append({"id": "leticia", "pos": p((alt[0] + alt[2]) / 2, (alt[1] + alt[3]) / 2), "raio": 150, "ordem": 1, "bolinha": [0, -96],
                         "requer": "cripta_vencida", "texto_antes": "Letícia está sobre o altar, ferida e desmaiada. Não dá para chegar até ela agora.",
                         "texto": "Letícia abre os olhos devagar. Está ferida, mas viva.", "provisorio": True})
@@ -368,6 +370,27 @@ def celeiro(d, p, ret):
                          "marca": "capitulo1_fim", "provisorio": True}
 
 
+# Pistas essenciais por lugar (Léo, 22/11: a investigação não é obrigatória). Só elas contam no HUD; as demais são extras.
+# "resumo": o que o grupo deduz (entra no diário como dedução) se sair do lugar sem examinar a pista. Provisório.
+ESSENCIAIS = {
+    "delegacia_17h": {
+        "chaveiro_recepcao": "Sem tempo para revirar a recepção, o grupo deduz que a chave do escritório do Ghular deve estar no chaveiro, e que a sala foi trancada de propósito.",
+        "agenda_ghular": "O grupo deduz que o delegado marcava datas e sábados em segredo: o sumiço dos sete segue um calendário.",
+    },
+    "biblioteca": {"fichario": "O grupo deduz que o livro Sanguis Orchid passou pela biblioteca, que um Ghular o retirou e que agora está com Roberto Ghular."},
+    "subsolo": {"livro_faltando": "O grupo deduz que o livro foi deixado de propósito no subsolo, junto de um mapa que aponta a Fazenda Ghular, a leste."},
+    "fazenda": {"poco": "O grupo deduz que o poço antigo é a entrada: uma corda desce para o escuro."},
+}
+
+
+def marcar_essenciais(cid, dados):
+    for p in dados.get("pistas", []):
+        resumo = ESSENCIAIS.get(cid, {}).get(p["id"])
+        if resumo:
+            p["essencial"] = True
+            p["resumo"] = resumo
+
+
 def main():
     lista = [
         ("delegacia_17h", "delegacia_17h", "delegacia_17h", 17, "DELEGACIA", [(7.2, 15.5), (6.5, 16.0), (7.9, 16.1)], delegacia17, (-0.15, -0.15, 19.45, 22.25)),
@@ -380,6 +403,7 @@ def main():
     ]
     for cid, glb, col, hora, rotulo, grupo, extras, limite in lista:
         dados = cenario(cid, glb, carregar(col), hora, rotulo, grupo, extras, limite)
+        marcar_essenciais(cid, dados)
         with open(os.path.join(RAIZ, "data", "cenarios", cid + ".json"), "w") as f:
             json.dump(dados, f, ensure_ascii=False, indent=1)
         print(cid, len(dados["colisoes"]), "colisões")

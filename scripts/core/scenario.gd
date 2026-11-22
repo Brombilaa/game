@@ -64,15 +64,29 @@ func collider_rects() -> Array[Rect2]:
 	return out
 
 
-## Pistas liberadas: as de ordem 1 sempre; as de ordem 2 só depois de todas as de ordem 1 vistas.
+## Pistas liberadas: as de ordem 1 sempre; as de ordem 2 só depois das pistas de ordem 1 que são essenciais
+## (Léo, 22/11: investigar não é obrigatório; sem nenhuma marcada, valem todas as de ordem 1, como antes).
 func available_clues(seen: Array) -> Array[String]:
+	var tem_essencial := false
+	for cid in clues:
+		if clues[cid]["ordem"] == 1 and clues[cid].get("essencial", false):
+			tem_essencial = true
 	var first_done := true
 	for cid in clues:
-		if clues[cid]["ordem"] == 1 and not seen.has(cid):
+		if clues[cid]["ordem"] == 1 and (clues[cid].get("essencial", false) or not tem_essencial) and not seen.has(cid):
 			first_done = false
 	var out: Array[String] = []
 	for cid in clues:
 		if clues[cid]["ordem"] == 1 or first_done:
+			out.append(cid)
+	return out
+
+
+## Pistas essenciais com resumo que o grupo ainda não examinou: viram dedução no diário ao sair do lugar.
+func deducoes(seen: Array) -> Array[String]:
+	var out: Array[String] = []
+	for cid in clues:
+		if clues[cid].get("essencial", false) and str(clues[cid].get("resumo", "")) != "" and not seen.has(cid):
 			out.append(cid)
 	return out
 
@@ -136,7 +150,7 @@ func _parse(data: Dictionary) -> void:
 			errors.append("colisão fora do plano: " + str(c["id"]))
 		colliders[c["id"]] = rect
 	for c in data.get("pistas", []):
-		clues[c["id"]] = {"pos": _vec(c["pos"]), "raio": float(c["raio"]), "ordem": int(c["ordem"]), "texto": str(c["texto"]), "inspecao": str(c.get("inspecao", "")), "inspecoes": c.get("inspecoes", []), "bolinha": _vec(c.get("bolinha", [0, -60])), "areas": c.get("areas", []), "destaque": c.get("destaque", {}), "da": c.get("da", []), "perda_san": int(c.get("perda_san", 0)), "perturbadora": bool(c.get("perturbadora", false)), "chave": str(c.get("chave", "")), "texto_trancado": str(c.get("texto_trancado", "Trancado. Falta a chave."))}
+		clues[c["id"]] = {"pos": _vec(c["pos"]), "raio": float(c["raio"]), "ordem": int(c["ordem"]), "texto": str(c["texto"]), "inspecao": str(c.get("inspecao", "")), "inspecoes": c.get("inspecoes", []), "bolinha": _vec(c.get("bolinha", [0, -60])), "areas": c.get("areas", []), "destaque": c.get("destaque", {}), "da": c.get("da", []), "perda_san": int(c.get("perda_san", 0)), "perturbadora": bool(c.get("perturbadora", false)), "chave": str(c.get("chave", "")), "texto_trancado": str(c.get("texto_trancado", "Trancado. Falta a chave.")), "essencial": bool(c.get("essencial", false)), "resumo": str(c.get("resumo", ""))}
 	objetivos = data.get("objetivos", [])
 	recortes = data.get("recortes", [])
 	for o in data.get("oclusores", []):

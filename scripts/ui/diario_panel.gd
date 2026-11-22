@@ -2,8 +2,8 @@ class_name DiarioPanel
 extends CanvasLayer
 # Diário do Miguel, modelo B1 "couro costurado" (Léo, 19/11/2026): um caderno de couro aberto em página dupla, com
 # três abas de fita no topo. DIÁRIO é o relato da missão escrito pelo Miguel, um lugar por página, com desenhos a
-# lápis (DiarioMiguel); PISTAS é a lista do que o grupo examinou, com a pista aberta na página da direita e o botão
-# LIGAR (tecla L, Ligacoes); CRIATURAS é o que o grupo sabe de cada inimigo (Fraquezas). Abre e fecha com J (Esc e
+# lápis (DiarioMiguel); PISTAS é a lista do que o grupo examinou, com a pista aberta na página da direita (ligar uma
+# pista a outra é com o jogador, na cabeça: não há botão nem regra de ligação); CRIATURAS é o que o grupo sabe de cada inimigo (Fraquezas). Abre e fecha com J (Esc e
 # o X também fecham), Tab troca de aba e as setas escolhem. Com o diário aberto o tempo para, como no inventário
 # (GDD #23). Só desenha e lê mouse e teclado; os dados vêm de Diario/Missao1/DiarioMiguel/Fraquezas e o objetivo,
 # de `room._objectives()`.
@@ -32,9 +32,6 @@ var secao := "diario"  # "diario", "pistas" ou "criaturas"
 var sel := 0  # pista aberta (posição na lista de PISTAS)
 var sel_pagina := 0  # lugar aberto no DIÁRIO
 var sel_criatura := 0
-var ligando := false  # modo ligar: a pista de `_a` espera a segunda
-var _a := ""  # id da primeira pista do modo ligar
-var _aviso := ""  # resultado da última tentativa de ligar, mostrado no pé até o próximo refresh
 
 var _raiz: Control
 var _esq: Control  # página da esquerda (conteúdo refeito a cada atualizar)
@@ -47,7 +44,6 @@ var _lugar_det: Label
 var _imagem: TextureRect
 var _texto: Label
 var _obj: Label
-var _ligar: Button
 var _contagem: Label
 var _vazio: Label
 var _pg_pistas_esq: Control
@@ -260,23 +256,6 @@ func _montar_pistas() -> void:
 	var vao := Control.new()
 	vao.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_pg_pistas_dir.add_child(vao)
-	_ligar = Button.new()
-	_ligar.focus_mode = Control.FOCUS_NONE
-	_ligar.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_ligar.add_theme_font_override("font", _negrito)
-	_ligar.add_theme_font_size_override("font_size", 14)
-	var e := StyleBoxFlat.new()
-	e.bg_color = FITA
-	e.content_margin_left = 12
-	e.content_margin_right = 12
-	e.content_margin_top = 2
-	e.content_margin_bottom = 2
-	for n in ["normal", "hover", "pressed"]:
-		_ligar.add_theme_stylebox_override(n, e)
-	for n in ["font_color", "font_hover_color", "font_pressed_color"]:
-		_ligar.add_theme_color_override(n, FITA_TEXTO)
-	_ligar.pressed.connect(alternar_ligar)
-	_pg_pistas_dir.add_child(_ligar)
 
 
 # --- Peças --------------------------------------------------------------------------------------------
@@ -403,8 +382,6 @@ func abrir() -> void:
 	if open:
 		return
 	open = true
-	ligando = false
-	_aviso = ""
 	sel = 0  # a última descoberta
 	sel_pagina = maxi(DiarioMiguel.secoes().size() - 1, 0)  # o relato abre no lugar mais recente
 	var caixa: Variant = room.get("caixa") if room != null else null
@@ -415,7 +392,6 @@ func abrir() -> void:
 
 
 func fechar() -> void:
-	ligando = false
 	open = false
 	visible = false
 
@@ -429,8 +405,6 @@ func alternar() -> void:
 
 func trocar_secao(id: String) -> void:
 	secao = id
-	ligando = false
-	_aviso = ""
 	atualizar()
 
 
@@ -712,11 +686,7 @@ func _atualizar_pistas() -> void:
 	_lugar_det.visible = tem
 	_texto.visible = tem
 	_imagem.visible = false
-	if tem and ligando:
-		_titulo_det.text = "Ligar duas pistas"
-		_lugar_det.text = "escolha a segunda na lista"
-		_texto.text = "1) %s\n2) %s" % [_titulo_de(_a), str(itens[sel]["titulo"]) if str(itens[sel]["id"]) != _a else "…"]
-	elif tem:
+	if tem:
 		var e: Dictionary = itens[sel]
 		_titulo_det.text = e["titulo"]
 		_lugar_det.text = str(e["lugar"]).to_lower()
@@ -733,23 +703,16 @@ func _atualizar_pistas() -> void:
 			_imagem.visible = true
 	var obj := Diario.objetivo_atual(room._objectives()) if room != null else ""
 	_obj.text = "PRÓXIMO OBJETIVO: " + obj if obj != "" else "Sem objetivo no momento."
-	if ligando:
-		_obj.text = "Clique na segunda pista (ou Enter). Esc cancela."
-	if _aviso != "":
-		_obj.text = _aviso
-	_ligar.visible = itens.size() >= 2
-	_ligar.text = "CANCELAR (L)" if ligando else "LIGAR (L)"
 	_mancha(_dir, SANGUE, Vector2(_dir.size.x - 88, 8), 60, 70.0, 0.45)
 
 
 func _botao(i: int, e: Dictionary) -> Button:
 	var b := Button.new()
-	var marca := "①" if ligando and e["id"] == _a else ("✓" if str(e["lugar"]) != Ligacoes.LUGAR else "→")
-	b.text = "%s  %s" % [marca, e["titulo"]]
+	b.text = "✓  %s" % e["titulo"]
 	b.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	b.focus_mode = Control.FOCUS_NONE
 	b.flat = true
-	var aberta: bool = i == sel or (ligando and e["id"] == _a)
+	var aberta: bool = i == sel
 	b.add_theme_font_override("font", _negrito if aberta else MAO)
 	b.add_theme_font_size_override("font_size", 16)
 	for n in ["font_color", "font_hover_color", "font_pressed_color"]:
@@ -764,57 +727,13 @@ func _botao(i: int, e: Dictionary) -> Button:
 
 
 func _escolher(i: int) -> void:
-	if ligando:
-		_confirmar(i)
-		return
 	sel = i
 	atualizar()
 
 
-# Teclas de cima e de baixo: só movem o cursor (no modo ligar não ligam nada até o Enter).
+# Teclas de cima e de baixo: movem o cursor da lista.
 func _cursor(i: int) -> void:
 	sel = clampi(i, 0, maxi(_itens().size() - 1, 0))
-	_aviso = ""
-	atualizar()
-
-
-# Liga L: abre o modo ligar com a pista aberta como primeira, ou cancela.
-func alternar_ligar() -> void:
-	if not open:
-		return
-	if secao != "pistas":
-		secao = "pistas"
-	_aviso = ""
-	var itens := _itens()
-	if ligando:
-		ligando = false
-	elif itens.size() >= 2:
-		_a = str(itens[sel]["id"])
-		ligando = true
-		sel = sel + 1 if sel + 1 < itens.size() else sel - 1  # o cursor sai da primeira pista
-	atualizar()
-
-
-func _confirmar(i: int) -> void:
-	var itens := _itens()
-	i = clampi(i, 0, itens.size() - 1)
-	var b := str(itens[i]["id"])
-	if b == _a:
-		_aviso = "Escolha uma pista diferente da primeira."
-		atualizar()
-		return
-	var r := Ligacoes.tentar(_a, b)
-	match r["resultado"]:
-		Ligacoes.Resultado.NOVA:
-			ligando = false
-			sel = 0  # a conclusão é a entrada mais nova
-			_aviso = "Conclusão nova: " + str(r["entrada"]["titulo"])
-		Ligacoes.Resultado.JA_FEITA:
-			ligando = false
-			sel = _posicao(str(r["entrada"]["id"]))
-			_aviso = "Você já ligou essas duas pistas."
-		_:
-			_aviso = "Essas pistas não parecem se ligar."
 	atualizar()
 
 
@@ -917,10 +836,7 @@ func _input(event: InputEvent) -> void:
 	elif open:
 		var k: int = event.keycode
 		if k == KEY_ESCAPE:
-			if ligando:
-				alternar_ligar()
-			else:
-				fechar()
+			fechar()
 		elif k == KEY_TAB:
 			var ordem := ["diario", "pistas", "criaturas"]
 			trocar_secao(ordem[(ordem.find(secao) + (2 if event.shift_pressed else 1)) % 3])
@@ -931,14 +847,8 @@ func _input(event: InputEvent) -> void:
 			sel_criatura += -1 if k in [KEY_UP, KEY_LEFT] else 1
 			atualizar()
 		elif secao == "pistas":
-			if k == KEY_L:
-				alternar_ligar()
-			elif k == KEY_UP:
+			if k == KEY_UP:
 				_cursor(sel - 1)
 			elif k == KEY_DOWN:
 				_cursor(sel + 1)
-			elif ligando and (k == KEY_ENTER or k == KEY_KP_ENTER or k == KEY_SPACE):
-				_confirmar(sel)
-		elif k == KEY_L:
-			alternar_ligar()
 		get_viewport().set_input_as_handled()  # com o diário aberto o mundo não recebe nada

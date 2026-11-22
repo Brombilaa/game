@@ -1161,7 +1161,9 @@
    ],
    "texto": "Nas fichas de empréstimo, dois livros chamam a atenção. \"Sanguis Orchid\": doado em 1979 por Geraldo Munch, retirado só em 1987 e em 1997, as duas vezes por Frederico Ghular. Na última linha, em letra recente: confiscado como evidência por Roberto Ghular, há poucos dias.",
    "provisorio": true,
-   "inspecao": "res://assets/sprites/pistas/fichario.png"
+   "inspecao": "res://assets/sprites/pistas/fichario.png",
+   "essencial": true,
+   "resumo": "O grupo deduz que o livro Sanguis Orchid passou pela biblioteca, que um Ghular o retirou e que agora está com Roberto Ghular."
   },
   {
    "id": "mesa_leitura",

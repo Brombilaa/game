@@ -1324,7 +1324,9 @@
     -30
    ],
    "texto": "Na agenda do delegado Ghular, sete datas do último mês estão circuladas, cada uma com uma orquídea vermelha desenhada a caneta. A sétima é de ontem. Na margem de todo sábado, a mesma anotação seca: \"treino\".",
-   "provisorio": true
+   "provisorio": true,
+   "essencial": true,
+   "resumo": "O grupo deduz que o delegado marcava datas e sábados em segredo: o sumiço dos sete segue um calendário."
   },
   {
    "id": "gaveta_provas",
@@ -1338,7 +1340,7 @@
     0,
     -30
    ],
-   "texto": "A gaveta da sala de provas foi forçada. Dentro, entre papéis manchados, ainda restam algumas balas soltas e um celular de tela rachada, num saco de provas.",
+   "texto": "A gaveta da sala de provas foi forçada. Dentro, entre papéis manchados, ainda restam algumas balas de pistola soltas e um celular de tela rachada, num saco de provas. Ao lado, o saco etiquetado como fuzil de caça está vazio.",
    "provisorio": true,
    "da": [
     {
@@ -1365,44 +1367,44 @@
    ],
    "texto": "No arquivo, uma pasta com sete fichas de desaparecidos de Aurora. Nada liga uma à outra: idades, bairros e lugares do sumiço são todos diferentes. A mais recente é de ontem à noite: Lisandra de Sá, 38 anos, funcionária de farmácia, vista pela última vez perto da praça.",
    "provisorio": true,
+   "inspecao": "res://assets/sprites/pistas/ficha_07.png",
    "inspecoes": [
     {
      "imagem": "res://assets/sprites/pistas/ficha_01.png",
      "titulo": "Ficha 1/7 · Antônio Weber",
-     "texto": "Antônio Weber, 61 anos, aposentado (Vila Nova). Visto pela última vez: em frente à igreja matriz, em 04/10."
+     "texto": "Antônio Weber, 61 anos, aposentado (Vila Nova). Sumiu em 04/10: em frente à igreja matriz."
     },
     {
      "imagem": "res://assets/sprites/pistas/ficha_02.png",
      "titulo": "Ficha 2/7 · Camila Rocha",
-     "texto": "Camila Rocha, 19 anos, estudante (Santa Rita). Visto pela última vez: ponto de ônibus da escola, em 11/10."
+     "texto": "Camila Rocha, 19 anos, estudante (Santa Rita). Sumiu em 11/10: ponto de ônibus da escola."
     },
     {
      "imagem": "res://assets/sprites/pistas/ficha_03.png",
      "titulo": "Ficha 3/7 · Osvaldo Pereira",
-     "texto": "Osvaldo Pereira, 45 anos, caminhoneiro (Distrito Industrial). Visto pela última vez: posto de combustível da BR, em 18/10."
+     "texto": "Osvaldo Pereira, 45 anos, caminhoneiro (Distrito Industrial). Sumiu em 18/10: posto de combustível da BR."
     },
     {
      "imagem": "res://assets/sprites/pistas/ficha_04.png",
      "titulo": "Ficha 4/7 · Marcos Alves",
-     "texto": "Marcos Alves, 24 anos, entregador (Jardim das Flores). Visto pela última vez: rua XV, durante uma entrega, em 25/10."
+     "texto": "Marcos Alves, 24 anos, entregador (Jardim das Flores). Sumiu em 25/10: rua XV, durante uma entrega."
     },
     {
      "imagem": "res://assets/sprites/pistas/ficha_05.png",
      "titulo": "Ficha 5/7 · Iracema Schmitt",
-     "texto": "Iracema Schmitt, 70 anos, costureira (Centro Velho). Visto pela última vez: feira livre da Rua Direita, em 01/11."
+     "texto": "Iracema Schmitt, 70 anos, costureira (Centro Velho). Sumiu em 01/11: feira livre da Rua Direita."
     },
     {
      "imagem": "res://assets/sprites/pistas/ficha_06.png",
      "titulo": "Ficha 6/7 · Bruno Teixeira",
-     "texto": "Bruno Teixeira, 52 anos, pescador (Beira-Rio). Visto pela última vez: margem do rio, ao amanhecer, em 08/11."
+     "texto": "Bruno Teixeira, 52 anos, pescador (Beira-Rio). Sumiu em 08/11: margem do rio, ao amanhecer."
     },
     {
      "imagem": "res://assets/sprites/pistas/ficha_07.png",
      "titulo": "Ficha 7/7 · Lisandra de Sá",
-     "texto": "Lisandra de Sá, 38 anos, funcionária de farmácia (Centro). Visto pela última vez: perto da praça, à noite, em 15/11."
+     "texto": "Lisandra de Sá, 38 anos, funcionária de farmácia (Centro). Sumiu em 15/11: perto da praça, à noite."
     }
-   ],
-   "inspecao": "res://assets/sprites/pistas/ficha_07.png"
+   ]
   },
   {
    "id": "cela_arranhoes",
@@ -1438,7 +1440,9 @@
      "item": "chave_escritorio",
      "qtd": 1
     }
-   ]
+   ],
+   "essencial": true,
+   "resumo": "Sem tempo para revirar a recepção, o grupo deduz que a chave do escritório do Ghular deve estar no chaveiro, e que a sala foi trancada de propósito."
   },
   {
    "id": "cofre_ghular",
