@@ -12,8 +12,11 @@ func _initialize() -> void:
 	for i in 10:
 		await process_frame
 	var c: Dictionary = room.scenario.clues[a[2]]
-	room._show_dialog("", c.texto, "")
-	if a.size() > 3:
+	room._show_dialog(c.inspecao, c.texto, a[2])
+	if a.size() > 4:
+		room.dialog_pg = int(a[4])
+		room._pagina_dialogo()
+	elif a.size() > 3:
 		room.dialog_image.texture = ImageTexture.create_from_image(Image.load_from_file(a[3]))
 		room.dialog_image.visible = true
 	for i in 8:

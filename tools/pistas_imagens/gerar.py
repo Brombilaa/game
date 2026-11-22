@@ -375,13 +375,194 @@ def c_pagina():
     return pousa(recorta(f, m), -2.5)
 
 
+# ================================================================= MODELO A, versão técnica: uma ficha por desaparecido
+# Os sete desaparecidos de Aurora (provisório, Claude 22/11/2026; só a Lisandra tem dados no texto da pista). Datas = as
+# sete datas circuladas na agenda do Ghular (semanais), a sétima é "ontem" (15/11). Nada liga um ao outro de propósito.
+DESAPARECIDOS = [
+    dict(n=1, nome="Antônio Weber", sexo="M", idade=61, alt="1,70 m", peso="78 kg", cabelo="Grisalho, curto", olhos="Castanhos",
+         sinais="Cicatriz na mão esquerda", roupa="Casaco de lã verde, boné", bairro="Vila Nova", local="Em frente à igreja matriz",
+         data="04/10", prof="Aposentado", forma="careca"),
+    dict(n=2, nome="Camila Rocha", sexo="F", idade=19, alt="1,63 m", peso="55 kg", cabelo="Castanho, longo", olhos="Verdes",
+         sinais="Piercing na sobrancelha", roupa="Uniforme escolar, mochila azul", bairro="Santa Rita", local="Ponto de ônibus da escola",
+         data="11/10", prof="Estudante", forma="longo"),
+    dict(n=3, nome="Osvaldo Pereira", sexo="M", idade=45, alt="1,82 m", peso="96 kg", cabelo="Preto, curto", olhos="Castanhos",
+         sinais="Tatuagem de âncora no braço", roupa="Camisa xadrez, jaqueta jeans", bairro="Distrito Industrial", local="Posto de combustível da BR",
+         data="18/10", prof="Caminhoneiro", forma="curto"),
+    dict(n=4, nome="Marcos Alves", sexo="M", idade=24, alt="1,76 m", peso="70 kg", cabelo="Loiro, ondulado", olhos="Azuis",
+         sinais="Nenhum informado", roupa="Capacete e colete de entregador", bairro="Jardim das Flores", local="Rua XV, durante uma entrega",
+         data="25/10", prof="Entregador", forma="curto"),
+    dict(n=5, nome="Iracema Schmitt", sexo="F", idade=70, alt="1,55 m", peso="62 kg", cabelo="Branco, preso", olhos="Castanhos",
+         sinais="Usa óculos de grau", roupa="Vestido florido, xale cinza", bairro="Centro Velho", local="Feira livre da Rua Direita",
+         data="01/11", prof="Costureira", forma="coque"),
+    dict(n=6, nome="Bruno Teixeira", sexo="M", idade=52, alt="1,74 m", peso="85 kg", cabelo="Grisalho, barba", olhos="Castanhos",
+         sinais="Falta o dedo mindinho direito", roupa="Capa de chuva amarela, botas", bairro="Beira-Rio", local="Margem do rio, ao amanhecer",
+         data="08/11", prof="Pescador", forma="curto"),
+    dict(n=7, nome="Lisandra de Sá", sexo="F", idade=38, alt="1,68 m", peso="64 kg", cabelo="Ruivo, ombros", olhos="Castanhos",
+         sinais="Sarda no nariz; aliança de prata", roupa="Jaleco branco de farmácia", bairro="Centro", local="Perto da praça, à noite",
+         data="15/11", prof="Funcionária de farmácia", prof_curta="Farmácia", forma="ombros"),
+]
+
+
+def _cabelo(d, box, forma, cor):
+    x0, y0, x1, y1 = box
+    w, h = x1 - x0, y1 - y0
+    cx = (x0 + x1) / 2
+    cab_y = y0 + h * 0.17
+    if forma == "careca":
+        return
+    if forma in ("longo", "ombros"):
+        for lado in (-1, 1):
+            d.rounded_rectangle((cx + lado * w * 0.2 - w * 0.06, cab_y, cx + lado * w * 0.2 + w * 0.06, cab_y + w * 0.62), 12, fill=cor)
+    elif forma == "coque":
+        d.ellipse((cx - w * 0.1, cab_y - w * 0.2, cx + w * 0.1, cab_y), fill=cor)
+    d.pieslice((cx - w * 0.23, cab_y - 8, cx + w * 0.23, cab_y + w * 0.4), 180, 360, fill=cor)
+
+
+def ficha_tecnica(f):
+    w, h = 600, 680
+    papel_cor = (232, 228, 214)
+    img = papel(w, h, papel_cor, 5, 100 + f["n"], veio=False)
+    d = ImageDraw.Draw(img)
+    tinta, verm, cinza = (30, 30, 34), (146, 28, 22), (110, 106, 98)
+    ft = lambda t: fonte(MAQ, t)
+    # cabeçalho
+    d.rectangle((14, 14, w - 15, 76), fill=tinta)
+    d.text((28, 20), "POLÍCIA CIVIL · DELEGACIA DE AURORA", font=ft(21), fill=(236, 232, 220))
+    d.text((28, 47), "FICHA DE PESSOA DESAPARECIDA", font=ft(18), fill=(236, 232, 220))
+    d.text((w - 150, 22), "FICHA", font=ft(14), fill=(190, 186, 176))
+    d.text((w - 150, 38), f"{f['n']:02d} / 07", font=ft(26), fill=(236, 232, 220))
+
+    def cel(x, y, cw, ch, rot, val, tam=19, cor=tinta):
+        d.rectangle((x, y, x + cw, y + ch), outline=tinta, width=2)
+        d.text((x + 6, y + 3), rot, font=ft(12), fill=cinza)
+        d.text((x + 8, y + 19), val, font=ft(tam), fill=cor)
+
+    # foto com régua de altura
+    fx0, fy0, fx1, fy1 = 28, 94, 218, 286
+    silhueta(d, (fx0, fy0, fx1, fy1), (178, 174, 164, 255), (84, 80, 74, 255) if f["sexo"] == "M" else (92, 84, 80, 255))
+    _cabelo(d, (fx0, fy0, fx1, fy1), f["forma"], (50, 44, 40, 255) if f["cabelo"].split(",")[0] not in ("Grisalho", "Branco") else (176, 172, 168, 255))
+    d.rectangle((fx0, fy0, fx1, fy1), outline=tinta, width=3)
+    for k in range(0, 11):
+        yy = fy0 + 10 + k * 19
+        d.line((fx1 - (22 if k % 5 == 0 else 12), yy, fx1, yy), fill=tinta, width=2)
+    d.text((fx0 + 6, fy1 - 22), f"Nº {f['n']:02d}", font=ft(16), fill=tinta)
+    d.rectangle((fx0, fy1 + 4, fx1, fy1 + 28), fill=tinta)
+    d.text((fx0 + 6, fy1 + 6), "FOTO ARQUIVADA", font=ft(14), fill=(236, 232, 220))
+    # dados
+    x = 236
+    cel(x, 94, 336, 50, "NOME COMPLETO", f["nome"], 24)
+    cel(x, 144, 108, 46, "SEXO", f["sexo"])
+    cel(x + 108, 144, 108, 46, "IDADE", f"{f['idade']} anos")
+    cel(x + 216, 144, 120, 46, "PROFISSÃO", f.get("prof_curta", f["prof"]), 17)
+    cel(x, 190, 108, 46, "ALTURA", f["alt"])
+    cel(x + 108, 190, 108, 46, "PESO", f["peso"])
+    cel(x + 216, 190, 120, 46, "OLHOS", f["olhos"], 18)
+    cel(x, 236, 336, 46, "CABELO", f["cabelo"], 19)
+    cel(28, 322, 544, 46, "SINAIS PARTICULARES", f["sinais"], 20)
+    cel(28, 368, 544, 46, "ÚLTIMA VESTIMENTA", f["roupa"], 20)
+    cel(28, 414, 340, 46, "ÚLTIMO LOCAL VISTO", f["local"][:28], 19)
+    cel(368, 414, 204, 46, "BAIRRO", f["bairro"], 19)
+    cel(28, 460, 170, 46, "DATA DO SUMIÇO", f["data"], 22, verm)
+    cel(198, 460, 170, 46, "B.O. Nº", f"AUR-{f['n']:03d}/{(24 + f['n'] * 7) % 90 + 10}", 20)
+    cel(368, 460, 204, 46, "SITUAÇÃO", "EM ABERTO", 22, verm)
+    # rodapé: observações e código de barras
+    d.text((28, 524), "OBSERVAÇÕES", font=ft(12), fill=cinza)
+    obs = "Vítima sem inimigos conhecidos. Sem pedido de resgate." if f["n"] < 7 else "Caso mais recente. Sem inimigos conhecidos. Sem pedido de resgate."
+    escreve(d, (28, 540), obs, ft(16), tinta, larg=330, esp=1.25)
+    r = random.Random(f["n"])
+    bx = 388
+    for i in range(34):
+        lw = r.choice((2, 2, 3, 5))
+        d.rectangle((bx, 534, bx + lw, 600), fill=tinta)
+        bx += lw + r.choice((2, 3, 4))
+        if bx > 560:
+            break
+    d.text((388, 606), f"AUR{f['n']:02d}{f['idade']:03d}0{f['data'][:2]}", font=ft(13), fill=tinta)
+    d.line((28, 636, w - 28, 636), fill=tinta, width=2)
+    d.text((28, 644), "Informações: Delegacia de Aurora, plantão 24 h", font=ft(13), fill=cinza)
+    # desgaste: uma dobra, uma mancha, carimbo
+    d.line((14, h // 2, w - 15, h // 2 + 1), fill=(190, 184, 168, 255), width=2)
+    if f["n"] % 2 == 0:
+        mancha_cafe(img, (500, 580), 38, 70, f["n"])
+    folha = recorta(img, borda_irregular(w, h, 30 + f["n"], rasgo=(), amp=2))
+    q = pousa(folha, (-2.5, 2.0, -1.5, 3.0, -3.0, 1.5, -2.0)[f["n"] - 1], (S // 2, S // 2 - 6))
+    clipe(ImageDraw.Draw(q), 52 + f["n"] * 6, 28)
+    carimbo(q, "DESAPARECIDO(A)" if False else ("DESAPARECIDA" if f["sexo"] == "F" else "DESAPARECIDO"), (468, 326), -8, (150, 24, 20), 28)
+    return q
+
+
+def pagina_generica(titulo, sub, linhas, aviso, semente, ruled=True):
+    """Folha de arquivo rasgada em estilo A (datilografada, pautada): `linhas` = [(margem, texto)]."""
+    w, h = 580, 640
+    f = papel(w, h, (234, 224, 196), 5, semente)
+    d = ImageDraw.Draw(f)
+    tinta = (40, 36, 34)
+    for yy in range(96, h, 34):
+        d.line((20, yy, w - 20, yy), fill=(150, 170, 190, 255), width=1)
+    d.line((84, 0, 84, h), fill=(190, 80, 80, 255), width=2)
+    d.text((100, 28), titulo, font=fonte(MAQ, 24), fill=tinta)
+    d.text((100, 60), sub, font=fonte(MAQ, 16), fill=(90, 80, 70))
+    y = 108
+    for mg, tx in linhas:
+        d.text((24, y), mg, font=fonte(MAQ, 16), fill=(100, 60, 50))
+        y = escreve(d, (100, y), tx, fonte(MAQ, 18), tinta, larg=440, esp=1.3) + 14
+    d.text((100, 440), aviso, font=fonte(MAO, 34), fill=(130, 24, 18))
+    mancha_cafe(f, (120, 560), 50, 70, semente)
+    m = borda_irregular(w, h, semente, rasgo=("esq", "baixo"), amp=14, fundo=70, passo=6)
+    return pousa(recorta(f, m), 2.5)
+
+
+def a_fichario():
+    return pagina_generica("FICHAS DE EMPRÉSTIMO", "Biblioteca Municipal de Aurora · acervo restrito",
+                           [("1979", "\"Sanguis Orchid\". Doado por Geraldo Munch."), ("1987", "Retirado por F. Ghular. Devolvido."),
+                            ("1997", "Retirado por F. Ghular. Devolvido."), ("recente", "Confiscado como evidência por Roberto Ghular.")],
+                           "ficha arrancada", 71)
+
+
+def a_diario_bibliotecaria():
+    return pagina_generica("DIÁRIO DA JULIANA", "última página",
+                           [("", "O delegado levou o Sanguis Orchid como evidência de um caso em aberto."),
+                            ("", "Mas o caso não tem relatório, e eu sei o que esse livro diz."),
+                            ("", "Preciso contar à Lari.")], "a letra termina aqui", 83)
+
+
+def a_recorte():
+    w, h = 560, 600
+    f = papel(w, h, (204, 196, 172), 9, 91)
+    d = ImageDraw.Draw(f)
+    tinta = (36, 32, 28)
+    d.text((24, 20), "A VOZ DE AURORA · 1977", font=fonte(MAQ, 20), fill=(90, 80, 70))
+    d.line((24, 52, w - 24, 52), fill=tinta, width=3)
+    escreve(d, (24, 66), "OS SETE DESAPARECIDOS", fonte(MAQ, 36), tinta, larg=510, esp=1.15)
+    escreve(d, (24, 150), "O mistério que continua a assolar Aurora.", fonte(MAQ, 22), tinta, larg=510, esp=1.25)
+    for i in range(9):
+        d.line((24, 250 + i * 24, 270 if i < 8 else 180, 250 + i * 24), fill=(120, 112, 100, 255), width=3)
+        d.line((300, 250 + i * 24, w - 24, 250 + i * 24), fill=(120, 112, 100, 255), width=3)
+    d.text((24, 480), "Última desaparecida: Maria Cabral, nascida em 1º/06/1948.", font=fonte(MAQ, 15), fill=tinta)
+    m = borda_irregular(w, h, 93, rasgo=("dir", "baixo", "esq", "cima"), amp=8, fundo=26, passo=7)
+    return pousa(recorta(f, m), -2)
+
+
 FUNCOES = {
     "A": {"ficha_desaparecidos": a_ficha, "livro_ocorrencias": a_pagina},
     "B": {"ficha_desaparecidos": b_ficha, "livro_ocorrencias": b_pagina},
     "C": {"ficha_desaparecidos": c_ficha, "livro_ocorrencias": c_pagina},
 }
 
+def gerar_jogo(pasta):
+    """Imagens finais (modelo A escolhido pelo Léo em 22/11): ficha_01..07, livro_ocorrencias, fichario, diario_bibliotecaria, mapa_antigo."""
+    os.makedirs(pasta, exist_ok=True)
+    for f in DESAPARECIDOS:
+        ficha_tecnica(f).save(os.path.join(pasta, f"ficha_{f['n']:02d}.png"))
+    for nome, fn in (("livro_ocorrencias", a_pagina), ("fichario", a_fichario), ("diario_bibliotecaria", a_diario_bibliotecaria), ("mapa_antigo", a_recorte)):
+        fn().save(os.path.join(pasta, nome + ".png"))
+    print("ok jogo", pasta)
+
+
 if __name__ == "__main__":
+    if sys.argv[1] == "jogo":
+        gerar_jogo(sys.argv[2])
+        sys.exit()
     modelo, pasta = sys.argv[1], sys.argv[2]
     os.makedirs(pasta, exist_ok=True)
     ids = sys.argv[3:] or list(FUNCOES[modelo])
