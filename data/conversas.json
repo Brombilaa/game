@@ -1,28 +1,10 @@
 {
-	"_nota": "Perguntas à Letícia no bar (roteiro-missao1.md, seção BAR; Léo 20/11/2026: todas disponíveis, cada resposta vira entrada do diário). Perguntas 1 a 4 e o fim vêm do texto do Léo; 5 a 8 são PROVISÓRIAS do Claude (22/11), para o Léo revisar no jogo. 'hoje à noite' virou 'hoje à tarde' porque a praça é às 16h.",
+	"_nota": "Perguntas à Letícia no bar (roteiro-missao1.md, seção BAR). Léo 22/11: ficam só a 2 (responsavel), a 4 (ordo) e a 6 (chamou); o conteúdo das outras (desaparecidos, cena do crime, tempo na cidade, guarda, delegado) entra aos poucos dentro dessas respostas. A 6 é PROVISÓRIA do Claude; 'hoje à noite' virou 'hoje à tarde' porque a praça é às 16h.",
 	"bar_leticia": {
 		"titulo": "Perguntas à Letícia",
 		"quem": "leticia",
 		"sair": "Já perguntei o bastante.",
 		"perguntas": [
-			{
-				"id": "desaparecidos",
-				"texto": "Quantos desaparecidos são?",
-				"respostas": [
-					{
-						"quem": "leticia",
-						"texto": "Sete. Sete pessoas sumiram em pouco mais de um mês, e eu não acho nenhuma ligação entre elas."
-					},
-					{
-						"quem": "leticia",
-						"texto": "Cada uma desapareceu num ponto diferente da cidade. Ninguém viu nada, ninguém ouviu nada."
-					}
-				],
-				"diario": {
-					"titulo": "Sete desaparecidos",
-					"texto": "Sete moradores desapareceram, sem relação aparente entre si e em lugares completamente diferentes da cidade. (Letícia, no bar)"
-				}
-			},
 			{
 				"id": "responsavel",
 				"texto": "Você é a responsável pelo caso?",
@@ -39,20 +21,6 @@
 				"diario": {
 					"titulo": "Quem conduz o caso",
 					"texto": "A Letícia não é a responsável. Os dados completos estão num armário de provas da delegacia. Quem investiga é o delegado Roberto Ghular, o Beto, superior dela, que lhe pediu para não se envolver. (Letícia, no bar)"
-				}
-			},
-			{
-				"id": "cena",
-				"texto": "Existe uma cena do crime?",
-				"respostas": [
-					{
-						"quem": "leticia",
-						"texto": "Existe. A praça da cidade. Convenci um guarda municipal a isolar o local hoje à tarde, para ficar livre para mim e para vocês."
-					}
-				],
-				"diario": {
-					"titulo": "Cena do crime: a praça",
-					"texto": "A cena do crime é a praça da cidade. A Letícia convenceu um guarda municipal a isolar o local para os Agentes investigarem. (Letícia, no bar)"
 				}
 			},
 			{
@@ -74,20 +42,6 @@
 				}
 			},
 			{
-				"id": "tempo",
-				"texto": "Há quanto tempo você está na cidade?",
-				"respostas": [
-					{
-						"quem": "leticia",
-						"texto": "Pouco. Fui transferida de uma cidade grande, e o interior ainda me assusta um pouco. Todo mundo se conhece, ninguém fala nada."
-					}
-				],
-				"diario": {
-					"titulo": "A Letícia é nova na cidade",
-					"texto": "A Letícia foi transferida há pouco de um grande centro urbano e ainda está se acostumando com o interior. Por isso não tem todos os contatos nem os dados do caso. [provisório]"
-				}
-			},
-			{
 				"id": "chamou",
 				"texto": "Por que você nos chamou?",
 				"respostas": [
@@ -99,34 +53,6 @@
 				"diario": {
 					"titulo": "Por que a Letícia chamou a Ordem",
 					"texto": "A Letícia acredita que há algo sobrenatural por trás dos desaparecimentos e não confia que a polícia da cidade vá investigar isso. [provisório]"
-				}
-			},
-			{
-				"id": "guarda",
-				"texto": "Quem isolou a praça?",
-				"respostas": [
-					{
-						"quem": "leticia",
-						"texto": "Um guarda municipal, que eu convenci. Ele não pode manter ninguém afastado por muito tempo, então a praça está livre só por um tempo."
-					}
-				],
-				"diario": {
-					"titulo": "O guarda da praça",
-					"texto": "Um guarda municipal isolou a praça a pedido da Letícia, mas só por pouco tempo. Não há policiais no local. [provisório]"
-				}
-			},
-			{
-				"id": "delegado",
-				"texto": "O delegado sabe que estamos aqui?",
-				"respostas": [
-					{
-						"quem": "leticia",
-						"texto": "Não. Eu evitei contar para o Beto, e peço discrição. Se ele ficar sabendo, vai querer saber por que eu chamei estranhos."
-					}
-				],
-				"diario": {
-					"titulo": "O delegado não sabe",
-					"texto": "O delegado Ghular não sabe que os Agentes estão na cidade. A Letícia evitou contar a ele e pede discrição. [provisório]"
 				}
 			}
 		]

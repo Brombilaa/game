@@ -1,7 +1,7 @@
 class_name ConversaPerguntas
 extends CanvasLayer
 # Lista de perguntas de uma conversa (bar, Léo 20/11/2026): painel à direita com as perguntas em qualquer ordem, as já
-# feitas riscadas e, no fim, a saída ("Já perguntei o bastante"). Clique, setas + Enter ou os números escolhem.
+# feitas em cinza escuro e, no fim, a saída ("Já perguntei o bastante"). Clique, setas + Enter ou os números escolhem.
 # Emite `escolheu(id)` com o id da pergunta, ou "" quando o jogador encerra a conversa.
 
 signal escolheu(id: String)
@@ -9,7 +9,7 @@ signal escolheu(id: String)
 const FONT := preload("res://assets/fonts/SpecialElite-Regular.ttf")
 const OURO := Color(0.82, 0.68, 0.4)
 const TEXTO := Color(0.94, 0.9, 0.83)
-const FEITA := Color(0.55, 0.5, 0.44)
+const FEITA := Color(0.34, 0.31, 0.29)  # cinza escuro: pergunta já feita (Léo, 22/11)
 const TELA := Vector2(960, 540)
 const PAINEL := Rect2(496, 78, 440, 308)
 
@@ -18,7 +18,6 @@ var dados := {}
 var botoes: Array[Button] = []  # um por pergunta, mais o da saída no fim
 var ids: Array[String] = []  # id de cada botão ("" = sair)
 var _cabecalho: Label
-var _contagem: Label
 
 
 func abrir(conversa_id_: String, dados_: Dictionary) -> void:
@@ -45,9 +44,6 @@ func abrir(conversa_id_: String, dados_: Dictionary) -> void:
 	_cabecalho.text = str(dados.get("titulo", "PERGUNTAS")).to_upper()
 	_cabecalho.position = PAINEL.position + Vector2(14, 8)
 	fundo.add_child(_cabecalho)
-	_contagem = _rotulo(11, FEITA)
-	_contagem.position = PAINEL.position + Vector2(PAINEL.size.x - 130, 11)
-	fundo.add_child(_contagem)
 	var lista := VBoxContainer.new()
 	lista.position = PAINEL.position + Vector2(10, 34)
 	lista.size = Vector2(PAINEL.size.x - 20, PAINEL.size.y - 40)
@@ -78,20 +74,16 @@ func escolher(id: String) -> void:
 	escolheu.emit(id)
 
 
-# Redesenha os riscados e a contagem (depois de cada resposta).
+# Repinta as perguntas já feitas (depois de cada resposta).
 func atualizar() -> void:
-	var feitas := 0
 	for i in range(ids.size()):
 		if ids[i] == "":
 			continue
 		var ja := Conversa.feita(conversa_id, ids[i])
-		if ja:
-			feitas += 1
 		var b: Button = botoes[i]
 		b.add_theme_color_override("font_color", FEITA if ja else TEXTO)
 		var perg := Conversa.pergunta(dados, ids[i])
-		b.text = "%s%d. %s" % ["✓ " if ja else "", i + 1, str(perg["texto"])]
-	_contagem.text = "%d de %d feitas" % [feitas, ids.size() - 1]
+		b.text = "%d. %s" % [i + 1, str(perg["texto"])]
 
 
 func _unhandled_key_input(event: InputEvent) -> void:

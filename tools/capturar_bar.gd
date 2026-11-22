@@ -1,7 +1,7 @@
 extends SceneTree
-# Capturas da introdução e do bar com render de verdade (o roteiro roda em tempo real; as falas avançam sozinhas).
+# Capturas do bar com render de verdade (o roteiro roda em tempo real; as falas avançam sozinhas).
 # xvfb-run -a godot --path . --rendering-driver opengl3 --resolution 1920x1080 -s tools/capturar_bar.gd -- saida.png estado
-# estado: intro_estrada | intro_legenda | intro_dialogo | intro_porta | bar_chegando | bar_fala | bar_perguntas | bar_resposta | bar_livre
+# estado: bar_chegando | bar_fala | bar_perguntas | bar_resposta | bar_livre
 
 var estado := ""
 var respondeu := false
@@ -18,17 +18,12 @@ func _rodar() -> void:
 	estado = a[1]
 	Progresso.autosave_ativo = false
 	Missao1.reiniciar()
-	if estado.begins_with("intro"):
-		var intro: Introducao = load(Missao1.CENA_INTRO).instantiate()
-		root.add_child(intro)
-		await _ate(func() -> bool: return _passo_da_intro(intro))
-	else:
-		Missao1.local = "bar"
-		if estado == "bar_livre":
-			Missao1.marcar("bar_conversou")
-		var room = load(Missao1.CENA_LOCAL).instantiate()
-		root.add_child(room)
-		await _ate(func() -> bool: return _passo_do_bar(room))
+	Missao1.local = "bar"
+	if estado == "bar_livre":
+		Missao1.marcar("bar_conversou")
+	var room = load(Missao1.CENA_LOCAL).instantiate()
+	root.add_child(room)
+	await _ate(func() -> bool: return _passo_do_bar(room))
 	for i in 8:
 		await process_frame
 	root.get_texture().get_image().save_png(saida)
@@ -45,24 +40,6 @@ func _ate(cond: Callable) -> void:
 
 func _digitou(cx: CaixaFala, nome: String) -> bool:
 	return cx.ocupada and cx._nome.text == nome and cx._texto.visible_characters == -1
-
-
-func _passo_da_intro(intro: Introducao) -> bool:
-	var cx: CaixaFala = intro.caixa
-	match estado:
-		"intro_estrada":
-			return intro._cartao.modulate.a > 0.95
-		"intro_legenda":
-			return intro._legenda.modulate.a > 0.95
-		"intro_dialogo":
-			if _digitou(cx, "MIGUEL"):
-				return true
-		"intro_porta":
-			if _digitou(cx, "LETÍCIA"):
-				return true
-	if cx.ocupada and cx._texto.visible_characters == -1:
-		cx._avancou = true  # passa a fala
-	return false
 
 
 func _passo_do_bar(room) -> bool:

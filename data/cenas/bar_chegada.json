@@ -1,5 +1,5 @@
 {
-	"_nota": "Cena do bar (roteiro-missao1.md, cena 5; Léo 20/11/2026: o bar pode ser cinemática até 'Alguma dúvida sobre o caso?' e dali em diante as perguntas são no jogo). Falas do Léo: Caio, Letícia (abertura e fim). A fala do Fernando vem das falas provisórias do roteiro ('o Caio vai querer a revanche'); a do Caio no fim ('Bilhar fica para depois') e o texto do cartão de viagem são PROVISÓRIOS do Claude (22/11). A Letícia é um retângulo provisório e fica de pé atrás da mesa (sem pose sentada).",
+	"_nota": "Cena do bar (roteiro-missao1.md, cena 5; Léo 20/11: o bar pode ser cinemática até 'Alguma dúvida sobre o caso?' e dali em diante as perguntas são no jogo). Léo 22/11: ao chegar só uma fala do Nikolai e eles vão direto para a mesa; a introdução na van é o vídeo do Blender. Falas do Léo: Caio e Letícia (abertura e fim). A fala do Nikolai ao chegar e a do Fernando vêm das falas provisórias do roteiro; a do Caio no fim ('Bilhar fica para depois') e o texto do cartão de viagem são PROVISÓRIOS do Claude.",
 	"passos": [
 		{
 			"faz": "cinema",
@@ -14,9 +14,13 @@
 			"tempo": 0.6
 		},
 		{
-			"faz": "legenda",
-			"texto": "Aurora, 15h. Um bar a poucas quadras da delegacia. Quase vazio.",
-			"tempo": 3.0
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "nikolai",
+					"texto": "Cidade pequena. Todo mundo se conhece. Alguém viu alguma coisa."
+				}
+			]
 		},
 		{
 			"faz": "andar",

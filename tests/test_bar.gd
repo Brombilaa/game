@@ -1,6 +1,6 @@
 extends SceneTree
-# Teste headless da introdução e do bar (Claude, 22/11/2026; roteiro-missao1.md, seções 0 e "BAR"): os dados são válidos,
-# a introdução termina no bar, a cena do bar toca inteira (chegada, perguntas à Letícia, despedida), cada pergunta vira
+# Teste headless do bar (Claude, 22/11/2026; roteiro-missao1.md, seções 0 e "BAR"): os dados são válidos,
+# a introdução (vídeo do Blender) virá antes, a cena do bar toca inteira (chegada, perguntas à Letícia, despedida), cada pergunta vira
 # uma entrada do diário uma única vez e o bar leva à praça (parque). Rodar com:
 #   godot --headless --path . -s tests/test_bar.gd
 
@@ -15,7 +15,6 @@ func _run() -> void:
 	Progresso.autosave_ativo = false
 	_dados()
 	_conversa_regras()
-	await _introducao()
 	await _cena_do_bar()
 	print("Falhas: %d" % failures if failures > 0 else "OK: test_bar")
 	quit(1 if failures > 0 else 0)
@@ -29,26 +28,19 @@ func _dados() -> void:
 	for arq in ["bar.glb", "bar.json"]:
 		_check(FileAccess.file_exists(Cenario3D_PASTA + arq) or ResourceLoader.exists(Cenario3D_PASTA + arq), "bar: " + arq + " existe")
 	var c := Conversa.carregar("bar_leticia")
-	_check(c.get("perguntas", []).size() >= 5 and c.get("perguntas", []).size() <= 9, "bar: de 5 a 9 perguntas (cabem nas teclas 1 a 9)")
+	_check(c.get("perguntas", []).size() == 3, "bar: só as perguntas 2, 4 e 6 (Léo, 22/11)")
 	var vistos := {}
 	for p in c.get("perguntas", []):
 		_check(not vistos.has(p["id"]), "bar: id único (%s)" % p["id"])
 		vistos[p["id"]] = true
 		_check(not p.get("respostas", []).is_empty() and not str(p.get("diario", {}).get("texto", "")).is_empty(), "bar: %s tem resposta e entrada de diário" % p["id"])
-	for id in ["desaparecidos", "responsavel", "cena", "ordo"]:
+	for id in ["responsavel", "ordo", "chamou"]:
 		_check(vistos.has(id), "bar: pergunta do roteiro do Léo (%s)" % id)
 	var passos := CenaRoteiro.carregar("bar_chegada")
 	_check(not passos.is_empty(), "bar: a cena carrega")
 	var faz := passos.map(func(p: Dictionary) -> String: return str(p["faz"]))
 	_check(faz.has("perguntas") and faz.find("perguntas") < faz.find("ir"), "bar: as perguntas vêm antes da ida à praça")
 	_check(str(passos[faz.find("ir")]["para"]) == "parque", "bar: termina indo ao parque")
-	var intro := Introducao.carregar()
-	_check(not intro.is_empty(), "intro: os passos carregam")
-	var falas := 0
-	for p in intro:
-		if p["faz"] == "dialogo":
-			falas += p["falas"].size()
-	_check(falas >= 8, "intro: briefing e falas do roteiro")
 
 
 const Cenario3D_PASTA := "res://assets/3d/missao1/"
@@ -57,26 +49,12 @@ const Cenario3D_PASTA := "res://assets/3d/missao1/"
 func _conversa_regras() -> void:
 	Missao1.reiniciar()
 	var c := Conversa.carregar("bar_leticia")
-	_check(Conversa.registrar("bar_leticia", c, "desaparecidos", "BAR · 15h"), "a primeira pergunta registra")
-	_check(not Conversa.registrar("bar_leticia", c, "desaparecidos", "BAR · 15h"), "repetir a pergunta não duplica")
+	_check(Conversa.registrar("bar_leticia", c, "responsavel", "BAR · 15h"), "a primeira pergunta registra")
+	_check(not Conversa.registrar("bar_leticia", c, "responsavel", "BAR · 15h"), "repetir a pergunta não duplica")
 	_check(Missao1.diario.size() == 1 and Missao1.diario[0]["lugar"] == "BAR · 15h", "a resposta vira entrada do diário no lugar do bar")
-	_check(Conversa.feita("bar_leticia", "desaparecidos") and not Conversa.feita("bar_leticia", "ordo"), "a lista sabe quais já foram feitas")
+	_check(Conversa.feita("bar_leticia", "responsavel") and not Conversa.feita("bar_leticia", "ordo"), "a lista sabe quais já foram feitas")
 	_check(Conversa.total_feitas("bar_leticia", c) == 1, "contagem de perguntas feitas")
 	Missao1.reiniciar()
-
-
-func _introducao() -> void:
-	Missao1.reiniciar()
-	var intro: Introducao = load(Missao1.CENA_INTRO).instantiate()
-	root.add_child(intro)
-	for i in 120:
-		await process_frame
-		if intro.acabou:
-			break
-	_check(intro.acabou, "a introdução termina")
-	_check(Missao1.local == "bar" and Missao1.chegada == "", "depois da introdução vem o bar")
-	intro.queue_free()
-	await process_frame
 
 
 func _cena_do_bar() -> void:
@@ -103,7 +81,7 @@ func _cena_do_bar() -> void:
 		Engine.time_scale = 1.0
 		return
 	_check(painel.ids.size() == Conversa.carregar("bar_leticia")["perguntas"].size() + 1 and painel.ids[-1] == "", "a lista termina com a saída")
-	painel.escolher("desaparecidos")
+	painel.escolher("responsavel")
 	await process_frame
 	await process_frame
 	painel.escolher("ordo")
@@ -113,7 +91,7 @@ func _cena_do_bar() -> void:
 	await process_frame
 	await process_frame
 	_check(Missao1.diario.size() == 2, "duas perguntas diferentes, duas entradas no diário")
-	_check(Missao1.tem("perg_bar_leticia_ordo") and Missao1.tem("perg_bar_leticia_desaparecidos"), "as perguntas feitas ficam marcadas (vão no save)")
+	_check(Missao1.tem("perg_bar_leticia_ordo") and Missao1.tem("perg_bar_leticia_responsavel"), "as perguntas feitas ficam marcadas (vão no save)")
 	painel.escolher("")
 	for i in 60 * 30:
 		await process_frame
