@@ -10,6 +10,8 @@ func _init() -> void:
 	_check(CaixaFala.nome_de("leticia") == "Letícia", "id vira nome com acento")
 	_check(CaixaFala.nome_de("Letícia") == "Letícia", "nome também serve")
 	_check(CaixaFala.tem_retrato("fernando"), "Fernando tem retrato")
+	_check(CaixaFala.tem_retrato("geraldo") and CaixaFala.nome_de("geraldo") == "Geraldo", "Geraldo tem retrato e nome")
+	_check(CaixaFala.tem_retrato("Letícia"), "Letícia tem retrato")
 	# Todas as falas do arquivo: 2 a 4 por pista, texto não vazio, personagem conhecido.
 	var f := FileAccess.open(CaixaFala.ARQUIVO_FALAS, FileAccess.READ)
 	var d: Dictionary = JSON.parse_string(f.get_as_text())
