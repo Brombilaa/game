@@ -419,7 +419,7 @@ def _cabelo(d, box, forma, cor):
 
 
 def ficha_tecnica(f):
-    w, h = 600, 680
+    w, h = 600, 650
     papel_cor = (232, 228, 214)
     img = papel(w, h, papel_cor, 5, 100 + f["n"], veio=False)
     d = ImageDraw.Draw(img)
@@ -437,57 +437,46 @@ def ficha_tecnica(f):
         d.text((x + 6, y + 3), rot, font=ft(12), fill=cinza)
         d.text((x + 8, y + 19), val, font=ft(tam), fill=cor)
 
-    # foto com régua de altura
-    fx0, fy0, fx1, fy1 = 28, 94, 218, 286
-    silhueta(d, (fx0, fy0, fx1, fy1), (178, 174, 164, 255), (84, 80, 74, 255) if f["sexo"] == "M" else (92, 84, 80, 255))
-    _cabelo(d, (fx0, fy0, fx1, fy1), f["forma"], (50, 44, 40, 255) if f["cabelo"].split(",")[0] not in ("Grisalho", "Branco") else (176, 172, 168, 255))
-    d.rectangle((fx0, fy0, fx1, fy1), outline=tinta, width=3)
-    for k in range(0, 11):
-        yy = fy0 + 10 + k * 19
-        d.line((fx1 - (22 if k % 5 == 0 else 12), yy, fx1, yy), fill=tinta, width=2)
-    d.text((fx0 + 6, fy1 - 22), f"Nº {f['n']:02d}", font=ft(16), fill=tinta)
-    d.rectangle((fx0, fy1 + 4, fx1, fy1 + 28), fill=tinta)
-    d.text((fx0 + 6, fy1 + 6), "FOTO ARQUIVADA", font=ft(14), fill=(236, 232, 220))
-    # dados
-    x = 236
-    cel(x, 94, 336, 50, "NOME COMPLETO", f["nome"], 24)
-    cel(x, 144, 108, 46, "SEXO", f["sexo"])
-    cel(x + 108, 144, 108, 46, "IDADE", f"{f['idade']} anos")
-    cel(x + 216, 144, 120, 46, "PROFISSÃO", f.get("prof_curta", f["prof"]), 17)
-    cel(x, 190, 108, 46, "ALTURA", f["alt"])
-    cel(x + 108, 190, 108, 46, "PESO", f["peso"])
-    cel(x + 216, 190, 120, 46, "OLHOS", f["olhos"], 18)
-    cel(x, 236, 336, 46, "CABELO", f["cabelo"], 19)
-    cel(28, 322, 544, 46, "SINAIS PARTICULARES", f["sinais"], 20)
-    cel(28, 368, 544, 46, "ÚLTIMA VESTIMENTA", f["roupa"], 20)
-    cel(28, 414, 340, 46, "ÚLTIMO LOCAL VISTO", f["local"][:28], 19)
-    cel(368, 414, 204, 46, "BAIRRO", f["bairro"], 19)
-    cel(28, 460, 170, 46, "DATA DO SUMIÇO", f["data"], 22, verm)
-    cel(198, 460, 170, 46, "B.O. Nº", f"AUR-{f['n']:03d}/{(24 + f['n'] * 7) % 90 + 10}", 20)
-    cel(368, 460, 204, 46, "SITUAÇÃO", "EM ABERTO", 22, verm)
+    # sem foto (Léo, 22/11): os campos ocupam a largura toda
+    x = 28
+    cel(x, 94, 544, 50, "NOME COMPLETO", f["nome"], 26)
+    cel(x, 144, 110, 46, "SEXO", f["sexo"])
+    cel(x + 110, 144, 144, 46, "IDADE", f"{f['idade']} anos")
+    cel(x + 254, 144, 290, 46, "PROFISSÃO", f["prof"], 19)
+    cel(x, 190, 110, 46, "ALTURA", f["alt"])
+    cel(x + 110, 190, 144, 46, "PESO", f["peso"])
+    cel(x + 254, 190, 290, 46, "OLHOS", f["olhos"], 19)
+    cel(x, 236, 544, 46, "CABELO", f["cabelo"], 20)
+    cel(28, 282, 544, 46, "SINAIS PARTICULARES", f["sinais"], 20)
+    cel(28, 328, 544, 46, "ÚLTIMA VESTIMENTA", f["roupa"], 20)
+    cel(28, 374, 340, 46, "ÚLTIMO LOCAL VISTO", f["local"][:28], 19)
+    cel(368, 374, 204, 46, "BAIRRO", f["bairro"], 19)
+    cel(28, 420, 170, 46, "DATA DO SUMIÇO", f["data"], 22, verm)
+    cel(198, 420, 170, 46, "B.O. Nº", f"AUR-{f['n']:03d}/{(24 + f['n'] * 7) % 90 + 10}", 20)
+    cel(368, 420, 204, 46, "SITUAÇÃO", "EM ABERTO", 22, verm)
     # rodapé: observações e código de barras
-    d.text((28, 524), "OBSERVAÇÕES", font=ft(12), fill=cinza)
+    d.text((28, 490), "OBSERVAÇÕES", font=ft(12), fill=cinza)
     obs = "Vítima sem inimigos conhecidos. Sem pedido de resgate." if f["n"] < 7 else "Caso mais recente. Sem inimigos conhecidos. Sem pedido de resgate."
-    escreve(d, (28, 540), obs, ft(16), tinta, larg=330, esp=1.25)
+    escreve(d, (28, 508), obs, ft(16), tinta, larg=330, esp=1.25)
     r = random.Random(f["n"])
     bx = 388
     for i in range(34):
         lw = r.choice((2, 2, 3, 5))
-        d.rectangle((bx, 534, bx + lw, 600), fill=tinta)
+        d.rectangle((bx, 500, bx + lw, 566), fill=tinta)
         bx += lw + r.choice((2, 3, 4))
         if bx > 560:
             break
-    d.text((388, 606), f"AUR{f['n']:02d}{f['idade']:03d}0{f['data'][:2]}", font=ft(13), fill=tinta)
-    d.line((28, 636, w - 28, 636), fill=tinta, width=2)
-    d.text((28, 644), "Informações: Delegacia de Aurora, plantão 24 h", font=ft(13), fill=cinza)
+    d.text((388, 572), f"AUR{f['n']:02d}{f['idade']:03d}0{f['data'][:2]}", font=ft(13), fill=tinta)
+    d.line((28, 604, w - 28, 604), fill=tinta, width=2)
+    d.text((28, 612), "Informações: Delegacia de Aurora, plantão 24 h", font=ft(13), fill=cinza)
     # desgaste: uma dobra, uma mancha, carimbo
     d.line((14, h // 2, w - 15, h // 2 + 1), fill=(190, 184, 168, 255), width=2)
     if f["n"] % 2 == 0:
-        mancha_cafe(img, (500, 580), 38, 70, f["n"])
+        mancha_cafe(img, (500, 548), 38, 70, f["n"])
     folha = recorta(img, borda_irregular(w, h, 30 + f["n"], rasgo=(), amp=2))
     q = pousa(folha, (-2.5, 2.0, -1.5, 3.0, -3.0, 1.5, -2.0)[f["n"] - 1], (S // 2, S // 2 - 6))
     clipe(ImageDraw.Draw(q), 52 + f["n"] * 6, 28)
-    carimbo(q, "DESAPARECIDO(A)" if False else ("DESAPARECIDA" if f["sexo"] == "F" else "DESAPARECIDO"), (468, 326), -8, (150, 24, 20), 28)
+    carimbo(q, "DESAPARECIDO(A)" if False else ("DESAPARECIDA" if f["sexo"] == "F" else "DESAPARECIDO"), (236, 592), -5, (150, 24, 20), 24)
     return q
 
 
