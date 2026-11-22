@@ -6,7 +6,7 @@ extends SceneTree
 # Rodar com:
 #   godot --headless --path . -s tests/test_local3d.gd
 
-const LOCAIS := ["delegacia_17h", "delegacia_21h", "subsolo", "biblioteca", "fazenda", "cripta", "celeiro"]
+const LOCAIS := ["delegacia_17h", "delegacia_21h", "subsolo", "biblioteca", "necrotorio", "casa_geraldo", "fazenda", "cripta", "celeiro"]
 
 var failures := 0
 
@@ -39,7 +39,7 @@ func _run() -> void:
 
 # Marcas das cenas de diálogo que tocam sozinhas ao chegar (as falas novas de 22/11): os testes de alcance, saque e
 # combate não as esperam. `_cenas_de_dialogo` testa as cenas de verdade.
-const MARCAS_DAS_CENAS := ["delegacia17_chegada", "ghular_17h", "ghular_21h", "biblioteca_julia", "ligacao_juliana", "cripta_ghular"]
+const MARCAS_DAS_CENAS := ["delegacia17_chegada", "ghular_17h", "ghular_21h", "biblioteca_julia", "ligacao_juliana", "cripta_ghular", "necrotorio_chegada", "geraldo_chegada"]
 
 
 func _abrir(id: String, chegada := "", com_cenas := false) -> Node:
@@ -97,7 +97,7 @@ func _local(id: String) -> void:
 
 func _investigacao() -> void:
 	# Delegacia das 17h e biblioteca têm pistas: documentos, itens no chão e gavetas (textos provisórios).
-	for id in ["delegacia_17h", "biblioteca"]:
+	for id in ["delegacia_17h", "biblioteca", "necrotorio", "casa_geraldo"]:
 		Missao1.reiniciar()
 		var room = await _abrir(id)
 		_check(room.scenario.clues.size() >= 5, id + ": tem pelo menos 5 pistas")
@@ -105,6 +105,8 @@ func _investigacao() -> void:
 			var c: Dictionary = room.scenario.clues[cid]
 			_check(str(c.texto).length() > 20, id + ": a pista %s tem texto" % cid)
 			_check(Pathfinder.is_free(c.pos, room._obstacles(room.player), room.player.radius), id + ": a pista %s fica em ponto livre" % cid)
+		for m in ["necrotorio_depois", "geraldo_chegada", "geraldo_conversa", "geraldo_1977"]:
+			Missao1.marcar(m)  # pistas que só abrem depois de uma cena (a Letícia, o Geraldo)
 		var antes: int = room.inventory.count("kit_primeiros_socorros") + room.inventory.count("municao_pistola") + room.inventory.count("curativo")
 		for cid in room.scenario.clues:
 			room._inspect(cid)

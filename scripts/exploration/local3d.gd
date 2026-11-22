@@ -32,6 +32,7 @@ var chefe_virou := false  # a Dama de Sangue já surgiu
 var chefe_dama: ChefeDama  # a luta da Dama (flores, pendurados, fases); nulo até ela surgir
 var portas := {}  # id -> {"rect": Rect2, "chave": item, "no": MeshInstance3D}: portas trancadas que ainda não abriram
 var porta_avisada := ""  # a porta cujo aviso "Trancada" já apareceu nesta aproximação
+var menu_destinos: CanvasLayer  # a escolha entre os três lugares livres (nulo = fechada)
 var fim_tocou := false  # a cutscene do tentáculo (fim da missão 1) já começou
 var fim_capitulo: FimCapitulo  # cutscene externa e cartão AURORA, no fim do celeiro
 const CENA_MENU := "res://scenes/menu/main_menu.tscn"
@@ -354,7 +355,7 @@ func _uniso(s: Vector2) -> Vector2:
 
 # Fora de casa (fazenda) o passo é de terra e grama; delegacia, biblioteca e cripta são piso duro.
 func _step_surface() -> String:
-	return "grass" if local_id == "fazenda" else "floor"
+	return "grass" if local_id == "fazenda" or local_id == "casa_geraldo" else "floor"
 
 
 func _place_label() -> String:
@@ -370,7 +371,7 @@ func _diario_lugar() -> String:
 func _enemy_variant(i: int) -> String:
 	if i >= enemies.size():
 		return "cultista"
-	if enemies[i].name == "Dama de Sangue":
+	if enemies[i].name == "Dama de Sangue" or enemies[i].name == "Criatura de Sangue":  # o zumbi do necrotério (22/11)
 		return CREATURE_VARIANT
 	return "atirador" if enemies[i].name == "Atirador" or enemies[i].name == "Roberto Ghular" else "cultista"
 
@@ -401,6 +402,9 @@ func _zonas() -> void:
 		if str(z.get("acao", "")) == "ir":
 			_ir_para(str(z["para"]), str(z.get("chegada", "")), str(z.get("texto", "")))
 			return
+		if str(z.get("acao", "")) == "destinos":  # saída para a escolha dos três lugares livres (Léo, 20/11)
+			_saida_para_destinos(str(z.get("texto", "")))
+			return
 		if str(z.get("acao", "")) == "estado":  # revela um trecho do cenário (cripta)
 			if z.has("marca") and Missao1.tem(str(z["marca"])):
 				continue
@@ -423,8 +427,9 @@ func _zonas() -> void:
 
 # Revela o trecho, toca a cena da zona e só então acorda os inimigos dele (o combate não atropela o discurso).
 func _revelar_com_cena(z: Dictionary) -> void:
-	for e in z["estados"]:
-		world3d.estado(e, z["estados"][e])
+	if not bool(z.get("estados_pela_cena", false)):  # com "estados_pela_cena" a própria cena muda o estado (passo "estado")
+		for e in z["estados"]:
+			world3d.estado(e, z["estados"][e])
 	if z.has("marca"):
 		Missao1.marcar(str(z["marca"]))
 	Missao1.marcar(str(z["cena"]))
@@ -482,6 +487,70 @@ func _run_trigger(trigger: Dictionary) -> void:
 	queue_redraw()
 
 
+# Saída de um lugar livre (ou da delegacia das 17h): o grupo escolhe o próximo destino entre os que ainda não visitou;
+# quando não sobra nenhum, volta à delegacia (21h). Com um só restante, vai direto.
+func _saida_para_destinos(texto_saida: String) -> void:
+	var livres := Missao1.destinos_livres()
+	if livres.is_empty():
+		_ir_para("delegacia_21h", "", "O grupo volta para a delegacia.")
+		return
+	if livres.size() == 1:
+		_ir_para(str(livres[0]["id"]), "", str(livres[0]["texto"]))
+		return
+	_abrir_menu_destinos(livres, texto_saida)
+
+
+func _abrir_menu_destinos(livres: Array, titulo: String) -> void:
+	if menu_destinos != null:
+		return
+	busy = true
+	path = PackedVector2Array()
+	moving_unit = null
+	menu_destinos = CanvasLayer.new()
+	menu_destinos.layer = 85
+	add_child(menu_destinos)
+	var fundo := ColorRect.new()
+	fundo.color = Color(0, 0, 0, 0.62)
+	fundo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fundo.mouse_filter = Control.MOUSE_FILTER_STOP
+	menu_destinos.add_child(fundo)
+	var centro := CenterContainer.new()
+	centro.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fundo.add_child(centro)
+	var caixa := VBoxContainer.new()
+	caixa.add_theme_constant_override("separation", 10)
+	caixa.custom_minimum_size = Vector2(420, 0)
+	centro.add_child(caixa)
+	var t := Label.new()
+	t.text = "Para onde o grupo vai agora?"
+	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	t.add_theme_font_size_override("font_size", 20)
+	t.add_theme_color_override("font_color", Color(0.93, 0.89, 0.8))
+	caixa.add_child(t)
+	for d in livres:
+		var b := Button.new()
+		b.text = "%s\n%s" % [str(d["rotulo"]), str(d["detalhe"])]
+		b.custom_minimum_size = Vector2(0, 56)
+		b.pressed.connect(_escolher_destino.bind(d))
+		caixa.add_child(b)
+	var ficar := Button.new()
+	ficar.text = "Ficar mais um pouco"
+	ficar.pressed.connect(_fechar_menu_destinos)
+	caixa.add_child(ficar)
+
+
+func _escolher_destino(d: Dictionary) -> void:
+	_fechar_menu_destinos()
+	_ir_para(str(d["id"]), "", str(d["texto"]))
+
+
+func _fechar_menu_destinos() -> void:
+	if menu_destinos != null:
+		menu_destinos.queue_free()
+		menu_destinos = null
+	busy = false
+
+
 # Invasão da delegacia às 21h (Léo, 13/11): depois do subsolo, ao entrar na recepção, uma flashbang estoura pela
 # porta da frente (tela branca e tremida), os atiradores entram e o combate começa quando a vista volta.
 func _invasao(inv: Dictionary) -> void:
@@ -525,6 +594,12 @@ func _on_combat_ended(result: TurnManager.Result) -> void:
 		Missao1.marcar(str(inv["marca"]))
 	if result == TurnManager.Result.VICTORY:
 		_marcar_grupos()
+	var apos: Dictionary = dados.get("cena_apos_combate", {})  # o grupo comenta o zumbi (necrotério, 22/11)
+	if result == TurnManager.Result.VICTORY and not apos.is_empty() and CenaRoteiro.existe(str(apos["cena"])) \
+			and not Missao1.tem(str(apos["marca"])) and (not apos.has("requer") or Missao1.tem(str(apos["requer"]))):
+		Missao1.marcar(str(apos["marca"]))
+		await get_tree().create_timer(1.0).timeout
+		await tocar_cena(str(apos["cena"]))
 	var depois := str(inv.get("cena_depois", ""))  # a ligação da Juliana, logo depois do ataque
 	if result == TurnManager.Result.VICTORY and depois != "" and CenaRoteiro.existe(depois) and not Missao1.tem("ligacao_juliana"):
 		Missao1.marcar("ligacao_juliana")

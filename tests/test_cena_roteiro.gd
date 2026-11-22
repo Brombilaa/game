@@ -6,8 +6,8 @@ extends SceneTree
 
 var failures := 0
 const PASSOS := ["cinema", "camera", "andar", "olhar", "anim", "cair", "fala", "legenda", "esperar", "tremor", "flash", "saltar", "choque",
-	"sangue", "poca", "surgir", "sumir", "marca", "dialogo"]
-const ATORES := ["caio", "leticia", "Fernando", "Nikolai", "Miguel", "lider", "inimigo:0", "inimigo:1", "tristan", "mark", "julia", "medico"]
+	"sangue", "poca", "surgir", "sumir", "marca", "dialogo", "estado", "acordar"]
+const ATORES := ["caio", "leticia", "Fernando", "Nikolai", "Miguel", "lider", "inimigo:0", "inimigo:1", "tristan", "mark", "julia", "medico", "geraldo"]
 
 
 func _initialize() -> void:

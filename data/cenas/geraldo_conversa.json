@@ -1,0 +1,65 @@
+{
+	"_nota": "Primeira conversa com o Geraldo (roteiro 3c, Léo 20/11). Ele começa Inamistoso e, quando o grupo mostra interesse de verdade, fica Indiferente e conta que também investigou um caso parecido em 1977 e pegou o livro Sanguis Orchid. O teste de Diplomacia (DT 20) do roteiro ainda não existe no jogo: a subida de atitude é fixa (provisório). Falas do grupo provisórias do Claude.",
+	"passos": [
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.7,
+			"junto": true
+		},
+		{
+			"faz": "legenda",
+			"texto": "Atitude do Geraldo: Inamistoso.",
+			"tempo": 1.6
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "miguel",
+					"texto": "Senhor Munch? Quem sumiu em Aurora não foi só uma pessoa. A gente está tentando entender o porquê."
+				},
+				{
+					"quem": "geraldo",
+					"texto": "Hum. Eu também acho que os desaparecimentos estão conectados. Só isso."
+				}
+			]
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "nikolai",
+					"texto": "O senhor foi policial aqui. Sabe como é carregar um caso que ninguém quer ouvir."
+				},
+				{
+					"quem": "fernando",
+					"texto": "Não viemos tirar nada do senhor. Só ouvir."
+				}
+			]
+		},
+		{
+			"faz": "legenda",
+			"texto": "Atitude do Geraldo: Indiferente.",
+			"tempo": 1.6
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "geraldo",
+					"texto": "...Eu investiguei um caso parecido em 1977. Peguei um livro chamado Sanguis Orchid, achava que estava ligado a tudo aquilo."
+				},
+				{
+					"quem": "geraldo",
+					"texto": "Hoje acho que não. Ou prefiro achar que não."
+				}
+			]
+		},
+		{
+			"faz": "cinema",
+			"estado": "sair",
+			"tempo": 0.7
+		}
+	]
+}

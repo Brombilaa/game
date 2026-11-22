@@ -1,0 +1,30 @@
+{
+	"_nota": "Fim da visita ao Velho Geraldo (roteiro 3c, Léo 20/11: 'não há mais nada aqui para investigar; para onde vocês vão agora?'). A pergunta dele leva à escolha do próximo destino. O contador de 'cinco rodadas' do roteiro ficou fora (provisório).",
+	"passos": [
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.7,
+			"junto": true
+		},
+		{
+			"faz": "legenda",
+			"texto": "O Velho Geraldo volta a se balançar, perdido nos pensamentos, e parece só um velhinho vulnerável.",
+			"tempo": 3.0
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "geraldo",
+					"texto": "Não há mais nada aqui para investigar. Para onde vocês vão agora?"
+				}
+			]
+		},
+		{
+			"faz": "cinema",
+			"estado": "sair",
+			"tempo": 0.7
+		}
+	]
+}

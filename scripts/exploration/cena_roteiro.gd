@@ -26,6 +26,8 @@ extends Node
 #   surgir   {"id": nome, "tipo": "criatura_sangue", "pos": [x, y]}  criatura que só existe na cena
 #   sumir    {"quem": ator}                                          tira o ator da cena (NPC ou criatura da cena)
 #   marca    {"id": nome}                                            Missao1.marcar
+#   estado   {"nome": estado, "valor": bool}                          liga/desliga um estado do cenário 3D (local3d)
+#   acordar  {"trecho": n}                                           os inimigos que esperavam o trecho n entram em cena (local3d)
 # Atores: id de NPC do cenário ("caio", "leticia"), nome do membro do grupo ("Fernando", "Nikolai", "Miguel"),
 # "lider" (o controlado), "inimigo:N" (N-ésimo inimigo do gatilho) ou o id de algo que surgiu na cena.
 
@@ -165,6 +167,13 @@ func _executar(p: Dictionary) -> void:
 			room.cena_sumir(_ator(p["quem"]))
 		"marca":
 			Missao1.marcar(str(p["id"]))
+		"estado":  # liga ou desliga um estado do cenário 3D no meio da cena (a gaveta do necrotério que arrebenta)
+			if room.get("world3d") != null:
+				room.world3d.estado(str(p["nome"]), bool(p.get("valor", true)))
+				room.queue_redraw()
+		"acordar":  # os inimigos que esperavam um trecho escondido entram em cena (o zumbi, depois da gaveta)
+			if room.has_method("_acordar"):
+				room._acordar(int(p.get("trecho", 0)))
 		_:
 			push_warning("cena %s: passo desconhecido %s" % [id, p])
 

@@ -11,10 +11,10 @@ const SCENARIO_ID := "parque"
 const BOUNDS_PAD := 64.0  # espessura das paredes invisíveis na borda do plano
 const BIG_PROPS := ["van", "lago", "lago_2", "lago_3", "lago_4", "arvore", "mata_1", "mata_2", "arbusto_4"]  # paredes: bloqueiam também a visão (Léo: van e arbustos atrás da árvore)
 const NPC_RADIUS := 14.0
-const NPC_NAMES := {"caio": "Caio", "leticia": "Letícia", "tristan": "Tristan", "mark": "Mark", "julia": "Júlia", "medico": "Socorrista"}
+const NPC_NAMES := {"caio": "Caio", "leticia": "Letícia", "tristan": "Tristan", "mark": "Mark", "julia": "Júlia", "medico": "Socorrista", "geraldo": "Geraldo"}
 # Figuras provisórias. O pessoal do celeiro (Léo, 19/11) tem cores diferentes até ganhar modelo 3D.
 const NPC_COLORS := {"caio": Color("#46628a"), "leticia": Color("#885050"), "tristan": Color("#4a4d52"), "mark": Color("#5d5a3a"),
-	"julia": Color("#6a4f78"), "medico": Color("#c9c2b0")}
+	"julia": Color("#6a4f78"), "medico": Color("#c9c2b0"), "geraldo": Color("#7a766c")}
 var caio3d := IdleSheet.new("caio3d", "caio3d")  # Caio: só a animação de parado (morre no primeiro mapa)
 
 const DOT_RADIUS := 6.0  # bolinha da pista, em px do desenho

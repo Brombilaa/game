@@ -28,6 +28,8 @@ const NOMES := {
 	"tristan": "Tristan", "mark": "Mark", "julia": "Júlia", "medico": "Socorrista",
 	# Delegacia (roteiro da missão 1, 20/11): o delegado Roberto Ghular e o escrivão Túlio (sem retrato: aparece a inicial)
 	"ghular": "Ghular", "tulio": "Túlio",
+	# Casa do Velho Geraldo (roteiro 3c, 20/11)
+	"geraldo": "Geraldo",
 }
 const ARQUIVO_FALAS := "res://data/falas.json"
 

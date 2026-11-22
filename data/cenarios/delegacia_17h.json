@@ -1495,10 +1495,9 @@
     1538.5,
     153.5
    ],
-   "acao": "ir",
-   "para": "biblioteca",
-   "texto": "O grupo segue para a biblioteca.",
-   "provisorio": true
+   "acao": "destinos",
+   "provisorio": true,
+   "texto": "O grupo sai da delegacia."
   }
  ],
  "inimigos": [],
@@ -1519,7 +1518,7 @@
    "provisorio": true
   },
   {
-   "texto": "Seguir para a biblioteca",
+   "texto": "Escolher o próximo destino (biblioteca, necrotério ou casa do Geraldo)",
    "provisorio": true
   }
  ],
