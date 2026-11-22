@@ -23,7 +23,7 @@ FICHAS = [
     ("ficha_04", "Ramiro Turi", "Ramiro Turi, 02/05/1972. Bar do Longo, Avenida Central, 304. Visto pela última vez no beco ao lado do bar: flores alaranjadas cortadas junto a um símbolo feito com o sangue dele."),
     ("ficha_05", "Ruth Santos", "Ruth Santos, 06/01/1965. Em casa, Rua das Camélias, 700. Sem arrombamento, mas com sinais de luta. Sacos de fertilizante abertos pela sala, com pétalas rosas de uma flor que ela não cultivava."),
     ("ficha_06", "Selena Schaefer", "Selena Schaefer, 05/02/1992. Seu apartamento, Rua das Tulipas, 34. Banheira com a torneira aberta, água transbordando e pétalas murchas de \"Caladenia viridis\". Pizza que ela não pediu, pedido anônimo."),
-    ("ficha_07", "Lisandra de Sá", "Lisandra de Sá, 38 anos, funcionária de farmácia. Sumiu ontem à noite na praça, voltando do trabalho. É a mais recente. (Ficha provisória: o Léo ainda não mandou a dela.)"),
+    ("ficha_07", "Lisandra de Sá", "Lisandra de Sá, 38 anos, funcionária de farmácia. Sumiu ontem à noite na praça, voltando do trabalho. É a mais recente."),
 ]
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
@@ -196,6 +196,7 @@ def subsolo(d, p, ret):
     d["pistas"].append({"id": "livro_faltando", "pos": p(1.0, 3.4), "raio": 70, "ordem": 1, "bolinha": [0, -40],
                         "destaque": {"nomes": ["Mesh33"]},  # a mesa (tampo) onde fica o retângulo limpo
                         "texto": "Sobre a mesa do subsolo, aberto, está o livro Sanguis Orchid: capa vermelha, uma orquídea dourada. Foi deixado ali de propósito. Sob ele, um mapa antigo da região com uma fazenda a leste marcada com uma orquídea vermelha e a anotação \"Ghular\".",
+                        "da": [{"item": "livro_sanguis_orchid", "qtd": 1}],
                         "provisorio": True})
     d["zonas"].append({"id": "escada", "ret": ret(4.2, 0.13, 1.27, 0.9), "acao": "ir", "para": "delegacia_21h", "chegada": "subsolo",
                        "texto": "O grupo sobe de volta para o escritório."})
