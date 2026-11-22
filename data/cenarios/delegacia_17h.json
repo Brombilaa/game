@@ -1492,7 +1492,8 @@
      "item": "garrafa_agua",
      "qtd": 1
     }
-   ]
+   ],
+   "sem_diario": true
   },
   {
    "id": "geladeira_pave",
@@ -1519,8 +1520,8 @@
   {
    "id": "kit_recepcao",
    "pos": [
-    288.0,
-    1056.0
+    1017.6,
+    1049.6
    ],
    "raio": 75,
    "ordem": 1,
@@ -1528,7 +1529,7 @@
     0,
     -30
    ],
-   "texto": "Debaixo de um banco da recepção, esquecido por alguém com pressa, há um kit com curativos e uma bandagem.",
+   "texto": "Sobre a mesa da recepção, esquecido por alguém com pressa, há um kit com curativos e uma bandagem.",
    "provisorio": true,
    "da": [
     {
@@ -1539,7 +1540,8 @@
      "item": "bandagem",
      "qtd": 1
     }
-   ]
+   ],
+   "sem_diario": true
   }
  ],
  "gatilhos": [

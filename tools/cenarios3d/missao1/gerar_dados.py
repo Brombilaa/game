@@ -153,14 +153,16 @@ def delegacia17(d, p, ret):
     _pista(d, p, "bebedouro_recepcao", 5.0, 15.0,
            "Ao lado do bebedouro da recepção, uma garrafa de água fechada. Pode servir.",
            da=[("garrafa_agua", 1)])
+    d["pistas"][-1]["sem_diario"] = True  # saque simples, não é pista
     # Pavê (roteiro: o Ghular manda comer o pavê da geladeira dos fundos; 1 a 3 porções de 5 PV). Posição provisória.
     _pista(d, p, "geladeira_pave", 4.0, 14.0,
            "Na geladeira dos fundos, o pavê do aniversário da Ribeiro, feito pela mãe dela. Duas fatias já cortadas, uma intacta: é bom mesmo.",
            da=[("pave", 3)])
     d["pistas"][-1]["sem_diario"] = True  # a geladeira não é pista: só dá o pavê, sem entrada no diário
-    _pista(d, p, "kit_recepcao", 3.0, 15.0,
-           "Debaixo de um banco da recepção, esquecido por alguém com pressa, há um kit com curativos e uma bandagem.",
+    _pista(d, p, "kit_recepcao", 14.4, 14.9,
+           "Sobre a mesa da recepção, esquecido por alguém com pressa, há um kit com curativos e uma bandagem.",
            da=[("curativo", 1), ("bandagem", 1)])
+    d["pistas"][-1]["sem_diario"] = True  # saque simples, não é pista
     # Cenas com roteiro (22/11, roteiro da missão 1): a chegada (o bilhete da Letícia) e, depois da agenda no escritório,
     # a chegada do delegado Ghular, simpático, e a mensagem da Letícia na caixa postal. Falas provisórias.
     d["cena_ao_chegar"] = {"cena": "delegacia_17h_chegada", "marca": "delegacia17_chegada"}
@@ -224,6 +226,7 @@ def biblioteca(d, p, ret):
     _pista(d, p, "caixa_arquivo", 17.2, 6.4,
            "Uma caixa de arquivo morto foi deixada no canto. Dentro, escondido sob relatórios velhos, há um kit de primeiros socorros.",
            da=[("kit_primeiros_socorros", 1)])
+    d["pistas"][-1]["sem_diario"] = True  # saque simples, não é pista
     # Acervo restrito (16/11, provisório): a chave está na gaveta do balcão de empréstimos.
     _pista(d, p, "gaveta_balcao", 12.4, 9.0,
            "Na gaveta do balcão de empréstimos, junto de carimbos secos, há uma chave pequena com uma etiqueta: \"Acervo restrito\".",
