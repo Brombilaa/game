@@ -57,6 +57,20 @@ func _cenas_de_dialogo() -> void:
 		await process_frame
 	_check(room.mode == room.Mode.EXPLORATION, "a cena do Ghular devolve o controle")
 	await _fechar(room)
+	# Morte do Túlio (22/11): ao voltar do subsolo, a cena toca antes da flashbang e só depois entram os atiradores.
+	Missao1.reiniciar()
+	for m in ["ghular_21h", "alcapao", "subsolo_visitado"]:
+		Missao1.marcar(m)
+	room = await _abrir("delegacia_21h")
+	_entrar_na_zona(room, "invasao")
+	await process_frame
+	_check(room.mode == room.Mode.CUTSCENE and room.enemies.is_empty(), "delegacia 21h: a morte do Túlio toca antes de os atiradores entrarem")
+	for i in 2400:
+		if not room.enemies.is_empty():
+			break
+		await process_frame
+	_check(Missao1.tem("tulio_morreu") and not room.enemies.is_empty(), "delegacia 21h: depois da morte do Túlio vem a invasão")
+	await _fechar(room)
 	Missao1.reiniciar()
 	room = await _abrir("cripta")
 	for n in [2, 3]:
