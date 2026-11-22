@@ -88,7 +88,12 @@ func _luta() -> void:
 	nikolai.pos = lu.pos + Vector2(60, 0)
 	nikolai.pa = 3
 	nikolai.hit_bonus = 5.0
-	var r: Dictionary = room.rules.attack(nikolai, lu, [] as Array[Rect2], [])
+	var r: Dictionary = {}
+	for _t in 30:  # o acerto sorteia; repete até acertar para o teste não depender de sorte
+		nikolai.pa = 3
+		r = room.rules.attack(nikolai, lu, [] as Array[Rect2], [])
+		if r.hit:
+			break
 	_check(r.hit and r.sem_efeito and lu.pv == lu.max_pv, "Laranja: bala acerta sem efeito")
 	miguel.weapon = room.cfg.weapon("espada")
 	miguel.pos = lu.pos + Vector2(lu.radius + miguel.radius + 4, 0)
