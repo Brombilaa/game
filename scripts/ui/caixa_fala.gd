@@ -28,6 +28,8 @@ const NOMES := {
 	"tristan": "Tristan", "mark": "Mark", "julia": "Júlia", "medico": "Socorrista",
 	# Delegacia (roteiro da missão 1, 20/11): o delegado Roberto Ghular e o escrivão Túlio (sem retrato: aparece a inicial)
 	"ghular": "Ghular", "tulio": "Túlio",
+	# Velho Geraldo Munch (retrato v2 pronto, 22/11); ainda sem fala no jogo
+	"geraldo": "Geraldo",
 }
 const ARQUIVO_FALAS := "res://data/falas.json"
 
