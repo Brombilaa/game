@@ -207,7 +207,8 @@ func _test_party() -> void:
 	var seguidor: Combatant = room.party[1]
 	lider.initiative = 9  # fichas do GDD: o Nikolai (AGI 3) agiria antes; aqui o líder age primeiro
 	room._order_move(Vector2(400, 360))
-	await _wait(func() -> bool: return room.moving_unit == null and room.follow_paths.is_empty(), 6.0)
+	# O seguidor corrige o lugar a cada 0,3 s no máximo: espera ele assentar a distância fixa, não só a rota esvaziar.
+	await _wait(func() -> bool: return room.moving_unit == null and room.follow_paths.is_empty() and absf(seguidor.pos.distance_to(lider.pos) - room.FOLLOW_DISTANCE) < 14.0, 6.0)
 	var d: float = seguidor.pos.distance_to(lider.pos)
 	_check(absf(d - room.FOLLOW_DISTANCE) < 14.0, "seguidor para a distância fixa do líder (%.0f)" % d)
 	room._switch_to(seguidor)

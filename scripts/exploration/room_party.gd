@@ -66,7 +66,6 @@ var _jitter := {}  # seguidor -> variação do ângulo (sorteada uma vez)
 var _slots := {}  # seguidor -> lugar livre escolhido {"alvo": Vector2 (líder + deslocamento), "livre": Vector2}
 var _espera := {}  # seguidor -> segundos desde a última rota
 var _preso := {}  # seguidor -> segundos parado por outro personagem no caminho
-var _pausada := {}  # seguidor -> rota guardada enquanto espera alguém passar
 
 
 func _formacao_completa() -> bool:
@@ -111,7 +110,7 @@ func _update_followers(delta: float) -> void:
 			continue
 		_espera[m] = float(_espera.get(m, FOLLOW_REPATH)) + delta
 		var alvo: Vector2 = room.player.pos + room.follow_offsets.get(m, Vector2.LEFT * TestRoom.FOLLOW_DISTANCE)
-		var route: PackedVector2Array = room.follow_paths.get(m, _pausada.get(m, PackedVector2Array()))
+		var route: PackedVector2Array = room.follow_paths.get(m, PackedVector2Array())
 		var slot: Dictionary = _slots.get(m, {})
 		var fim := route[route.size() - 1] if not route.is_empty() else m.pos
 		var velho := route.is_empty() or fim.distance_to(alvo) > FOLLOW_STALE
@@ -125,6 +124,12 @@ func _update_followers(delta: float) -> void:
 				_espera[m] = 0.0
 				route = _rota_seguidor(m, goal)
 				if route.is_empty():
+					# O lugar da formação pode estar do outro lado de uma parede: procura um lugar parecido que se alcança.
+					var alt := _slot_alcancavel(m, goal)
+					if alt != Vector2.INF:
+						_slots[m] = {"alvo": alvo, "livre": alt}
+						route = _rota_seguidor(m, alt)
+				if route.is_empty():
 					# Ainda sem rota: ele está dentro de uma colisão do cenário (Léo, 08/11: "Miguel tá travado", nasceu
 					# dentro dos pneus). Sai para o ponto livre mais próximo e tenta de novo no próximo quadro.
 					var livre := _ponto_livre_perto(m)
@@ -137,7 +142,6 @@ func _update_followers(delta: float) -> void:
 				route = PackedVector2Array()  # o líder parou e o lugar já está aqui
 		if route.is_empty():
 			room.follow_paths.erase(m)
-			_pausada.erase(m)
 			_preso.erase(m)
 			continue
 		var step := room._iso(route[0]) - room._iso(m.pos)
@@ -147,10 +151,8 @@ func _update_followers(delta: float) -> void:
 			# Alguém (vivo ou caído) está na frente: espera; se demorar, a próxima rota já o conta como obstáculo.
 			var t := float(_preso.get(m, 0.0)) + delta
 			_preso[m] = t
-			_pausada[m] = route
-			room.follow_paths.erase(m)  # parado, não anda no lugar
+			room.follow_paths[m] = route  # a rota fica: o grupo ainda não terminou de se arrumar
 			if t >= FOLLOW_BLOCKED:
-				_pausada.erase(m)
 				_preso.erase(m)
 				_espera[m] = FOLLOW_REPATH
 				_slots.erase(m)
@@ -160,7 +162,6 @@ func _update_followers(delta: float) -> void:
 					room.follow_paths[m] = rota_nova
 			continue
 		_preso.erase(m)
-		_pausada.erase(m)
 		room.facing8[m] = CharacterSheet.dir_from_vector(step)
 		var before := room._iso(m.pos)
 		m.pos = depois
@@ -194,6 +195,24 @@ func _slot_livre(m: Combatant, alvo: Vector2) -> Vector2:
 			if not _dentro(q, m.radius, obst):
 				return q
 	return room.player.pos  # nada livre perto: vai até o líder
+
+
+# Ponto livre perto de `alvo` que `m` consegue alcançar (anéis crescentes); por fim, um ponto a FOLLOW_DISTANCE do
+# líder na direção de `m`. INF quando nada serve.
+func _slot_alcancavel(m: Combatant, alvo: Vector2) -> Vector2:
+	var obst: Array[Rect2] = room._obstacles(m, false)
+	var cands: Array[Vector2] = []
+	for raio in range(16, 161, 16):
+		for k in 12:
+			cands.append(alvo + Vector2.RIGHT.rotated(TAU * k / 12.0) * raio)
+	var dir: Vector2 = (m.pos - room.player.pos).normalized() if m.pos != room.player.pos else Vector2.LEFT
+	cands.append(room.player.pos + dir * TestRoom.FOLLOW_DISTANCE)
+	for q in cands:
+		if _dentro(q, m.radius, obst):
+			continue
+		if not room.pathfinder.find_path(m.pos, q, room._obstacles(m), m.radius).is_empty():
+			return q
+	return Vector2.INF
 
 
 func _dentro(p: Vector2, raio: float, obst: Array[Rect2]) -> bool:
