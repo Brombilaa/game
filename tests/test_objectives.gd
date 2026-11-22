@@ -41,7 +41,7 @@ func _init() -> void:
 	sem_saque.erase("mochila_piquenique")  # esconderijo opcional (16/11): fora dos objetivos e do caminho antigo
 	var antigo := Objectives.build(sem_saque, ["caio"], false)
 	var novo := Objectives.from_data(parque.objetivos, ["caio"], tem, false)
-	_check(antigo == novo, "objetivos do parque iguais aos de antes (%s)" % str(novo))
+	_check(antigo.size() == novo.size() and novo[0]["feito"] and novo[0]["detalhe"] == "1/1 · extras 0/4", "parque: só o Caio é essencial, os 4 extras são opcionais (%s)" % str(novo))
 	print("Falhas: %d" % failures)
 	quit(1 if failures > 0 else 0)
 

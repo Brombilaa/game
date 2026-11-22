@@ -32,6 +32,8 @@ func _init() -> void:
 		if s.clues[cid]["ordem"] == 1:
 			seen.append(cid)
 	_check(s.available_clues(seen).has("arvore_simbolo"), "árvore liberada depois das outras pistas")
+	_check(s.available_clues(["caio"]).has("arvore_simbolo"), "a árvore libera só com a pista essencial (extras opcionais)")
+	_check(not s.available_clues(["marcas_pneu", "balanco"]).has("arvore_simbolo"), "extras sozinhos não liberam a árvore")
 	_check(s.clue_at(Vector2(1130, 235)) == "arvore_simbolo", "pista da árvore ao alcance")
 	_check(s.clue_at(Vector2(640, 20)) == "", "nenhuma pista no vazio")
 	_check(s.triggers_after("arvore_simbolo").size() == 1, "a árvore dispara o combate")

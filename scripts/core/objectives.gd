@@ -2,7 +2,7 @@ class_name Objectives
 extends RefCounted
 # Lista de objetivos do HUD (GDD §12: "objetivo atual"). Sem nós de tela, para testar em modo headless.
 # Todos os lugares usam o mesmo formato, a lista "objetivos" do JSON do cenário (from_data). Cada objetivo:
-#   texto; feito por "pista" (uma pista vista), "pistas" (todas vistas; mostra "x/y") ou "marca" (Missao1);
+#   texto; feito por "pista" (uma pista vista), "pistas" (todas vistas; mostra "x/y"; com "opcionais" soma "extras x/y" sem exigir) ou "marca" (Missao1);
 #   "requer": marca que faz o objetivo aparecer; "trancado": true mostra ??? até os anteriores estarem feitos.
 # build() é o caminho antigo do parque (pistas de ordem 1, depois a de ordem 2), para cenário sem "objetivos".
 # Textos provisórios até o Léo revisar a redação.
@@ -25,6 +25,9 @@ static func from_data(lista: Array, seen: Array, tem: Callable, in_combat: bool)
 			var vistas: int = (o["pistas"] as Array).filter(func(c) -> bool: return seen.has(str(c))).size()
 			feito = vistas >= (o["pistas"] as Array).size()
 			detalhe = "%d/%d" % [vistas, (o["pistas"] as Array).size()]
+			if o.has("opcionais"):  # extras: aparecem como "extras x/y" e nunca seguram o objetivo (Léo, 22/11)
+				var extras: Array = o["opcionais"]
+				detalhe += " · extras %d/%d" % [extras.filter(func(c) -> bool: return seen.has(str(c))).size(), extras.size()]
 		elif o.has("pista"):
 			feito = seen.has(str(o["pista"]))
 		if o.has("marca") and tem.call(str(o["marca"])):
