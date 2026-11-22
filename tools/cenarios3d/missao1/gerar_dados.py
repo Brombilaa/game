@@ -153,6 +153,10 @@ def delegacia17(d, p, ret):
     _pista(d, p, "bebedouro_recepcao", 5.0, 15.0,
            "Ao lado do bebedouro da recepção, uma garrafa de água fechada. Pode servir.",
            da=[("garrafa_agua", 1)])
+    # Pavê (roteiro: o Ghular manda comer o pavê da geladeira dos fundos; 1 a 3 porções de 5 PV). Posição provisória.
+    _pista(d, p, "geladeira_pave", 4.0, 14.0,
+           "Na geladeira dos fundos, o pavê do aniversário da Ribeiro, feito pela mãe dela. Duas fatias já cortadas, uma intacta: é bom mesmo.",
+           da=[("pave", 3)])
     _pista(d, p, "kit_recepcao", 3.0, 15.0,
            "Debaixo de um banco da recepção, esquecido por alguém com pressa, há um kit com curativos e uma bandagem.",
            da=[("curativo", 1), ("bandagem", 1)])

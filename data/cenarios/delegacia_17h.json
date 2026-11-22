@@ -1495,6 +1495,27 @@
    ]
   },
   {
+   "id": "geladeira_pave",
+   "pos": [
+    352.0,
+    992.0
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Na geladeira dos fundos, o pavê do aniversário da Ribeiro, feito pela mãe dela. Duas fatias já cortadas, uma intacta: é bom mesmo.",
+   "provisorio": true,
+   "da": [
+    {
+     "item": "pave",
+     "qtd": 3
+    }
+   ]
+  },
+  {
    "id": "kit_recepcao",
    "pos": [
     288.0,
