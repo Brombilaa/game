@@ -49,11 +49,23 @@ func _draw_objectives(font: Font, to_world: Transform2D, items: Array[Dictionary
 			room.draw_circle(mark, 2.0, DIM)
 		else:
 			room.draw_arc(mark, 2.5, 0.0, TAU, 12, DIM, 0.75)
-		hud._draw_soft_text(font, Vector2(pos.x, y + 10), text, HORIZONTAL_ALIGNMENT_RIGHT, WIDTH - 13.0, FONT, color)
+		var tam := _tamanho_que_cabe(font, text)
+		hud._draw_soft_text(font, Vector2(pos.x, y + 10), text, HORIZONTAL_ALIGNMENT_RIGHT, WIDTH - 13.0, tam, color)
 		if done:  # risco sobre o texto concluído
-			var w := minf(font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT).x, WIDTH - 13.0)
+			var w := minf(font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, tam).x, WIDTH - 13.0)
 			room.draw_line(Vector2(pos.x + WIDTH - 13.0 - w, y + 6.5), Vector2(pos.x + WIDTH - 13.0, y + 6.5), DIM, 0.5)
 	_draw_selo_luz(font, pos + Vector2(0, 16 + items.size() * ROW_H + 4.0))
+
+
+# Texto longo não é cortado ("escritório do Ghu"): a fonte diminui até caber na largura, no mínimo FONT_MIN.
+const FONT_MIN := 7
+
+
+func _tamanho_que_cabe(font: Font, text: String) -> int:
+	var tam := FONT
+	while tam > FONT_MIN and font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, tam).x > WIDTH - 13.0:
+		tam -= 1
+	return tam
 
 
 # Selo da luz e furtividade (modelo A, Léo 15/11/2026): à noite, na exploração, diz se o líder está

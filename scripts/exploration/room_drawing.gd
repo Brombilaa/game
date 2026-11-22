@@ -174,7 +174,7 @@ func _update_perf(delta: float) -> void:
 		var calls := room.pathfinder.calls_total - room._perf_path_calls
 		room._perf_path_usec = room.pathfinder.usec_total
 		room._perf_path_calls = room.pathfinder.calls_total
-		room.perf_text = "%d FPS · rotas %d (%.1f ms) · desenho %.1f ms" % [Engine.get_frames_per_second(), calls, usec / 1000.0, room._draw_usec / 1000.0]
+		room.perf_text = "%d FPS · rotas %d (%.1f ms) · desenho %.1f ms (radar %.1f)" % [Engine.get_frames_per_second(), calls, usec / 1000.0, room._draw_usec / 1000.0, room._minimap_usec / 1000.0]
 		room._perf_time = 0.0
 	room.queue_redraw()
 
@@ -634,7 +634,9 @@ func _draw_hud(font: Font) -> void:
 		room.party_hud._draw_sheet(font, room.party[i], i, to_world)
 	room.party_hud._draw_links(font, to_world)
 	if not (room.inv_panel and room.inv_panel.t > 0.0):  # o inventário (vidro fosco) cobre o radar e os objetivos
+		var t_mapa := Time.get_ticks_usec()
 		room.minimap._draw_minimap(font, to_world)
+		room._minimap_usec = Time.get_ticks_usec() - t_mapa
 		room.objectives_hud._draw_objectives(font, to_world, room._objectives())
 	room.dicas_hud._draw_dica(font, to_world)
 	if room.mode == TestRoom.Mode.COMBAT and room.turns:

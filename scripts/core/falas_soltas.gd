@@ -7,7 +7,8 @@ extends RefCounted
 # Regras (provisórias do Claude, a testar): a primeira fala vem PRIMEIRA_ESPERA s depois de a exploração começar
 # livre, e entre uma fala e outra passam de ESPERA_MIN a ESPERA_MAX s; só conta o tempo com o jogador livre
 # (sem combate, diálogo, cena ou transição); cada fala toca uma vez por jogo (vira marca "fala_<id>" e vai
-# para o save); a ordem do arquivo é mantida, e "requer" segura a fala até a marca existir.
+# para o save); a ordem do arquivo é mantida, "requer" segura a fala até a marca existir e "pista" até a pista
+# (id em data/cenarios) ter sido examinada: antes a fala sobre o sangue no banco tocava aos 8 s, sem o grupo ter visto o banco.
 
 const ARQUIVO := "res://data/falas_soltas.json"
 const PRIMEIRA_ESPERA := 8.0
@@ -39,9 +40,11 @@ static func marca_de(id: String) -> String:
 
 
 # Próxima fala ainda não dita deste lugar cuja condição já vale, ou {}. Cada fala é {"id", "area", "falas": [{"quem", "texto"}]}.
-func proxima() -> Dictionary:
+func proxima(vistas: Array = []) -> Dictionary:
 	for f in dados().get("falas", []):
 		if str(f["area"]) != area or Missao1.tem(marca_de(str(f["id"]))):
+			continue
+		if f.has("pista") and not vistas.has(str(f["pista"])):
 			continue
 		if f.has("requer") and not Missao1.tem(str(f["requer"])):
 			continue
@@ -51,13 +54,13 @@ func proxima() -> Dictionary:
 
 # Chamada todo quadro. `livre` = exploração sem combate, diálogo, cena nem transição. Devolve a fala a tocar (e já
 # a marca como dita) ou {}. Sem `livre` o relógio fica parado.
-func tick(delta: float, livre: bool) -> Dictionary:
+func tick(delta: float, livre: bool, vistas: Array = []) -> Dictionary:
 	if not livre:
 		return {}
 	espera -= delta
 	if espera > 0.0:
 		return {}
-	var f := proxima()
+	var f := proxima(vistas)
 	if f.is_empty():
 		espera = ESPERA_MAX  # nada a dizer agora: tenta de novo depois (uma marca nova pode liberar uma fala)
 		return {}
