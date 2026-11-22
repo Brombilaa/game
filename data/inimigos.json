@@ -13,9 +13,7 @@
       "faca_cultista"
     ],
     "comportamento": "cerca",
-    "resistencias": [
-      "ritual"
-    ],
+    "resistencias": [],
     "fraquezas": [],
     "chefe": false,
     "fases": [],
@@ -142,9 +140,7 @@
     "resistencias": [
       "corpo_a_corpo"
     ],
-    "fraquezas": [
-      "ritual"
-    ],
+    "fraquezas": [],
     "chefe": true,
     "fases": [],
     "drops": [
@@ -179,9 +175,7 @@
       "atordoado",
       "corpo_a_corpo"
     ],
-    "fraquezas": [
-      "ritual"
-    ],
+    "fraquezas": [],
     "chefe": true,
     "fases": [],
     "drops": [],

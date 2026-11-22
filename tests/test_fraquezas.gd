@@ -27,7 +27,8 @@ func _afinidades() -> void:
 	var gd := cfg.game_data
 	_check(Fraquezas.afinidade(gd, "criatura_sangue", "balistico") == "resistencia", "Criatura resiste a bala")
 	_check(Fraquezas.afinidade(gd, "criatura_sangue", "ritual") == "fraqueza", "Criatura é fraca a ritual")
-	_check(Fraquezas.afinidade(gd, "cultista", "ritual") == "resistencia", "cultista resiste a ritual")
+	_check(Fraquezas.afinidade(gd, "cultista", "ritual") == "", "cultista é neutro a ritual (Léo, 22/11)")
+	_check(Fraquezas.afinidade(gd, "roberto_ghular", "ritual") == "" and Fraquezas.afinidade(gd, "dama_sangue", "ritual") == "", "Roberto e Dama são neutros a ritual (Léo, 22/11)")
 	_check(Fraquezas.afinidade(gd, "atirador", "corpo_a_corpo") == "fraqueza", "atirador é fraco de perto")
 	_check(Fraquezas.afinidade(gd, "cultista", "balistico") == "", "cultista é neutro a bala")
 	_check(Fraquezas.afinidade(gd, "", "ritual") == "", "agente não tem afinidade")
@@ -35,7 +36,8 @@ func _afinidades() -> void:
 	_check(is_equal_approx(Fraquezas.multiplicador("fraqueza"), 1.5) and is_equal_approx(Fraquezas.multiplicador("resistencia"), 0.5), "multiplicadores provisórios")
 	_check(is_equal_approx(Fraquezas.multiplicador(""), 1.0), "sem afinidade o dano não muda")
 	_check(Fraquezas.titulo(gd, "criatura_sangue", "ritual") == "Criatura de Sangue: rituais ferem mais", "título da fraqueza")
-	_check(Fraquezas.titulo(gd, "cultista", "ritual") == "Cultista: rituais ferem menos", "título da resistência")
+	_check(Fraquezas.titulo(gd, "atirador", "corpo_a_corpo") == "Atirador: golpes corpo a corpo ferem mais", "título da fraqueza do atirador")
+	_check(Fraquezas.titulo(gd, "criatura_sangue", "balistico") == "Criatura de Sangue: balas ferem menos", "título da resistência")
 
 
 # Tiro fixo de 6: na Criatura (resiste a bala) sai 3, no cultista 6; crítico dobra antes da resistência.
@@ -115,7 +117,7 @@ func _dano_ritual() -> void:
 			"criatura_sangue":
 				_check(out.afinidade == "fraqueza" and out.damage >= 12 and out.damage <= 18, "Criatura leva 8-12 x1,5 (%d)" % out.damage)
 			"cultista":
-				_check(out.afinidade == "resistencia" and out.damage >= 4 and out.damage <= 6, "cultista leva 8-12 pela metade (%d)" % out.damage)
+				_check(out.afinidade == "" and out.damage >= 8 and out.damage <= 12, "cultista leva o dano normal (%d)" % out.damage)
 			"atirador":
 				_check(out.afinidade == "" and out.damage >= 8 and out.damage <= 12, "atirador leva o dano normal (%d)" % out.damage)
 
@@ -132,20 +134,20 @@ func _descoberta() -> void:
 	_check(e["lugar"] == Fraquezas.LUGAR and e["id"] == "frq_criatura_sangue_balistico", "entra no diário em INIMIGOS")
 	_check(Fraquezas.ao_examinar(gd, "banco_quebrado").is_empty(), "examinar de novo não repete")
 	# No combate: primeira vez anota, depois só mostra o aviso.
-	var t := cfg.make_enemy("cultista", Vector2.ZERO)
-	var r := {"afinidade": "resistencia", "tipo_dano": "ritual"}
+	var t := cfg.make_enemy("atirador", Vector2.ZERO)
+	var r := {"afinidade": "fraqueza", "tipo_dano": "corpo_a_corpo"}
 	var f := Fraquezas.ao_acertar(gd, t, r)
-	_check(f["popup"] == "RESISTE" and f["nova"], "o primeiro ritual no cultista revela a resistência")
-	_check(str(Missao1.diario[Missao1.diario.size() - 1]["texto"]).contains("marca de sangue"), "usa o texto de combate")
+	_check(f["popup"] == "FRAQUEZA" and f["nova"], "o primeiro golpe de perto no atirador revela a fraqueza")
+	_check(str(Missao1.diario[Missao1.diario.size() - 1]["texto"]).contains("fuzil"), "usa o texto de combate")
 	f = Fraquezas.ao_acertar(gd, t, r)
-	_check(f["popup"] == "RESISTE" and not f["nova"], "o segundo só mostra o aviso")
+	_check(f["popup"] == "FRAQUEZA" and not f["nova"], "o segundo só mostra o aviso")
 	_check(Fraquezas.ao_acertar(gd, t, {"afinidade": "", "tipo_dano": "balistico"})["popup"] == "", "golpe neutro não avisa")
 	_check(Fraquezas.ao_acertar(gd, cfg.make_agent("fernando", Vector2.ZERO), r)["popup"] == "", "agente não tem afinidade")
 	var n := Missao1.diario.size()
 	var salvo := JSON.parse_string(JSON.stringify(Missao1.diario)) as Array
 	Missao1.reiniciar()
 	Missao1.diario = Diario.ler(salvo)
-	_check(Missao1.diario.size() == n and Fraquezas.conhecida("cultista", "ritual") and Fraquezas.conhecida("criatura_sangue", "balistico"), "as descobertas voltam do save com o diário")
+	_check(Missao1.diario.size() == n and Fraquezas.conhecida("atirador", "corpo_a_corpo") and Fraquezas.conhecida("criatura_sangue", "balistico"), "as descobertas voltam do save com o diário")
 
 
 # Seção CRIATURAS (caderno do Miguel): só entra quem foi visto ou tem descoberta; o que falta vem como não conhecido.
