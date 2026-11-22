@@ -78,7 +78,7 @@ func click(mouse: Vector2) -> bool:
 		var route: PackedVector2Array = room.pathfinder.find_path(room.player.pos, spot, room._obstacles(room.player), room.player.radius)
 		if route.size() > 1:
 			pending = str(p["id"])
-			room._reset_follow_offsets(spot - room.player.pos)
+			room._reset_follow_offsets(spot - room.player.pos, true)
 			room._start_move(room.player, route)
 			return true
 	room.hud.show_notice("Não dá para chegar em %s" % p["nome"])

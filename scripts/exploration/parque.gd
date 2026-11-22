@@ -113,7 +113,23 @@ func _ready() -> void:
 		Progresso.aplicar(self, salvo)
 		_reset_follow_offsets(Vector2.RIGHT)
 		camera.position = _iso(player.pos)
+	_aquecer_rotas()
 	Progresso.autosalvar(self, _area_id(), _place_label())
+
+
+# Monta já as grades de rota dos tamanhos de personagem do lugar (só os cenários em grade têm o que aquecer).
+func _aquecer_rotas() -> void:
+	if pathfinder is PathfinderGrade:
+		var raios := {}
+		for u in party + enemies:
+			raios[u.radius] = true
+		(pathfinder as PathfinderGrade).aquecer(raios.keys())
+	# Malhas e pontos de cada pista: antes eram achados no primeiro quadro em que a pista aparecia (42 ms na fazenda,
+	# quando uma pista oculta era liberada) ou no primeiro mouse sobre ela.
+	if world3d != null and world3d.has_method("malhas_em"):
+		for cid in scenario.clues:
+			if not _malhas_pista(cid).is_empty():
+				_pontos_pista(cid)
 
 
 # Id do lugar no save (o mesmo dos dados em data/cenarios).
@@ -1159,7 +1175,7 @@ func _go_to_clue(cid: String) -> void:
 		var route := pathfinder.find_path(player.pos, spot, _obstacles(player), player.radius)
 		if route.size() > 1:
 			pending_clue = cid
-			_reset_follow_offsets(spot - player.pos)
+			_reset_follow_offsets(spot - player.pos, true)
 			_start_move(player, route)
 			return
 
@@ -1181,7 +1197,7 @@ func _falas_soltas(delta: float) -> void:
 		falas = FalasSoltas.new(_area_id())
 	var livre := mode == Mode.EXPLORATION and not busy and indo_para == "" and not _dialogo_aberto() \
 		and not (diario_panel != null and diario_panel.open)  # com o caderno aberto ninguém fala
-	var f := falas.tick(delta, livre)
+	var f := falas.tick(delta, livre, seen_clues)
 	if not f.is_empty():
 		caixa.sequencia(f["falas"], true)
 

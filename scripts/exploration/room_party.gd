@@ -39,18 +39,40 @@ func _switch_to(m: Combatant) -> void:
 	room.queue_redraw()
 
 
-# Sorteia a posição de cada seguidor: atrás do líder (oposto ao rumo), a distância fixa,
-# com ângulo variando para não formar fila rígida.
-func _reset_follow_offsets(heading: Vector2) -> void:
-	var back := -heading.normalized() if heading.length() > 0.1 else Vector2.LEFT
+# Posição de cada seguidor: atrás do líder (oposto ao rumo), a distância fixa, com ângulo variando para não formar
+# fila rígida. A variação é sorteada uma vez por seguidor (antes mudava a cada clique e o grupo embaralhava). Com
+# `suave` (clique para andar), um rumo a menos de 90° do anterior mantém os lugares: ninguém dá a volta no líder à toa.
+func _reset_follow_offsets(heading: Vector2, suave := false) -> void:
+	var rumo := heading.normalized() if heading.length() > 0.1 else Vector2.RIGHT
+	if suave and _rumo_formacao != Vector2.ZERO and rumo.dot(_rumo_formacao) > 0.0 and _formacao_completa():
+		return
+	_rumo_formacao = rumo
+	var back := -rumo
 	var k := 0
 	for m in room.party:
 		if m == room.player:
 			continue
+		if not _jitter.has(m):
+			_jitter[m] = room.follow_rng.randf_range(-TestRoom.FOLLOW_SPREAD, TestRoom.FOLLOW_SPREAD) * 0.5
 		var side := (k % 2) * 2 - 1  # alterna os lados
-		var angle := side * 0.35 * (k + 1) + room.follow_rng.randf_range(-TestRoom.FOLLOW_SPREAD, TestRoom.FOLLOW_SPREAD) * 0.5
+		var angle := side * 0.35 * (k + 1) + float(_jitter[m])
 		room.follow_offsets[m] = back.rotated(angle) * TestRoom.FOLLOW_DISTANCE
+		_slots.erase(m)  # o lugar livre é recalculado na próxima rota
 		k += 1
+
+
+var _rumo_formacao := Vector2.ZERO  # rumo em que os lugares foram montados
+var _jitter := {}  # seguidor -> variação do ângulo (sorteada uma vez)
+var _slots := {}  # seguidor -> lugar livre escolhido {"alvo": Vector2 (líder + deslocamento), "livre": Vector2}
+var _espera := {}  # seguidor -> segundos desde a última rota
+var _preso := {}  # seguidor -> segundos parado por outro personagem no caminho
+
+
+func _formacao_completa() -> bool:
+	for m in room.party:
+		if m != room.player and not room.follow_offsets.has(m):
+			return false
+	return true
 
 
 # Solta o seguidor da corrente (ele para de acompanhar o líder) ou o prende de volta.
@@ -73,41 +95,143 @@ func _link_at(screen: Vector2) -> int:
 	return -1
 
 
+const FOLLOW_REPATH := 0.3  # s: no máximo uma rota nova por seguidor a cada 0,3 s (o líder anda 180 px/s)
+const FOLLOW_ARRIVE := 10.0  # px: chegou ao lugar, para
+const FOLLOW_STALE := 16.0  # px: a rota só é refeita quando o lugar andou mais que isto (seguidor para a no máximo ~ARRIVE+STALE do lugar)
+const FOLLOW_BLOCKED := 0.35  # s esperando alguém sair da frente antes de pedir rota que contorne
+
+
+# Seguidores (GDD: grupo espalhado a distância fixa do líder; ninguém atravessa outro personagem; contorna). Rota
+# nova no máximo a cada FOLLOW_REPATH, lugar sempre fora de paredes, e quem encontra outro personagem na frente
+# espera e depois contorna, em vez de atravessar.
 func _update_followers(delta: float) -> void:
 	for m in room.party:
 		if m == room.player or not m.is_alive() or room.unlinked.has(m):
 			continue
-		var goal: Vector2 = room.player.pos + room.follow_offsets.get(m, Vector2.LEFT * TestRoom.FOLLOW_DISTANCE)
+		_espera[m] = float(_espera.get(m, FOLLOW_REPATH)) + delta
+		var alvo: Vector2 = room.player.pos + room.follow_offsets.get(m, Vector2.LEFT * TestRoom.FOLLOW_DISTANCE)
 		var route: PackedVector2Array = room.follow_paths.get(m, PackedVector2Array())
-		var stale := route.is_empty() or route[route.size() - 1].distance_to(goal) > 24.0
-		if stale and m.pos.distance_to(goal) > 12.0:
-			route = room.pathfinder.find_path(m.pos, goal, room._obstacles(m), m.radius)
-			if route.is_empty():
-				# Dois seguidores se encostaram e um ficou dentro do obstáculo do outro: sem esta rota
-				# de reserva (só paredes e coberturas) ele ficaria parado para sempre.
-				route = room.pathfinder.find_path(m.pos, goal, room._obstacles(m, false), m.radius)
-			if route.is_empty():
-				# Ainda sem rota: ele está dentro de uma colisão do cenário (Léo, 08/11: "Miguel tá travado", nasceu
-				# dentro dos pneus). Sai para o ponto livre mais próximo e tenta de novo no próximo quadro.
-				var livre := _ponto_livre_perto(m)
-				if livre != m.pos:
-					m.pos = livre
-					room.queue_redraw()
-					continue
-			if not route.is_empty():
-				route.remove_at(0)
+		var slot: Dictionary = _slots.get(m, {})
+		var fim := route[route.size() - 1] if not route.is_empty() else m.pos
+		var velho := route.is_empty() or fim.distance_to(alvo) > FOLLOW_STALE
+		# Sem rota (chegou ao lugar antigo) o seguidor já corrige para o lugar novo; com rota, só a cada FOLLOW_REPATH.
+		if velho and float(_espera[m]) >= (0.1 if route.is_empty() else FOLLOW_REPATH):
+			if slot.is_empty() or (slot["alvo"] as Vector2).distance_to(alvo) > 6.0:
+				slot = {"alvo": alvo, "livre": _slot_livre(m, alvo)}
+				_slots[m] = slot
+			var goal: Vector2 = slot["livre"]
+			if m.pos.distance_to(goal) > FOLLOW_ARRIVE:
+				_espera[m] = 0.0
+				route = _rota_seguidor(m, goal)
+				if route.is_empty():
+					# O lugar da formação pode estar do outro lado de uma parede: procura um lugar parecido que se alcança.
+					var alt := _slot_alcancavel(m, goal)
+					if alt != Vector2.INF:
+						_slots[m] = {"alvo": alvo, "livre": alt}
+						route = _rota_seguidor(m, alt)
+				if route.is_empty():
+					# Ainda sem rota: ele está dentro de uma colisão do cenário (Léo, 08/11: "Miguel tá travado", nasceu
+					# dentro dos pneus). Sai para o ponto livre mais próximo e tenta de novo no próximo quadro.
+					var livre := _ponto_livre_perto(m)
+					if livre != m.pos:
+						m.pos = livre
+						room.queue_redraw()
+				else:
+					route.remove_at(0)
+			elif not route.is_empty():
+				route = PackedVector2Array()  # o líder parou e o lugar já está aqui
 		if route.is_empty():
 			room.follow_paths.erase(m)
+			_preso.erase(m)
 			continue
 		var step := room._iso(route[0]) - room._iso(m.pos)
+		var depois := m.pos.move_toward(route[0], TestRoom.SPEED * delta)
+		var barreira := _quem_bloqueia(m, depois)
+		if barreira != null:
+			# Alguém (vivo ou caído) está na frente: espera; se demorar, a próxima rota já o conta como obstáculo.
+			var t := float(_preso.get(m, 0.0)) + delta
+			_preso[m] = t
+			room.follow_paths[m] = route  # a rota fica: o grupo ainda não terminou de se arrumar
+			if t >= FOLLOW_BLOCKED:
+				_preso.erase(m)
+				_espera[m] = FOLLOW_REPATH
+				_slots.erase(m)
+				var rota_nova := _rota_seguidor(m, route[route.size() - 1])
+				if not rota_nova.is_empty():
+					rota_nova.remove_at(0)
+					room.follow_paths[m] = rota_nova
+			continue
+		_preso.erase(m)
 		room.facing8[m] = CharacterSheet.dir_from_vector(step)
 		var before := room._iso(m.pos)
-		m.pos = m.pos.move_toward(route[0], TestRoom.SPEED * delta)
+		m.pos = depois
 		room.walk_dist[m] = room.walk_dist.get(m, 0.0) + before.distance_to(room._iso(m.pos))
 		if m.pos.is_equal_approx(route[0]):
 			route.remove_at(0)
-		room.follow_paths[m] = route
+		if route.is_empty():
+			room.follow_paths.erase(m)
+		else:
+			room.follow_paths[m] = route
 		room.queue_redraw()
+
+
+# Rota do seguidor até `goal`; sem rota com os outros personagens como obstáculo, tenta só com paredes e coberturas
+# (dois seguidores encostados deixavam um dentro do obstáculo do outro, parado para sempre).
+func _rota_seguidor(m: Combatant, goal: Vector2) -> PackedVector2Array:
+	var route: PackedVector2Array = room.pathfinder.find_path(m.pos, goal, room._obstacles(m), m.radius)
+	if route.is_empty():
+		route = room.pathfinder.find_path(m.pos, goal, room._obstacles(m, false), m.radius)
+	return route
+
+
+# O lugar na formação pode cair dentro de parede ou móvel (porta, canto): usa o ponto livre mais próximo dele.
+func _slot_livre(m: Combatant, alvo: Vector2) -> Vector2:
+	var obst: Array[Rect2] = room._obstacles(m, false)
+	if not _dentro(alvo, m.radius, obst):
+		return alvo
+	for raio in range(8, 121, 8):
+		for k in 16:
+			var q := alvo + Vector2.RIGHT.rotated(TAU * k / 16.0) * raio
+			if not _dentro(q, m.radius, obst):
+				return q
+	return room.player.pos  # nada livre perto: vai até o líder
+
+
+# Ponto livre perto de `alvo` que `m` consegue alcançar (anéis crescentes); por fim, um ponto a FOLLOW_DISTANCE do
+# líder na direção de `m`. INF quando nada serve.
+func _slot_alcancavel(m: Combatant, alvo: Vector2) -> Vector2:
+	var obst: Array[Rect2] = room._obstacles(m, false)
+	var cands: Array[Vector2] = []
+	for raio in range(16, 161, 16):
+		for k in 12:
+			cands.append(alvo + Vector2.RIGHT.rotated(TAU * k / 12.0) * raio)
+	var dir: Vector2 = (m.pos - room.player.pos).normalized() if m.pos != room.player.pos else Vector2.LEFT
+	cands.append(room.player.pos + dir * TestRoom.FOLLOW_DISTANCE)
+	for q in cands:
+		if _dentro(q, m.radius, obst):
+			continue
+		if not room.pathfinder.find_path(m.pos, q, room._obstacles(m), m.radius).is_empty():
+			return q
+	return Vector2.INF
+
+
+func _dentro(p: Vector2, raio: float, obst: Array[Rect2]) -> bool:
+	for o in obst:
+		if o.grow(raio).has_point(p):
+			return true
+	return false
+
+
+# Outro personagem (do grupo, vivo ou caído, ou inimigo) que `m` tocaria indo para `depois` sem já estar tocando nele.
+func _quem_bloqueia(m: Combatant, depois: Vector2) -> Combatant:
+	for u in room._living_units():
+		if u == m:
+			continue
+		var folga := (m.radius + u.radius) * 0.9
+		var d := depois.distance_to(u.pos)
+		if d < folga and d < m.pos.distance_to(u.pos):
+			return u
+	return null
 
 
 # Ponto mais próximo de `m` fora das colisões do cenário (anéis de 8 em 8 px, até 96 px); sem nenhum, a própria posição.

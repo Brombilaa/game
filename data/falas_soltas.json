@@ -1,9 +1,10 @@
 {
-	"_comentario": "Falas soltas do grupo na exploração (banter), na CaixaFala em modo solta. Só Fernando, Nikolai e Miguel falam entre si, sobre as pistas do lugar (Léo, 16/11: sem Caio nem Letícia). Cada fala toca uma vez por jogo, na ordem do arquivo, dentro do seu lugar (area = id do cenário). 'requer' = marca que precisa existir antes. Cada item tem 1 a 2 linhas, texto até 100 letras. Textos provisórios do Claude, para o Léo revisar.",
+	"_comentario": "Falas soltas do grupo na exploração (banter), na CaixaFala em modo solta. Só Fernando, Nikolai e Miguel falam entre si, sobre as pistas do lugar (Léo, 16/11: sem Caio nem Letícia). Cada fala toca uma vez por jogo, na ordem do arquivo, dentro do seu lugar (area = id do cenário). 'requer' = marca que precisa existir antes; 'pista' = id da pista que o grupo precisa ter examinado antes de falar dela. Cada item tem 1 a 2 linhas, texto até 100 letras. Textos provisórios do Claude, para o Léo revisar.",
 	"falas": [
 		{
 			"id": "parque_1",
 			"area": "parque",
+			"pista": "marcas_pneu",
 			"falas": [
 				{
 					"quem": "fernando",
@@ -18,6 +19,7 @@
 		{
 			"id": "parque_2",
 			"area": "parque",
+			"pista": "banco_quebrado",
 			"falas": [
 				{
 					"quem": "nikolai",
@@ -32,6 +34,7 @@
 		{
 			"id": "parque_3",
 			"area": "parque",
+			"requer": "fala_parque_2",
 			"falas": [
 				{
 					"quem": "miguel",
@@ -88,6 +91,7 @@
 		{
 			"id": "biblioteca_2",
 			"area": "biblioteca",
+			"pista": "fichario",
 			"falas": [
 				{
 					"quem": "fernando",
@@ -116,6 +120,7 @@
 		{
 			"id": "subsolo_1",
 			"area": "subsolo",
+			"pista": "livro_faltando",
 			"falas": [
 				{
 					"quem": "nikolai",

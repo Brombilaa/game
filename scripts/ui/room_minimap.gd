@@ -57,22 +57,34 @@ func _draw_minimap(font: Font, to_world: Transform2D) -> void:
 	for k in 64:
 		disc.append(center + Vector2.RIGHT.rotated(TAU * k / 64.0) * RADAR_RADIUS)
 	var known := room._known_rects()
+	# Só o que cai dentro do quadrado do radar vira polígono: na fazenda são centenas de paredes e quase todas ficam longe.
+	var area := Rect2(center - Vector2.ONE * RADAR_RADIUS, Vector2.ONE * RADAR_RADIUS * 2.0)
+	var vis := Rect2(focus.pos - Vector2.ONE * RADAR_RADIUS / RADAR_SCALE, Vector2.ONE * RADAR_RADIUS / RADAR_SCALE * 2.0)  # a mesma área, em unidades da sala
 	# Recorta um retângulo da sala pelo que já foi descoberto e pelo círculo do radar.
 	var fill := func(r: Rect2, color: Color) -> void:
+		if not r.intersects(vis):
+			return
 		for k: Rect2 in known:
 			var part := r.intersection(k)
-			if part.has_area():
+			if part.has_area() and area.intersects(Rect2(to_map.call(part.position), part.size * RADAR_SCALE)):
 				for piece in Geometry2D.intersect_polygons(_map_poly(to_map, part), disc):
 					if not Geometry2D.triangulate_polygon(piece).is_empty():  # lasca na borda do radar não vira polígono válido (cripta: centenas de paredes)
 						room.draw_colored_polygon(piece, color)
 	var line := func(a: Vector2, b: Vector2, color: Color, width: float) -> void:
+		var ma: Vector2 = to_map.call(a)
+		var mb: Vector2 = to_map.call(b)
+		if not area.intersects(Rect2(ma.min(mb), (ma - mb).abs()), true):
+			return
 		for seg in Geometry2D.intersect_polyline_with_polygon(PackedVector2Array([to_map.call(a), to_map.call(b)]), disc):
 			room.draw_polyline(seg, color, width)
 
 	# Fundo escuro no círculo inteiro do aro.
 	room.draw_circle(center, RADAR_RADIUS + 1, Color(0.03, 0.03, 0.04, 0.92))
-	for c in known:
-		fill.call(c, RADAR_FLOOR)
+	for c0 in known:
+		fill.call(c0, RADAR_FLOOR)
+		var c := c0.intersection(vis)  # a grade só precisa do que cabe no radar
+		if not c.has_area():
+			continue
 		# Grade fraca de losangos do chão, só no que já foi visto.
 		var x := ceilf(c.position.x / RADAR_GRID) * RADAR_GRID
 		while x < c.end.x:
