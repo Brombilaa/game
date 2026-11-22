@@ -14,8 +14,17 @@ import math
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "pistas_imagens"))
-from gerar import DESAPARECIDOS  # noqa: E402
+# As sete fichas dos desaparecidos (Apêndice B do roteiro; imagens em assets/sprites/pistas, tools/pistas_imagens/
+# importar_roteiro.py). Texto do caderno = resumo das "informações coletadas"; a Lisandra é provisória.
+FICHAS = [
+    ("ficha_01", "Bruno Rouxinol", "Bruno Rouxinol, 04/03/1983. Antiquário, Rua Íris, 520. Sumiu trabalhando; um cliente achou pétalas manchadas de sangue no balcão. Especialistas: \"Caladenia purpura\"."),
+    ("ficha_02", "Jurema Couto", "Jurema Couto, 06/01/1960. Loja Eletrônicos Couto, Rua das Rosas, 601. As luzes se apagaram durante o atendimento. Pétalas de uma flor azul desconhecida no painel elétrico, algumas em contato com fios ativos."),
+    ("ficha_03", "Marcos Paixão", "Marcos Paixão, 03/04/1957. Supermercado Família, Passeio dos Crisântemos, 160. As compras ficaram na calçada ao lado de uma construção abandonada, com o saco de carvão aberto e brasa e cinzas ainda quentes lá dentro."),
+    ("ficha_04", "Ramiro Turi", "Ramiro Turi, 02/05/1972. Bar do Longo, Avenida Central, 304. Visto pela última vez no beco ao lado do bar: flores alaranjadas cortadas junto a um símbolo feito com o sangue dele."),
+    ("ficha_05", "Ruth Santos", "Ruth Santos, 06/01/1965. Em casa, Rua das Camélias, 700. Sem arrombamento, mas com sinais de luta. Sacos de fertilizante abertos pela sala, com pétalas rosas de uma flor que ela não cultivava."),
+    ("ficha_06", "Selena Schaefer", "Selena Schaefer, 05/02/1992. Seu apartamento, Rua das Tulipas, 34. Banheira com a torneira aberta, água transbordando e pétalas murchas de \"Caladenia viridis\". Pizza que ela não pediu, pedido anônimo."),
+    ("ficha_07", "Lisandra de Sá", "Lisandra de Sá, 38 anos, funcionária de farmácia. Sumiu ontem à noite na praça, voltando do trabalho. É a mais recente. (Ficha provisória: o Léo ainda não mandou a dela.)"),
+]
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 RAIZ = os.path.abspath(os.path.join(AQUI, "..", "..", ".."))
@@ -126,9 +135,7 @@ def delegacia17(d, p, ret):
            da=[("municao_pistola", 6), ("celular_quebrado", 1)])
     _pista(d, p, "ficha_desaparecidos", 2.7, 4.8,
            "No arquivo, uma pasta com sete fichas de desaparecidos de Aurora. Nada liga uma à outra: idades, bairros e lugares do sumiço são todos diferentes. A mais recente é de ontem à noite: Lisandra de Sá, 38 anos, funcionária de farmácia, vista pela última vez perto da praça.",
-           inspecoes=[{"arquivo": "ficha_%02d" % f["n"], "titulo": "Ficha %d/7 · %s" % (f["n"], f["nome"]),
-                       "texto": "%s, %d anos, %s (%s). Sumiu em %s: %s." % (f["nome"], f["idade"], f["prof"].lower(), f["bairro"], f["data"], f["local"][0].lower() + f["local"][1:])}
-                      for f in DESAPARECIDOS])
+           inspecoes=[{"arquivo": a, "titulo": "Ficha %d/7 · %s" % (i, n), "texto": t} for i, (a, n, t) in enumerate(FICHAS, 1)])
     _pista(d, p, "cela_arranhoes", 1.5, 8.2,
            "As paredes da cela estão marcadas por arranhões fundos, feitos de dentro para fora. Desenhado com o que parece sangue, o mesmo símbolo da árvore do parque.")
     # Porta trancada (GDD #19: só abre com a chave achada no cenário; com a chave no grupo abre sozinha ao chegar).

@@ -1256,16 +1256,30 @@ func _show_dialog(image_path: String, text: String, cid: String) -> void:
 	dialog_pg = 0
 	dialog_image.texture = load(image_path) if image_path != "" and ResourceLoader.exists(image_path) else null
 	dialog_image.visible = dialog_image.texture != null
+	_ajustar_imagem_dialogo()
 	if cid != "" and scenario.clues.has(cid) and scenario.clues[cid].get("inspecoes", []).size() > 1:
 		dialog_paginas = scenario.clues[cid]["inspecoes"]
 		_pagina_dialogo()
 	dialog_layer.visible = true
 
 
+# Imagem quadrada: caixa de 360x360; ficha ou página (bem mais larga que alta): 600 de largura, na altura da proporção.
+func _ajustar_imagem_dialogo() -> void:
+	var t := dialog_image.texture
+	if t != null and t.get_width() > t.get_height() * 1.2:
+		var h := 600.0 * t.get_height() / t.get_width()
+		dialog_image.position = Vector2(180, 28 + (360.0 - h) * 0.5)
+		dialog_image.size = Vector2(600, h)
+	else:
+		dialog_image.position = Vector2(300, 28)
+		dialog_image.size = Vector2(360, 360)
+
+
 func _pagina_dialogo() -> void:
 	var pg: Dictionary = dialog_paginas[dialog_pg]
 	dialog_image.texture = load(str(pg["imagem"]))
 	dialog_image.visible = true
+	_ajustar_imagem_dialogo()
 	dialog_text.text = dialog_base + "\n(%d/%d · clique para %s)" % [dialog_pg + 1, dialog_paginas.size(), "a próxima" if dialog_pg + 1 < dialog_paginas.size() else "fechar"]
 
 
