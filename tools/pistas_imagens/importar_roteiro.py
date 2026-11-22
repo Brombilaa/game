@@ -95,6 +95,7 @@ if __name__ == "__main__":
     fichas = []
     for i, nome in enumerate(FICHAS, 1):
         im = reduzir(Image.open(os.path.join(origem, "fichas-desaparecidos", f"ficha_{nome}.png")))
+        apagar(im, (355, 43, 590, 70))  # tira " - Estado de São Paulo" do cabeçalho (pedido do Léo)
         fichas.append(im)
         im.save(os.path.join(saida, f"ficha_{i:02d}.png"), optimize=True)
     lisandra(fichas[0]).save(os.path.join(saida, "ficha_07.png"), optimize=True)
