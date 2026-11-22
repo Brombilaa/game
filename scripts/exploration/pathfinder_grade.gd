@@ -20,7 +20,16 @@ func configurar(paredes: Array[Rect2], tamanho_sala: Vector2) -> void:
 	_fixos.clear()
 	for r in estaticos:
 		_fixos[r] = true
+	var usados: Array = _grades.keys()
 	_grades.clear()
+	aquecer(usados)  # porta que abre refaz as grades já no quadro da porta, não no próximo clique
+
+
+# Monta já a grade de cada raio (uma por tamanho de personagem). Antes ela nascia no primeiro desvio do jogo e
+# travava 25 a 30 ms na fazenda (800 retângulos); agora esse custo cai na carga do lugar.
+func aquecer(radios: Array) -> void:
+	for r in radios:
+		_grade(float(r))
 
 
 func _compute_path(from: Vector2, to: Vector2, obstacles: Array[Rect2], radius: float) -> PackedVector2Array:
@@ -51,7 +60,11 @@ func _compute_path(from: Vector2, to: Vector2, obstacles: Array[Rect2], radius: 
 	if ids.is_empty():
 		return PackedVector2Array()
 	var pts := PackedVector2Array([from])
+	# Só os cantos da rota da grade: os pontos no meio de uma reta saem sem mudar o resultado, e o esticar (que
+	# testa cada trecho contra centenas de paredes) caía de ~20 ms para poucos ms numa rota longa da fazenda.
 	for i in range(1, ids.size() - 1):
+		if ids[i] - ids[i - 1] == ids[i + 1] - ids[i]:
+			continue
 		pts.append((Vector2(ids[i]) + Vector2(0.5, 0.5)) * CELULA)
 	pts.append(to)
 	return _esticar(pts, blocks)

@@ -29,7 +29,7 @@ const SPEED := 180.0
 
 const STAND_OFFSET := 6.0
 
-const FOLLOW_DISTANCE := 60.0  # distância fixa do seguidor ao líder (provisório)
+const FOLLOW_DISTANCE := 76.0  # distância fixa do seguidor ao líder (provisório; 21/11: de 60 para 76, o corpo no cenário é largo e os três pareciam um só)
 
 const FOLLOW_SPREAD := 1.0  # variação do ângulo do seguidor em radianos (provisório)
 
@@ -223,6 +223,8 @@ var _perf_path_usec := 0
 var _perf_path_calls := 0
 
 var _draw_usec := 0
+
+var _minimap_usec := 0  # parte do _draw gasta no radar (medidor F3)
 
 var screen_shake := 0.0  # segundos restantes de tremor da tela (crítico)
 
@@ -527,7 +529,7 @@ func _order_move(click: Vector2) -> void:
 		return  # destino inacessível
 	# Novo destino cancela a interação pendente e recalcula a rota.
 	pending_door = wants_door
-	_reset_follow_offsets(click - player.pos)
+	_reset_follow_offsets(click - player.pos, true)
 	_start_move(player, new_path)
 
 
@@ -1054,8 +1056,8 @@ func _switch_to(m: Combatant) -> void:
 	room_party._switch_to(m)
 
 
-func _reset_follow_offsets(heading: Vector2) -> void:
-	room_party._reset_follow_offsets(heading)
+func _reset_follow_offsets(heading: Vector2, suave := false) -> void:
+	room_party._reset_follow_offsets(heading, suave)
 
 
 func _toggle_link(m: Combatant) -> void:
