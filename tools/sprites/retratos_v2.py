@@ -9,7 +9,7 @@ from pathlib import Path
 
 from PIL import Image
 
-NOMES = ["fernando", "miguel", "nikolai", "geraldo", "leticia"]
+NOMES = ["fernando", "miguel", "nikolai", "geraldo", "leticia", "ghular", "ghular_manto"]
 TAMANHOS = [128, 64]
 
 
