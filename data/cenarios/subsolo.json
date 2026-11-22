@@ -112,7 +112,9 @@
     ]
    },
    "texto": "Sobre a mesa do subsolo, aberto, está o livro Sanguis Orchid: capa vermelha, uma orquídea dourada. Foi deixado ali de propósito. Sob ele, um mapa antigo da região com uma fazenda a leste marcada com uma orquídea vermelha e a anotação \"Ghular\". Entre as páginas do livro, uma nota solta: \"A Senhora do Sangue não se toca com as mãos. Quem chega perto dela sangra antes de ferir.\"",
-   "provisorio": true
+   "provisorio": true,
+   "essencial": true,
+   "resumo": "O grupo deduz que o livro foi deixado de propósito no subsolo, junto de um mapa que aponta a Fazenda Ghular, a leste."
   }
  ],
  "gatilhos": [],

@@ -217,6 +217,8 @@ func _ir_para(local: String, chegada: String, texto: String, espera := 0.0) -> v
 	if indo_para != "":
 		return
 	indo_para = local
+	for cid in scenario.deducoes(seen_clues):  # o que ficou sem examinar vira dedução do grupo no diário
+		Diario.deduzir(_diario_lugar(), cid, str(scenario.clues[cid]["resumo"]))
 	busy = true
 	path = PackedVector2Array()
 	var camada := CanvasLayer.new()

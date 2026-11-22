@@ -44,7 +44,20 @@ static func anotar(lugar: String, id: String, texto: String, imagem := "", titul
 	for e in Missao1.diario:
 		if e["id"] == id and e["lugar"] == lugar:
 			return false
+	for i in range(Missao1.diario.size() - 1, -1, -1):  # examinar de verdade substitui a dedução do grupo
+		if Missao1.diario[i]["id"] == "ded_" + id and Missao1.diario[i]["lugar"] == lugar:
+			Missao1.diario.remove_at(i)
 	Missao1.diario.append({"id": id, "lugar": lugar, "titulo": titulo_proprio if titulo_proprio != "" else titulo(id), "texto": texto, "imagem": imagem})
+	return true
+
+
+# Dedução do grupo (Léo, 22/11): pista essencial que ficou sem examinar entra como resumo superficial, no estilo
+# "falhou no teste" do roteiro. Não repete se a pista já foi examinada ou deduzida; examinar depois a substitui.
+static func deduzir(lugar: String, id: String, resumo: String) -> bool:
+	for e in Missao1.diario:
+		if e["lugar"] == lugar and (e["id"] == id or e["id"] == "ded_" + id):
+			return false
+	Missao1.diario.append({"id": "ded_" + id, "lugar": lugar, "titulo": "Dedução: " + titulo(id), "texto": resumo, "imagem": ""})
 	return true
 
 

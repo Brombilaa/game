@@ -1,0 +1,47 @@
+{
+	"_nota": "Morte do Túlio (roteiro 3d, 'Ataque à delegacia', Léo 20/11): o grupo volta do subsolo para a recepção, tenta sair e a porta está fechada por fora; um estrondo, tiros e vidros estilhaçados; o escrivão Túlio, que nunca esteve num tiroteio, se levanta, hesita e grita 'Protejam-se!' antes de cuspir sangue, alvejado no peito. Toca logo antes da flashbang da invasão (invasao.cena_antes). Falas, tempos e a posição da mesa dele são provisórios do Claude a partir do texto do Léo; o Túlio ainda não tem modelo em cena, então a morte é contada por legenda, som, sangue e tremor.",
+	"passos": [
+		{"faz": "cinema", "estado": "entrar", "tempo": 0.7, "junto": true},
+		{"faz": "legenda", "texto": "O grupo sobe do subsolo. Na recepção, o escrivão Túlio ainda está sentado à mesa, com o fone na mão.", "tempo": 2.8},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{"quem": "tulio", "texto": "Já voltaram? O delegado ainda não apareceu. Disse que ia só ao carro. Estranho."},
+				{"quem": "nikolai", "texto": "O Ghular nos mentiu. Vamos embora daqui."},
+				{"quem": "tulio", "texto": "Mentiu? Como assim? Ele é um homem sério, eu..."}
+			]
+		},
+		{"faz": "legenda", "texto": "Fernando empurra a porta da frente. Ela não cede. Está trancada por fora.", "tempo": 2.6},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{"quem": "fernando", "texto": "Trancada. Por fora."},
+				{"quem": "tulio", "texto": "Mas eu tenho a chave! Foi o delegado que... eu não tranquei nada, juro."}
+			]
+		},
+		{"faz": "esperar", "tempo": 1.0},
+		{"faz": "flash", "forca": 0.2},
+		{"faz": "tremor", "forca": 9, "tempo": 0.7},
+		{"faz": "legenda", "texto": "Um estrondo. Depois outro, e mais outro. Os vidros das janelas se estilhaçam.", "tempo": 2.4},
+		{"faz": "esperar", "tempo": 0.3},
+		{"faz": "tremor", "forca": 12, "tempo": 0.7},
+		{"faz": "sangue", "em": "lider", "qtd": 14, "altura": 30},
+		{"faz": "legenda", "texto": "Túlio se levanta de um salto. Leva a mão à pistola, olha para a porta, olha para a mesa. Nunca esteve num tiroteio.", "tempo": 3.2},
+		{"faz": "fala", "quem": "Túlio", "texto": "Protejam-se!", "tempo": 1.2, "junto": true},
+		{"faz": "esperar", "tempo": 0.9},
+		{"faz": "tremor", "forca": 10, "tempo": 0.5},
+		{"faz": "flash", "forca": 0.35},
+		{"faz": "sangue", "em": "lider", "qtd": 32, "altura": 26},
+		{"faz": "legenda", "texto": "Antes de dizer mais, Túlio cospe sangue. Um tiro no peito. Ele escorrega para trás da mesa e não se levanta.", "tempo": 3.4},
+		{"faz": "esperar", "tempo": 0.6},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{"quem": "miguel", "texto": "Ele está morto. Era só um rapaz atrás de um balcão."},
+				{"quem": "nikolai", "texto": "Abaixem-se. Pelas janelas: mantos velhos, armas de fogo. Muitos."},
+				{"quem": "fernando", "texto": "O Ghular nos prendeu aqui para sermos fuzilados. Atrás das mesas, agora!"}
+			]
+		},
+		{"faz": "marca", "id": "tulio_morreu"}
+	]
+}
