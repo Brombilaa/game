@@ -47,7 +47,7 @@
 		{"id": "pneus_arvore", "rect": [1112, 312, 78, 75], "_nota": "pilha de dois pneus ao lado da árvore; medido sobre o fundo em 5/11"}
 	],
 	"pistas": [
-		{"id": "caio", "pos": [330, 740], "raio": 80, "ordem": 1, "bolinha": [0, -90], "texto": "O Caio abre o porta-malas da van e separa o equipamento do grupo: uma escopeta, balas e bandagens. Do pulso, tira uma pulseira de miçangas, torta, feita por mãos de criança, e a entrega ao grupo: \"Da minha filha. Dá sorte.\"", "da": [{"item": "escopeta", "qtd": 1}, {"item": "municao_escopeta", "qtd": 6}, {"item": "bandagem", "qtd": 2}, {"item": "pulseira_amizade", "qtd": 1}]},
+		{"id": "caio", "essencial": true, "pos": [330, 740], "raio": 80, "ordem": 1, "bolinha": [0, -90], "texto": "O Caio abre o porta-malas da van e separa o equipamento do grupo: uma escopeta, balas e bandagens. Do pulso, tira uma pulseira de miçangas, torta, feita por mãos de criança, e a entrega ao grupo: \"Da minha filha. Dá sorte.\"", "da": [{"item": "escopeta", "qtd": 1}, {"item": "municao_escopeta", "qtd": 6}, {"item": "bandagem", "qtd": 2}, {"item": "pulseira_amizade", "qtd": 1}]},
 		{"id": "marcas_pneu", "pos": [226, 520], "raio": 70, "ordem": 1, "bolinha": [0, -28], "destaque": {"decalque": {"png": "res://assets/3d/parque/marcas_pneu_contorno.png", "min": [-3.0, 3.0], "max": [9.0, 12.0], "y": 0.03}}, "texto": "Marcas largas de pneu, fundas: um veículo grande e pesado parou aqui. Os sulcos vão da terra central até a entrada, como se um corpo tivesse sido arrastado até ele."},
 		{"id": "balanco", "pos": [1200, 700], "raio": 100, "ordem": 1, "bolinha": [0, -125], "destaque": {"nomes": ["Mesh42", "Mesh43", "Mesh44"]}, "texto": "O balanço range com o vento. Na areia embaixo, o chão foi revolvido por uma briga, e alguém foi arrastado dali em direção às moitas."},
 		{"id": "banco_quebrado", "pos": [900, 400], "raio": 85, "ordem": 1, "perda_san": 1, "bolinha": [0, -62], "destaque": {"nomes": ["Mesh28", "Mesh30"]}, "texto": "As tábuas do banco foram quebradas por um corpo arremessado contra elas. Há sangue seco na madeira, marcas de garra, buracos de bala e um pedaço de tecido escuro e rústico preso numa lasca."},
@@ -60,7 +60,7 @@
 		{"min": [16.2, 0.0, 1.5], "max": [19.2, 1.8, 4.5], "excluir": ["Mesh3", "Mesh4", "Mesh10", "Mesh11", "Mesh12", "Mesh13", "Mesh22", "Mesh23"]}
 	],
 	"objetivos": [
-		{ "texto": "Investigar o parque", "pistas": ["caio", "marcas_pneu", "balanco", "banco_quebrado", "banco_velho"], "provisorio": true },
+		{ "texto": "Investigar o parque", "pistas": ["caio"], "opcionais": ["marcas_pneu", "balanco", "banco_quebrado", "banco_velho"], "provisorio": true },
 		{ "texto": "Examinar o símbolo", "pista": "arvore_simbolo", "trancado": true, "provisorio": true }
 	],
 	"gatilhos": [

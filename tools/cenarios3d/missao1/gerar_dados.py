@@ -351,6 +351,27 @@ def celeiro(d, p, ret):
                          "marca": "capitulo1_fim", "provisorio": True}
 
 
+# Pistas essenciais por lugar (Léo, 22/11: a investigação não é obrigatória). Só elas contam no HUD; as demais são extras.
+# "resumo": o que o grupo deduz (entra no diário como dedução) se sair do lugar sem examinar a pista. Provisório.
+ESSENCIAIS = {
+    "delegacia_17h": {
+        "chaveiro_recepcao": "Sem tempo para revirar a recepção, o grupo deduz que a chave do escritório do Ghular deve estar no chaveiro, e que a sala foi trancada de propósito.",
+        "agenda_ghular": "O grupo deduz que o delegado marcava datas e sábados em segredo: o sumiço dos sete segue um calendário.",
+    },
+    "biblioteca": {"fichario": "O grupo deduz que o livro Sanguis Orchid passou pela biblioteca, que um Ghular o retirou e que agora está com Roberto Ghular."},
+    "subsolo": {"livro_faltando": "O grupo deduz que o livro foi deixado de propósito no subsolo, junto de um mapa que aponta a Fazenda Ghular, a leste."},
+    "fazenda": {"poco": "O grupo deduz que o poço antigo é a entrada: uma corda desce para o escuro."},
+}
+
+
+def marcar_essenciais(cid, dados):
+    for p in dados.get("pistas", []):
+        resumo = ESSENCIAIS.get(cid, {}).get(p["id"])
+        if resumo:
+            p["essencial"] = True
+            p["resumo"] = resumo
+
+
 def main():
     lista = [
         ("delegacia_17h", "delegacia_17h", "delegacia_17h", 17, "DELEGACIA", [(7.2, 15.5), (6.5, 16.0), (7.9, 16.1)], delegacia17, (-0.15, -0.15, 19.45, 22.25)),
@@ -363,6 +384,7 @@ def main():
     ]
     for cid, glb, col, hora, rotulo, grupo, extras, limite in lista:
         dados = cenario(cid, glb, carregar(col), hora, rotulo, grupo, extras, limite)
+        marcar_essenciais(cid, dados)
         with open(os.path.join(RAIZ, "data", "cenarios", cid + ".json"), "w") as f:
             json.dump(dados, f, ensure_ascii=False, indent=1)
         print(cid, len(dados["colisoes"]), "colisões")

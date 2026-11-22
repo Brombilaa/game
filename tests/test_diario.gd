@@ -15,6 +15,15 @@ func _initialize() -> void:
 func _run() -> void:
 	Progresso.dir = DIR
 	Progresso.autosave_ativo = true
+	# Dedução do grupo (22/11): essencial não examinada vira resumo; examinar depois troca pela pista de verdade.
+	Missao1.reiniciar()
+	_check(Diario.deduzir("BIBLIOTECA · 19h", "fichario", "O grupo deduz."), "dedução entra")
+	_check(not Diario.deduzir("BIBLIOTECA · 19h", "fichario", "O grupo deduz."), "dedução não repete")
+	_check(Missao1.diario[0]["titulo"].begins_with("Dedução"), "título marca a dedução")
+	_check(Diario.anotar("BIBLIOTECA · 19h", "fichario", "Texto completo.", "") and Missao1.diario.size() == 1 and Missao1.diario[0]["id"] == "fichario", "examinar de verdade substitui a dedução")
+	_check(not Diario.deduzir("BIBLIOTECA · 19h", "fichario", "O grupo deduz."), "pista já examinada não gera dedução")
+	var ob := Objectives.from_data([{"texto": "Investigar", "pistas": ["caio"], "opcionais": ["a", "b"]}], ["caio", "a"], func(_m: String) -> bool: return false, false)
+	_check(ob[0]["feito"] and ob[0]["detalhe"] == "1/1 · extras 1/2", "extras aparecem no HUD sem segurar o objetivo")
 	Missao1.reiniciar()
 	_regras()
 	_relato()
