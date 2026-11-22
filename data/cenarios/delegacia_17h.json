@@ -1308,7 +1308,8 @@
     -30
    ],
    "texto": "O livro de ocorrências está aberto no balcão. Nas últimas três semanas, a mesma anotação: \"Barulho na Fazenda Ghular\". Nenhuma viatura foi enviada. A última página foi arrancada.",
-   "provisorio": true
+   "provisorio": true,
+   "inspecao": "res://assets/sprites/pistas/livro_ocorrencias.png"
   },
   {
    "id": "agenda_ghular",
@@ -1365,7 +1366,45 @@
     -30
    ],
    "texto": "No arquivo, uma pasta com sete fichas de desaparecidos de Aurora. Nada liga uma à outra: idades, bairros e lugares do sumiço são todos diferentes. A mais recente é de ontem à noite: Lisandra de Sá, 38 anos, funcionária de farmácia, vista pela última vez perto da praça.",
-   "provisorio": true
+   "provisorio": true,
+   "inspecao": "res://assets/sprites/pistas/ficha_07.png",
+   "inspecoes": [
+    {
+     "imagem": "res://assets/sprites/pistas/ficha_01.png",
+     "titulo": "Ficha 1/7 · Bruno Rouxinol",
+     "texto": "Bruno Rouxinol, 04/03/1983. Antiquário, Rua Íris, 520. Sumiu trabalhando; um cliente achou pétalas manchadas de sangue no balcão. Especialistas: \"Caladenia purpura\"."
+    },
+    {
+     "imagem": "res://assets/sprites/pistas/ficha_02.png",
+     "titulo": "Ficha 2/7 · Jurema Couto",
+     "texto": "Jurema Couto, 06/01/1960. Loja Eletrônicos Couto, Rua das Rosas, 601. As luzes se apagaram durante o atendimento. Pétalas de uma flor azul desconhecida no painel elétrico, algumas em contato com fios ativos."
+    },
+    {
+     "imagem": "res://assets/sprites/pistas/ficha_03.png",
+     "titulo": "Ficha 3/7 · Marcos Paixão",
+     "texto": "Marcos Paixão, 03/04/1957. Supermercado Família, Passeio dos Crisântemos, 160. As compras ficaram na calçada ao lado de uma construção abandonada, com o saco de carvão aberto e brasa e cinzas ainda quentes lá dentro."
+    },
+    {
+     "imagem": "res://assets/sprites/pistas/ficha_04.png",
+     "titulo": "Ficha 4/7 · Ramiro Turi",
+     "texto": "Ramiro Turi, 02/05/1972. Bar do Longo, Avenida Central, 304. Visto pela última vez no beco ao lado do bar: flores alaranjadas cortadas junto a um símbolo feito com o sangue dele."
+    },
+    {
+     "imagem": "res://assets/sprites/pistas/ficha_05.png",
+     "titulo": "Ficha 5/7 · Ruth Santos",
+     "texto": "Ruth Santos, 06/01/1965. Em casa, Rua das Camélias, 700. Sem arrombamento, mas com sinais de luta. Sacos de fertilizante abertos pela sala, com pétalas rosas de uma flor que ela não cultivava."
+    },
+    {
+     "imagem": "res://assets/sprites/pistas/ficha_06.png",
+     "titulo": "Ficha 6/7 · Selena Schaefer",
+     "texto": "Selena Schaefer, 05/02/1992. Seu apartamento, Rua das Tulipas, 34. Banheira com a torneira aberta, água transbordando e pétalas murchas de \"Caladenia viridis\". Pizza que ela não pediu, pedido anônimo."
+    },
+    {
+     "imagem": "res://assets/sprites/pistas/ficha_07.png",
+     "titulo": "Ficha 7/7 · Lisandra de Sá",
+     "texto": "Lisandra de Sá, 38 anos, funcionária de farmácia. Sumiu ontem à noite na praça, voltando do trabalho. É a mais recente. (Ficha provisória: o Léo ainda não mandou a dela.)"
+    }
+   ]
   },
   {
    "id": "cela_arranhoes",

@@ -49,6 +49,9 @@ var pista_malhas := {}
 var pending_clue := ""
 var dialog_layer: CanvasLayer
 var dialog_clue := ""
+var dialog_paginas: Array = []  # pista com várias imagens (as 7 fichas): o clique vira a página até a última
+var dialog_pg := 0
+var dialog_base := ""
 var falas: FalasSoltas  # quando o grupo fala sozinho na exploração (Léo, 15/11)
 var caixa: CaixaFala  # falas curtas com retrato depois das pistas (Léo, modelo C, 15/11)
 var dialog_text: Label
@@ -1248,9 +1251,36 @@ func _pista_oculta(_cid: String) -> bool:
 func _show_dialog(image_path: String, text: String, cid: String) -> void:
 	dialog_clue = cid
 	dialog_text.text = text
-	dialog_image.texture = load(image_path) if image_path != "" else null
-	dialog_image.visible = image_path != ""
+	dialog_base = text
+	dialog_paginas = []
+	dialog_pg = 0
+	dialog_image.texture = load(image_path) if image_path != "" and ResourceLoader.exists(image_path) else null
+	dialog_image.visible = dialog_image.texture != null
+	_ajustar_imagem_dialogo()
+	if cid != "" and scenario.clues.has(cid) and scenario.clues[cid].get("inspecoes", []).size() > 1:
+		dialog_paginas = scenario.clues[cid]["inspecoes"]
+		_pagina_dialogo()
 	dialog_layer.visible = true
+
+
+# Imagem quadrada: caixa de 360x360; ficha ou página (bem mais larga que alta): 600 de largura, na altura da proporção.
+func _ajustar_imagem_dialogo() -> void:
+	var t := dialog_image.texture
+	if t != null and t.get_width() > t.get_height() * 1.2:
+		var h := 600.0 * t.get_height() / t.get_width()
+		dialog_image.position = Vector2(180, 28 + (360.0 - h) * 0.5)
+		dialog_image.size = Vector2(600, h)
+	else:
+		dialog_image.position = Vector2(300, 28)
+		dialog_image.size = Vector2(360, 360)
+
+
+func _pagina_dialogo() -> void:
+	var pg: Dictionary = dialog_paginas[dialog_pg]
+	dialog_image.texture = load(str(pg["imagem"]))
+	dialog_image.visible = true
+	_ajustar_imagem_dialogo()
+	dialog_text.text = dialog_base + "\n(%d/%d · clique para %s)" % [dialog_pg + 1, dialog_paginas.size(), "a próxima" if dialog_pg + 1 < dialog_paginas.size() else "fechar"]
 
 
 # Fecha a caixa de texto. Se era uma pista nova, registra e dispara o que vem depois dela.
@@ -1268,6 +1298,9 @@ func _close_dialog() -> void:
 	Dicas.marcar("examinar")
 	audio.play_sfx("clue_found")
 	var c: Dictionary = scenario.clues[cid]
+	var fichas: Array = c["inspecoes"]
+	for i in range(fichas.size() - 1):  # uma entrada do diário por ficha; a última é a da pista (a mais recente)
+		Diario.anotar(_diario_lugar(), "%s_%d" % [cid, i + 1], str(fichas[i]["texto"]), str(fichas[i]["imagem"]), str(fichas[i]["titulo"]))
 	Diario.anotar(_diario_lugar(), cid, c["texto"], c["inspecao"])
 	if c["perda_san"] > 0 or c["perturbadora"]:  # pista que perturba: quem leu (o líder) perde SAN
 		room_combat._san_report({player: san.clue_read(player, {"perda_san": c["perda_san"]} if c["perda_san"] > 0 else c)}, "lê a pista")
@@ -1312,6 +1345,10 @@ func _run_trigger(trigger: Dictionary) -> void:
 
 func _on_dialog_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if dialog_pg + 1 < dialog_paginas.size():
+			dialog_pg += 1
+			_pagina_dialogo()
+			return
 		_close_dialog()
 
 

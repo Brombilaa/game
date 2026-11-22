@@ -694,11 +694,12 @@ func _atualizar_pistas() -> void:
 		var esb := DiarioMiguel.desenho_pista(str(e["id"]))
 		var ins := str(e["imagem"])
 		_imagem.custom_minimum_size = Vector2(250, 120)
-		if esb != "":
-			_imagem.texture = load(esb)
-			_imagem.visible = true
-		elif ins != "" and ResourceLoader.exists(ins):
+		if ins != "" and ResourceLoader.exists(ins):  # a imagem da própria pista (ficha, página) vale mais que o esboço do lugar
 			_imagem.texture = load(ins)
+			_imagem.custom_minimum_size = Vector2(250, 200)
+			_imagem.visible = true
+		elif esb != "":
+			_imagem.texture = load(esb)
 			_imagem.visible = true
 	var obj := Diario.objetivo_atual(room._objectives()) if room != null else ""
 	_obj.text = "PRÓXIMO OBJETIVO: " + obj if obj != "" else "Sem objetivo no momento."
