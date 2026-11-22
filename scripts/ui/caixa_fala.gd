@@ -26,6 +26,8 @@ const NOMES := {
 	"leticia": "Letícia", "caio": "Caio",
 	# Celeiro, depois da Dama (Léo, 19/11): Tristan, sub-líder da Ordem; Mark, que sela o poço; Júlia, namorada da Letícia
 	"tristan": "Tristan", "mark": "Mark", "julia": "Júlia", "medico": "Socorrista",
+	# Delegacia (roteiro da missão 1, 20/11): o delegado Roberto Ghular e o escrivão Túlio (sem retrato: aparece a inicial)
+	"ghular": "Ghular", "tulio": "Túlio",
 }
 const ARQUIVO_FALAS := "res://data/falas.json"
 

@@ -24,7 +24,7 @@
 				},
 				{
 					"t": "[u]O Caio não levantou mais.[/u]",
-					"requer": "pista:caio",
+					"requer": "marca:caio_morreu",
 					"maior": true
 				},
 				{
@@ -45,7 +45,7 @@
 				{
 					"desenho": "caio",
 					"legenda": "Caio. Desculpa.",
-					"requer": "pista:caio"
+					"requer": "marca:caio_morreu"
 				}
 			],
 			"notas": [
@@ -59,8 +59,8 @@
 					"rabisco": "seta"
 				},
 				{
-					"t": "Caio. Quem avisa a família?",
-					"requer": "pista:caio",
+					"t": "Caio. Quem avisa a filha dele?",
+					"requer": "marca:caio_morreu",
 					"rabisco": "x"
 				}
 			]
@@ -84,7 +84,7 @@
 					"requer": "pista:cela_arranhoes"
 				},
 				{
-					"t": "\"Roberto voltou da fazenda. Não parece mais ele.\" Quem é Roberto?",
+					"t": "Sete datas circuladas na agenda do delegado, cada uma com uma orquídea vermelha. A sétima é de ontem.",
 					"requer": "pista:agenda_ghular"
 				},
 				{
@@ -109,7 +109,7 @@
 					"rabisco": "x"
 				},
 				{
-					"t": "Roberto Ghular = parente do delegado??",
+					"t": "Roberto Ghular = o delegado. Sete datas, sete sumiços?",
 					"requer": "pista:agenda_ghular",
 					"rabisco": "olho"
 				},
@@ -131,15 +131,19 @@
 					"t": "Silêncio de biblioteca, mas pesado. Alguém saiu daqui com pressa."
 				},
 				{
-					"t": "Antes da cidade, a fazenda era terra de um [u]culto[/u]. Está no livro de história, sublinhado por outra pessoa.",
+					"t": "Em 1970 a cidade pediu ao Vaticano uma \"Santa das Flores\": Lygia Virgínia do Rosário. [u]Negaram.[/u] Um desses pedidos que não acabam bem.",
 					"requer": "pista:mesa_leitura"
 				},
 				{
-					"t": "A ficha dos Ghular foi arrancada. Sobrou uma palavra: [color=#8e1b12]poço[/color].",
+					"t": "O Sanguis Orchid: doado em 1979, lido por Frederico Ghular em 87 e 97, [color=#8e1b12]confiscado pelo Roberto[/color] há poucos dias.",
 					"requer": "pista:fichario"
 				},
 				{
-					"t": "\"A Letícia ainda estava viva lá embaixo.\" [u]Viva.[/u] Então a gente ainda pode chegar a tempo.",
+					"t": "1977: sete desaparecidos também. [u]Sete.[/u] O mesmo número.",
+					"requer": "pista:mapa_antigo"
+				},
+				{
+					"t": "A Juliana também sabe o que o livro diz. Está com medo, e [u]ela tem razão[/u].",
 					"requer": "pista:diario_bibliotecaria",
 					"maior": true
 				}
@@ -151,7 +155,7 @@
 				},
 				{
 					"desenho": "arquivo",
-					"legenda": "o arquivo onde ela escondeu o diário",
+					"legenda": "o arquivo onde ela deixou o diário",
 					"requer": "pista:diario_bibliotecaria"
 				}
 			],
@@ -162,7 +166,7 @@
 					"rabisco": "espiral"
 				},
 				{
-					"t": "achar o livro que falta",
+					"t": "o Sanguis Orchid: se o Roberto o tirou da biblioteca, está com ele.",
 					"rabisco": "seta"
 				}
 			]
@@ -187,7 +191,7 @@
 					"requer": "pista:tapete"
 				},
 				{
-					"t": "Na mesa do subsolo, a marca limpa de um livro grosso que [color=#8e1b12]não está mais lá[/color].",
+					"t": "Na mesa do subsolo, aberto, o Sanguis Orchid. E sob ele um mapa com a [color=#8e1b12]Fazenda Ghular[/color] marcada.",
 					"requer": "pista:livro_faltando"
 				}
 			],

@@ -1408,9 +1408,14 @@
    ]
   ]
  },
+ "cena_ao_chegar": {
+  "cena": "delegacia_ghular_21h",
+  "marca": "ghular_21h"
+ },
  "invasao": {
   "quando": "zona",
   "marca": "invasao_vencida",
+  "cena_depois": "ligacao_juliana",
   "flashbang": [
    720.0,
    1260.8

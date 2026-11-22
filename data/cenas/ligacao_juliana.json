@@ -1,0 +1,41 @@
+{
+	"_nota": "Logo depois do ataque à delegacia (roteiro 3e e 'Transição para a fazenda'; revista pelo Léo em 20/11: a Juliana não sabe demais, está desesperada). Dá o motivo de ir à fazenda e fecha a pergunta 'onde está a Letícia'. Falas provisórias do Claude.",
+	"passos": [
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.7,
+			"junto": true
+		},
+		{
+			"faz": "legenda",
+			"texto": "Os tiros cessam. As caminhonetes vão embora. Um celular vibra no meio dos vidros quebrados.",
+			"tempo": 2.8
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "julia",
+					"texto": "Alô? Alô! Vocês estão aí? Ouvi tiros pelo telefone da Letícia, ela me ligou e a linha caiu. Ela não atende mais!"
+				},
+				{
+					"quem": "julia",
+					"texto": "Ela tinha medo do Beto. Falou da fazenda dele, que ele sumia para lá de noite. Eu não sei de mais nada. Por favor, achem ela!"
+				},
+				{
+					"quem": "fernando",
+					"texto": "Vamos achar. Fique em casa, Juliana, e tranque a porta."
+				},
+				{
+					"quem": "miguel",
+					"texto": "Fazenda Ghular. O mapa do subsolo, o medo da Letícia, o rastro de pneu. Tudo aponta para lá."
+				},
+				{
+					"quem": "nikolai",
+					"texto": "Então é para lá."
+				}
+			]
+		}
+	]
+}

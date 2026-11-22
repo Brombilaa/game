@@ -1159,7 +1159,7 @@
     0,
     -30
    ],
-   "texto": "No fichário, a gaveta \"G\" está vazia. A ficha \"Ghular, R.\" foi arrancada, e só sobrou um pedaço de papel com a palavra \"poço\".",
+   "texto": "Nas fichas de empréstimo, dois livros chamam a atenção. \"Sanguis Orchid\": doado em 1979 por Geraldo Munch, retirado só em 1987 e em 1997, as duas vezes por Frederico Ghular. Na última linha, em letra recente: confiscado como evidência por Roberto Ghular, há poucos dias.",
    "provisorio": true
   },
   {
@@ -1174,7 +1174,7 @@
     0,
     -30
    ],
-   "texto": "Um livro de história de Aurora ficou aberto na mesa de leitura, com um parágrafo sublinhado: antes da cidade, a fazenda era terra de um culto que oferecia sangue à terra.",
+   "texto": "O livro \"Aurora, a Cidade das Flores\" está aberto na mesa de leitura. Um parágrafo foi sublinhado: em 1970 a cidade pediu ao Vaticano que canonizasse Lygia Virgínia do Rosário como a Santa das Flores, e o pedido foi negado. Na margem, a lápis: \"carne feita de sangue só se desfaz com o próprio Outro Lado\".",
    "provisorio": true
   },
   {
@@ -1189,7 +1189,7 @@
     0,
     -30
    ],
-   "texto": "Um mapa antigo da região. A Fazenda Ghular está circulada a tinta vermelha, e uma cruz marca o antigo poço atrás do celeiro.",
+   "texto": "Um recorte de jornal de 1977: \"Os Sete Desaparecidos, o mistério que continua a assolar Aurora\". Sete moradores sumiram ao longo de um mês; o investigador do caso era o jovem Geraldo Munch. A última desaparecida foi Maria Cabral, nascida em 1º de junho de 1948.",
    "provisorio": true
   },
   {
@@ -1204,7 +1204,7 @@
     0,
     -30
    ],
-   "texto": "O diário da bibliotecária termina de repente: \"Ele pediu os livros sobre o pacto de novo. Disse que a Letícia ainda estava viva lá embaixo.\"",
+   "texto": "O diário da Juliana termina de repente: \"O delegado levou o Sanguis Orchid como evidência de um caso em aberto. Mas o caso não tem relatório, e eu sei o que esse livro diz. Preciso contar à Lari.\"",
    "provisorio": true
   },
   {
@@ -1312,5 +1312,9 @@
    "texto": "Voltar para a delegacia",
    "provisorio": true
   }
- ]
+ ],
+ "cena_ao_chegar": {
+  "cena": "biblioteca_julia",
+  "marca": "biblioteca_julia"
+ }
 }

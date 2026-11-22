@@ -1,0 +1,61 @@
+{
+	"_nota": "Depois do combate do parque (roteiro da missão 1, 'Após o combate da Praça'; Léo 20/11): a Letícia lamenta, entrega a chave da delegacia e fica para cuidar do corpo do Caio e da cena do crime. Antes desta cena não havia nenhuma fala entre o fim do combate e a viagem. A pulseira e a escopeta já foram dadas pelo próprio Caio na pista dele (o jogo não deixa examinar o corpo: a viagem é automática). Falas e tempos provisórios do Claude.",
+	"passos": [
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.7,
+			"junto": true
+		},
+		{
+			"faz": "camera",
+			"em": "leticia",
+			"zoom": 1.35,
+			"tempo": 0.8
+		},
+		{
+			"faz": "choque",
+			"quem": "leticia",
+			"sim": false
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "leticia",
+					"texto": "Lamento... Eu fiz o que pude. Não fui rápida o bastante."
+				},
+				{
+					"quem": "fernando",
+					"texto": "Foi ele quem se jogou na frente. Não carregue isso."
+				},
+				{
+					"quem": "nikolai",
+					"texto": "Aquilo não era bicho. Eram corpos de gente da cidade, de roupa antiga. Alguém os levantou."
+				},
+				{
+					"quem": "leticia",
+					"texto": "Eu sei. Por isso chamei vocês. Levem a chave da delegacia: os relatórios do caso estão lá."
+				},
+				{
+					"quem": "leticia",
+					"texto": "Eu fico. Preciso dar um jeito no que deixamos aqui, e no Caio. Tenho um contato no cemitério."
+				},
+				{
+					"quem": "miguel",
+					"texto": "Obrigado por cuidar dele."
+				},
+				{
+					"quem": "fernando",
+					"texto": "Ele nos mandou ficar juntos. Então vamos ficar juntos."
+				}
+			]
+		},
+		{
+			"faz": "camera",
+			"em": "lider",
+			"zoom": "jogador",
+			"tempo": 0.8
+		}
+	]
+}

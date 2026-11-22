@@ -1,0 +1,33 @@
+{
+	"_nota": "Chegada à delegacia das 17h (roteiro: porta da frente trancada, luzes acesas, um bilhete da Letícia no vidro). Antes o grupo aparecia na recepção sem nenhuma palavra. Falas provisórias do Claude.",
+	"passos": [
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.7,
+			"junto": true
+		},
+		{
+			"faz": "legenda",
+			"texto": "No vidro da porta, preso com fita: \"Volto logo. Policial Ribeiro.\"",
+			"tempo": 2.6
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "fernando",
+					"texto": "Ela nos deu a chave e sumiu. Luz acesa, ninguém dentro."
+				},
+				{
+					"quem": "nikolai",
+					"texto": "Ou ninguém que apareça. Fiquem juntos e toquem só no necessário."
+				},
+				{
+					"quem": "miguel",
+					"texto": "Invadir prédio público. Ao menos hoje com permissão."
+				}
+			]
+		}
+	]
+}

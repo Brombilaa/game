@@ -47,9 +47,12 @@ func _relato() -> void:
 	_check(s.size() == 1 and s[0]["id"] == "parque", "estar no parque abre a página do parque")
 	var antes: int = s[0]["linhas"].size()
 	var des: int = s[0]["desenhos"].size()
-	Diario.anotar("PARQUE · 16h", "caio", "O Caio não se mexe mais.", "")
+	Diario.anotar("PARQUE · 16h", "caio", "O Caio separa o equipamento do grupo.", "")
 	s = DiarioMiguel.secoes()
-	_check(s[0]["linhas"].size() == antes + 1 and s[0]["desenhos"].size() == des + 1, "a pista do Caio acrescenta linha e desenho")
+	_check(s[0]["linhas"].size() == antes and s[0]["desenhos"].size() == des, "a pista do Caio, com ele vivo, não escreve a morte no relato")
+	Missao1.marcar("caio_morreu")  # a morte só entra no caderno depois da cena
+	s = DiarioMiguel.secoes()
+	_check(s[0]["linhas"].size() == antes + 1 and s[0]["desenhos"].size() == des + 1, "depois da morte do Caio o relato ganha linha e desenho")
 	DiarioMiguel.esteve("subsolo")
 	s = DiarioMiguel.secoes()
 	_check(s.size() == 2 and s[1]["id"] == "delegacia_21h", "o subsolo entra na página da delegacia de noite")
@@ -115,7 +118,7 @@ func _salvo_e_painel() -> void:
 	p.alternar_ligar()
 	p._escolher(p._posicao("livro_faltando"))
 	_check(not p.ligando and Missao1.diario.size() == 4, "par certo vira conclusão nova")
-	_check(p._titulo_det.text == "O livro saiu de van" and p._obj.text.contains("Conclusão nova"), "o diário abre na conclusão")
+	_check(p._titulo_det.text == "O mapa e o rastro" and p._obj.text.contains("Conclusão nova"), "o diário abre na conclusão")
 	p.fechar()
 	room.dialog_layer.visible = true
 	_check(not room.diario_pode_abrir(), "com a caixa de pista aberta o diário não abre")

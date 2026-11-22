@@ -37,7 +37,15 @@ func _run() -> void:
 	quit(1 if failures > 0 else 0)
 
 
-func _abrir(id: String, chegada := "") -> Node:
+# Marcas das cenas de diálogo que tocam sozinhas ao chegar (as falas novas de 22/11): os testes de alcance, saque e
+# combate não as esperam. `_cenas_de_dialogo` testa as cenas de verdade.
+const MARCAS_DAS_CENAS := ["delegacia17_chegada", "ghular_17h", "ghular_21h", "biblioteca_julia", "ligacao_juliana", "cripta_ghular"]
+
+
+func _abrir(id: String, chegada := "", com_cenas := false) -> Node:
+	if not com_cenas:
+		for m in MARCAS_DAS_CENAS:
+			Missao1.marcar(m)
 	Missao1.local = id
 	Missao1.chegada = chegada
 	var room = load(Missao1.CENA_LOCAL).instantiate()

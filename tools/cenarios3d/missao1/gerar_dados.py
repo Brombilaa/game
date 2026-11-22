@@ -109,12 +109,12 @@ def delegacia17(d, p, ret):
     _pista(d, p, "livro_ocorrencias", 12.6, 14.6,
            "O livro de ocorrências está aberto no balcão. Nas últimas três semanas, a mesma anotação: \"Barulho na Fazenda Ghular\". Nenhuma viatura foi enviada. A última página foi arrancada.")
     _pista(d, p, "agenda_ghular", 14.0, 3.4,
-           "Na agenda do delegado Ghular, as datas estão riscadas. Só uma linha sobrou legível: \"Roberto voltou da fazenda. Não parece mais ele.\"")
+           "Na agenda do delegado Ghular, sete datas do último mês estão circuladas, cada uma com uma orquídea vermelha desenhada a caneta. A sétima é de ontem. Na margem de todo sábado, a mesma anotação seca: \"treino\".")
     _pista(d, p, "gaveta_provas", 14.8, 9.8,
            "A gaveta da sala de provas foi forçada. Dentro, entre papéis manchados, ainda restam algumas balas soltas e um celular de tela rachada, num saco de provas.",
            da=[("municao_pistola", 6), ("celular_quebrado", 1)])
     _pista(d, p, "ficha_desaparecidos", 2.7, 4.8,
-           "No arquivo, uma pasta cheia de fichas de desaparecidos de Aurora. Todas têm a mesma anotação a lápis: \"visto pela última vez perto da fazenda\".")
+           "No arquivo, uma pasta com sete fichas de desaparecidos de Aurora. Nada liga uma à outra: idades, bairros e lugares do sumiço são todos diferentes. A mais recente é de ontem à noite: Lisandra de Sá, 38 anos, funcionária de farmácia, vista pela última vez perto da praça.")
     _pista(d, p, "cela_arranhoes", 1.5, 8.2,
            "As paredes da cela estão marcadas por arranhões fundos, feitos de dentro para fora. Desenhado com o que parece sangue, o mesmo símbolo da árvore do parque.")
     # Porta trancada (GDD #19: só abre com a chave achada no cenário; com a chave no grupo abre sozinha ao chegar).
@@ -135,6 +135,10 @@ def delegacia17(d, p, ret):
     _pista(d, p, "kit_recepcao", 3.0, 15.0,
            "Debaixo de um banco da recepção, esquecido por alguém com pressa, há um kit com curativos e uma bandagem.",
            da=[("curativo", 1), ("bandagem", 1)])
+    # Cenas com roteiro (22/11, roteiro da missão 1): a chegada (o bilhete da Letícia) e, depois da agenda no escritório,
+    # a chegada do delegado Ghular, simpático, e a mensagem da Letícia na caixa postal. Falas provisórias.
+    d["cena_ao_chegar"] = {"cena": "delegacia_17h_chegada", "marca": "delegacia17_chegada"}
+    d["gatilhos"].append({"id": "ghular_chega", "apos": "agenda_ghular", "tipo": "cena", "cena": "ghular_17h", "marca": "ghular_17h"})
     d["zonas"].append({"id": "saida", "ret": _ret4(ret, P["saida"]), "acao": "ir", "para": "biblioteca",
                        "texto": "O grupo segue para a biblioteca.", "provisorio": True})
 
@@ -160,7 +164,8 @@ def delegacia21(d, p, ret):
     # porta da frente e os inimigos entram; todos atiradores. Faixa da zona e posições = provisórios.
     d["zonas"].append({"id": "invasao", "ret": _ret4(ret, [5.6, 13.3, 13.8, 15.0]), "acao": "invasao",
                        "requer": "subsolo_visitado", "provisorio": True})
-    d["invasao"] = {"quando": "zona", "marca": "invasao_vencida", "flashbang": p(9.75, 18.2), "inimigos": [
+    d["cena_ao_chegar"] = {"cena": "delegacia_ghular_21h", "marca": "ghular_21h"}  # Túlio, o Ghular "aliado" e o motivo de olhar a sala dele
+    d["invasao"] = {"quando": "zona", "marca": "invasao_vencida", "cena_depois": "ligacao_juliana", "flashbang": p(9.75, 18.2), "inimigos": [
         {"tipo": "atirador", "pos": p(*c), "provisorio": True} for c in [(9.75, 17.4), (7.7, 17.7), (11.8, 17.6)]]}
 
 
@@ -169,7 +174,7 @@ def subsolo(d, p, ret):
     d["objetivos"] = [{"texto": "Investigar o subsolo", "pista": "livro_faltando"}, {"texto": "Voltar ao escritório"}]
     d["pistas"].append({"id": "livro_faltando", "pos": p(1.0, 3.4), "raio": 70, "ordem": 1, "bolinha": [0, -40],
                         "destaque": {"nomes": ["Mesh33"]},  # a mesa (tampo) onde fica o retângulo limpo
-                        "texto": "Pó em toda a mesa, menos num retângulo limpo: um livro grosso ficava aqui até pouco tempo.",
+                        "texto": "Sobre a mesa do subsolo, aberto, está o livro Sanguis Orchid: capa vermelha, uma orquídea dourada. Foi deixado ali de propósito. Sob ele, um mapa antigo da região com uma fazenda a leste marcada com uma orquídea vermelha e a anotação \"Ghular\".",
                         "provisorio": True})
     d["zonas"].append({"id": "escada", "ret": ret(4.2, 0.13, 1.27, 0.9), "acao": "ir", "para": "delegacia_21h", "chegada": "subsolo",
                        "texto": "O grupo sobe de volta para o escritório."})
@@ -179,13 +184,13 @@ def biblioteca(d, p, ret):
     d["objetivos"] = [{"texto": "Descobrir o que o Ghular pesquisava", "pista": "fichario", "provisorio": True},
                       {"texto": "Voltar para a delegacia", "provisorio": True}]
     _pista(d, p, "fichario", 11.4, 6.3,
-           "No fichário, a gaveta \"G\" está vazia. A ficha \"Ghular, R.\" foi arrancada, e só sobrou um pedaço de papel com a palavra \"poço\".")
+           "Nas fichas de empréstimo, dois livros chamam a atenção. \"Sanguis Orchid\": doado em 1979 por Geraldo Munch, retirado só em 1987 e em 1997, as duas vezes por Frederico Ghular. Na última linha, em letra recente: confiscado como evidência por Roberto Ghular, há poucos dias.")
     _pista(d, p, "mesa_leitura", 2.6, 5.6,
-           "Um livro de história de Aurora ficou aberto na mesa de leitura, com um parágrafo sublinhado: antes da cidade, a fazenda era terra de um culto que oferecia sangue à terra.")
+           "O livro \"Aurora, a Cidade das Flores\" está aberto na mesa de leitura. Um parágrafo foi sublinhado: em 1970 a cidade pediu ao Vaticano que canonizasse Lygia Virgínia do Rosário como a Santa das Flores, e o pedido foi negado. Na margem, a lápis: \"carne feita de sangue só se desfaz com o próprio Outro Lado\".")
     _pista(d, p, "mapa_antigo", 12.7, 6.2,
-           "Um mapa antigo da região. A Fazenda Ghular está circulada a tinta vermelha, e uma cruz marca o antigo poço atrás do celeiro.")
+           "Um recorte de jornal de 1977: \"Os Sete Desaparecidos, o mistério que continua a assolar Aurora\". Sete moradores sumiram ao longo de um mês; o investigador do caso era o jovem Geraldo Munch. A última desaparecida foi Maria Cabral, nascida em 1º de junho de 1948.")
     _pista(d, p, "diario_bibliotecaria", 15.3, 3.4,
-           "O diário da bibliotecária termina de repente: \"Ele pediu os livros sobre o pacto de novo. Disse que a Letícia ainda estava viva lá embaixo.\"")
+           "O diário da Juliana termina de repente: \"O delegado levou o Sanguis Orchid como evidência de um caso em aberto. Mas o caso não tem relatório, e eu sei o que esse livro diz. Preciso contar à Lari.\"")
     _pista(d, p, "caixa_arquivo", 17.2, 6.4,
            "Uma caixa de arquivo morto foi deixada no canto. Dentro, escondido sob relatórios velhos, há um kit de primeiros socorros.",
            da=[("kit_primeiros_socorros", 1)])
@@ -197,6 +202,7 @@ def biblioteca(d, p, ret):
            "A chave gira no armário do acervo restrito. Entre livros embrulhados em plástico, a bibliotecária guardava suprimentos de emergência e um relógio de bolso parado à meia-noite.",
            da=[("bandagem", 2), ("antidoto", 1), ("municao_escopeta", 4), ("relogio_quebrado", 1)],
            chave="chave_acervo", trancado="Trancado. O armário do acervo restrito precisa de uma chave.")
+    d["cena_ao_chegar"] = {"cena": "biblioteca_julia", "marca": "biblioteca_julia"}  # a Ju recebe o grupo (22/11)
     d["zonas"].append({"id": "saida", "ret": ret(-1.5, 12.4, 22.5, 2.1), "acao": "ir", "para": "delegacia_21h",
                        "texto": "O grupo volta para a delegacia.", "provisorio": True})
 
@@ -249,8 +255,11 @@ def cripta(d, p, ret):
               4: [[27.5, 24.0, 34.5, 29.6], [11.6, 12.0, 16.2, 24.0], [38.8, 22.0, 41.4, 28.2]]}
     for n in sorted(faixas):
         for i, f in enumerate(faixas[n]):
-            d["zonas"].append({"id": "trecho%d_%d" % (n, i), "ret": _ret4(ret, f), "acao": "estado",
-                               "estados": {"trecho%d" % n: True}, "trecho": n, "marca": "cripta_trecho%d" % n, "provisorio": True})
+            z = {"id": "trecho%d_%d" % (n, i), "ret": _ret4(ret, f), "acao": "estado",
+                 "estados": {"trecho%d" % n: True}, "trecho": n, "marca": "cripta_trecho%d" % n, "provisorio": True}
+            if n == 4:  # o salão abre com o discurso do Ghular (data/cenas/cripta_ghular.json) antes de os cultistas e a luta
+                z["cena"] = "cripta_ghular"
+            d["zonas"].append(z)
     # Minimapa: só o que já foi revelado conta como visto.
     d["trechos"] = {
         "1": [_ret4(ret, r) for r in [[-6.8, 50.2, 12.6, 56.4], [7.6, 42.0, 12.8, 56.4]]],

@@ -404,6 +404,9 @@ func _zonas() -> void:
 		if str(z.get("acao", "")) == "estado":  # revela um trecho do cenário (cripta)
 			if z.has("marca") and Missao1.tem(str(z["marca"])):
 				continue
+			if z.has("cena") and CenaRoteiro.existe(str(z["cena"])) and not Missao1.tem(str(z["cena"])):  # o trecho abre com uma cena (o discurso do Ghular no salão); a marca da cena é o id dela
+				_revelar_com_cena(z)
+				return
 			for e in z["estados"]:
 				world3d.estado(e, z["estados"][e])
 			if z.has("marca"):
@@ -416,6 +419,19 @@ func _zonas() -> void:
 			if not inv.is_empty() and not Missao1.tem(str(inv["marca"])):
 				_invasao(inv)
 				return
+
+
+# Revela o trecho, toca a cena da zona e só então acorda os inimigos dele (o combate não atropela o discurso).
+func _revelar_com_cena(z: Dictionary) -> void:
+	for e in z["estados"]:
+		world3d.estado(e, z["estados"][e])
+	if z.has("marca"):
+		Missao1.marcar(str(z["marca"]))
+	Missao1.marcar(str(z["cena"]))
+	queue_redraw()
+	await tocar_cena(str(z["cena"]))
+	_acordar(int(z.get("trecho", 0)))
+	queue_redraw()
 
 
 static func _ret(z: Dictionary) -> Rect2:
@@ -444,6 +460,14 @@ func _pista_oculta(cid: String) -> bool:
 
 
 func _run_trigger(trigger: Dictionary) -> void:
+	if str(trigger["tipo"]) == "cena":  # depois da pista toca uma cena com roteiro (data/cenas), uma vez (a marca impede repetir)
+		var cena_id := str(trigger.get("cena", ""))
+		var m := str(trigger.get("marca", ""))
+		if CenaRoteiro.existe(cena_id) and (m == "" or not Missao1.tem(m)):
+			if m != "":
+				Missao1.marcar(m)
+			await tocar_cena(cena_id)
+		return
 	if str(trigger["tipo"]) == "ir":  # depois da pista, o grupo segue para outro lugar (o poço leva à cripta)
 		_ir_para(str(trigger["para"]), str(trigger.get("chegada", "")), str(trigger.get("texto", "")))
 		return
@@ -501,6 +525,11 @@ func _on_combat_ended(result: TurnManager.Result) -> void:
 		Missao1.marcar(str(inv["marca"]))
 	if result == TurnManager.Result.VICTORY:
 		_marcar_grupos()
+	var depois := str(inv.get("cena_depois", ""))  # a ligação da Juliana, logo depois do ataque
+	if result == TurnManager.Result.VICTORY and depois != "" and CenaRoteiro.existe(depois) and not Missao1.tem("ligacao_juliana"):
+		Missao1.marcar("ligacao_juliana")
+		await get_tree().create_timer(1.0).timeout  # o último golpe termina antes de a cena começar
+		await tocar_cena(depois)
 
 
 # Grupo vencido: todos os inimigos dele em cena caíram e nenhum espera num trecho escondido.

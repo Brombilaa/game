@@ -1,0 +1,89 @@
+{
+	"_nota": "O delegado Roberto Ghular chega depois de o grupo mexer na agenda dele (roteiro 'O Delegado Ghular chega'; Léo 20/11): fingido, simpático, o 'tio do pavê'; não deixa transparecer que é o chefe do culto. Depois toca a mensagem da Letícia na caixa postal, que manda o grupo à biblioteca (o necrotério e a casa do Velho Geraldo, também citados no roteiro, ainda não existem no jogo). Falas provisórias do Claude a partir dos textos do Léo (Larissa virou Letícia).",
+	"passos": [
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.7,
+			"junto": true
+		},
+		{
+			"faz": "legenda",
+			"texto": "Lá fora, um carro estaciona. Passos na recepção.",
+			"tempo": 2.2
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "ghular",
+					"texto": "Quem são vocês? Se forem pivetes fazendo bagunça, já aviso: estou sem paciência hoje."
+				},
+				{
+					"quem": "fernando",
+					"texto": "Agentes, delegado. A investigadora Ribeiro nos chamou por causa dos desaparecimentos."
+				},
+				{
+					"quem": "ghular",
+					"texto": "Ufa! Ajuda, enfim. Desculpem o susto, mas vocês estavam dentro da delegacia e eu não os conhecia."
+				},
+				{
+					"quem": "ghular",
+					"texto": "Se são amigos da Letícia, são gente boa. Ela chegou faz pouco, mas já é a melhor policial da cidade."
+				},
+				{
+					"quem": "ghular",
+					"texto": "Hoje é minha folga e a patroa me espera. Fiquem à vontade com as provas."
+				},
+				{
+					"quem": "ghular",
+					"texto": "Ah, na geladeira dos fundos sobrou pavê do aniversário da Ribeiro. É para comer, hein!"
+				}
+			]
+		},
+		{
+			"faz": "legenda",
+			"texto": "O delegado sai. O carro dele parte.",
+			"tempo": 2.0
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "miguel",
+					"texto": "Amigável demais para o meu gosto."
+				},
+				{
+					"quem": "nikolai",
+					"texto": "A mão direita dele não saiu do cinto o tempo todo."
+				}
+			]
+		},
+		{
+			"faz": "esperar",
+			"tempo": 0.5
+		},
+		{
+			"faz": "legenda",
+			"texto": "O telefone da delegacia toca. A caixa de mensagens atende.",
+			"tempo": 2.4
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "leticia",
+					"texto": "Oi, aqui é a Letícia. Espero que tenham achado alguma coisa. Falei com a Juliana, a bibliotecária: ela tem informações do arquivo público."
+				},
+				{
+					"quem": "leticia",
+					"texto": "Vão até a biblioteca. E, por favor, apaguem esta mensagem."
+				},
+				{
+					"quem": "fernando",
+					"texto": "Biblioteca, então. E ninguém comenta isto com o delegado."
+				}
+			]
+		}
+	]
+}

@@ -7260,7 +7260,8 @@
    },
    "trecho": 4,
    "marca": "cripta_trecho4",
-   "provisorio": true
+   "provisorio": true,
+   "cena": "cripta_ghular"
   },
   {
    "id": "trecho4_1",
@@ -7276,7 +7277,8 @@
    },
    "trecho": 4,
    "marca": "cripta_trecho4",
-   "provisorio": true
+   "provisorio": true,
+   "cena": "cripta_ghular"
   },
   {
    "id": "trecho4_2",
@@ -7292,7 +7294,8 @@
    },
    "trecho": 4,
    "marca": "cripta_trecho4",
-   "provisorio": true
+   "provisorio": true,
+   "cena": "cripta_ghular"
   }
  ],
  "inimigos": [

@@ -1322,7 +1322,7 @@
     0,
     -30
    ],
-   "texto": "Na agenda do delegado Ghular, as datas estão riscadas. Só uma linha sobrou legível: \"Roberto voltou da fazenda. Não parece mais ele.\"",
+   "texto": "Na agenda do delegado Ghular, sete datas do último mês estão circuladas, cada uma com uma orquídea vermelha desenhada a caneta. A sétima é de ontem. Na margem de todo sábado, a mesma anotação seca: \"treino\".",
    "provisorio": true
   },
   {
@@ -1362,7 +1362,7 @@
     0,
     -30
    ],
-   "texto": "No arquivo, uma pasta cheia de fichas de desaparecidos de Aurora. Todas têm a mesma anotação a lápis: \"visto pela última vez perto da fazenda\".",
+   "texto": "No arquivo, uma pasta com sete fichas de desaparecidos de Aurora. Nada liga uma à outra: idades, bairros e lugares do sumiço são todos diferentes. A mais recente é de ontem à noite: Lisandra de Sá, 38 anos, funcionária de farmácia, vista pela última vez perto da praça.",
    "provisorio": true
   },
   {
@@ -1477,7 +1477,15 @@
    ]
   }
  ],
- "gatilhos": [],
+ "gatilhos": [
+  {
+   "id": "ghular_chega",
+   "apos": "agenda_ghular",
+   "tipo": "cena",
+   "cena": "ghular_17h",
+   "marca": "ghular_17h"
+  }
+ ],
  "zonas": [
   {
    "id": "saida",
@@ -1528,5 +1536,9 @@
    "texto": "Trancada. A porta do escritório do Ghular precisa de uma chave.",
    "provisorio": true
   }
- ]
+ ],
+ "cena_ao_chegar": {
+  "cena": "delegacia_17h_chegada",
+  "marca": "delegacia17_chegada"
+ }
 }

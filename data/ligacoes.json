@@ -2,17 +2,17 @@
 	"_comentario": "Ligações de pistas (sugestão 3 do relatório de 14/11): o jogador junta duas pistas do diário e, se elas se completam, o diário ganha uma conclusão nova. Par sem ordem: [pista_a, pista_b] com os ids das pistas. Todas as pistas do par precisam estar no diário, de qualquer lugar. 'marca' (opcional) marca o fato em Missao1.marcas. Textos e pares provisórios do Claude, para o Léo revisar.",
 	"ligacoes": [
 		{
-			"id": "van_levou_livro",
+			"id": "mapa_e_rastro",
 			"pistas": ["marcas_pneu", "livro_faltando"],
-			"titulo": "O livro saiu de van",
-			"texto": "Algo foi arrastado do parque até a rua, e um livro grosso sumiu da mesa do subsolo. Quem levou o livro usou a van que deixou as marcas, e o rastro aponta para a Fazenda Ghular.",
+			"titulo": "O mapa e o rastro",
+			"texto": "Um veículo grande levou algo arrastado do parque, e o mapa do subsolo marca a Fazenda Ghular com uma orquídea vermelha. É para lá que levaram quem sumiu.",
 			"marca": "rastro_fazenda"
 		},
 		{
 			"id": "fazenda_centro",
 			"pistas": ["livro_ocorrencias", "ficha_desaparecidos"],
 			"titulo": "Tudo leva à fazenda",
-			"texto": "Três semanas de barulho na Fazenda Ghular sem nenhuma viatura enviada, e todos os desaparecidos vistos pela última vez perto dela. Alguém na delegacia sabia e deixou acontecer.",
+			"texto": "Três semanas de barulho na Fazenda Ghular sem nenhuma viatura enviada, e sete desaparecidos que a polícia nunca ligou entre si. Alguém na delegacia sabia e deixou acontecer.",
 			"marca": "fazenda_suspeita"
 		},
 		{
@@ -22,18 +22,18 @@
 			"texto": "O símbolo sangrando na árvore do parque é o mesmo desenhado na parede da cela. Não é um ataque isolado: é obra de um culto, e ele já passou pela delegacia."
 		},
 		{
-			"id": "poco_e_a_entrada",
+			"id": "ciclo_ghular",
 			"pistas": ["fichario", "mapa_antigo"],
-			"titulo": "O poço é a entrada",
-			"texto": "A ficha dos Ghular foi arrancada deixando só a palavra \"poço\", e o mapa antigo marca uma cruz no poço atrás do celeiro. O caminho para o que está embaixo da fazenda é pelo poço.",
-			"marca": "poco_e_entrada"
+			"titulo": "De novo, a mesma família",
+			"texto": "Sete desaparecidos em 1977, sete agora. O Sanguis Orchid foi lido por Frederico Ghular em 1987 e 1997 e confiscado por Roberto Ghular há poucos dias. É um ciclo, e a família Ghular está em todos os elos.",
+			"marca": "ciclo_ghular"
 		},
 		{
-			"id": "leticia_embaixo",
+			"id": "delegado_e_livro",
 			"pistas": ["agenda_ghular", "diario_bibliotecaria"],
-			"titulo": "Letícia está embaixo",
-			"texto": "\"Roberto voltou da fazenda. Não parece mais ele\" e \"a Letícia ainda estava viva lá embaixo\". Roberto Ghular não é mais ele mesmo, e é ele quem mantém a Letícia presa sob a fazenda.",
-			"marca": "leticia_embaixo"
+			"titulo": "O delegado e o livro",
+			"texto": "Sete datas circuladas com orquídeas vermelhas na agenda do Ghular, e o livro do pacto que ele tirou da biblioteca como \"evidência\" sem relatório. O delegado não investiga os sumiços: está no meio deles.",
+			"marca": "delegado_e_livro"
 		}
 	]
 }

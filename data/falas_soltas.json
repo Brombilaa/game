@@ -8,11 +8,11 @@
 			"falas": [
 				{
 					"quem": "fernando",
-					"texto": "Marcas de pneu até a entrada. Alguém levou algo pesado."
+					"texto": "Praça isolada e nenhum guarda à vista. A Letícia pediu um favor grande."
 				},
 				{
 					"quem": "nikolai",
-					"texto": "Ou alguém quis que a gente achasse."
+					"texto": "E o favor tem hora para acabar. Vamos olhar tudo antes."
 				}
 			]
 		},
@@ -22,12 +22,12 @@
 			"pista": "banco_quebrado",
 			"falas": [
 				{
-					"quem": "nikolai",
-					"texto": "Esse sangue no banco já secou. Uns dois dias."
+					"quem": "miguel",
+					"texto": "\"Cidade das Flores\", dizia o pórtico. Até agora só vi sangue e nenhuma flor."
 				},
 				{
-					"quem": "miguel",
-					"texto": "E ninguém na cidade avisou ninguém."
+					"quem": "nikolai",
+					"texto": "Dê tempo. Cidade com esse nome costuma esconder o que cheira pior."
 				}
 			]
 		},
@@ -37,12 +37,12 @@
 			"requer": "fala_parque_2",
 			"falas": [
 				{
-					"quem": "miguel",
-					"texto": "Aquele símbolo na árvore eu já vi em livros. Não é pichação."
+					"quem": "fernando",
+					"texto": "Parque aberto, moita por todo lado. Se der problema, é de lá que vem."
 				},
 				{
-					"quem": "fernando",
-					"texto": "Então chegamos perto sem armas na mão. Atenção."
+					"quem": "nikolai",
+					"texto": "Então eu olho as moitas. Você olha o que estiver na frente."
 				}
 			]
 		},
@@ -52,11 +52,11 @@
 			"falas": [
 				{
 					"quem": "nikolai",
-					"texto": "Delegacia vazia e luz acesa. Mau sinal."
+					"texto": "Câmera em quase todo cômodo. Para cidade pequena, é muita vigilância."
 				},
 				{
-					"quem": "fernando",
-					"texto": "Procurem registros do plantão."
+					"quem": "miguel",
+					"texto": "Ou o delegado gosta de plateia. Cuidado com o que a gente toca."
 				}
 			]
 		},
@@ -65,12 +65,12 @@
 			"area": "delegacia_17h",
 			"falas": [
 				{
-					"quem": "miguel",
-					"texto": "Esse tapete está torto, e o resto aqui é arrumado demais."
+					"quem": "fernando",
+					"texto": "A Letícia disse que os dados do caso estão aqui. Primeiro, a chave do escritório."
 				},
 				{
 					"quem": "nikolai",
-					"texto": "Deixa para a noite. Aqui ainda tem gente passando."
+					"texto": "E sem forçar nada. Prefiro entrar pela porta."
 				}
 			]
 		},
@@ -94,12 +94,12 @@
 			"pista": "fichario",
 			"falas": [
 				{
-					"quem": "fernando",
-					"texto": "Alguém mexeu nessas prateleiras há pouco."
+					"quem": "nikolai",
+					"texto": "Quem pegou livro aqui deixou o nome no registro. É por onde eu começo."
 				},
 				{
-					"quem": "miguel",
-					"texto": "E levou só o que interessava."
+					"quem": "fernando",
+					"texto": "Então começa. Quero o nome de quem mexeu no que sumiu."
 				}
 			]
 		},
@@ -109,11 +109,11 @@
 			"falas": [
 				{
 					"quem": "fernando",
-					"texto": "Voltamos ao ponto de partida, e agora é noite."
+					"texto": "Ele pode voltar a qualquer minuto. Rápido e em silêncio."
 				},
 				{
 					"quem": "nikolai",
-					"texto": "O tapete. Quero ver o que ele escondia."
+					"texto": "O livro tem que estar em algum lugar dessa sala."
 				}
 			]
 		},
@@ -123,12 +123,12 @@
 			"pista": "livro_faltando",
 			"falas": [
 				{
-					"quem": "nikolai",
-					"texto": "Sem poeira no retângulo da estante. O livro saiu há pouco."
+					"quem": "miguel",
+					"texto": "Cheiro de cera e de ferro. Alguém faz rituais aqui embaixo, e faz sempre."
 				},
 				{
-					"quem": "miguel",
-					"texto": "Então quem levou ainda está por perto."
+					"quem": "nikolai",
+					"texto": "A mesa do fundo está arrumada demais para um porão abandonado."
 				}
 			]
 		},
@@ -156,7 +156,7 @@
 				},
 				{
 					"quem": "fernando",
-					"texto": "E o poço? Quero ver antes de qualquer coisa."
+					"texto": "Alguém cuida disso. Provavelmente quem levou a Letícia."
 				}
 			]
 		},
