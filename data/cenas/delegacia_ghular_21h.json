@@ -1,0 +1,73 @@
+{
+	"_nota": "Volta à delegacia às 21h (roteiro 3d): o escrivão Túlio liga para o delegado, o Ghular chega com a história de que a Letícia está envolvida e sai para buscar 'provas', e o grupo, sozinho, decide olhar a sala dele. Dá o motivo de voltar ao escritório (antes o grupo só ia ao tapete, sem razão). O ataque, a morte do Túlio e o plot twist do livro ainda não têm cena. Falas provisórias do Claude a partir dos textos do Léo.",
+	"passos": [
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.7,
+			"junto": true
+		},
+		{
+			"faz": "legenda",
+			"texto": "21h. A delegacia está aberta. Atrás do balcão, um rapaz de camisa passada.",
+			"tempo": 2.6
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "tulio",
+					"texto": "Olá, é o Túlio. Eles estão aqui, sim senhor. Pode deixar. Boa noite, senhor."
+				},
+				{
+					"quem": "tulio",
+					"texto": "O delegado está vindo e pediu que esperem. Ele tem novas evidências sobre os desaparecimentos."
+				}
+			]
+		},
+		{
+			"faz": "legenda",
+			"texto": "Um carro estaciona lá fora. O delegado entra, de rosto fechado.",
+			"tempo": 2.4
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "ghular",
+					"texto": "Que bom que estão aqui. Vamos para a minha sala, tenho más notícias."
+				},
+				{
+					"quem": "ghular",
+					"texto": "Eu não queria acreditar, mas é verdade: a Letícia está envolvida nos desaparecimentos. O que ela me contou não bate."
+				},
+				{
+					"quem": "ghular",
+					"texto": "Só não consigo provar como. É aí que vocês entram. Vou ao carro buscar umas fotos. Esperem aqui."
+				}
+			]
+		},
+		{
+			"faz": "legenda",
+			"texto": "O delegado sai. A porta do escritório fica aberta.",
+			"tempo": 2.2
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "nikolai",
+					"texto": "\"Envolvida\". A mesma Letícia que segurou o Caio morrendo?"
+				},
+				{
+					"quem": "miguel",
+					"texto": "E a Juliana escreveu que o delegado levou o Sanguis Orchid. Se o livro existe, está na sala dele."
+				},
+				{
+					"quem": "fernando",
+					"texto": "Ele saiu por poucos minutos. Rápido. O tapete torto é o primeiro lugar."
+				}
+			]
+		}
+	]
+}

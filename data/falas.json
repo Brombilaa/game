@@ -1,41 +1,55 @@
 {
-	"_comentario": "Falas curtas por pista (2 a 4, sem escolhas), tocadas na caixa com retrato (CaixaFala) logo depois do texto da pista. Chave: <cenario>/<pista>. só o grupo (Fernando, Nikolai, Miguel) fala, entre si (Léo, 15/11); quem = id do personagem (retrato em assets/sprites/retratos). Textos provisórios do Claude, para o Léo revisar. Na cripta a Letícia acordada também fala, e o Fernando não (já morreu).",
-	"parque/marcas_pneu": [
+	"_comentario": "Falas curtas por pista (2 a 4, sem escolhas), tocadas na caixa com retrato (CaixaFala) logo depois do texto da pista. Chave: <cenario>/<pista>. Só o grupo (Fernando, Nikolai, Miguel) fala, entre si (Léo, 15/11); quem = id do personagem (retrato em assets/sprites/retratos). Na cripta a Letícia acordada também fala. Revisão 22/11 (Léo: 'frases desconexas que fogem do roteiro'): cada fala comenta o que a pista mostra (sem repetir as falas soltas) e segue o roteiro da missão 1; as falas soltas (falas_soltas.json) ficam para o clima e para guiar o grupo. Personalidades: Miguel carismático e ácido (e cuida de tudo que é religião), Nikolai reservado e observador, Fernando tático e prático. Textos provisórios do Claude, para o Léo revisar.",
+	"parque/caio": [
 		{
 			"quem": "nikolai",
-			"texto": "Algo pesado foi arrastado por aqui. E não faz muito tempo."
+			"texto": "Miçangas com nó torto. Foi uma criança que fez."
+		},
+		{
+			"quem": "miguel",
+			"texto": "Ele usava por baixo da manga. O veterano tinha pudor de mostrar que é pai."
 		},
 		{
 			"quem": "fernando",
-			"texto": "Foi até a entrada. Quem fez isso queria que a gente visse."
+			"texto": "Quem usar, cuida. Um dia essa pulseira volta para a filha dele."
+		}
+	],
+	"parque/marcas_pneu": [
+		{
+			"quem": "nikolai",
+			"texto": "Veículo grande e pesado. Alguém carregou um corpo até ele."
+		},
+		{
+			"quem": "fernando",
+			"texto": "Levaram uma pessoa daqui, e levaram com pressa."
 		}
 	],
 	"parque/balanco": [
 		{
-			"quem": "nikolai",
-			"texto": "Arranhões fundos num balanço. Criança não faz isso."
+			"quem": "miguel",
+			"texto": "O balanço continua balançando. Nada mais neste parque se mexe."
 		},
 		{
-			"quem": "miguel",
-			"texto": "Bicho também não. As marcas estão altas demais."
+			"quem": "nikolai",
+			"texto": "Teve briga aqui. A areia foi revirada e o rastro segue para as moitas."
 		},
 		{
 			"quem": "fernando",
-			"texto": "Fiquem juntos. Ninguém se afasta."
+			"texto": "Moita é mau lugar para dar as costas. Fiquem em grupo."
 		}
 	],
 	"parque/banco_quebrado": [
 		{
 			"quem": "nikolai",
-			"texto": "Sangue seco. Uns dois dias, pelo cheiro."
-		},
-		{
-			"quem": "fernando",
-			"texto": "Dois dias, e ninguém limpou? Ninguém avisou?"
+			"texto": "Sangue seco, de ontem à noite. Alguém foi jogado contra este banco."
 		},
 		{
 			"quem": "miguel",
-			"texto": "Esta cidade parou de olhar para o parque."
+			"texto": "Esse pano é grosso, escuro, feito à mão. Não é roupa de quem passeia no parque."
+		},
+		{
+			"quem": "fernando",
+			"texto": "Duas pessoas brigaram aqui. Só uma saiu andando."
 		}
 	],
 	"parque/arvore_simbolo": [
@@ -45,11 +59,83 @@
 		},
 		{
 			"quem": "nikolai",
-			"texto": "Parece estar sangrando de verdade."
+			"texto": "Não foi pintado. O sangue sai de dentro da árvore, e ainda está quente."
 		},
 		{
 			"quem": "fernando",
 			"texto": "Armas em punho. Agora."
+		}
+	],
+	"delegacia_17h/livro_ocorrencias": [
+		{
+			"quem": "nikolai",
+			"texto": "Três semanas de queixas sobre a fazenda dos Ghular. Nenhuma viatura."
+		},
+		{
+			"quem": "fernando",
+			"texto": "Ou a polícia é incompetente, ou mandaram olhar para o outro lado."
+		}
+	],
+	"delegacia_17h/agenda_ghular": [
+		{
+			"quem": "miguel",
+			"texto": "Sete datas, sete orquídeas desenhadas à mão. Caprichoso, para um delegado."
+		},
+		{
+			"quem": "nikolai",
+			"texto": "A última é de ontem à noite. Bate com o sangue do banco."
+		},
+		{
+			"quem": "fernando",
+			"texto": "Sem conclusões ainda. Anotem tudo."
+		}
+	],
+	"delegacia_17h/ficha_desaparecidos": [
+		{
+			"quem": "nikolai",
+			"texto": "Sete fichas e nenhum elo. Nem bairro, nem emprego, nem parentesco."
+		},
+		{
+			"quem": "miguel",
+			"texto": "Quando não há elo, o elo é outra coisa."
+		},
+		{
+			"quem": "fernando",
+			"texto": "A última, Lisandra de Sá, foi ontem à noite, perto do parque."
+		}
+	],
+	"delegacia_17h/cela_arranhoes": [
+		{
+			"quem": "nikolai",
+			"texto": "Arranhado de dentro para fora. Alguém tentou sair daqui."
+		},
+		{
+			"quem": "miguel",
+			"texto": "Quem desenhou sabia o símbolo de cor. Isso não é pichação, é fé."
+		},
+		{
+			"quem": "fernando",
+			"texto": "Parque, cela, delegacia. O culto já passou por tudo."
+		}
+	],
+	"delegacia_17h/chaveiro_recepcao": [
+		{
+			"quem": "fernando",
+			"texto": "Uma chave só. A etiqueta diz que é a do escritório do delegado."
+		},
+		{
+			"quem": "nikolai",
+			"texto": "O resto do chaveiro está vazio. Alguém limpou antes de sair."
+		}
+	],
+	"delegacia_17h/cofre_ghular": [
+		{
+			"quem": "miguel",
+			"texto": "Colete, munição, bateria de rádio. O delegado se prepara para uma guerra."
+		},
+		{
+			"quem": "nikolai",
+			"texto": "Ou para uma noite longa."
 		}
 	],
 	"delegacia_21h/tapete": [
@@ -64,12 +150,76 @@
 	],
 	"subsolo/livro_faltando": [
 		{
-			"quem": "nikolai",
-			"texto": "Sem poeira no retângulo. Levaram o livro há pouco."
+			"quem": "miguel",
+			"texto": "Sanguis Orchid. Uma Aurora na Europa, um anjo chamado Serafim Vermelho e uma santa de flores."
 		},
 		{
 			"quem": "miguel",
-			"texto": "Então quem levou ainda pode estar por perto."
+			"texto": "Sete corpos, sete condições, sete orquídeas. No sétimo aceito, a santa volta como a Dama de Sangue."
+		},
+		{
+			"quem": "nikolai",
+			"texto": "Aceito quando o sangue jorra da marca. Como a árvore do parque."
+		},
+		{
+			"quem": "fernando",
+			"texto": "E o mapa? Fazenda Ghular, com orquídea vermelha. É para lá."
+		}
+	],
+	"biblioteca/fichario": [
+		{
+			"quem": "miguel",
+			"texto": "Sanguis Orchid. Orquídea do Sangue. Isso não é título de livro de jardinagem."
+		},
+		{
+			"quem": "nikolai",
+			"texto": "Confiscado pelo Roberto Ghular. E na sala de evidências não havia livro nenhum."
+		},
+		{
+			"quem": "fernando",
+			"texto": "Então o livro está com ele. A gente precisa achar."
+		}
+	],
+	"biblioteca/mesa_leitura": [
+		{
+			"quem": "miguel",
+			"texto": "Pediram uma santa ao Vaticano e a Igreja disse não. Já vi esse roteiro."
+		},
+		{
+			"quem": "miguel",
+			"texto": "Santo leva décadas e milagre provado. Cidade com pressa já cultuava alguém."
+		},
+		{
+			"quem": "nikolai",
+			"texto": "E a lápis, na margem: só se desfaz com o próprio Outro Lado. Quem anotou sabia."
+		}
+	],
+	"biblioteca/mapa_antigo": [
+		{
+			"quem": "nikolai",
+			"texto": "1977. Sete desaparecidos em um mês. O mesmo número de agora."
+		},
+		{
+			"quem": "fernando",
+			"texto": "Quase meio século depois. Isso não é coincidência."
+		},
+		{
+			"quem": "miguel",
+			"texto": "Ciclo assim precisa de quem o mantenha. Alguém que ainda esteja vivo."
+		}
+	],
+	"biblioteca/diario_bibliotecaria": [
+		{
+			"quem": "nikolai",
+			"texto": "\"Preciso contar à Lari.\" A Juliana sabe mais do que mostrou."
+		},
+		{
+			"quem": "miguel",
+			"texto": "E o delegado levou o livro sem abrir caso. Roubo com distintivo."
+		},
+		{
+			"quem": "fernando",
+			"texto": "Primeiro achamos o livro. Depois a gente pensa em quem sabe ler."
 		}
 	],
 	"fazenda/poco": [
@@ -82,6 +232,46 @@
 			"texto": "Tem algo lá embaixo. Dá para sentir daqui."
 		}
 	],
+	"fazenda/prateleira_insumos": [
+		{
+			"quem": "fernando",
+			"texto": "Fertilizante e veneno de lavoura. Pode ser útil mais tarde."
+		},
+		{
+			"quem": "miguel",
+			"texto": "Em fazenda de flor é normal. Em fazenda de flor com culto, nem tanto."
+		}
+	],
+	"fazenda/balde_poco": [
+		{
+			"quem": "nikolai",
+			"texto": "Água corrente e fria. Pode ser útil lá embaixo."
+		},
+		{
+			"quem": "miguel",
+			"texto": "Você fala como quem já sabe o que há lá embaixo."
+		}
+	],
+	"cripta/pedra_bravo_purpulis": [
+		{
+			"quem": "miguel",
+			"texto": "Esse roxo não é natural."
+		},
+		{
+			"quem": "nikolai",
+			"texto": "Quem plantou isso aqui sabia o que estava fazendo."
+		}
+	],
+	"cripta/mochila_desaparecido": [
+		{
+			"quem": "nikolai",
+			"texto": "Mochila de um dos desaparecidos. Ele chegou até aqui."
+		},
+		{
+			"quem": "fernando",
+			"texto": "Se ele chegou vivo, os outros podem estar vivos também."
+		}
+	],
 	"cripta/leticia": [
 		{
 			"quem": "miguel",
@@ -89,11 +279,11 @@
 		},
 		{
 			"quem": "leticia",
-			"texto": "Vocês... vieram mesmo. Cadê o outro? O de casaco?"
+			"texto": "Vocês... vieram mesmo. A Juliana, ela está bem?"
 		},
 		{
 			"quem": "nikolai",
-			"texto": "Depois. Primeiro a gente tira você daqui."
+			"texto": "Está. Foi ela quem nos avisou. Primeiro a gente tira você daqui."
 		}
 	]
 }

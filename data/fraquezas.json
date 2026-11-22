@@ -29,7 +29,7 @@
 			"pistas": [
 				"mesa_leitura"
 			],
-			"texto": "O livro de história descreve as criaturas do pacto: carne feita de sangue, que só se desfaz com o próprio Outro Lado. Rituais ferem a Criatura de Sangue muito mais que armas.",
+			"texto": "Na margem do livro de história, alguém anotou a lápis: carne feita de sangue só se desfaz com o próprio Outro Lado. Rituais ferem a Criatura de Sangue muito mais que armas.",
 			"combate": "O ritual rasga a Criatura de Sangue por dentro. Ela sente muito mais do que sente bala.",
 			"miguel": "O que é feito do Outro Lado só se desfaz com o Outro Lado. Eletrocussão nela, sempre."
 		},
@@ -59,7 +59,7 @@
 			"pistas": [
 				"agenda_ghular"
 			],
-			"texto": "\"Roberto voltou da fazenda. Não parece mais ele.\" O que voltou aguenta pancadas que derrubariam um homem: golpes de perto quase não afetam Roberto Ghular.",
+			"texto": "Todo sábado da agenda do delegado diz apenas \"treino\". Quem treina assim, há anos, aguenta pancadas que derrubariam um homem: golpes de perto quase não afetam Roberto Ghular.",
 			"combate": "Roberto Ghular nem sente o golpe. O que está dentro dele aguenta pancada.",
 			"miguel": "Roberto não sente pancada. Não é mais o corpo de um homem que está ali."
 		},
@@ -69,7 +69,7 @@
 			"pistas": [
 				"diario_bibliotecaria"
 			],
-			"texto": "Roberto pedia os livros sobre o pacto de novo e de novo. O pacto que o mudou também o prende: rituais ferem Roberto Ghular mais que armas.",
+			"texto": "O delegado levou da biblioteca o livro do pacto sem registrar o caso. Quem se entrega a esse pacto também fica preso a ele: rituais ferem Roberto Ghular mais que armas.",
 			"combate": "O ritual arranca um grito de Roberto Ghular que não é a voz dele.",
 			"miguel": "O pacto que tomou Roberto ainda o prende. Ritual dói nele de um jeito que bala não dói."
 		},
@@ -79,7 +79,7 @@
 			"pistas": [
 				"livro_faltando"
 			],
-			"texto": "Num canto da mesa sobrou uma página solta do livro levado: \"A Senhora do Sangue não se toca com as mãos. Quem chega perto dela sangra antes de ferir.\" A Dama de Sangue resiste a golpes de perto.",
+			"texto": "Entre as páginas do Sanguis Orchid, uma nota solta: \"A Senhora do Sangue não se toca com as mãos. Quem chega perto dela sangra antes de ferir.\" A Dama de Sangue resiste a golpes de perto.",
 			"combate": "O golpe afunda no sangue da Dama como em água. De perto ela quase não se fere.",
 			"miguel": "Quem chega perto dela sangra antes de ferir. De longe, sempre de longe."
 		},

@@ -71,13 +71,13 @@ func _run() -> void:
 	_check(fernando.max_san == san0 and fernando.max_pv == pv0, "sem acessório, PV e SAN voltam ao normal")
 	room.gear_equip(fernando, "secundaria", esc)
 	_check(int(fernando.mag.get("escopeta", -1)) == 0, "escopeta recém-achada começa com o carregador vazio")
-	# Pista perturbadora (Caio morto) tira SAN de quem leu.
+	# Pista perturbadora (banco quebrado, com sangue) tira SAN de quem leu. (O Caio está vivo até a árvore: a pista dele não perturba.)
 	var leitor: Combatant = room.player
 	var san_antes: int = leitor.san
-	room.dialog_clue = "caio"
+	room.dialog_clue = "banco_quebrado"
 	room._close_dialog()
-	_check(leitor.san == san_antes - 3 and room.seen_clues.has("caio"), "pista do Caio tira 3 de SAN de quem leu")
-	room.seen_clues.erase("caio")
+	_check(leitor.san == san_antes - 1 and room.seen_clues.has("banco_quebrado"), "pista do banco quebrado tira 1 de SAN de quem leu")
+	room.seen_clues.erase("banco_quebrado")
 	leitor.san = san_antes
 	# Inimigo abatido larga itens da ficha.
 	var cultista: Combatant = room.cfg.make_enemy("cultista", Vector2.ZERO)

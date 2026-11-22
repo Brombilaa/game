@@ -1,0 +1,58 @@
+{
+	"_nota": "Salão do ritual (roteiro 'Discurso do Beto/Roberto Ghular na cripta'; Léo: tom calmo e fanático). Toca ao entrar no salão, antes de os cultistas e a luta. Usa só fatos já dados pelo Léo: o ciclo, o Serafim Vermelho, os sete sacrifícios, a Lisandra, o papel da Letícia. NÃO revela como derrotar a Dama. Falas provisórias do Claude.",
+	"passos": [
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.7,
+			"junto": true
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "miguel",
+					"texto": "Estão pendurados... e respiram. Todos vivos."
+				},
+				{
+					"quem": "nikolai",
+					"texto": "Então ainda há tempo. Pouco."
+				}
+			]
+		},
+		{
+			"faz": "legenda",
+			"texto": "No altar, Roberto Ghular espera sem se mover.",
+			"tempo": 2.2
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "ghular",
+					"texto": "Vocês chegaram cedo. Eu esperava só a Ordem na hora do ritual, não os recrutas dela."
+				},
+				{
+					"quem": "ghular",
+					"texto": "A cidade me chama de louco. Mas sete vezes, a cada geração, o Serafim Vermelho aceita o sangue de Aurora e a Santa das Flores volta para nos proteger."
+				},
+				{
+					"quem": "ghular",
+					"texto": "Sete almas escolhidas. Seis já estão aqui. A sétima foi a Lisandra, na praça. Foi bem aceita: as pétalas vermelhas não mentem."
+				},
+				{
+					"quem": "ghular",
+					"texto": "A Letícia é a oferta de fechamento. Não tenho raiva dela. A pena é que ela quis ver demais."
+				},
+				{
+					"quem": "ghular",
+					"texto": "Não é um crime. É uma fé. E vocês vão assistir ao milagre."
+				},
+				{
+					"quem": "fernando",
+					"texto": "Quando eu mandar, vocês dois cobrem. Eu abro o caminho."
+				}
+			]
+		}
+	]
+}
