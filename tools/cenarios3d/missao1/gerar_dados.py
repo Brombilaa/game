@@ -257,7 +257,7 @@ def necrotorio(d, p, ret):
     _pista(d, p, "leticia_despedida", *P["leticia_dentro"],
            "Letícia está sentada na cadeira do legista, pálida. Talvez seja hora de se despedir.", raio=110, bolinha=(0, -96))
     d["pistas"][-1]["requer"] = "necrotorio_depois"
-    d["pistas"][-1]["texto_antes"] = "Letícia espera junto ao banco, do lado de fora."
+    d["pistas"][-1]["texto_antes"] = "Letícia espera perto da entrada, apoiada na parede."
     d["gatilhos"].append({"id": "despedida", "apos": "leticia_despedida", "tipo": "cena", "cena": "necrotorio_despedida", "marca": "necrotorio_despedida"})
 
 

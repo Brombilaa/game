@@ -27,24 +27,24 @@
  "inicio": {
   "grupo": [
    [
-    262.4,
-    780.8
+    243.2,
+    537.6
    ],
    [
-    320.0,
-    806.4
+    294.4,
+    563.2
    ],
    [
-    211.2,
-    812.8
+    198.4,
+    563.2
    ]
   ],
   "npcs": [
    {
     "id": "leticia",
     "pos": [
-     505.6,
-     716.8
+     371.2,
+     524.8
     ]
    }
   ]
@@ -995,7 +995,7 @@
    "texto": "Letícia está sentada na cadeira do legista, pálida. Talvez seja hora de se despedir.",
    "provisorio": true,
    "requer": "necrotorio_depois",
-   "texto_antes": "Letícia espera junto ao banco, do lado de fora."
+   "texto_antes": "Letícia espera perto da entrada, apoiada na parede."
   }
  ],
  "gatilhos": [
@@ -1029,10 +1029,10 @@
   {
    "id": "saida",
    "ret": [
-    0.0,
-    825.6,
-    1190.4,
-    70.3
+    236.8,
+    608.0,
+    102.3,
+    64.0
    ],
    "acao": "destinos",
    "requer": "necrotorio_despedida",
