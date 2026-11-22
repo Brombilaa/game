@@ -111,7 +111,7 @@ func _tela_do_dado() -> void:
 	tela._clique(_clique_mouse())
 	_check(not fechou[0], "não fecha antes do resultado")
 	await create_timer(1.3).timeout
-	_check(tela._faixa.text == "SUCESSO" and tela._fichas.get_child_count() == 3, "mostra as fichas da conta e a faixa SUCESSO")
+	_check(tela._faixa.text == "SUCESSO" and tela._fichas.get_child_count() == 2, "mostra as fichas da conta e a faixa SUCESSO")
 	tela._clique(_clique_mouse())
 	await process_frame
 	_check(fechou[0], "o clique depois do resultado fecha a tela")

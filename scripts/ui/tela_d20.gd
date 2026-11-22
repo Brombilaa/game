@@ -50,7 +50,11 @@ func montar(r: Dictionary, duracao := 2.6) -> void:
 	centro.add_child(col)
 	var p: Dictionary = TestePericia.PERICIAS.get(str(r.get("pericia", "")), {"nome": "", "atr": ""})
 	col.add_child(_rotulo("%s (%s)" % [p["nome"], p["atr"]], 26, PAPEL))
-	col.add_child(_rotulo("%s rola o d20" % str(r.get("quem", "")), 16, Color(0.8, 0.75, 0.64)))
+	col.add_child(_rotulo(str(r.get("quem", "")), 16, Color(0.8, 0.75, 0.64)))
+	var folga := Control.new()  # espaço para a etiqueta da DT, que sobe sobre a borda do anel
+	folga.custom_minimum_size = Vector2(0, 14)
+	folga.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(folga)
 	_anel = Control.new()
 	_anel.custom_minimum_size = Vector2(300, 300)
 	_anel.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -118,21 +122,9 @@ func _revelar() -> void:
 	dado.brilho = Color(_cor_anel.r, _cor_anel.g, _cor_anel.b, 0.9)
 	dado.queue_redraw()
 	_anel.queue_redraw()
-	for texto in ["d20  %d" % int(_r["dado"]), "+ %d" % int(_r["bonus"]), "= %d" % int(_r["total"])]:
-		var f := PanelContainer.new()
-		var sb := StyleBoxFlat.new()
-		sb.bg_color = Color(0.1, 0.08, 0.06, 0.9)
-		sb.border_color = OURO
-		sb.set_border_width_all(2)
-		sb.set_corner_radius_all(6)
-		sb.content_margin_left = 16
-		sb.content_margin_right = 16
-		sb.content_margin_top = 6
-		sb.content_margin_bottom = 6
-		f.add_theme_stylebox_override("panel", sb)
-		f.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		f.add_child(_rotulo(texto, 20, PAPEL))
-		_fichas.add_child(f)
+	# só o bônus e o total, sem blocos: o número do dado já está no d20 (Léo, 22/11)
+	for texto in ["+ %d" % int(_r["bonus"]), "= %d" % int(_r["total"])]:
+		_fichas.add_child(_rotulo(texto, 30, PAPEL))
 	_faixa.text = resultado_texto(_r)
 	_faixa.add_theme_color_override("font_color", _cor_anel)
 	_faixa.pivot_offset = _faixa.size * 0.5
