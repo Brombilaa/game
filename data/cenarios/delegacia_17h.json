@@ -1513,7 +1513,8 @@
      "item": "pave",
      "qtd": 3
     }
-   ]
+   ],
+   "sem_diario": true
   },
   {
    "id": "kit_recepcao",

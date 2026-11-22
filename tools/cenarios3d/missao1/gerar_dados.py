@@ -157,6 +157,7 @@ def delegacia17(d, p, ret):
     _pista(d, p, "geladeira_pave", 4.0, 14.0,
            "Na geladeira dos fundos, o pavê do aniversário da Ribeiro, feito pela mãe dela. Duas fatias já cortadas, uma intacta: é bom mesmo.",
            da=[("pave", 3)])
+    d["pistas"][-1]["sem_diario"] = True  # a geladeira não é pista: só dá o pavê, sem entrada no diário
     _pista(d, p, "kit_recepcao", 3.0, 15.0,
            "Debaixo de um banco da recepção, esquecido por alguém com pressa, há um kit com curativos e uma bandagem.",
            da=[("curativo", 1), ("bandagem", 1)])
