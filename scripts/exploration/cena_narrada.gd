@@ -5,7 +5,7 @@ extends CanvasLayer
 # cinema, mostra a narração em blocos (como o Léo escreveu) e as falas do grupo, e devolve o jogo exatamente como estava.
 # Por isso serve no meio do combate (a Dama surge no meio de um golpe) e também depois dele.
 #
-# Passos de data/cenas/<id>.json (mesmo arquivo da CenaRoteiro, só um subconjunto):
+# Passos de data/cenas_narradas/<id>.json (mesmo formato da CenaRoteiro, só um subconjunto, mais "narrar"):
 #   cinema   {"estado": "entrar" | "sair", "tempo": s}
 #   narrar   {"texto": "...", "tempo": s, "tremor": px, "flash": 0..1}   bloco de narração; clique/espaço avança
 #   dialogo  {"falas": [{"quem": id, "texto": "..."}, ...]}               nome em dourado + fala; clique avança
@@ -16,6 +16,7 @@ extends CanvasLayer
 
 signal terminou
 
+const PASTA := "res://data/cenas_narradas/"  # fora de data/cenas: os passos daqui (narrar) não são da CenaRoteiro
 const FONT := preload("res://assets/fonts/SpecialElite-Regular.ttf")
 const OURO := Color(0.82, 0.68, 0.4)
 const TEXTO := Color(0.96, 0.92, 0.84)
@@ -36,8 +37,16 @@ var _tremor_forca := 0.0
 var _pausado_antes := false
 
 
+static func carregar(cena_id: String) -> Array:
+	var f := FileAccess.open(PASTA + cena_id + ".json", FileAccess.READ)
+	if f == null:
+		return []
+	var d: Variant = JSON.parse_string(f.get_as_text())
+	return d.get("passos", []) if d is Dictionary else []
+
+
 static func tocar(sala: Node, cena_id: String) -> void:
-	var lista := CenaRoteiro.carregar(cena_id)
+	var lista := carregar(cena_id)
 	if lista.is_empty() or pular:
 		return
 	var c := CenaNarrada.new()
