@@ -13,6 +13,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	Progresso.autosave_ativo = false
+	TestePericia.animar = false  # a tela do dado tem teste próprio (test_testes_pericia)
 	_regra()
 	await _no_jogo()
 	print("Falhas: %d" % failures if failures > 0 else "OK: test_testes_pericia")
@@ -72,8 +73,61 @@ func _escolha() -> void:
 	await process_frame
 
 
+# A tela do d20 rolando (Léo, 22/11): o dado gira, para com o número sorteado virado para a frente, mostra a conta e só fecha
+# com o clique depois do resultado.
+func _tela_do_dado() -> void:
+	var d := DadoD20.new()
+	_check(d.faces.size() == 20 and d.verts.size() == 12, "o dado é um icosaedro: 20 faces e 12 vértices")
+	var soma_ok := true
+	for i in d.faces.size():
+		for j in d.faces.size():
+			if d.normais[i].dot(d.normais[j]) < -0.99 and d.numeros[i] + d.numeros[j] != 21:
+				soma_ok = false
+	var vistos := {}
+	for n in d.numeros:
+		vistos[n] = true
+	_check(soma_ok and vistos.size() == 20, "faces opostas somam 21 e os números de 1 a 20 aparecem uma vez")
+	for valor in [1, 7, 20]:
+		d.parado(valor)
+		var frente := -1
+		var melhor := -2.0
+		var b := Basis(d.q)
+		for i in d.faces.size():
+			var z := (b * d.normais[i]).z
+			if z > melhor:
+				melhor = z
+				frente = i
+		_check(d.numeros[frente] == valor and melhor > 0.99, "o dado para com o %d virado para a frente" % valor)
+	var tela := TelaD20.new()
+	root.add_child(tela)
+	var r := {"pericia": "ocultismo", "quem": "Miguel", "dt": 12, "dado": 14, "bonus": 5, "total": 19, "passou": true}
+	var fechou := [false]
+	tela.fechada.connect(func(): fechou[0] = true)
+	tela.montar(r, 0.4)
+	var antes: Quaternion = tela.dado.q
+	for i in 8:
+		await process_frame
+	_check(not tela.dado.q.is_equal_approx(antes), "o dado gira enquanto rola")
+	tela._clique(_clique_mouse())
+	_check(not fechou[0], "não fecha antes do resultado")
+	await create_timer(1.3).timeout
+	_check(tela._faixa.text == "SUCESSO" and tela._fichas.get_child_count() == 3, "mostra as fichas da conta e a faixa SUCESSO")
+	tela._clique(_clique_mouse())
+	await process_frame
+	_check(fechou[0], "o clique depois do resultado fecha a tela")
+	_check(TelaD20.resultado_texto({"dado": 1, "passou": false}) == "FALHA CRÍTICA" and TelaD20.resultado_texto({"dado": 20, "passou": true}) == "SUCESSO CRÍTICO", "20 e 1 naturais têm faixa de crítico")
+
+
+func _clique_mouse() -> InputEventMouseButton:
+	var e := InputEventMouseButton.new()
+	e.pressed = true
+	e.button_index = MOUSE_BUTTON_LEFT
+	return e
+
+
 func _no_jogo() -> void:
 	await _escolha()
+	await _tela_do_dado()
 	Missao1.reiniciar()
 	Missao1.marcar("necrotorio_chegada")
 	Missao1.marcar("teste_necrotorio_tutu_pescoco_passou")

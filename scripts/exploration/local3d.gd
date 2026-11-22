@@ -477,7 +477,20 @@ func _tentar_teste(id: String, t: Dictionary) -> Dictionary:
 	var escolha := {}
 	if not TestePericia.feito(id) and not grupo.is_empty():
 		escolha = await _escolher_quem_rola(pericias, dt, grupo)
-	return TestePericia.tentar(id, pericias, dt, grupo, _rng_teste(), 0, escolha)
+	var r := TestePericia.tentar(id, pericias, dt, grupo, _rng_teste(), 0, escolha)
+	if TestePericia.animar and r.has("dado") and not r.get("salvo", false):
+		await _mostrar_dado(r)
+	return r
+
+
+# A tela do d20 rolando (TelaD20): o jogador vê o dado parar e a conta antes de ler o texto da pista.
+func _mostrar_dado(r: Dictionary) -> void:
+	busy = true
+	var tela := TelaD20.new()
+	add_child(tela)
+	tela.montar(r)
+	await tela.fechada
+	busy = false
 
 
 func _escolher_quem_rola(pericias: Array, dt: int, grupo: Array) -> Dictionary:

@@ -19,6 +19,9 @@ const PERICIAS := {
 }
 const BONUS_OCULTISTA := 2
 
+# A tela do dado rolando (TelaD20) aparece depois da escolha; os testes automáticos a desligam.
+static var animar := true
+
 # Detalhes da rolagem desta sessão (id do teste -> resultado). O que vai no save é só passou/falhou, nas marcas.
 static var rolados := {}
 

@@ -14,6 +14,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	Progresso.autosave_ativo = false
+	TestePericia.animar = false  # a tela do dado tem teste próprio (test_testes_pericia)
 	await _chegadas()
 	await _necroterio_e_geraldo()
 	await _destinos()

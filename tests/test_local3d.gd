@@ -17,6 +17,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	Progresso.autosave_ativo = false  # não mexe nos saves de quem roda os testes
+	TestePericia.animar = false  # a tela do dado tem teste próprio (test_testes_pericia)
 	_pathfinder_grade()
 	for id in LOCAIS:
 		var s := Scenario.load_id(id)
