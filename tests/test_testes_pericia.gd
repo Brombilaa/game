@@ -50,7 +50,30 @@ func _abrir(id: String) -> Node:
 	return room
 
 
+# O jogador escolhe quem rola (Léo, 22/11): a tela abre antes do dado, lista os agentes com o bônus e rola quem foi escolhido.
+func _escolha() -> void:
+	Missao1.reiniciar()
+	Missao1.marcar("necrotorio_chegada")
+	var room = await _abrir("necrotorio")
+	room._inspect("tutu_pescoco")
+	await process_frame
+	_check(room.menu_teste != null and room.busy, "necrotério: a tela de escolha abre antes do dado")
+	var botoes: Array = room.menu_teste.find_children("*", "Button", true, false)
+	var alvo: Button = null
+	for b in botoes:
+		if b.text.begins_with("Miguel"):
+			alvo = b
+	_check(botoes.size() == room.party.size() and alvo != null and alvo.text.contains("bônus"), "um botão por agente, com o bônus de cada um")
+	alvo.pressed.emit()
+	await process_frame
+	_check(room.menu_teste == null and not room.busy and room.dialog_text.text.contains("Miguel: d20"), "rola quem o jogador escolheu e o texto mostra o dado")
+	_check(TestePericia.feito("necrotorio_tutu_pescoco"), "o resultado fica salvo")
+	room.queue_free()
+	await process_frame
+
+
 func _no_jogo() -> void:
+	await _escolha()
 	Missao1.reiniciar()
 	Missao1.marcar("necrotorio_chegada")
 	Missao1.marcar("teste_necrotorio_tutu_pescoco_passou")
@@ -85,6 +108,27 @@ func _no_jogo() -> void:
 		_check(Missao1.tem("geraldo_1977") and room.mode == room.Mode.EXPLORATION, "Geraldo (%s): a conversa toca e devolve o controle" % ("falhou" if falhou else "passou"))
 		room.queue_free()
 		await process_frame
+	Missao1.reiniciar()
+	Missao1.marcar("geraldo_chegada")
+	Missao1.marcar("geraldo_conversa")
+	room = await _abrir("casa_geraldo")
+	room._inspect("geraldo_1977")
+	room._close_dialog()
+	for i in 120:
+		await process_frame
+		if room.menu_teste != null:
+			break
+	_check(room.menu_teste != null and room.menu_teste.find_children("*", "Button", true, false).size() == room.party.size() * 2, "Geraldo: a escolha oferece cada agente com Diplomacia e Intimidação")
+	room.menu_teste.find_children("*", "Button", true, false)[0].pressed.emit()
+	for i in 600:
+		await process_frame
+		if room.dialog_layer.visible:
+			room._close_dialog()
+		if Missao1.tem("geraldo_1977") and room.mode == room.Mode.EXPLORATION and not room.busy and room.menu_teste == null:
+			break
+	_check(TestePericia.feito("casa_geraldo_geraldo_1977") and room.mode == room.Mode.EXPLORATION, "Geraldo: depois da escolha o dado rola e a conversa toca")
+	room.queue_free()
+	await process_frame
 	Engine.time_scale = 1.0
 
 

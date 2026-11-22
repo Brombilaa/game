@@ -110,6 +110,9 @@ func _investigacao() -> void:
 		var antes: int = room.inventory.count("kit_primeiros_socorros") + room.inventory.count("municao_pistola") + room.inventory.count("curativo")
 		for cid in room.scenario.clues:
 			room._inspect(cid)
+			if room.menu_teste != null:  # pista com teste de perícia: o jogador escolhe quem rola (22/11)
+				room.menu_teste.find_children("*", "Button", true, false)[0].pressed.emit()
+				await process_frame
 			room._close_dialog()
 		_check(room.seen_clues.size() == room.scenario.clues.size(), id + ": todas as pistas podem ser lidas")
 		var depois: int = room.inventory.count("kit_primeiros_socorros") + room.inventory.count("municao_pistola") + room.inventory.count("curativo")

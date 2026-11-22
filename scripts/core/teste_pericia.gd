@@ -6,8 +6,8 @@ extends RefCounted
 #
 # Perícias do jogo (Léo): Ocultismo, Religião, Tecnologia (INT); Diplomacia, Intuição, Intimidação (PRE, correção de 20/11).
 # Ocultista soma +2 em Ocultismo (Léo).
-# PROVISÓRIO (Claude, 22/11): o roteiro diz que o jogador escolhe quem rola, mas essa tela ainda não existe; por enquanto
-# rola o agente do grupo com o maior total possível (o primeiro, em caso de empate).
+# Quem rola (Léo, 22/11: "jogador escolhe"): a tela de escolha lista cada agente com a perícia e o bônus antes do dado
+# (opcoes). Sem escolha (testes, ou se a tela não abrir), rola o agente de maior bônus (melhor).
 
 const PERICIAS := {
 	"ocultismo": {"nome": "Ocultismo", "atr": "INT"},
@@ -35,6 +35,15 @@ static func bonus(pericia: String, atributos: Dictionary, ocultista: bool) -> in
 	return b
 
 
+# Opções da tela de escolha: um item por agente e perícia, com o bônus de cada um.
+static func opcoes(pericias: Array, grupo: Array) -> Array:
+	var out: Array = []
+	for m in grupo:
+		for p in pericias:
+			out.append({"pericia": str(p), "quem": str(m.get("nome", "")), "bonus": bonus(str(p), m.get("atributos", {}), bool(m.get("ocultista", false)))})
+	return out
+
+
 # Quem rola entre `grupo` (lista de {"nome", "atributos", "ocultista"}) e com qual perícia de `pericias`: o maior bônus.
 static func melhor(pericias: Array, grupo: Array) -> Dictionary:
 	var best := {}
@@ -49,8 +58,8 @@ static func melhor(pericias: Array, grupo: Array) -> Dictionary:
 
 
 # Uma rolagem (sem guardar). `dado` 0 = sorteia (rng); valor de 1 a 20 = dado já rolado (testes).
-static func rolar(pericias: Array, dt: int, grupo: Array, rng: RandomNumberGenerator, dado := 0) -> Dictionary:
-	var m := melhor(pericias, grupo)
+static func rolar(pericias: Array, dt: int, grupo: Array, rng: RandomNumberGenerator, dado := 0, escolha := {}) -> Dictionary:
+	var m := escolha.duplicate() if not escolha.is_empty() else melhor(pericias, grupo)
 	if m.is_empty():
 		return {}
 	var d := dado if dado > 0 else rng.randi_range(1, 20)
@@ -60,8 +69,13 @@ static func rolar(pericias: Array, dt: int, grupo: Array, rng: RandomNumberGener
 	return m
 
 
+# Já foi rolado (ou falhou/passou num save anterior)?
+static func feito(id: String) -> bool:
+	return Missao1.tem("teste_%s_passou" % id) or Missao1.tem("teste_%s_falhou" % id)
+
+
 # Teste de uma pista ou cena: uma tentativa só. Repetir devolve o resultado salvo.
-static func tentar(id: String, pericias: Array, dt: int, grupo: Array, rng: RandomNumberGenerator, dado := 0) -> Dictionary:
+static func tentar(id: String, pericias: Array, dt: int, grupo: Array, rng: RandomNumberGenerator, dado := 0, escolha := {}) -> Dictionary:
 	if Missao1.tem("teste_%s_passou" % id) or Missao1.tem("teste_%s_falhou" % id):
 		var g: Dictionary = rolados.get(id, {})
 		g["passou"] = Missao1.tem("teste_%s_passou" % id)
@@ -70,7 +84,7 @@ static func tentar(id: String, pericias: Array, dt: int, grupo: Array, rng: Rand
 		if not g.has("pericia"):
 			g["pericia"] = str(pericias[0])
 		return g
-	var r := rolar(pericias, dt, grupo, rng, dado)
+	var r := rolar(pericias, dt, grupo, rng, dado, escolha)
 	if r.is_empty():
 		return r
 	rolados[id] = r

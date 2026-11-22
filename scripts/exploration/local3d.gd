@@ -32,6 +32,8 @@ var chefe_virou := false  # a Dama de Sangue já surgiu
 var chefe_dama: ChefeDama  # a luta da Dama (flores, pendurados, fases); nulo até ela surgir
 var portas := {}  # id -> {"rect": Rect2, "chave": item, "no": MeshInstance3D}: portas trancadas que ainda não abriram
 var porta_avisada := ""  # a porta cujo aviso "Trancada" já apareceu nesta aproximação
+signal teste_escolhido(escolha: Dictionary)
+var menu_teste: CanvasLayer  # a escolha de quem rola o teste de perícia (nulo = fechada)
 var menu_destinos: CanvasLayer  # a escolha entre os três lugares livres (nulo = fechada)
 var fim_tocou := false  # a cutscene do tentáculo (fim da missão 1) já começou
 var fim_capitulo: FimCapitulo  # cutscene externa e cartão AURORA, no fim do celeiro
@@ -458,18 +460,67 @@ func _inspect(cid: String) -> void:
 			var t: Dictionary = bruto["teste"]
 			if not t.has("texto_base"):
 				t["texto_base"] = c["texto"]  # o texto do cenário é o superficial; guarda para não trocar duas vezes
-			var r := _tentar_teste("%s_%s" % [local_id, cid], t)
+			var r: Dictionary = await _tentar_teste("%s_%s" % [local_id, cid], t)
 			c["texto"] = ("%s\n\n%s" % [TestePericia.texto(r), str(t["completo"]) if r.get("passou", false) else str(t["texto_base"])])
 			break
 	_show_dialog(c.inspecao, c.texto, cid)
 
 
-# Rola (uma vez) o teste de `t` ({"pericias": [...], "dt": n}) com o grupo atual. Resultado salvo nas marcas.
+# Rola (uma vez) o teste de `t` ({"pericias": [...], "dt": n}). O jogador escolhe quem rola antes do dado, vendo a DT e o
+# bônus de cada agente (Léo, 22/11). Se o teste já foi feito, devolve o resultado salvo sem perguntar.
 func _tentar_teste(id: String, t: Dictionary) -> Dictionary:
 	var grupo: Array = []
 	for u in party:
 		grupo.append({"nome": u.name, "atributos": u.atributos, "ocultista": Ficha.classe_de(rules.cfg.game_data, u.personagem) == "ocultista"})
-	return TestePericia.tentar(id, t.get("pericias", []), int(t.get("dt", 12)), grupo, _rng_teste())
+	var pericias: Array = t.get("pericias", [])
+	var dt := int(t.get("dt", 12))
+	var escolha := {}
+	if not TestePericia.feito(id) and not grupo.is_empty():
+		escolha = await _escolher_quem_rola(pericias, dt, grupo)
+	return TestePericia.tentar(id, pericias, dt, grupo, _rng_teste(), 0, escolha)
+
+
+func _escolher_quem_rola(pericias: Array, dt: int, grupo: Array) -> Dictionary:
+	if menu_teste != null:
+		return {}
+	busy = true
+	path = PackedVector2Array()
+	moving_unit = null
+	menu_teste = CanvasLayer.new()
+	menu_teste.layer = 86
+	add_child(menu_teste)
+	var fundo := ColorRect.new()
+	fundo.color = Color(0, 0, 0, 0.62)
+	fundo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fundo.mouse_filter = Control.MOUSE_FILTER_STOP
+	menu_teste.add_child(fundo)
+	var centro := CenterContainer.new()
+	centro.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fundo.add_child(centro)
+	var caixa := VBoxContainer.new()
+	caixa.add_theme_constant_override("separation", 8)
+	caixa.custom_minimum_size = Vector2(460, 0)
+	centro.add_child(caixa)
+	var nomes: Array = []
+	for p in pericias:
+		nomes.append("%s (%s)" % [TestePericia.PERICIAS[str(p)]["nome"], TestePericia.PERICIAS[str(p)]["atr"]])
+	var tit := Label.new()
+	tit.text = "Teste de %s · DT %d\nQuem rola o d20?" % [" ou ".join(nomes), dt]
+	tit.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tit.add_theme_font_size_override("font_size", 20)
+	tit.add_theme_color_override("font_color", Color(0.93, 0.89, 0.8))
+	caixa.add_child(tit)
+	for o in TestePericia.opcoes(pericias, grupo):
+		var b := Button.new()
+		b.text = "%s · %s  (bônus %+d)" % [o["quem"], TestePericia.PERICIAS[o["pericia"]]["nome"], int(o["bonus"])]
+		b.custom_minimum_size = Vector2(0, 40)
+		b.pressed.connect(func(): teste_escolhido.emit(o))
+		caixa.add_child(b)
+	var escolha: Dictionary = await teste_escolhido
+	menu_teste.queue_free()
+	menu_teste = null
+	busy = false
+	return escolha
 
 
 func _rng_teste() -> RandomNumberGenerator:
@@ -494,7 +545,7 @@ func _run_trigger(trigger: Dictionary) -> void:
 			if m != "":
 				Missao1.marcar(m)
 			if trigger.has("teste"):  # a cena depende de um teste de perícia (Geraldo): falhou = a versão curta ("cena_falha")
-				var r := _tentar_teste("%s_%s" % [local_id, cena_id], trigger["teste"])
+				var r: Dictionary = await _tentar_teste("%s_%s" % [local_id, cena_id], trigger["teste"])
 				_show_dialog("", TestePericia.texto(r), "")
 				while dialog_layer.visible:
 					await get_tree().process_frame
