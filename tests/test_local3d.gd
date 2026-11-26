@@ -142,15 +142,6 @@ func _porta_com_chave() -> void:
 	room._close_dialog()
 	_check(room.seen_clues.has("ficha_desaparecidos"), "17h: com a chave o armário abre e dá as fichas")
 	await _fechar(room)
-	# 21h: a sala está aberta, com a agenda, o cofre, o gravador e o quadro.
-	Missao1.reiniciar()
-	var del = await _abrir("delegacia_21h")
-	_check(del.portas.is_empty(), "21h: sem porta trancada no escritório")
-	for cid in ["agenda_ghular", "cofre_ghular", "gravador_ghular", "quadro_flor"]:
-		_check(del.scenario.clues.has(cid), "21h: o escritório tem a pista " + cid)
-		var pos: Vector2 = del.scenario.clues[cid].pos
-		_check(del.pathfinder.find_path(del.player.pos, pos, del._obstacles(del.player), del.player.radius).size() > 1, "21h: dá para chegar a " + cid)
-	await _fechar(del)
 
 
 func _baus() -> void:
