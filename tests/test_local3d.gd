@@ -314,7 +314,7 @@ func _cripta() -> void:
 	_check(not room.seen_clues.has("leticia"), "cripta: antes do combate a Letícia não acorda")
 	# Roberto com pouca vida: ele cai e a Dama de Sangue entra no mesmo combate.
 	room._start_combat()
-	roberto.pv = 8
+	roberto.pv = 5
 	room._show_attack(room.player, roberto, {"ok": true, "hit": true, "damage": 3, "crit": false, "blocked": false})
 	var dama: Combatant = null
 	for e in room.enemies:

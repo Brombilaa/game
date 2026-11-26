@@ -195,7 +195,7 @@ func _murchar(f: Dictionary) -> void:
 
 
 func _checar_fase2_por_vida() -> void:
-	if fase == 1 and dama.is_alive() and dama.pv <= float(d["fase2"]["abaixo_de"]) * dama.max_pv:
+	if fase == 1 and dama.is_alive() and float(d["fase2"]["abaixo_de"]) > 0.0 and dama.pv <= float(d["fase2"]["abaixo_de"]) * dama.max_pv:
 		_entrar_fase2()
 
 
