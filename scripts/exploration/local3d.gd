@@ -29,6 +29,8 @@ var niveis: Array = []  # áreas elevadas: {"h", "rampa", "ret": Rect2 + "dir"} 
 var adormecidos := {}  # trecho -> fichas dos inimigos que esperam o trecho ser revelado
 var ficha_de := {}  # inimigo -> a ficha dele nos dados (grupo, trecho)
 var chefe_virou := false  # a Dama de Sangue já surgiu
+var transformacao_pendente := false  # a Dama já existe nos dados, mas a cena da transformação ainda não tocou: ela e as flores ficam escondidas
+var transformacao_corpo: Combatant  # Roberto Ghular caído, de onde a Dama surge
 var chefe_dama: ChefeDama  # a luta da Dama (flores, pendurados, fases); nulo até ela surgir
 var portas := {}  # id -> {"rect": Rect2, "chave": item, "no": MeshInstance3D}: portas trancadas que ainda não abriram
 var porta_avisada := ""  # a porta cujo aviso "Trancada" já apareceu nesta aproximação
@@ -383,6 +385,8 @@ func _process(delta: float) -> void:
 	super(delta)
 	if chefe_dama != null:
 		chefe_dama.visual.sync()
+		if chefe_dama.visual.raiz != null and is_instance_valid(chefe_dama.visual.raiz):
+			chefe_dama.visual.raiz.visible = not transformacao_pendente  # flores e pendurados também esperam a cena
 	if mode == Mode.EXPLORATION and indo_para == "" and not _dialogo_aberto():
 		_zonas()
 		_portas()
@@ -599,15 +603,20 @@ func _depois_do_dano(target: Combatant) -> void:
 		turns.add_unit(dama)
 	chefe_dama = ChefeDama.new(self, dama, chefe.get("corpos", []))  # pendurados e flor Vermelha surgem com ela
 	_log(str(chefe["texto"]))
+	# Transformação (Léo, 26/11; roteiro 5b): em combate, a Dama e as flores ficam escondidas até a cena visual, que toca
+	# quando o turno de quem acertou acaba (como a cena do Fernando). Sem janela (testes) tudo surge na hora.
+	if mode == Mode.COMBAT and not CenaTransformacao.pular:
+		transformacao_pendente = true
+		transformacao_corpo = target
+		if turns != null and turns.current != null and party.has(turns.current):
+			turns.end_turn.call_deferred()  # o resto do turno do grupo se perde: a cena começa já
+		queue_redraw()
+		return
 	_popup(target.pos, "A DAMA DE SANGUE SURGE", "down")
 	audio.on_boss_appeared()
 	fx.shake_time = 0.5
 	fx.shake_px = 6.0
 	queue_redraw()
-	# Transformação (Léo, 22/11; roteiro 5b): o jogo congela e toca a narração do Léo. Em combate fica pausado no meio do
-	# golpe e volta exatamente de onde estava; sem janela (testes) passa direto.
-	if str(chefe.get("cena", "")) != "":
-		CenaNarrada.tocar(self, str(chefe["cena"]))
 
 
 # A Dama morreu: quem ainda estava no ritual (Léo, 19/11: só luta se for atacado) cai junto e o combate acaba.
@@ -649,6 +658,11 @@ func _start_combat(surprise_side: int = -1) -> void:
 # Fim da missão 1 (Léo, 20/11): com a Dama em 15% de vida ou menos (fim.limite de cripta.json), a cutscene do
 # tentáculo toca logo depois do turno do Fernando, sempre; se ele está caído, no fim do turno em que ela chegou lá.
 func _ao_fim_do_turno(u: Combatant) -> void:
+	if transformacao_pendente and mode == Mode.COMBAT and chefe_dama != null:
+		var cena := CenaTransformacao.new()
+		add_child(cena)
+		cena.iniciar(self, chefe_dama.dama, transformacao_corpo)
+		return
 	var fim: Dictionary = dados.get("fim", {})
 	if fim.is_empty() or fim_tocou or mode != Mode.COMBAT:
 		return
@@ -697,6 +711,8 @@ func _draw_health_bar(u: Combatant, at: Vector2) -> void:
 # O Fernando morto (cutscene do tentáculo) continua deitado na cena.
 func _drawn_units() -> Array[Combatant]:
 	var out := super()
+	if transformacao_pendente:
+		out.erase(chefe_dama.dama if chefe_dama != null else null)  # a Dama só aparece quando a cena termina
 	for m in party:
 		if m.dead and m.name == "Fernando" and Missao1.tem("fernando_morreu") and local_id == "cripta" and not out.has(m):
 			out.append(m)

@@ -296,7 +296,6 @@ def cripta(d, p, ret):
     # (passada de balanceamento de 19/11; era 25%).
     d["chefe"] = {"tipo": "roberto_ghular", "limite": 0.5, "vira": "dama_sangue", "marca": "dama_surgiu",
                   "texto": "Roberto Ghular crava a adaga no próprio peito. Do sangue dele se ergue a Dama de Sangue.", "provisorio": True,
-                  "cena": "dama_transformacao",  # narração do Léo (roteiro 5b) + reação do grupo: data/cenas_narradas/dama_transformacao.json
                   # Os seis pendurados vivos (Léo, 20/11; ChefeDama), na ordem em que ela devora (do mais jovem ao mais velho):
                   # fora do fosso, aos pares entre as três pontes, a 9,5 x 8,5 m do centro do altar. Posições provisórias.
                   "corpos": [p(31 + 9.5 * math.cos(math.radians(a)), 15 + 8.5 * math.sin(math.radians(a))) for a in (6, 46, 126, 166, 242, 282)]}
