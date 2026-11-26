@@ -373,7 +373,7 @@ func _diario_lugar() -> String:
 func _enemy_variant(i: int) -> String:
 	if i >= enemies.size():
 		return "cultista"
-	if enemies[i].name == "Dama de Sangue" or enemies[i].name == "Criatura de Sangue":  # o zumbi do necrotério (22/11)
+	if enemies[i].name == "Dama de Sangue" or enemies[i].name == "Zumbi de Sangue":  # o zumbi do necrotério (22/11)
 		return CREATURE_VARIANT
 	return "atirador" if enemies[i].name == "Atirador" or enemies[i].name == "Roberto Ghular" else "cultista"
 
