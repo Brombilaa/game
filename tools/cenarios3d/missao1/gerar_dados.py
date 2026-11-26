@@ -129,7 +129,7 @@ def delegacia17(d, p, ret):
            "O livro de ocorrências está aberto no balcão. Nas últimas três semanas, a mesma anotação: \"Barulho na Fazenda Ghular\". Nenhuma viatura foi enviada. A última página foi arrancada.",
            inspecao="livro_ocorrencias")
     _pista(d, p, "agenda_ghular", 14.0, 3.4,
-           "Na agenda do delegado Ghular, sete datas do último mês estão circuladas, cada uma com uma orquídea vermelha desenhada a caneta. A sétima é de ontem. Na margem de todo sábado, a mesma anotação seca: \"treino\".")
+           "Na agenda do delegado Ghular, sete datas do último mês estão circuladas, cada uma com uma orquídea vermelha desenhada a caneta. A sétima é de ontem.")
     _pista(d, p, "gaveta_provas", 14.8, 9.8,
            "A gaveta da sala de provas foi forçada. Dentro, entre papéis manchados, ainda restam algumas balas soltas e um celular de tela rachada, num saco de provas.",
            da=[("municao_pistola", 6), ("celular_quebrado", 1)])
