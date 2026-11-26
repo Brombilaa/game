@@ -1312,23 +1312,6 @@
    "inspecao": "res://assets/sprites/pistas/livro_ocorrencias.png"
   },
   {
-   "id": "agenda_ghular",
-   "pos": [
-    992.0,
-    313.6
-   ],
-   "raio": 75,
-   "ordem": 1,
-   "bolinha": [
-    0,
-    -30
-   ],
-   "texto": "Na agenda do delegado Ghular, sete datas do último mês estão circuladas, cada uma com uma orquídea vermelha desenhada a caneta. A sétima é de ontem. Na margem de todo sábado, a mesma anotação seca: \"treino\".",
-   "provisorio": true,
-   "essencial": true,
-   "resumo": "O grupo deduz que o delegado marcava datas e sábados em segredo: o sumiço dos sete segue um calendário."
-  },
-  {
    "id": "gaveta_provas",
    "pos": [
     1043.2,
@@ -1340,7 +1323,7 @@
     0,
     -30
    ],
-   "texto": "A gaveta da sala de provas foi forçada. Dentro, entre papéis manchados, ainda restam algumas balas de pistola soltas e um celular de tela rachada, num saco de provas. Ao lado, o saco etiquetado como fuzil de caça está vazio.",
+   "texto": "A gaveta da sala de provas foi forçada. Dentro, entre papéis manchados, ainda restam algumas balas soltas e um celular de tela rachada, num saco de provas.",
    "provisorio": true,
    "da": [
     {
@@ -1367,7 +1350,8 @@
    ],
    "texto": "No arquivo, uma pasta com sete fichas de desaparecidos de Aurora. Nada liga uma à outra: idades, bairros e lugares do sumiço são todos diferentes. A mais recente é de ontem à noite: Lisandra de Sá, 38 anos, funcionária de farmácia, vista pela última vez perto da praça.",
    "provisorio": true,
-   "inspecao": "res://assets/sprites/pistas/ficha_07.png",
+   "chave": "chave_armario",
+   "texto_trancado": "O armário de evidências está trancado. A chave deve estar em algum lugar da recepção.",
    "inspecoes": [
     {
      "imagem": "res://assets/sprites/pistas/ficha_01.png",
@@ -1404,7 +1388,10 @@
      "titulo": "Ficha 7/7 · Lisandra de Sá",
      "texto": "Lisandra de Sá, 38 anos, funcionária de farmácia. Sumiu ontem à noite na praça, voltando do trabalho. É a mais recente."
     }
-   ]
+   ],
+   "inspecao": "res://assets/sprites/pistas/ficha_07.png",
+   "essencial": true,
+   "resumo": "O grupo deduz que o armário de evidências guarda as fichas dos sete desaparecidos, e que nada as liga à primeira vista."
   },
   {
    "id": "cela_arranhoes",
@@ -1433,45 +1420,16 @@
     0,
     -30
    ],
-   "texto": "O chaveiro da recepção está quase vazio. Sobrou uma chave presa com uma etiqueta: \"Escritório do Delegado\".",
+   "texto": "O chaveiro da recepção está quase vazio. Sobrou uma chave presa com uma etiqueta: \"Armário de evidências\". A do escritório do Delegado não está ali.",
    "provisorio": true,
    "da": [
     {
-     "item": "chave_escritorio",
+     "item": "chave_armario",
      "qtd": 1
     }
    ],
    "essencial": true,
-   "resumo": "Sem tempo para revirar a recepção, o grupo deduz que a chave do escritório do Ghular deve estar no chaveiro, e que a sala foi trancada de propósito."
-  },
-  {
-   "id": "cofre_ghular",
-   "pos": [
-    876.8,
-    185.6
-   ],
-   "raio": 75,
-   "ordem": 1,
-   "bolinha": [
-    0,
-    -30
-   ],
-   "texto": "Atrás da estante do escritório há um cofre de parede. A combinação está colada por baixo da gaveta da escrivaninha, e dentro ficam um colete, munição e duas baterias de rádio guardados pelo delegado.",
-   "provisorio": true,
-   "da": [
-    {
-     "item": "colete_leve",
-     "qtd": 1
-    },
-    {
-     "item": "municao_pistola",
-     "qtd": 6
-    },
-    {
-     "item": "bateria",
-     "qtd": 2
-    }
-   ]
+   "resumo": "Sem tempo para revirar a recepção, o grupo deduz que a chave do armário de evidências está no chaveiro, e que a sala do Ghular foi trancada de propósito."
   },
   {
    "id": "bebedouro_recepcao",
@@ -1547,7 +1505,7 @@
  "gatilhos": [
   {
    "id": "ghular_chega",
-   "apos": "agenda_ghular",
+   "apos": "ficha_desaparecidos",
    "tipo": "cena",
    "cena": "ghular_17h",
    "marca": "ghular_17h"
@@ -1576,13 +1534,13 @@
    "provisorio": true
   },
   {
-   "texto": "Achar a chave do escritório",
+   "texto": "Achar a chave do armário de evidências",
    "pista": "chaveiro_recepcao",
    "provisorio": true
   },
   {
-   "texto": "Procurar pistas no escritório do Ghular",
-   "pista": "agenda_ghular",
+   "texto": "Ler as fichas dos desaparecidos",
+   "pista": "ficha_desaparecidos",
    "provisorio": true
   },
   {
@@ -1600,7 +1558,7 @@
     28.8
    ],
    "chave": "chave_escritorio",
-   "texto": "Trancada. A porta do escritório do Ghular precisa de uma chave.",
+   "texto": "Trancada. A porta do escritório do Ghular não cede, e a chave não está à vista.",
    "provisorio": true
   }
  ],
