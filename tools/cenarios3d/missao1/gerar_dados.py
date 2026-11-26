@@ -391,7 +391,7 @@ def celeiro(d, p, ret):
 ESSENCIAIS = {
     "delegacia_17h": {
         "chaveiro_recepcao": "Sem tempo para revirar a recepção, o grupo deduz que a chave do escritório do Ghular deve estar no chaveiro, e que a sala foi trancada de propósito.",
-        "agenda_ghular": "O grupo deduz que o delegado marcava datas e sábados em segredo: o sumiço dos sete segue um calendário.",
+        "agenda_ghular": "O grupo deduz que o delegado marcava datas em segredo: o sumiço dos sete segue um calendário.",
     },
     "biblioteca": {"fichario": "O grupo deduz que o livro Sanguis Orchid passou pela biblioteca, que um Ghular o retirou e que agora está com Roberto Ghular."},
     "subsolo": {"livro_faltando": "O grupo deduz que o livro foi deixado de propósito no subsolo, junto de um mapa que aponta a Fazenda Ghular, a leste."},
