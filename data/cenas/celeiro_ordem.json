@@ -9,10 +9,11 @@
 		{"faz": "andar", "quem": "tristan", "ate": "lider", "perto": 70},
 		{"faz": "camera", "em": "tristan", "tempo": 0.4},
 		{"faz": "dialogo", "falas": [
-			{"quem": "tristan", "texto": "Nikolai. Miguel. Eu respondo pela equipe esta noite."},
+			{"quem": "tristan", "texto": "Nikolai. Miguel. Fui eu quem ligou para vocês depois da praça. Eu respondo pela equipe esta noite."},
 			{"quem": "tristan", "texto": "Já me contaram do Fernando. Eu sinto muito. Ele era dos melhores que a Ordem já teve."},
 			{"quem": "nikolai", "texto": "Ele foi na frente. Como sempre ia."},
-			{"quem": "tristan", "texto": "Então ele sabia o que fazia. Isso não diminui nada. Hoje vocês descansam, o resto fica com a gente."}
+			{"quem": "tristan", "texto": "Então ele sabia o que fazia. Isso não diminui nada. Perdi o Caio e agora o Fernando, na mesma noite. A filha do Caio já está sendo avisada, a Ordem cuida dela."},
+			{"quem": "tristan", "texto": "Hoje vocês descansam, o resto fica com a gente."}
 		]},
 		{"faz": "camera", "em": "julia", "tempo": 0.4},
 		{"faz": "andar", "quem": "julia", "ate": "leticia", "perto": 34, "correr": true},
