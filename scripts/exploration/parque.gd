@@ -1301,7 +1301,8 @@ func _close_dialog() -> void:
 	var fichas: Array = c["inspecoes"]
 	for i in range(fichas.size() - 1):  # uma entrada do diário por ficha; a última é a da pista (a mais recente)
 		Diario.anotar(_diario_lugar(), "%s_%d" % [cid, i + 1], str(fichas[i]["texto"]), str(fichas[i]["imagem"]), str(fichas[i]["titulo"]))
-	Diario.anotar(_diario_lugar(), cid, c["texto"], c["inspecao"])
+	if not c["sem_diario"]:  # saque simples (geladeira, caixa) não é pista: não entra no diário
+		Diario.anotar(_diario_lugar(), cid, c["texto"], c["inspecao"])
 	if c["perda_san"] > 0 or c["perturbadora"]:  # pista que perturba: quem leu (o líder) perde SAN
 		room_combat._san_report({player: san.clue_read(player, {"perda_san": c["perda_san"]} if c["perda_san"] > 0 else c)}, "lê a pista")
 	var achou := collect_items(c["da"])

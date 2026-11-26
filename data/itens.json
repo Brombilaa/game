@@ -1,5 +1,6 @@
 [
   {"id": "kit_primeiros_socorros", "nome": "Kit de primeiros socorros", "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": 5, "custo_pa_combate": 2, "efeito": "reanimar", "valor": 0.5, "provisorio": true, "elemento": null},
+  {"id": "pave", "nome": "Pavê", "provisorio": true, "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": 3, "custo_pa_combate": 1, "efeito": "curar_pv_fixo", "valor": 5, "elemento": null},
   {"id": "curativo", "nome": "Curativo", "provisorio": true, "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": 5, "custo_pa_combate": 1, "efeito": "curar_pv", "valor": 0.3, "elemento": null},
   {"id": "bandagem", "nome": "Bandagem", "provisorio": true, "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": 5, "custo_pa_combate": 1, "efeito": "remover_sangrando", "valor": null, "elemento": null},
   {"id": "antidoto", "nome": "Antídoto", "provisorio": true, "categoria": "consumivel", "consumivel": true, "tamanho": null, "pilha_max": 5, "custo_pa_combate": 1, "efeito": "remover_envenenado", "valor": null, "elemento": null},

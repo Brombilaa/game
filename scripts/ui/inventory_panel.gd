@@ -64,6 +64,7 @@ const BLURBS := {
 	"bandagem": "Estanca o sangramento de quem a usa.",
 	"antidoto": "Neutraliza o veneno em quem o toma.",
 	"curativo": "Cobre ferimentos leves.",
+	"pave": "Pavê do aniversário da Ribeiro, feito pela mãe dela. Recupera 5 PV por porção.",
 	"sinalizador": "Luz vermelha no chão por alguns turnos: o grupo acerta melhor quem está nela. Só em combate.",
 	"componente_ritual": "Material usado nos rituais.",
 	"sangue_coagulado": "Componente de Sangue. Tirado da Criatura de Sangue.",
