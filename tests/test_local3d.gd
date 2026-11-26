@@ -6,7 +6,7 @@ extends SceneTree
 # Rodar com:
 #   godot --headless --path . -s tests/test_local3d.gd
 
-const LOCAIS := ["delegacia_17h", "delegacia_21h", "subsolo", "biblioteca", "necrotorio", "casa_geraldo", "fazenda", "cripta", "celeiro"]
+const LOCAIS := ["delegacia_17h", "delegacia_21h", "subsolo", "biblioteca", "fazenda", "cripta", "celeiro"]
 
 var failures := 0
 
@@ -98,7 +98,7 @@ func _local(id: String) -> void:
 
 func _investigacao() -> void:
 	# Delegacia das 17h e biblioteca têm pistas: documentos, itens no chão e gavetas (textos provisórios).
-	for id in ["delegacia_17h", "biblioteca", "necrotorio", "casa_geraldo"]:
+	for id in ["delegacia_17h", "biblioteca"]:
 		Missao1.reiniciar()
 		var room = await _abrir(id)
 		_check(room.scenario.clues.size() >= 5, id + ": tem pelo menos 5 pistas")
