@@ -1321,6 +1321,41 @@
    },
    "texto": "O tapete do canto está torto, como se alguém o tivesse puxado às pressas. Embaixo dele há um alçapão.",
    "provisorio": true
+  },
+  {
+   "id": "gravador_ghular",
+   "pos": [
+    1152.0,
+    243.2
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Cabos que entram na sala por cima da estante levam a um aparelho de gravação escondido atrás de uns livros. Guarda as gravações de toda a delegacia: o delegado vinha filmando os próprios policiais.",
+   "provisorio": true,
+   "pericia": {
+    "nome": "Tecnologia",
+    "dt": 12,
+    "provisorio": true
+   }
+  },
+  {
+   "id": "quadro_flor_vermelha",
+   "pos": [
+    1280.0,
+    307.2
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Um quadro grande na parede mostra uma única flor vermelha, uma orquídea. É a mesma orquídea desenhada na agenda e dourada na capa do Sanguis Orchid.",
+   "provisorio": true
   }
  ],
  "gatilhos": [
@@ -1414,7 +1449,6 @@
  },
  "invasao": {
   "quando": "zona",
-  "cena_antes": "delegacia_tulio_morte",
   "marca": "invasao_vencida",
   "cena_depois": "ligacao_juliana",
   "flashbang": [

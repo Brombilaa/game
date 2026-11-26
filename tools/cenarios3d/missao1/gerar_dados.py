@@ -128,14 +128,24 @@ def delegacia17(d, p, ret):
     _pista(d, p, "livro_ocorrencias", 12.6, 14.6,
            "O livro de ocorrências está aberto no balcão. Nas últimas três semanas, a mesma anotação: \"Barulho na Fazenda Ghular\". Nenhuma viatura foi enviada. A última página foi arrancada.",
            inspecao="livro_ocorrencias")
+    _pista(d, p, "chaves_armario", 9.4, 14.95,
+           "Presas por uma etiqueta no painel de chaves da recepção, as chaves do armário de evidências.",
+           da=[("chave_armario", 1)])
+    d["pistas"][-1]["sem_diario"] = True  # só a chave, não é pista
     _pista(d, p, "agenda_ghular", 14.0, 3.4,
            "Na agenda do delegado Ghular, sete datas do último mês estão circuladas, cada uma com uma orquídea vermelha desenhada a caneta. A sétima é de ontem. Na margem de todo sábado, a mesma anotação seca: \"treino\".")
     _pista(d, p, "gaveta_provas", 14.8, 9.8,
            "A gaveta da sala de provas foi forçada. Dentro, entre papéis manchados, ainda restam algumas balas soltas e um celular de tela rachada, num saco de provas.",
            da=[("municao_pistola", 6), ("celular_quebrado", 1)])
     _pista(d, p, "ficha_desaparecidos", 2.7, 4.8,
-           "No arquivo, uma pasta com sete fichas de desaparecidos de Aurora. Nada liga uma à outra: idades, bairros e lugares do sumiço são todos diferentes. A mais recente é de ontem à noite: Lisandra de Sá, 38 anos, funcionária de farmácia, vista pela última vez perto da praça.",
+           "No armário de evidências, uma pasta com sete fichas de desaparecidos de Aurora. Nada liga uma à outra: idades, bairros e lugares do sumiço são todos diferentes. A mais recente é de ontem à noite: Lisandra de Sá, 38 anos, funcionária de farmácia, vista pela última vez perto da praça.",
            inspecoes=[{"arquivo": a, "titulo": "Ficha %d/7 · %s" % (i, n), "texto": t} for i, (a, n, t) in enumerate(FICHAS, 1)])
+    # O armário de evidências fica trancado: as chaves estão na recepção (Léo, 20/11). Fichas e livros ficam dentro.
+    d["pistas"][-1]["chave"] = "chave_armario"
+    d["pistas"][-1]["texto_trancado"] = "Uma placa na porta diz \"Armário de Evidências\". Está trancado, e as chaves da delegacia não abrem. As do armário devem estar por aqui."
+    _pista(d, p, "armario_livros", 2.3, 2.8,
+           "Entre as caixas do armário de evidências há um espaço vazio do tamanho de uns livros. No registro, o nome de quem os retirou foi apagado, e a anotação diz só: \"livros do arquivo público\".",
+           chave="chave_armario", trancado="O armário de evidências está trancado.")
     _pista(d, p, "cela_arranhoes", 1.5, 8.2,
            "As paredes da cela estão marcadas por arranhões fundos, feitos de dentro para fora. Desenhado com o que parece sangue, o mesmo símbolo da árvore do parque.")
     # Porta trancada (GDD #19: só abre com a chave achada no cenário; com a chave no grupo abre sozinha ao chegar).
@@ -144,6 +154,10 @@ def delegacia17(d, p, ret):
     _pista(d, p, "chaveiro_recepcao", 7.4, 15.0,
            "O chaveiro da recepção está quase vazio. Sobrou uma chave presa com uma etiqueta: \"Escritório do Delegado\".",
            da=[("chave_escritorio", 1)])
+    # Câmeras (roteiro: Tecnologia DT 8 no computador da recepção; o jogo ainda não tem testes de perícia, provisório).
+    _pista(d, p, "cameras_recepcao", 11.6, 14.95,
+           "O computador da recepção controla câmeras instaladas em todos os cômodos da delegacia. Há uma pasta de gravações, apagadas a cada um ou dois dias, e dá para apagar também os traços da presença do grupo. O delegado pode estar vendo tudo.")
+    d["pistas"][-1]["pericia"] = {"nome": "Tecnologia", "dt": 8, "provisorio": True}
     d["objetivos"].insert(1, {"texto": "Achar a chave do escritório", "pista": "chaveiro_recepcao", "provisorio": True})
     # Cofre do delegado, dentro do escritório trancado: o saque é a razão de achar a chave (provisório, 16/11).
     _pista(d, p, "cofre_ghular", 12.2, 1.4,
@@ -181,6 +195,13 @@ def delegacia21(d, p, ret):
                         "destaque": {"estado": "tapete"},
                         "texto": "O tapete do canto está torto, como se alguém o tivesse puxado às pressas. Embaixo dele há um alçapão.",
                         "provisorio": True})
+    # Sala do Ghular às 21h (roteiro e decisão de 20/11): aparelho de gravação escondido na estante e quadro da flor
+    # vermelha. Textos e posições provisórios; Tecnologia DT 12 do mapa de testes ainda sem sistema de perícias.
+    _pista(d, p, "gravador_ghular", 16.5, 2.3,
+           "Cabos que entram na sala por cima da estante levam a um aparelho de gravação escondido atrás de uns livros. Guarda as gravações de toda a delegacia: o delegado vinha filmando os próprios policiais.")
+    d["pistas"][-1]["pericia"] = {"nome": "Tecnologia", "dt": 12, "provisorio": True}
+    _pista(d, p, "quadro_flor_vermelha", 18.5, 3.3,
+           "Um quadro grande na parede mostra uma única flor vermelha, uma orquídea. É a mesma orquídea desenhada na agenda e dourada na capa do Sanguis Orchid.")
     d["gatilhos"].append({"id": "revelar_alcapao", "apos": "tapete", "tipo": "estado", "estados": {"tapete": False, "alcapao": True},
                           "marca": "alcapao"})
     d["zonas"].append({"id": "alcapao", "ret": _ret4(ret, P["alcapao"]), "acao": "ir", "para": "subsolo", "requer": "alcapao",
