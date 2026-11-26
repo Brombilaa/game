@@ -1,0 +1,75 @@
+{
+	"_nota": "VERSÃO SUPERFICIAL (teste de Ocultismo DT 12 falhou, 26/11): o Nikolai não percebe que eram corpos de antigos moradores. Depois do combate do parque (roteiro da missão 1, 'Após o combate da Praça'; Léo 20/11): a Letícia lamenta, entrega a chave da delegacia e fica para cuidar do corpo do Caio e da cena do crime. Antes desta cena não havia nenhuma fala entre o fim do combate e a viagem. A pulseira e as bandagens o Caio dá em vida, na pista dele. A escopeta (Léo, 26/11: só depois da morte do Caio), as balas, o caderninho, o celular e a chave da van saem do equipamento dele aqui, no passo `dar`. Falas e tempos provisórios do Claude.",
+	"passos": [
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.7,
+			"junto": true
+		},
+		{
+			"faz": "camera",
+			"em": "leticia",
+			"zoom": 1.35,
+			"tempo": 0.8
+		},
+		{
+			"faz": "choque",
+			"quem": "leticia",
+			"sim": false
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "leticia",
+					"texto": "Lamento... Eu fiz o que pude. Não fui rápida o bastante."
+				},
+				{
+					"quem": "fernando",
+					"texto": "Foi ele quem se jogou na frente. Não carregue isso."
+				},
+				{
+					"quem": "nikolai",
+					"texto": "Aquilo não era bicho. Alguém os levantou, e sabia o que estava fazendo."
+				},
+				{
+					"quem": "leticia",
+					"texto": "Eu sei. Por isso chamei vocês. Levem a chave da delegacia: os relatórios do caso estão lá."
+				},
+				{
+					"quem": "leticia",
+					"texto": "O equipamento dele ficou na van. Fernando, a escopeta é sua agora. Levem também o caderninho, o celular e a chave da van."
+				},
+				{
+					"quem": "leticia",
+					"texto": "Eu fico. Preciso dar um jeito no que deixamos aqui, e no Caio. Tenho um contato no cemitério."
+				},
+				{
+					"quem": "miguel",
+					"texto": "Obrigado por cuidar dele."
+				},
+				{
+					"quem": "fernando",
+					"texto": "Ele nos mandou ficar juntos. Então vamos ficar juntos."
+				}
+			]
+		},
+		{
+			"faz": "dar",
+			"itens": [
+				{"item": "escopeta", "qtd": 1},
+				{"item": "municao_escopeta", "qtd": 6},
+				{"item": "caderninho_caio", "qtd": 1},
+				{"item": "chave_van", "qtd": 1},
+				{"item": "celular_caio", "qtd": 1}
+			]
+		},
+		{
+			"faz": "camera",
+			"em": "lider",
+			"zoom": "jogador",
+			"tempo": 0.8
+		}
+	]
+}

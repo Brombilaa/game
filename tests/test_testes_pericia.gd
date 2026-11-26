@@ -212,6 +212,13 @@ func _testes_novos() -> void:
 	parque._inspect("arvore_simbolo")
 	var t: String = parque.dialog_text.text
 	_check(t.contains("giz e cinzas") and t.contains("DT 12") and t.contains("DT 15") and not t.contains("símbolos de Invocação"), "árvore: passou a primeira camada e falhou a segunda")
+	var gat: Dictionary = parque.scenario.triggers["combate_arvore"]
+	var td: Dictionary = gat.get("teste_depois", {})
+	_check(td.get("pericias", []) == ["ocultismo"] and int(td.get("dt", 0)) == 12, "parque: o fim do combate tem teste de Ocultismo DT 12 nos restos dos zumbis")
+	var completa := FileAccess.get_file_as_string("res://data/cenas/pos_praca.json")
+	var superficial := FileAccess.get_file_as_string("res://data/cenas/%s.json" % td.get("cena_falha", "x"))
+	_check(completa.contains("roupa antiga") and superficial != "" and not superficial.contains("roupa antiga"), "restos dos zumbis: passou conta a roupa de época, falhou fica superficial")
+	_check(CenaRoteiro.existe(str(td.get("cena_falha", ""))), "restos dos zumbis: a cena da falha existe")
 	parque.queue_free()
 	await process_frame
 	var casos := [
