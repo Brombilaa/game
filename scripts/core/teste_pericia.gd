@@ -5,7 +5,8 @@ extends RefCounted
 # Uma tentativa por pista: o resultado fica salvo nas marcas ("teste_<id>_passou" ou "teste_<id>_falhou"), que vão no save.
 #
 # Perícias do jogo (Léo): Ocultismo, Religião, Tecnologia (INT); Diplomacia, Intuição, Intimidação (PRE, correção de 20/11).
-# Ocultista soma +2 em Ocultismo (Léo).
+# Cada classe soma +2 numa perícia (Léo, 26/11: "faça a diferença por classe"; o Miguel não pode ser o melhor em tudo):
+# Combatente em Intimidação, Especialista em Tecnologia, Ocultista em Ocultismo. Provisório: a perícia de cada classe (Claude).
 # Quem rola (Léo, 22/11: "jogador escolhe"): a tela de escolha lista cada agente com a perícia e o bônus antes do dado
 # (opcoes). Sem escolha (testes, ou se a tela não abrir), rola o agente de maior bônus (melhor).
 
@@ -17,7 +18,8 @@ const PERICIAS := {
 	"intuicao": {"nome": "Intuição", "atr": "PRE"},
 	"intimidacao": {"nome": "Intimidação", "atr": "PRE"},
 }
-const BONUS_OCULTISTA := 2
+const BONUS_CLASSE := 2
+const PERICIA_DA_CLASSE := {"combatente": "intimidacao", "especialista": "tecnologia", "ocultista": "ocultismo"}
 
 # A tela do dado rolando (TelaD20) aparece depois da escolha; os testes automáticos a desligam.
 static var animar := true
@@ -30,12 +32,19 @@ static func reiniciar() -> void:
 	rolados = {}
 
 
-# Bônus de quem rola: o atributo ligado à perícia (+2 de Ocultista em Ocultismo).
-static func bonus(pericia: String, atributos: Dictionary, ocultista: bool) -> int:
+# Bônus de quem rola: o atributo ligado à perícia (+2 se a perícia é a da classe dele).
+static func bonus(pericia: String, atributos: Dictionary, classe: String) -> int:
 	var b := int(atributos.get(str(PERICIAS[pericia]["atr"]), 0))
-	if pericia == "ocultismo" and ocultista:
-		b += BONUS_OCULTISTA
+	if str(PERICIA_DA_CLASSE.get(classe, "")) == pericia:
+		b += BONUS_CLASSE
 	return b
+
+
+# Classe de um item do grupo ({"classe"}; "ocultista": true vale como classe ocultista, para quem monta o grupo à mão).
+static func _classe(m: Dictionary) -> String:
+	if m.has("classe"):
+		return str(m["classe"])
+	return "ocultista" if bool(m.get("ocultista", false)) else ""
 
 
 # Opções da tela de escolha: um item por agente e perícia, com o bônus de cada um.
@@ -43,7 +52,7 @@ static func opcoes(pericias: Array, grupo: Array) -> Array:
 	var out: Array = []
 	for m in grupo:
 		for p in pericias:
-			out.append({"pericia": str(p), "quem": str(m.get("nome", "")), "bonus": bonus(str(p), m.get("atributos", {}), bool(m.get("ocultista", false)))})
+			out.append({"pericia": str(p), "quem": str(m.get("nome", "")), "bonus": bonus(str(p), m.get("atributos", {}), _classe(m))})
 	return out
 
 
@@ -53,7 +62,7 @@ static func melhor(pericias: Array, grupo: Array) -> Dictionary:
 	var best_b := -999
 	for p in pericias:
 		for m in grupo:
-			var b := bonus(str(p), m.get("atributos", {}), bool(m.get("ocultista", false)))
+			var b := bonus(str(p), m.get("atributos", {}), _classe(m))
 			if b > best_b:
 				best_b = b
 				best = {"pericia": str(p), "quem": str(m.get("nome", "")), "bonus": b}

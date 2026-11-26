@@ -1,0 +1,35 @@
+{
+	"_nota": "Intuição DT 8 falhou: informação superficial (Léo, 26/11: pessoa conversando = superficial ou negativa). Falas provisórias do Claude.",
+	"passos": [
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.7,
+			"junto": true
+		},
+		{
+			"faz": "legenda",
+			"texto": "Ela sorri rápido e muda de assunto.",
+			"tempo": 2.0
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "julia",
+					"texto": "Eu? Só estou com pressa. O segurança da ronda pode chegar a qualquer minuto."
+				},
+				{
+					"quem": "miguel",
+					"texto": "Parece só nervosismo de quem está fora do horário. Vamos olhar a mesa."
+				}
+			]
+		},
+		{
+			"faz": "cinema",
+			"estado": "sair",
+			"tempo": 0.6,
+			"junto": true
+		}
+	]
+}

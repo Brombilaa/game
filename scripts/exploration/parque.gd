@@ -1258,6 +1258,114 @@ func _falas_soltas(delta: float) -> void:
 		caixa.sequencia(f["falas"], true)
 
 
+signal teste_escolhido(escolha: Dictionary)
+var menu_teste: CanvasLayer  # a escolha de quem rola o teste de perícia (nulo = fechada)
+
+
+# Texto da pista com as camadas de teste de perícia (d20), no parque e nos outros lugares. O texto do cenário é o
+# superficial (guardado em "texto_base" para não trocar duas vezes). Uma pista tem `teste` (uma camada) ou `testes` (várias,
+# da mais fácil à mais difícil): cada camada tem {"id", "pericias", "dt", "completo"}; passou = soma o texto completo e
+# segue para a próxima camada; falhou = para aí (uma tentativa por camada, resultado salvo).
+func _texto_com_testes(cid: String, c: Dictionary) -> String:
+	var camadas: Array = []
+	if not c.get("teste", {}).is_empty():
+		camadas.append(c["teste"])
+	camadas.append_array(c.get("testes", []))
+	if camadas.is_empty():
+		return str(c["texto"])
+	if not c.has("texto_base"):
+		c["texto_base"] = c["texto"]
+	var base := str(c["texto_base"])
+	if camadas.size() == 1:
+		var r1: Dictionary = await _tentar_teste("%s_%s" % [Missao1.local, cid], camadas[0])
+		return "%s\n\n%s" % [TestePericia.texto(r1), str(camadas[0]["completo"]) if r1.get("passou", false) else base]
+	var partes: Array = [base]
+	for i in camadas.size():
+		var t: Dictionary = camadas[i]
+		var r: Dictionary = await _tentar_teste("%s_%s_%s" % [Missao1.local, cid, str(t.get("id", i))], t)
+		partes.append(TestePericia.texto(r) + ("\n" + str(t["completo"]) if r.get("passou", false) else ""))
+		if not r.get("passou", false):
+			break
+	return "\n\n".join(partes)
+
+
+# Rola (uma vez) o teste de `t` ({"pericias": [...], "dt": n}). O jogador escolhe quem rola antes do dado, vendo a DT e o
+# bônus de cada agente (Léo, 22/11). Se o teste já foi feito, devolve o resultado salvo sem perguntar.
+func _tentar_teste(id: String, t: Dictionary) -> Dictionary:
+	var grupo: Array = []
+	for u in party:
+		grupo.append({"nome": u.name, "atributos": u.atributos, "classe": Ficha.classe_de(rules.cfg.game_data, u.personagem)})
+	var pericias: Array = t.get("pericias", [])
+	var dt := int(t.get("dt", 12))
+	var escolha := {}
+	if not TestePericia.feito(id) and not grupo.is_empty():
+		escolha = await _escolher_quem_rola(pericias, dt, grupo)
+	var r := TestePericia.tentar(id, pericias, dt, grupo, _rng_teste(), 0, escolha)
+	if TestePericia.animar and r.has("dado") and not r.get("salvo", false):
+		await _mostrar_dado(r)
+	return r
+
+
+# A tela do d20 rolando (TelaD20): o jogador vê o dado parar e a conta antes de ler o texto da pista.
+func _mostrar_dado(r: Dictionary) -> void:
+	busy = true
+	var tela := TelaD20.new()
+	add_child(tela)
+	tela.montar(r)
+	await tela.fechada
+	busy = false
+
+
+func _escolher_quem_rola(pericias: Array, dt: int, grupo: Array) -> Dictionary:
+	if menu_teste != null:
+		return {}
+	busy = true
+	path = PackedVector2Array()
+	moving_unit = null
+	menu_teste = CanvasLayer.new()
+	menu_teste.layer = 86
+	add_child(menu_teste)
+	var fundo := ColorRect.new()
+	fundo.color = Color(0, 0, 0, 0.62)
+	fundo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fundo.mouse_filter = Control.MOUSE_FILTER_STOP
+	menu_teste.add_child(fundo)
+	var centro := CenterContainer.new()
+	centro.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fundo.add_child(centro)
+	var caixa := VBoxContainer.new()
+	caixa.add_theme_constant_override("separation", 8)
+	caixa.custom_minimum_size = Vector2(460, 0)
+	centro.add_child(caixa)
+	var nomes: Array = []
+	for p in pericias:
+		nomes.append("%s (%s)" % [TestePericia.PERICIAS[str(p)]["nome"], TestePericia.PERICIAS[str(p)]["atr"]])
+	var tit := Label.new()
+	tit.text = "Teste de %s · DT %d\nQuem rola o d20?" % [" ou ".join(nomes), dt]
+	tit.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tit.add_theme_font_size_override("font_size", 20)
+	tit.add_theme_color_override("font_color", Color(0.93, 0.89, 0.8))
+	caixa.add_child(tit)
+	for o in TestePericia.opcoes(pericias, grupo):
+		var b := Button.new()
+		b.text = "%s · %s  (bônus %+d)" % [o["quem"], TestePericia.PERICIAS[o["pericia"]]["nome"], int(o["bonus"])]
+		b.custom_minimum_size = Vector2(0, 40)
+		b.pressed.connect(func(): teste_escolhido.emit(o))
+		caixa.add_child(b)
+	var escolha: Dictionary = await teste_escolhido
+	menu_teste.queue_free()
+	menu_teste = null
+	busy = false
+	return escolha
+
+
+func _rng_teste() -> RandomNumberGenerator:
+	var g := RandomNumberGenerator.new()
+	g.randomize()
+	return g
+
+
+
 func _inspect(cid: String) -> void:
 	var c: Dictionary = scenario.clues[cid]
 	if not scenario.available_clues(seen_clues).has(cid):
@@ -1266,6 +1374,7 @@ func _inspect(cid: String) -> void:
 	if _trancada(c):
 		_show_dialog("", c.texto_trancado, "")
 		return
+	c["texto"] = await _texto_com_testes(cid, c)
 	_show_dialog(c.inspecao, c.texto, cid)
 
 

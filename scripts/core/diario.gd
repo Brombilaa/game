@@ -19,7 +19,6 @@ const TITULOS := {
 	"livro_faltando": "O livro Sanguis Orchid",
 	"livro_ocorrencias": "Livro de ocorrências",
 	"agenda_ghular": "A agenda do delegado",
-	"gravador_ghular": "Gravador escondido",
 	"quadro_flor": "Quadro da flor vermelha",
 	"cofre_ghular": "Cofre do delegado",
 	"gaveta_provas": "Gaveta de provas forçada",
@@ -52,6 +51,11 @@ const TITULOS := {
 	"cerca_buracos": "Cerca cheia de buracos",
 	"arma_chumbinho": "Arma de chumbinho",
 	"caixote_varanda": "Caixote da varanda",
+	# Testes de perícia (26/11)
+	"computador_recepcao": "Computador da recepção",
+	"gravador_ghular": "Gravador escondido",
+	"julia_conversa": "A Júlia aflita",
+	"julia_pressionar": "O que a Júlia viu",
 }
 
 
