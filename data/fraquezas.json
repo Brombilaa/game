@@ -1,5 +1,5 @@
 {
-	"_comentario": "Fraquezas e resistências dos inimigos (sugestão 6 da segunda leva, aprovada pelo Léo em 16/11). Quais inimigos têm o quê fica em inimigos.json (campos 'fraquezas' e 'resistencias', com os tipos de dano abaixo; 'atordoado' em resistencias continua sendo imunidade a atordoar). Rituais só mexem com a Criatura de Sangue (fraqueza); cultista, Roberto e Dama não têm afinidade com ritual (Léo, 22/11). Aqui ficam os multiplicadores e como o grupo descobre cada uma. TUDO PROVISÓRIO do Claude, para o Léo revisar jogando.",
+	"_comentario": "Fraquezas e resistências dos inimigos (sugestão 6 da segunda leva, aprovada pelo Léo em 16/11). Quais inimigos têm o quê fica em inimigos.json (campos 'fraquezas' e 'resistencias', com os tipos de dano abaixo; 'atordoado' em resistencias continua sendo imunidade a atordoar). Rituais só mexem com o Zumbi de Sangue (fraqueza); cultista, Roberto e Dama não têm afinidade com ritual (Léo, 22/11). Aqui ficam os multiplicadores e como o grupo descobre cada uma. TUDO PROVISÓRIO do Claude, para o Léo revisar jogando.",
 	"provisorio": true,
 	"_tipos": "tipos de dano: 'balistico' (qualquer arma de fogo, mesmo a queima-roupa), 'corpo_a_corpo' (soco, espada, faca, garra; \"de perto\" aqui nunca inclui tiro) e 'ritual' (Eletrocussão). 'fogo' é o dano do coquetel do Fernando (item de uso em combate). Sem 'sal': o jogo não usa sal nem cruzes (Léo, 19/11).",
 	"tipos": {
@@ -19,9 +19,9 @@
 			"pistas": [
 				"banco_quebrado"
 			],
-			"texto": "Há buracos de bala na madeira, ao lado das marcas de garra, e o sangue seco não é de gente. Alguém atirou na coisa que fez isso e não a parou: bala mal arranha a Criatura de Sangue.",
-			"combate": "As balas entram na Criatura de Sangue e o corpo dela se fecha em volta. Tiro faz pouco efeito.",
-			"miguel": "Descarreguei a pistola nela e o corpo fechou em volta das balas. Não gasto mais munição assim."
+			"texto": "Há buracos de bala na madeira, ao lado das marcas de garra, e o sangue seco não é de gente. Alguém atirou na coisa que fez isso e não a parou: bala mal arranha o Zumbi de Sangue.",
+			"combate": "As balas entram no Zumbi de Sangue e o corpo dele se fecha em volta. Tiro faz pouco efeito.",
+			"miguel": "Descarreguei a pistola nele e o corpo fechou em volta das balas. Não gasto mais munição assim."
 		},
 		{
 			"inimigo": "criatura_sangue",
@@ -29,9 +29,9 @@
 			"pistas": [
 				"mesa_leitura"
 			],
-			"texto": "Na margem do livro de história, alguém anotou a lápis: carne feita de sangue só se desfaz com o próprio Outro Lado. Rituais ferem a Criatura de Sangue muito mais que armas.",
-			"combate": "O ritual rasga a Criatura de Sangue por dentro. Ela sente muito mais do que sente bala.",
-			"miguel": "O que é feito do Outro Lado só se desfaz com o Outro Lado. Eletrocussão nela, sempre."
+			"texto": "Na margem do livro de história, alguém anotou a lápis: carne feita de sangue só se desfaz com o próprio Outro Lado. Rituais ferem o Zumbi de Sangue muito mais que armas.",
+			"combate": "O ritual rasga o Zumbi de Sangue por dentro. Ele sente muito mais do que sente bala.",
+			"miguel": "O que é feito do Outro Lado só se desfaz com o Outro Lado. Eletrocussão nele, sempre."
 		},
 		{
 			"inimigo": "atirador",
@@ -76,15 +76,15 @@
 		},
 		"criatura_sangue": {
 			"retrato": "criatura",
-			"nota": "Não tenho nome melhor para isso. Um corpo feito de sangue que anda e tem garras. Olhar para ela pesa na cabeça. Foi uma dessas que abriu o banco do parque."
+			"nota": "Zumbi é o nome mais perto que eu tenho. Um corpo feito de sangue que anda e tem garras. Olhar para ele pesa na cabeça. Foi um desses que abriu o banco do parque."
 		},
 		"roberto_ghular": {
 			"retrato": "",
-			"nota": "Roberto Ghular, da família da fazenda. A agenda do delegado diz que ele voltou de lá diferente. Ainda atira como homem, mas o que olha por trás dos olhos dele não é o Roberto."
+			"nota": "Roberto Ghular, da família da fazenda. Delegado de Aurora, da família mais antiga da cidade, e o chefe do culto local. Ainda atira como homem, mas o fanatismo dele não recua: aguenta o que vier até o ritual terminar."
 		},
 		"dama_sangue": {
 			"retrato": "dama",
-			"nota": "A Senhora do Sangue dos livros do pacto. Tudo em Aurora leva até ela. Não se atordoa, não recua e chama os fiéis quando é ferida. Se eu escrever isto e não voltar, que alguém leia."
+			"nota": "A Senhora do Sangue dos livros do pacto. Tudo em Aurora leva até ela. Não se atordoa, não recua e devora os sacrificados, um por rodada, abrindo uma flor de cada vez. Se eu escrever isto e não voltar, que alguém leia."
 		}
 	}
 }

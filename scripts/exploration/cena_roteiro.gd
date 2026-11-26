@@ -28,6 +28,8 @@ extends Node
 #   marca    {"id": nome}                                            Missao1.marcar
 #   estado   {"nome": estado, "valor": bool}                          liga/desliga um estado do cenário 3D (local3d)
 #   acordar  {"trecho": n}                                           os inimigos que esperavam o trecho n entram em cena (local3d)
+#   perguntas {"id": conversa}                                       lista de perguntas (data/conversas.json) até o jogador encerrar
+#   ir       {"para": lugar, "chegada": ponto, "texto": cartão}      escurece e abre o próximo lugar ("parque" = a praça)
 # Atores: id de NPC do cenário ("caio", "leticia"), nome do membro do grupo ("Fernando", "Nikolai", "Miguel"),
 # "lider" (o controlado), "inimigo:N" (N-ésimo inimigo do gatilho) ou o id de algo que surgiu na cena.
 
@@ -174,6 +176,14 @@ func _executar(p: Dictionary) -> void:
 		"acordar":  # os inimigos que esperavam um trecho escondido entram em cena (o zumbi, depois da gaveta)
 			if room.has_method("_acordar"):
 				room._acordar(int(p.get("trecho", 0)))
+		"perguntas":
+			var caixa: CaixaFala = room.caixa
+			var camada := caixa.layer
+			caixa.layer = cinema.layer + 1
+			await room.conversa(str(p["id"]), cinema.layer + 2)
+			caixa.layer = camada
+		"ir":
+			await room._ir_para(str(p["para"]), str(p.get("chegada", "")), str(p.get("texto", "")))
 		_:
 			push_warning("cena %s: passo desconhecido %s" % [id, p])
 

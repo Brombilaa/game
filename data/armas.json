@@ -146,7 +146,7 @@
   },
   {
     "id": "garra_criatura",
-    "nome": "Garra da Criatura de Sangue",
+    "nome": "Garra do Zumbi de Sangue",
     "provisorio": true,
     "tipo": "corpo_a_corpo",
     "arma_longa": false,

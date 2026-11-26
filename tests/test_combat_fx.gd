@@ -74,7 +74,7 @@ func _init() -> void:
 	fx.update(0.61)
 	_check(fx.kicks.has(t) and fx.kicks[t]["dist"] == CombatFx.DODGE_PX and fx.flash_red == 0.0 and fx.shake_time == 0.0, "erro: o alvo desvia 10 px")
 
-	# Mira mais longa (Criatura de Sangue, valor provisório 1,2 s).
+	# Mira mais longa (Zumbi de Sangue, valor provisório 1,2 s).
 	fx.update(2.0)
 	fx.start(a, t, {"ok": true, "hit": false, "crit": false, "blocked": false}, 20, 1.2)
 	fx.update(0.6)

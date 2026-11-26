@@ -35,9 +35,9 @@ func _afinidades() -> void:
 	_check(Fraquezas.afinidade(gd, "dama_sangue", "atordoado") == "resistencia", "imunidade a atordoar continua na lista")
 	_check(is_equal_approx(Fraquezas.multiplicador("fraqueza"), 1.5) and is_equal_approx(Fraquezas.multiplicador("resistencia"), 0.5), "multiplicadores provisórios")
 	_check(is_equal_approx(Fraquezas.multiplicador(""), 1.0), "sem afinidade o dano não muda")
-	_check(Fraquezas.titulo(gd, "criatura_sangue", "ritual") == "Criatura de Sangue: rituais ferem mais", "título da fraqueza")
+	_check(Fraquezas.titulo(gd, "criatura_sangue", "ritual") == "Zumbi de Sangue: rituais ferem mais", "título da fraqueza")
 	_check(Fraquezas.titulo(gd, "atirador", "corpo_a_corpo") == "Atirador: golpes corpo a corpo ferem mais", "título da fraqueza do atirador")
-	_check(Fraquezas.titulo(gd, "criatura_sangue", "balistico") == "Criatura de Sangue: balas ferem menos", "título da resistência")
+	_check(Fraquezas.titulo(gd, "criatura_sangue", "balistico") == "Zumbi de Sangue: balas ferem menos", "título da resistência")
 
 
 # Tiro fixo de 6: na Criatura (resiste a bala) sai 3, no cultista 6; crítico dobra antes da resistência.
@@ -128,7 +128,7 @@ func _descoberta() -> void:
 	_check(not Fraquezas.conhecida("criatura_sangue", "balistico"), "começa sem saber")
 	_check(Fraquezas.ao_examinar(gd, "balanco").is_empty(), "pista sem descoberta não anota nada")
 	var novas := Fraquezas.ao_examinar(gd, "banco_quebrado")
-	_check(novas == ["Criatura de Sangue: balas ferem menos"], "o banco quebrado ensina a resistência da Criatura")
+	_check(novas == ["Zumbi de Sangue: balas ferem menos"], "o banco quebrado ensina a resistência da Criatura")
 	_check(Fraquezas.conhecida("criatura_sangue", "balistico"), "fica conhecida")
 	var e: Dictionary = Missao1.diario[Missao1.diario.size() - 1]
 	_check(e["lugar"] == Fraquezas.LUGAR and e["id"] == "frq_criatura_sangue_balistico", "entra no diário em INIMIGOS")

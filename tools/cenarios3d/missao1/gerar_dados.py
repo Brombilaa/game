@@ -23,7 +23,7 @@ FICHAS = [
     ("ficha_04", "Ramiro Turi", "Ramiro Turi, 02/05/1972. Bar do Longo, Avenida Central, 304. Visto pela última vez no beco ao lado do bar: flores alaranjadas cortadas junto a um símbolo feito com o sangue dele."),
     ("ficha_05", "Ruth Santos", "Ruth Santos, 06/01/1965. Em casa, Rua das Camélias, 700. Sem arrombamento, mas com sinais de luta. Sacos de fertilizante abertos pela sala, com pétalas rosas de uma flor que ela não cultivava."),
     ("ficha_06", "Selena Schaefer", "Selena Schaefer, 05/02/1992. Seu apartamento, Rua das Tulipas, 34. Banheira com a torneira aberta, água transbordando e pétalas murchas de \"Caladenia viridis\". Pizza que ela não pediu, pedido anônimo."),
-    ("ficha_07", "Lisandra de Sá", "Lisandra de Sá, 38 anos, funcionária de farmácia. Sumiu ontem à noite na praça, voltando do trabalho. É a mais recente. (Ficha provisória: o Léo ainda não mandou a dela.)"),
+    ("ficha_07", "Lisandra de Sá", "Lisandra de Sá, 38 anos, funcionária de farmácia. Sumiu ontem à noite na praça, voltando do trabalho. É a mais recente."),
 ]
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
@@ -153,9 +153,16 @@ def delegacia17(d, p, ret):
     _pista(d, p, "bebedouro_recepcao", 5.0, 15.0,
            "Ao lado do bebedouro da recepção, uma garrafa de água fechada. Pode servir.",
            da=[("garrafa_agua", 1)])
-    _pista(d, p, "kit_recepcao", 3.0, 15.0,
-           "Debaixo de um banco da recepção, esquecido por alguém com pressa, há um kit com curativos e uma bandagem.",
+    d["pistas"][-1]["sem_diario"] = True  # saque simples, não é pista
+    # Pavê (roteiro: o Ghular manda comer o pavê da geladeira dos fundos; 1 a 3 porções de 5 PV). Posição provisória.
+    _pista(d, p, "geladeira_pave", 4.0, 14.0,
+           "Na geladeira dos fundos, o pavê do aniversário da Ribeiro, feito pela mãe dela. Duas fatias já cortadas, uma intacta: é bom mesmo.",
+           da=[("pave", 3)])
+    d["pistas"][-1]["sem_diario"] = True  # a geladeira não é pista: só dá o pavê, sem entrada no diário
+    _pista(d, p, "kit_recepcao", 13.9, 14.95,
+           "Sobre a mesa da recepção, esquecido por alguém com pressa, há um kit com curativos e uma bandagem.",
            da=[("curativo", 1), ("bandagem", 1)])
+    d["pistas"][-1]["sem_diario"] = True  # saque simples, não é pista
     # Cenas com roteiro (22/11, roteiro da missão 1): a chegada (o bilhete da Letícia) e, depois da agenda no escritório,
     # a chegada do delegado Ghular, simpático, e a mensagem da Letícia na caixa postal. Falas provisórias.
     d["cena_ao_chegar"] = {"cena": "delegacia_17h_chegada", "marca": "delegacia17_chegada"}
@@ -196,6 +203,7 @@ def subsolo(d, p, ret):
     d["pistas"].append({"id": "livro_faltando", "pos": p(1.0, 3.4), "raio": 70, "ordem": 1, "bolinha": [0, -40],
                         "destaque": {"nomes": ["Mesh33"]},  # a mesa (tampo) onde fica o retângulo limpo
                         "texto": "Sobre a mesa do subsolo, aberto, está o livro Sanguis Orchid: capa vermelha, uma orquídea dourada. Foi deixado ali de propósito. Sob ele, um mapa antigo da região com uma fazenda a leste marcada com uma orquídea vermelha e a anotação \"Ghular\".",
+                        "da": [{"item": "livro_sanguis_orchid", "qtd": 1}],
                         "provisorio": True})
     d["zonas"].append({"id": "escada", "ret": ret(4.2, 0.13, 1.27, 0.9), "acao": "ir", "para": "delegacia_21h", "chegada": "subsolo",
                        "texto": "O grupo sobe de volta para o escritório."})
@@ -219,6 +227,7 @@ def biblioteca(d, p, ret):
     _pista(d, p, "caixa_arquivo", 17.2, 6.4,
            "Uma caixa de arquivo morto foi deixada no canto. Dentro, escondido sob relatórios velhos, há um kit de primeiros socorros.",
            da=[("kit_primeiros_socorros", 1)])
+    d["pistas"][-1]["sem_diario"] = True  # saque simples, não é pista
     # Acervo restrito (16/11, provisório): a chave está na gaveta do balcão de empréstimos.
     _pista(d, p, "gaveta_balcao", 12.4, 9.0,
            "Na gaveta do balcão de empréstimos, junto de carimbos secos, há uma chave pequena com uma etiqueta: \"Acervo restrito\".",
@@ -432,9 +441,9 @@ def cripta(d, p, ret):
             e["ritual"] = True  # Léo (19/11): focados no ritual, só lutam se forem atacados
         d["inimigos"].append(e)
     d["inimigos"].append({"tipo": "roberto_ghular", "pos": p(*P["roberto"]), "trecho": 4, "grupo": "salao"})
-    # Roberto se mata com pouca vida e a Dama de Sangue surge dele (Léo). O limite de 50% é provisório
-    # (passada de balanceamento de 19/11; era 25%).
-    d["chefe"] = {"tipo": "roberto_ghular", "limite": 0.5, "vira": "dama_sangue", "marca": "dama_surgiu",
+    # Roberto se mata com pouca vida e a Dama de Sangue surge dele (Léo). O limite de 25% é provisório
+    # (Léo, 26/11: opção B, volta ao roteiro; ficou 50% na passada de 19/11).
+    d["chefe"] = {"tipo": "roberto_ghular", "limite": 0.25, "vira": "dama_sangue", "marca": "dama_surgiu",
                   "texto": "Roberto Ghular crava a adaga no próprio peito. Do sangue dele se ergue a Dama de Sangue.", "provisorio": True,
                   # Os seis pendurados vivos (Léo, 20/11; ChefeDama), na ordem em que ela devora (do mais jovem ao mais velho):
                   # fora do fosso, aos pares entre as três pontes, a 9,5 x 8,5 m do centro do altar. Posições provisórias.

@@ -10865,7 +10865,7 @@
  ],
  "chefe": {
   "tipo": "roberto_ghular",
-  "limite": 0.5,
+  "limite": 0.25,
   "vira": "dama_sangue",
   "marca": "dama_surgiu",
   "texto": "Roberto Ghular crava a adaga no próprio peito. Do sangue dele se ergue a Dama de Sangue.",

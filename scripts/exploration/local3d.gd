@@ -369,7 +369,7 @@ func _diario_lugar() -> String:
 
 
 # Variante pelo nome da ficha (Léo, 13/11: todos atiradores); o atirador usa a figura do cultista e o retrato próprio.
-# A Dama de Sangue usa a figura da Criatura de Sangue e Roberto Ghular a do atirador, até os modelos deles existirem.
+# A Dama de Sangue usa a figura do Zumbi de Sangue e Roberto Ghular a do atirador, até os modelos deles existirem.
 func _enemy_variant(i: int) -> String:
 	if i >= enemies.size():
 		return "cultista"
