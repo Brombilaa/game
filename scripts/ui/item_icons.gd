@@ -386,10 +386,10 @@ const PIXEL_ROWS := {
 
 # Ids das tabelas de dados que usam o ícone de outro id.
 # Componentes de ritual (19/11): o relógio quebrado usa o relógio de bolso; os outros, a pedra carmesim provisória.
-const ALIASES := {"chave_escritorio": "chave", "chave_armario": "chave", "chave_acervo": "chave", "chave_celeiro": "chave", "chave_ossuario": "chave",
+const ALIASES := {"chave_escritorio": "chave", "chave_armario": "chave", "chave_acervo": "chave", "chave_celeiro": "chave", "chave_ossuario": "chave", "chave_van": "chave",
 	"kit_primeiros_socorros": "kit", "pave": "curativo", "colete": "colete_leve", "relogio_quebrado": "atrasar",
 	"sangue_coagulado": "componente_ritual", "prego_enferrujado": "componente_ritual", "frasco_orgao": "componente_ritual",
-	"bateria": "componente_ritual", "maco_fios": "componente_ritual", "celular_quebrado": "componente_ritual",
+	"bateria": "componente_ritual", "maco_fios": "componente_ritual", "celular_quebrado": "componente_ritual", "celular_caio": "componente_ritual", "caderninho_caio": "livro_sanguis_orchid",
 	"ossos_pequenos": "componente_ritual", "cinzas": "componente_ritual", "anel_ouro": "componente_ritual",
 	"tomo_antigo": "componente_ritual"}
 

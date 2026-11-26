@@ -20,13 +20,13 @@ const GRUPO := ["fernando", "nikolai", "miguel"]
 # surpresa: lado que age todo primeiro na rodada 1 (como no jogo). chefe: Roberto vira a Dama a 25% do PV e o
 # Fernando morre na cena do tentáculo quando a Dama chega ao limite do fim (cripta.json); a luta segue até a Dama morrer.
 const ENCONTROS := {
-	"parque": {"nome": "Parque: 2 Criaturas de Sangue", "inimigos": ["criatura_sangue", "criatura_sangue"], "dist_m": 8.0, "surpresa": Combatant.Side.ENEMY},
+	"parque": {"nome": "Parque: 2 Zumbis de Sangue", "inimigos": ["criatura_sangue", "criatura_sangue"], "dist_m": 8.0, "surpresa": Combatant.Side.ENEMY},
 	"delegacia": {"nome": "Delegacia 21h: invasão de 3 atiradores", "inimigos": ["atirador", "atirador", "atirador"], "dist_m": 9.0, "surpresa": Combatant.Side.ENEMY},
 	"fazenda": {"nome": "Fazenda: 3 atiradores", "inimigos": ["atirador", "atirador", "atirador"], "dist_m": 10.0, "surpresa": -1},
 	"corredor": {"nome": "Cripta, corredor: 2 cultistas", "inimigos": ["cultista", "cultista"], "dist_m": 7.0, "surpresa": -1},
 	# Salão (Léo: 7 inimigos contando Roberto). Léo (19/11): os 6 em volta do Roberto seguem o ritual e só lutam
 	# se forem atacados ("ritual": quantos dos primeiros da lista começam em ritual). Limites como em cripta.json.
-	"salao": {"nome": "Cripta, salão: 4 cultistas e 2 atiradores no ritual, Roberto e a Dama", "inimigos": ["cultista", "cultista", "cultista", "cultista", "atirador", "atirador", "roberto_ghular"], "ritual": 6, "dist_m": 9.0, "surpresa": -1, "chefe": {"de": "roberto_ghular", "limite": 0.5, "vira": "dama_sangue", "fim": 0.15}},
+	"salao": {"nome": "Cripta, salão: 4 cultistas e 2 atiradores no ritual, Roberto e a Dama", "inimigos": ["cultista", "cultista", "cultista", "cultista", "atirador", "atirador", "roberto_ghular"], "ritual": 6, "dist_m": 9.0, "surpresa": -1, "chefe": {"de": "roberto_ghular", "limite": 0.25, "vira": "dama_sangue", "fim": 0.15}},
 }
 
 const MAX_RODADAS := 40
@@ -119,14 +119,14 @@ func lutar(e: Dictionary) -> Dictionary:
 		if u == dama and fase_dama == 1:
 			# Dama (Léo, 20/11; ChefeDama): na fase 1 cada turno é devorar um pendurado e usar a habilidade da flor que
 			# abre. Aqui só o dano em PV, sem flores murchando (o grupo da simulação não usa itens nem rituais).
-			if dama_turnos < DANO_FLORES_FASE1.size() and dama.pv > 0.5 * dama.max_pv:
+			if dama_turnos < DANO_FLORES_FASE1.size() and dama.pv > float(chefe.get("fase2_pv", 0.0)) * dama.max_pv:
 				var vitima := _alvo(u, units, {})
 				if vitima:
 					vitima.take_damage(rules.damage_after_defense(float(DANO_FLORES_FASE1[dama_turnos]), vitima.defense_total()))
 				dama_turnos += 1
 				turns.end_turn()
 				continue
-			fase_dama = 2  # corpos acabaram ou ela caiu a 50%: bate 25% mais forte
+			fase_dama = 2  # corpos acabaram (ou ela caiu a fase2_pv, se > 0): bate 25% mais forte
 			dama.weapon["damage_min"] = int(round(int(dama.weapon["damage_min"]) * 1.25))
 			dama.weapon["damage_max"] = int(round(int(dama.weapon["damage_max"]) * 1.25))
 		var guard := 0

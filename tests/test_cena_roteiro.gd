@@ -6,7 +6,7 @@ extends SceneTree
 
 var failures := 0
 const PASSOS := ["cinema", "camera", "andar", "olhar", "anim", "cair", "fala", "legenda", "esperar", "tremor", "flash", "saltar", "choque",
-	"sangue", "poca", "surgir", "sumir", "marca", "dialogo"]
+	"sangue", "poca", "surgir", "sumir", "marca", "dialogo", "perguntas", "ir", "dar"]
 const ATORES := ["caio", "leticia", "Fernando", "Nikolai", "Miguel", "lider", "inimigo:0", "inimigo:1", "tristan", "mark", "julia", "medico"]
 
 
@@ -33,7 +33,7 @@ func _run() -> void:
 				surgidos.append(str(p["id"]))
 			for campo in ["quem", "em", "ate", "para", "sobre"]:
 				var v: Variant = p.get(campo)
-				if v is String and not (campo == "quem" and p.get("faz") in ["fala"]):
+				if v is String and not (campo == "quem" and p.get("faz") in ["fala"]) and not (campo == "para" and p.get("faz") == "ir"):
 					_check(ATORES.has(v) or surgidos.has(v), "%s: ator conhecido (%s)" % [cid, v])
 
 	var room = load(Missao1.CENA_PARQUE).instantiate()
