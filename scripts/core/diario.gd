@@ -32,6 +32,25 @@ const TITULOS := {
 	"mapa_antigo": "Recorte de 1977",
 	"diario_bibliotecaria": "Diário da bibliotecária",
 	"caixa_arquivo": "Caixa de arquivo",
+	# Necrotério e casa do Velho Geraldo (22/11)
+	"tutu_corpo": "O corpo do Tutu",
+	"tutu_pescoco": "Pontos no pescoço do Tutu",
+	"mesa_legista": "A mesa do legista",
+	"gaveta_zumbi": "A gaveta do zumbi",
+	"armario_instrumentos": "Armário de instrumentos",
+	"pagina_parasitagem": "Página: Parasitagem",
+	"pagina_caladenia_purpura": "Página: Caladenia purpura",
+	"pagina_caladenia_viridis": "Página: Caladenia viridis",
+	"pagina_caladenia_flavum": "Página: Caladenia flavum",
+	"leticia_despedida": "A Letícia no necrotério",
+	"geraldo_conversa": "O Velho Geraldo",
+	"geraldo_1977": "O caso de 1977",
+	"geraldo_despedida": "O que o Geraldo ficou de contar",
+	"geraldo_pescoco": "Cicatrizes no pescoço",
+	"geraldo_tique": "O tique do Geraldo",
+	"cerca_buracos": "Cerca cheia de buracos",
+	"arma_chumbinho": "Arma de chumbinho",
+	"caixote_varanda": "Caixote da varanda",
 }
 
 

@@ -1,0 +1,86 @@
+{
+	"_nota": "Chegada à casa do Velho Geraldo (roteiro 3c, Léo 20/11): propriedade cercada na Rua das Bromélias, casa velha e vermelha de janelas tapadas; Geraldo sai mancando na varanda e enxota o grupo; ao ouvir dos desaparecimentos, fica interessado, ainda que desconfiado. Falas do Léo; as do grupo, provisórias do Claude.",
+	"passos": [
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.7,
+			"junto": true
+		},
+		{
+			"faz": "legenda",
+			"texto": "Rua das Bromélias. Uma propriedade cercada: poucas árvores secas, buracos na cerca, uma casa velha e vermelha de janelas tapadas com tábuas.",
+			"tempo": 3.2
+		},
+		{
+			"faz": "legenda",
+			"texto": "A porta se abre e um velho sai mancando na varanda.",
+			"tempo": 2.0
+		},
+		{
+			"faz": "andar",
+			"quem": "geraldo",
+			"ate": [
+				934.4,
+				761.6
+			],
+			"vel": 70
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "geraldo",
+					"texto": "Ah, jovens intrometidos! Saiam da minha propriedade! Eu vou soltar os cachorros! Fora!"
+				},
+				{
+					"quem": "geraldo",
+					"texto": "Vocês não querem ver o Velho Geraldo irritado!"
+				},
+				{
+					"quem": "fernando",
+					"texto": "Calma, senhor. Não viemos fazer festa. Viemos por causa dos desaparecimentos."
+				}
+			]
+		},
+		{
+			"faz": "legenda",
+			"texto": "O velho para. Continua desconfiado, mas agora está interessado.",
+			"tempo": 2.2
+		},
+		{
+			"faz": "andar",
+			"quem": "geraldo",
+			"ate": [
+				1036.8,
+				723.2
+			],
+			"vel": 60
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "geraldo",
+					"texto": "Desaparecimentos... Está bem. Só me deixem retomar o fôlego."
+				}
+			]
+		},
+		{
+			"faz": "legenda",
+			"texto": "O Velho Geraldo senta na cadeira de balanço da varanda. Talvez agora seja um bom momento para questioná-lo.",
+			"tempo": 3.0
+		},
+		{
+			"faz": "camera",
+			"em": "lider",
+			"tempo": 0.6,
+			"zoom": "jogador"
+		},
+		{
+			"faz": "cinema",
+			"estado": "sair",
+			"tempo": 0.7
+		}
+	]
+}

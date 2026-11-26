@@ -17,6 +17,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	Progresso.autosave_ativo = false  # não mexe nos saves de quem roda os testes
+	TestePericia.animar = false  # a tela do dado tem teste próprio (test_testes_pericia)
 	_pathfinder_grade()
 	for id in LOCAIS:
 		var s := Scenario.load_id(id)
@@ -39,7 +40,7 @@ func _run() -> void:
 
 # Marcas das cenas de diálogo que tocam sozinhas ao chegar (as falas novas de 22/11): os testes de alcance, saque e
 # combate não as esperam. `_cenas_de_dialogo` testa as cenas de verdade.
-const MARCAS_DAS_CENAS := ["delegacia17_chegada", "ghular_17h", "ghular_21h", "biblioteca_julia", "ligacao_juliana", "delegacia_tulio_morte", "cripta_ghular"]
+const MARCAS_DAS_CENAS := ["delegacia17_chegada", "ghular_17h", "ghular_21h", "biblioteca_julia", "ligacao_juliana", "delegacia_tulio_morte", "cripta_ghular", "necrotorio_chegada", "geraldo_chegada"]
 
 
 func _abrir(id: String, chegada := "", com_cenas := false) -> Node:
@@ -105,10 +106,15 @@ func _investigacao() -> void:
 			var c: Dictionary = room.scenario.clues[cid]
 			_check(str(c.texto).length() > 20, id + ": a pista %s tem texto" % cid)
 			_check(Pathfinder.is_free(c.pos, room._obstacles(room.player), room.player.radius), id + ": a pista %s fica em ponto livre" % cid)
+		for m in ["necrotorio_depois", "geraldo_chegada", "geraldo_conversa", "geraldo_1977"]:
+			Missao1.marcar(m)  # pistas que só abrem depois de uma cena (a Letícia, o Geraldo)
 		var antes: int = room.inventory.count("kit_primeiros_socorros") + room.inventory.count("municao_pistola") + room.inventory.count("curativo")
 		for _volta in 2:  # duas voltas: o armário de evidências (fichas) só abre depois do chaveiro
 			for cid in room.scenario.clues:
 				room._inspect(cid)
+				if room.menu_teste != null:  # pista com teste de perícia: o jogador escolhe quem rola (22/11)
+					room.menu_teste.find_children("*", "Button", true, false)[0].pressed.emit()
+					await process_frame
 				room._close_dialog()
 		_check(room.seen_clues.size() == room.scenario.clues.size(), id + ": todas as pistas podem ser lidas")
 		var depois: int = room.inventory.count("kit_primeiros_socorros") + room.inventory.count("municao_pistola") + room.inventory.count("curativo")

@@ -1334,7 +1334,7 @@
     0,
     -30
    ],
-   "texto": "Na agenda do delegado Ghular, sete datas do último mês estão circuladas, cada uma com uma orquídea vermelha desenhada a caneta. A sétima é de ontem. Na margem de todo sábado, a mesma anotação seca: \"treino\".",
+   "texto": "Na agenda do delegado Ghular, sete datas do último mês estão circuladas, cada uma com uma orquídea vermelha desenhada a caneta. A sétima é de ontem.",
    "provisorio": true
   },
   {
@@ -1488,8 +1488,8 @@
  },
  "invasao": {
   "quando": "zona",
-  "marca": "invasao_vencida",
   "cena_antes": "delegacia_tulio_morte",
+  "marca": "invasao_vencida",
   "cena_depois": "ligacao_juliana",
   "flashbang": [
    720.0,

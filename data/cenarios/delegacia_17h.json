@@ -1323,7 +1323,7 @@
     0,
     -30
    ],
-   "texto": "A gaveta da sala de provas foi forçada. Dentro, entre papéis manchados, ainda restam algumas balas soltas e um celular de tela rachada, num saco de provas.",
+   "texto": "A gaveta da sala de provas foi forçada. Dentro, entre papéis manchados, ainda restam algumas balas de pistola soltas e um celular de tela rachada, num saco de provas. Ao lado, o saco etiquetado como fuzil de caça está vazio.",
    "provisorio": true,
    "da": [
     {
@@ -1520,10 +1520,9 @@
     1538.5,
     153.5
    ],
-   "acao": "ir",
-   "para": "biblioteca",
-   "texto": "O grupo segue para a biblioteca.",
-   "provisorio": true
+   "acao": "destinos",
+   "provisorio": true,
+   "texto": "O grupo sai da delegacia."
   }
  ],
  "inimigos": [],
@@ -1544,7 +1543,7 @@
    "provisorio": true
   },
   {
-   "texto": "Seguir para a biblioteca",
+   "texto": "Escolher o próximo destino (biblioteca, necrotério ou casa do Geraldo)",
    "provisorio": true
   }
  ],

@@ -1,0 +1,100 @@
+{
+	"_nota": "O caso de 1977 (roteiro 3c, Léo 20/11), contado quando o Geraldo está Amistoso e Prestativo. Texto do Léo, só encurtado em falas. Termina com ele agitado e menos disposto a falar. Provisório: a subida de atitude é fixa.",
+	"passos": [
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.7,
+			"junto": true
+		},
+		{
+			"faz": "legenda",
+			"texto": "Atitude do Geraldo: Amistoso e Prestativo.",
+			"tempo": 1.6
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "geraldo",
+					"texto": "Eu era investigador da polícia de Aurora. Peguei um caso estranho: sete desaparecidos. Sem pistas, até achar uma coisa curiosa."
+				},
+				{
+					"quem": "geraldo",
+					"texto": "Todos eles tiveram alguma relação com orquídeas em algum momento da vida."
+				},
+				{
+					"quem": "geraldo",
+					"texto": "Foi assim que cheguei no Sanguis Orchid. Falava de passagens sagradas, mas logo mostrou o que era: rituais macabros, sacrifícios humanos, o passado sujo de Aurora."
+				}
+			]
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "geraldo",
+					"texto": "Levei o livro pra casa pra estudar. No dia seguinte soube que o Thales tinha sido assassinado no caminho de volta pra casa. Algo incomum nesta cidade."
+				},
+				{
+					"quem": "geraldo",
+					"texto": "Naquela noite eles vieram. Figuras de capuz rubro e escuro. Entraram na minha casa."
+				}
+			]
+		},
+		{
+			"faz": "choque",
+			"quem": "geraldo",
+			"sim": true
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "geraldo",
+					"texto": "Marcaram símbolos nas paredes... e eu senti a minha mente... mergulhar numa espiral... eu não consigo... descrever..."
+				},
+				{
+					"quem": "miguel",
+					"texto": "Respire, seu Geraldo. Não precisa dizer tudo agora."
+				}
+			]
+		},
+		{
+			"faz": "choque",
+			"quem": "geraldo",
+			"sim": false
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "geraldo",
+					"texto": "Me poupou. Fui poupado. Deixaram uma mensagem clara: arquivar o caso e devolver o livro para a biblioteca, onde ele devia ficar."
+				},
+				{
+					"quem": "geraldo",
+					"texto": "Pra continuar vivo eu tinha que deixar a polícia, e garantir que o caso ficasse abandonado. Eu fiz isso."
+				},
+				{
+					"quem": "geraldo",
+					"texto": "E agora está acontecendo de novo. Como em 1977."
+				}
+			]
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "geraldo",
+					"texto": "Chega por hoje. Não aguento mais falar disso."
+				}
+			]
+		},
+		{
+			"faz": "cinema",
+			"estado": "sair",
+			"tempo": 0.7
+		}
+	]
+}

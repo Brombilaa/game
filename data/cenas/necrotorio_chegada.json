@@ -1,0 +1,66 @@
+{
+	"_nota": "Chegada ao necrotério (roteiro 3b, Léo 20/11; 22/11: a cena passa por dentro do prédio): a Letícia espera dentro, mancando, de café na mão, e leva o grupo à sala de autópsia. Falas do Léo; o resto é provisório do Claude.",
+	"passos": [
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.7,
+			"junto": true
+		},
+		{
+			"faz": "legenda",
+			"texto": "Necrotério de Aurora. Por dentro, o prédio baixo e cinzento cheira a produto de limpeza e a frio.",
+			"tempo": 2.4
+		},
+		{
+			"faz": "camera",
+			"em": "leticia",
+			"tempo": 0.7
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "leticia",
+					"texto": "Vocês chegaram. Ótimo. Tenho algo para mostrar para vocês."
+				},
+				{
+					"quem": "nikolai",
+					"texto": "Você está mancando."
+				},
+				{
+					"quem": "leticia",
+					"texto": "Foi o parque, os zumbis de sangue. Não é nada. Venham, é melhor ver com os próprios olhos."
+				}
+			]
+		},
+		{
+			"faz": "andar",
+			"quem": "leticia",
+			"ate": [
+				294.4,
+				377.6
+			],
+			"perto": 6
+		},
+		{
+			"faz": "andar",
+			"quem": "leticia",
+			"ate": [
+				550.4,
+				371.2
+			]
+		},
+		{
+			"faz": "camera",
+			"em": "lider",
+			"tempo": 0.6,
+			"zoom": "jogador"
+		},
+		{
+			"faz": "cinema",
+			"estado": "sair",
+			"tempo": 0.7
+		}
+	]
+}
