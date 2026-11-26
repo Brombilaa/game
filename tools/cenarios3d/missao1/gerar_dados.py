@@ -90,6 +90,17 @@ def cenario(cid, glb, col, hora, rotulo, grupo, extras, limite=None):
     return dados
 
 
+DEST_ITEM = {"raio": 0.8, "max": 2.5}  # malhas do objeto a até 0,6 m do ponto da pista, menores que 2,5 m
+
+
+def borda(d):
+    """Borda do objeto como no parque (Léo, 26/11), no lugar da bolinha: as malhas próprias a até 0,8 m do ponto da pista.
+    Objeto fundido ao cenário (sem malha própria) segue com a bolinha, porque o destaque só enxerga malhas separadas."""
+    for c in d["pistas"]:
+        if "destaque" not in c or c["destaque"] == DEST_ITEM:
+            c["destaque"] = dict(DEST_ITEM)
+
+
 def _pt(d):
     """Pontos de jogo da delegacia já na planta ampliada (13/11), exportados por delegacia.js (PONTOS) via col.js."""
     return d["_pontos"]
@@ -132,6 +143,7 @@ def delegacia17(d, p, ret):
            "Presas por uma etiqueta no painel de chaves da recepção, as chaves do armário de evidências.",
            da=[("chave_armario", 1)])
     d["pistas"][-1]["sem_diario"] = True  # só a chave, não é pista
+    d["pistas"][-1]["destaque"] = DEST_ITEM
     _pista(d, p, "agenda_ghular", 14.0, 3.4,
            "Na agenda do delegado Ghular, sete datas do último mês estão circuladas, cada uma com uma orquídea vermelha desenhada a caneta. A sétima é de ontem. Na margem de todo sábado, a mesma anotação seca: \"treino\".")
     _pista(d, p, "gaveta_provas", 14.8, 9.8,
@@ -141,11 +153,13 @@ def delegacia17(d, p, ret):
            "No armário de evidências, uma pasta com sete fichas de desaparecidos de Aurora. Nada liga uma à outra: idades, bairros e lugares do sumiço são todos diferentes. A mais recente é de ontem à noite: Lisandra de Sá, 38 anos, funcionária de farmácia, vista pela última vez perto da praça.",
            inspecoes=[{"arquivo": a, "titulo": "Ficha %d/7 · %s" % (i, n), "texto": t} for i, (a, n, t) in enumerate(FICHAS, 1)])
     # O armário de evidências fica trancado: as chaves estão na recepção (Léo, 20/11). Fichas e livros ficam dentro.
+    d["pistas"][-1]["destaque"] = DEST_ITEM  # borda do objeto, como no parque (Léo, 13/11)
     d["pistas"][-1]["chave"] = "chave_armario"
     d["pistas"][-1]["texto_trancado"] = "Uma placa na porta diz \"Armário de Evidências\". Está trancado, e as chaves da delegacia não abrem. As do armário devem estar por aqui."
     _pista(d, p, "armario_livros", 2.3, 2.8,
            "Entre as caixas do armário de evidências há um espaço vazio do tamanho de uns livros. No registro, o nome de quem os retirou foi apagado, e a anotação diz só: \"livros do arquivo público\".",
            chave="chave_armario", trancado="O armário de evidências está trancado.")
+    d["pistas"][-1]["destaque"] = DEST_ITEM
     _pista(d, p, "cela_arranhoes", 1.5, 8.2,
            "As paredes da cela estão marcadas por arranhões fundos, feitos de dentro para fora. Desenhado com o que parece sangue, o mesmo símbolo da árvore do parque.")
     # Porta trancada (GDD #19: só abre com a chave achada no cenário; com a chave no grupo abre sozinha ao chegar).
@@ -158,6 +172,7 @@ def delegacia17(d, p, ret):
     _pista(d, p, "cameras_recepcao", 11.6, 14.95,
            "O computador da recepção controla câmeras instaladas em todos os cômodos da delegacia. Há uma pasta de gravações, apagadas a cada um ou dois dias, e dá para apagar também os traços da presença do grupo. O delegado pode estar vendo tudo.")
     d["pistas"][-1]["pericia"] = {"nome": "Tecnologia", "dt": 8, "provisorio": True}
+    d["pistas"][-1]["destaque"] = DEST_ITEM
     d["objetivos"].insert(1, {"texto": "Achar a chave do escritório", "pista": "chaveiro_recepcao", "provisorio": True})
     # Cofre do delegado, dentro do escritório trancado: o saque é a razão de achar a chave (provisório, 16/11).
     _pista(d, p, "cofre_ghular", 12.2, 1.4,
@@ -181,6 +196,7 @@ def delegacia17(d, p, ret):
     # a chegada do delegado Ghular, simpático, e a mensagem da Letícia na caixa postal. Falas provisórias.
     d["cena_ao_chegar"] = {"cena": "delegacia_17h_chegada", "marca": "delegacia17_chegada"}
     d["gatilhos"].append({"id": "ghular_chega", "apos": "agenda_ghular", "tipo": "cena", "cena": "ghular_17h", "marca": "ghular_17h"})
+    borda(d)
     d["zonas"].append({"id": "saida", "ret": _ret4(ret, P["saida"]), "acao": "ir", "para": "biblioteca",
                        "texto": "O grupo segue para a biblioteca.", "provisorio": True})
 
@@ -200,8 +216,11 @@ def delegacia21(d, p, ret):
     _pista(d, p, "gravador_ghular", 16.5, 2.3,
            "Cabos que entram na sala por cima da estante levam a um aparelho de gravação escondido atrás de uns livros. Guarda as gravações de toda a delegacia: o delegado vinha filmando os próprios policiais.")
     d["pistas"][-1]["pericia"] = {"nome": "Tecnologia", "dt": 12, "provisorio": True}
+    d["pistas"][-1]["destaque"] = DEST_ITEM
     _pista(d, p, "quadro_flor_vermelha", 18.5, 3.3,
            "Um quadro grande na parede mostra uma única flor vermelha, uma orquídea. É a mesma orquídea desenhada na agenda e dourada na capa do Sanguis Orchid.")
+    d["pistas"][-1]["destaque"] = DEST_ITEM
+    borda(d)
     d["gatilhos"].append({"id": "revelar_alcapao", "apos": "tapete", "tipo": "estado", "estados": {"tapete": False, "alcapao": True},
                           "marca": "alcapao"})
     d["zonas"].append({"id": "alcapao", "ret": _ret4(ret, P["alcapao"]), "acao": "ir", "para": "subsolo", "requer": "alcapao",

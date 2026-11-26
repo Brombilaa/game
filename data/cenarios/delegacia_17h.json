@@ -1309,7 +1309,11 @@
    ],
    "texto": "O livro de ocorrências está aberto no balcão. Nas últimas três semanas, a mesma anotação: \"Barulho na Fazenda Ghular\". Nenhuma viatura foi enviada. A última página foi arrancada.",
    "provisorio": true,
-   "inspecao": "res://assets/sprites/pistas/livro_ocorrencias.png"
+   "inspecao": "res://assets/sprites/pistas/livro_ocorrencias.png",
+   "destaque": {
+    "raio": 0.8,
+    "max": 2.5
+   }
   },
   {
    "id": "chaves_armario",
@@ -1331,7 +1335,11 @@
      "qtd": 1
     }
    ],
-   "sem_diario": true
+   "sem_diario": true,
+   "destaque": {
+    "raio": 0.8,
+    "max": 2.5
+   }
   },
   {
    "id": "agenda_ghular",
@@ -1347,6 +1355,10 @@
    ],
    "texto": "Na agenda do delegado Ghular, sete datas do último mês estão circuladas, cada uma com uma orquídea vermelha desenhada a caneta. A sétima é de ontem. Na margem de todo sábado, a mesma anotação seca: \"treino\".",
    "provisorio": true,
+   "destaque": {
+    "raio": 0.8,
+    "max": 2.5
+   },
    "essencial": true,
    "resumo": "O grupo deduz que o delegado marcava datas e sábados em segredo: o sumiço dos sete segue um calendário."
   },
@@ -1373,7 +1385,11 @@
      "item": "celular_quebrado",
      "qtd": 1
     }
-   ]
+   ],
+   "destaque": {
+    "raio": 0.8,
+    "max": 2.5
+   }
   },
   {
    "id": "ficha_desaparecidos",
@@ -1427,6 +1443,10 @@
     }
    ],
    "inspecao": "res://assets/sprites/pistas/ficha_07.png",
+   "destaque": {
+    "raio": 0.8,
+    "max": 2.5
+   },
    "chave": "chave_armario",
    "texto_trancado": "Uma placa na porta diz \"Armário de Evidências\". Está trancado, e as chaves da delegacia não abrem. As do armário devem estar por aqui."
   },
@@ -1445,7 +1465,11 @@
    "texto": "Entre as caixas do armário de evidências há um espaço vazio do tamanho de uns livros. No registro, o nome de quem os retirou foi apagado, e a anotação diz só: \"livros do arquivo público\".",
    "provisorio": true,
    "chave": "chave_armario",
-   "texto_trancado": "O armário de evidências está trancado."
+   "texto_trancado": "O armário de evidências está trancado.",
+   "destaque": {
+    "raio": 0.8,
+    "max": 2.5
+   }
   },
   {
    "id": "cela_arranhoes",
@@ -1460,7 +1484,11 @@
     -30
    ],
    "texto": "As paredes da cela estão marcadas por arranhões fundos, feitos de dentro para fora. Desenhado com o que parece sangue, o mesmo símbolo da árvore do parque.",
-   "provisorio": true
+   "provisorio": true,
+   "destaque": {
+    "raio": 0.8,
+    "max": 2.5
+   }
   },
   {
    "id": "chaveiro_recepcao",
@@ -1482,6 +1510,10 @@
      "qtd": 1
     }
    ],
+   "destaque": {
+    "raio": 0.8,
+    "max": 2.5
+   },
    "essencial": true,
    "resumo": "Sem tempo para revirar a recepção, o grupo deduz que a chave do escritório do Ghular deve estar no chaveiro, e que a sala foi trancada de propósito."
   },
@@ -1503,6 +1535,10 @@
     "nome": "Tecnologia",
     "dt": 8,
     "provisorio": true
+   },
+   "destaque": {
+    "raio": 0.8,
+    "max": 2.5
    }
   },
   {
@@ -1532,7 +1568,11 @@
      "item": "bateria",
      "qtd": 2
     }
-   ]
+   ],
+   "destaque": {
+    "raio": 0.8,
+    "max": 2.5
+   }
   },
   {
    "id": "bebedouro_recepcao",
@@ -1554,7 +1594,11 @@
      "qtd": 1
     }
    ],
-   "sem_diario": true
+   "sem_diario": true,
+   "destaque": {
+    "raio": 0.8,
+    "max": 2.5
+   }
   },
   {
    "id": "geladeira_pave",
@@ -1576,7 +1620,11 @@
      "qtd": 3
     }
    ],
-   "sem_diario": true
+   "sem_diario": true,
+   "destaque": {
+    "raio": 0.8,
+    "max": 2.5
+   }
   },
   {
    "id": "kit_recepcao",
@@ -1602,7 +1650,11 @@
      "qtd": 1
     }
    ],
-   "sem_diario": true
+   "sem_diario": true,
+   "destaque": {
+    "raio": 0.8,
+    "max": 2.5
+   }
   }
  ],
  "gatilhos": [

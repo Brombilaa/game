@@ -1340,6 +1340,10 @@
     "nome": "Tecnologia",
     "dt": 12,
     "provisorio": true
+   },
+   "destaque": {
+    "raio": 0.8,
+    "max": 2.5
    }
   },
   {
@@ -1355,7 +1359,11 @@
     -30
    ],
    "texto": "Um quadro grande na parede mostra uma única flor vermelha, uma orquídea. É a mesma orquídea desenhada na agenda e dourada na capa do Sanguis Orchid.",
-   "provisorio": true
+   "provisorio": true,
+   "destaque": {
+    "raio": 0.8,
+    "max": 2.5
+   }
   }
  ],
  "gatilhos": [
