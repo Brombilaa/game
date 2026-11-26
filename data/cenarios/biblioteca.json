@@ -35,6 +35,15 @@
     953.6,
     844.8
    ]
+  ],
+  "npcs": [
+   {
+    "id": "julia",
+    "pos": [
+     537.6,
+     537.6
+    ]
+   }
   ]
  },
  "colisoes": [
@@ -1178,7 +1187,25 @@
     -30
    ],
    "texto": "O livro \"Aurora, a Cidade das Flores\" está aberto na mesa de leitura. Um parágrafo foi sublinhado: em 1970 a cidade pediu ao Vaticano que canonizasse Lygia Virgínia do Rosário como a Santa das Flores, e o pedido foi negado. Na margem, a lápis: \"carne feita de sangue só se desfaz com o próprio Outro Lado\".",
-   "provisorio": true
+   "provisorio": true,
+   "testes": [
+    {
+     "id": "beatificacao",
+     "pericias": [
+      "religiao"
+     ],
+     "dt": 8,
+     "completo": "Para canonizar alguém é preciso antes que a Igreja a reconheça como beata, por virtudes. Ao que tudo indica, não era o caso de Lygia."
+    },
+    {
+     "id": "padrao",
+     "pericias": [
+      "religiao"
+     ],
+     "dt": 12,
+     "completo": "Já houve outros pedidos de Santa das Flores com o mesmo padrão: uma cidade pequena da Europa tentando canonizar uma mulher sem passar pela beatificação."
+    }
+   ]
   },
   {
    "id": "mapa_antigo",
@@ -1289,9 +1316,71 @@
    ],
    "chave": "chave_acervo",
    "texto_trancado": "Trancado. O armário do acervo restrito precisa de uma chave."
+  },
+  {
+   "id": "julia_conversa",
+   "pos": [
+    665.6,
+    537.6
+   ],
+   "raio": 70,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -90
+   ],
+   "texto": "A JÃºlia olha o relógio e arruma papéis sem necessidade. Vale conversar com ela.",
+   "provisorio": true
+  },
+  {
+   "id": "julia_pressionar",
+   "pos": [
+    416.0,
+    537.6
+   ],
+   "raio": 70,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -90
+   ],
+   "texto": "A JÃºlia foge do olhar do grupo. Talvez dê para insistir com ela.",
+   "provisorio": true,
+   "requer": "julia_aflita",
+   "texto_antes": "A JÃºlia ainda está se fechando. Melhor começar por uma conversa."
   }
  ],
- "gatilhos": [],
+ "gatilhos": [
+  {
+   "id": "julia_1",
+   "apos": "julia_conversa",
+   "tipo": "cena",
+   "cena": "julia_aflita",
+   "marca": "julia_aflita",
+   "teste": {
+    "pericias": [
+     "intuicao"
+    ],
+    "dt": 8,
+    "cena_falha": "julia_aflita_nada"
+   }
+  },
+  {
+   "id": "julia_2",
+   "apos": "julia_pressionar",
+   "tipo": "cena",
+   "cena": "julia_revela",
+   "marca": "julia_revela",
+   "teste": {
+    "pericias": [
+     "diplomacia",
+     "intimidacao"
+    ],
+    "dt": 12,
+    "cena_falha": "julia_revela_nada"
+   }
+  }
+ ],
  "zonas": [
   {
    "id": "saida",
@@ -1311,6 +1400,11 @@
   {
    "texto": "Descobrir o que o Ghular pesquisava",
    "pista": "fichario",
+   "provisorio": true
+  },
+  {
+   "texto": "Conversar com a JÃºlia",
+   "pista": "julia_conversa",
    "provisorio": true
   },
   {

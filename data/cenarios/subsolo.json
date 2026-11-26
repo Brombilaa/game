@@ -120,7 +120,15 @@
      "item": "livro_sanguis_orchid",
      "qtd": 1
     }
-   ]
+   ],
+   "teste": {
+    "pericias": [
+     "ocultismo",
+     "religiao"
+    ],
+    "dt": 8,
+    "completo": "O livro conta as origens do culto da Orquídea de Sangue. Para iniciar a invocação, o símbolo da Orquídea precisava tocar sete sacrifícios, em sete condições específicas, com sete flores que representam os sete milagres da Santa das Flores. Cada Orquídea Amaldiçoada tem uma cor e murcha ao reagir a uma condição própria. Se o sangue do escolhido jorrasse das marcações, o corpo era aceito por Serafim Vermelho e servia à invocação da Santa, agora chamada de Dama de Sangue."
+   }
   }
  ],
  "gatilhos": [],

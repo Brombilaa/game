@@ -1,0 +1,39 @@
+{
+	"_nota": "Intuição DT 8 passou (roteiro 3a, mapa de testes de 20/11): o grupo nota a aflição da JÃºlia. Falas provisórias do Claude.",
+	"passos": [
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.7,
+			"junto": true
+		},
+		{
+			"faz": "legenda",
+			"texto": "Ela olha o relógio a cada minuto.",
+			"tempo": 2.0
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "nikolai",
+					"texto": "Você não está só nervosa. Está com medo."
+				},
+				{
+					"quem": "julia",
+					"texto": "Estou. Leio sobre essas coisas há anos e nunca achei prova de nada. Agora tenho pavor de achar."
+				},
+				{
+					"quem": "fernando",
+					"texto": "Se quiser contar mais alguma coisa, é só falar."
+				}
+			]
+		},
+		{
+			"faz": "cinema",
+			"estado": "sair",
+			"tempo": 0.6,
+			"junto": true
+		}
+	]
+}

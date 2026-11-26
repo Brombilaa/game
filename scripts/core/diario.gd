@@ -48,6 +48,11 @@ const TITULOS := {
 	"cerca_buracos": "Cerca cheia de buracos",
 	"arma_chumbinho": "Arma de chumbinho",
 	"caixote_varanda": "Caixote da varanda",
+	# Testes de perícia (26/11)
+	"computador_recepcao": "Computador da recepção",
+	"gravador_ghular": "Gravador escondido",
+	"julia_conversa": "A JÃºlia aflita",
+	"julia_pressionar": "O que a JÃºlia viu",
 }
 
 

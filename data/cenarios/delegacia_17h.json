@@ -1542,6 +1542,28 @@
     }
    ],
    "sem_diario": true
+  },
+  {
+   "id": "computador_recepcao",
+   "pos": [
+    774.4,
+    1056.0
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "O computador da recepção está ligado a um aparelho que controla as câmeras da delegacia. Sem saber mexer, o grupo só vê uma tela de senha.",
+   "provisorio": true,
+   "teste": {
+    "pericias": [
+     "tecnologia"
+    ],
+    "dt": 8,
+    "completo": "A pasta de gravações guarda a delegacia por dentro, mas tudo é apagado depois de um ou dois dias, provavelmente por falta de espaço. Dá para apagar os traços da presença do grupo."
+   }
   }
  ],
  "gatilhos": [

@@ -106,12 +106,14 @@ func _investigacao() -> void:
 			var c: Dictionary = room.scenario.clues[cid]
 			_check(str(c.texto).length() > 20, id + ": a pista %s tem texto" % cid)
 			_check(Pathfinder.is_free(c.pos, room._obstacles(room.player), room.player.radius), id + ": a pista %s fica em ponto livre" % cid)
-		for m in ["necrotorio_depois", "geraldo_chegada", "geraldo_conversa", "geraldo_1977"]:
+		for m in ["necrotorio_depois", "geraldo_chegada", "geraldo_conversa", "geraldo_1977", "julia_aflita", "julia_revela"]:
 			Missao1.marcar(m)  # pistas que só abrem depois de uma cena (a Letícia, o Geraldo)
 		var antes: int = room.inventory.count("kit_primeiros_socorros") + room.inventory.count("municao_pistola") + room.inventory.count("curativo")
 		for cid in room.scenario.clues:
 			room._inspect(cid)
-			if room.menu_teste != null:  # pista com teste de perícia: o jogador escolhe quem rola (22/11)
+			for i in 4:  # pista com teste de perícia: o jogador escolhe quem rola, uma vez por camada (22/11, 26/11)
+				if room.menu_teste == null:
+					break
 				room.menu_teste.find_children("*", "Button", true, false)[0].pressed.emit()
 				await process_frame
 			room._close_dialog()

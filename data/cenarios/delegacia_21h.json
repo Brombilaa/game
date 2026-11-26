@@ -1321,6 +1321,28 @@
    },
    "texto": "O tapete do canto está torto, como se alguém o tivesse puxado às pressas. Embaixo dele há um alçapão.",
    "provisorio": true
+  },
+  {
+   "id": "gravador_ghular",
+   "pos": [
+    928.0,
+    249.6
+   ],
+   "raio": 70,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "provisorio": true,
+   "texto": "Atrás de uma fileira de livros da estante, cabos levam a um aparelho de gravação escondido. Sem entender dele, o grupo não sabe o que ele guarda.",
+   "teste": {
+    "pericias": [
+     "tecnologia"
+    ],
+    "dt": 12,
+    "completo": "O aparelho mostra que o delegado gravava a delegacia inteira, com as mesmas imagens da recepção. Dá para apagar os traços da presença do grupo."
+   }
   }
  ],
  "gatilhos": [

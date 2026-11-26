@@ -163,6 +163,12 @@ def delegacia17(d, p, ret):
            "Sobre a mesa da recepção, esquecido por alguém com pressa, há um kit com curativos e uma bandagem.",
            da=[("curativo", 1), ("bandagem", 1)])
     d["pistas"][-1]["sem_diario"] = True  # saque simples, não é pista
+    # Computador da recepção (roteiro 2: câmeras; Tecnologia DT 10 -> 8 no mapa de 20/11). Posição provisória.
+    _pista(d, p, "computador_recepcao", 10.6, 15.0,
+           "O computador da recepção está ligado a um aparelho que controla as câmeras da delegacia. Sem saber mexer, o grupo só vê uma tela de senha.",
+           bolinha=(0, -30))
+    d["pistas"][-1]["teste"] = {"pericias": ["tecnologia"], "dt": 8,
+                                "completo": "A pasta de gravações guarda a delegacia por dentro, mas tudo é apagado depois de um ou dois dias, provavelmente por falta de espaço. Dá para apagar os traços da presença do grupo."}
     # Cenas com roteiro (22/11, roteiro da missão 1): a chegada (o bilhete da Letícia) e, depois da agenda no escritório,
     # a chegada do delegado Ghular, simpático, e a mensagem da Letícia na caixa postal. Falas provisórias.
     d["cena_ao_chegar"] = {"cena": "delegacia_17h_chegada", "marca": "delegacia17_chegada"}
@@ -181,6 +187,11 @@ def delegacia21(d, p, ret):
                         "destaque": {"estado": "tapete"},
                         "texto": "O tapete do canto está torto, como se alguém o tivesse puxado às pressas. Embaixo dele há um alçapão.",
                         "provisorio": True})
+    # Gravador escondido atrás dos livros (roteiro 2, sala do Ghular; Tecnologia DT 15 -> 12). Posição provisória, junto à estante.
+    d["pistas"].append({"id": "gravador_ghular", "pos": p(13.0, 2.4), "raio": 70, "ordem": 1, "bolinha": [0, -30], "provisorio": True,
+                        "texto": "Atrás de uma fileira de livros da estante, cabos levam a um aparelho de gravação escondido. Sem entender dele, o grupo não sabe o que ele guarda.",
+                        "teste": {"pericias": ["tecnologia"], "dt": 12,
+                                  "completo": "O aparelho mostra que o delegado gravava a delegacia inteira, com as mesmas imagens da recepção. Dá para apagar os traços da presença do grupo."}})
     d["gatilhos"].append({"id": "revelar_alcapao", "apos": "tapete", "tipo": "estado", "estados": {"tapete": False, "alcapao": True},
                           "marca": "alcapao"})
     d["zonas"].append({"id": "alcapao", "ret": _ret4(ret, P["alcapao"]), "acao": "ir", "para": "subsolo", "requer": "alcapao",
@@ -204,6 +215,9 @@ def subsolo(d, p, ret):
                         "destaque": {"nomes": ["Mesh33"]},  # a mesa (tampo) onde fica o retângulo limpo
                         "texto": "Sobre a mesa do subsolo, aberto, está o livro Sanguis Orchid: capa vermelha, uma orquídea dourada. Foi deixado ali de propósito. Sob ele, um mapa antigo da região com uma fazenda a leste marcada com uma orquídea vermelha e a anotação \"Ghular\". Entre as páginas do livro, uma nota solta: \"A Senhora do Sangue não se toca com as mãos. Quem chega perto dela sangra antes de ferir.\"",
                         "da": [{"item": "livro_sanguis_orchid", "qtd": 1}],
+                        # Roteiro 3d: quem lê precisa de Ocultismo ou Religião para entender os detalhes. DT 8 (fácil, provisório): a pista é essencial.
+                        "teste": {"pericias": ["ocultismo", "religiao"], "dt": 8,
+                                  "completo": "O livro conta as origens do culto da Orquídea de Sangue. Para iniciar a invocação, o símbolo da Orquídea precisava tocar sete sacrifícios, em sete condições específicas, com sete flores que representam os sete milagres da Santa das Flores. Cada Orquídea Amaldiçoada tem uma cor e murcha ao reagir a uma condição própria. Se o sangue do escolhido jorrasse das marcações, o corpo era aceito por Serafim Vermelho e servia à invocação da Santa, agora chamada de Dama de Sangue."},
                         "provisorio": True})
     d["zonas"].append({"id": "escada", "ret": ret(4.2, 0.13, 1.27, 0.9), "acao": "ir", "para": "delegacia_21h", "chegada": "subsolo",
                        "texto": "O grupo sobe de volta para o escritório."})
@@ -218,6 +232,11 @@ def biblioteca(d, p, ret):
            inspecao="fichario")
     _pista(d, p, "mesa_leitura", 2.6, 5.6,
            "O livro \"Aurora, a Cidade das Flores\" está aberto na mesa de leitura. Um parágrafo foi sublinhado: em 1970 a cidade pediu ao Vaticano que canonizasse Lygia Virgínia do Rosário como a Santa das Flores, e o pedido foi negado. Na margem, a lápis: \"carne feita de sangue só se desfaz com o próprio Outro Lado\".")
+    d["pistas"][-1]["testes"] = [  # mapa de testes de 20/11 (Religião, PRE): DT 10 -> 8 e 15 -> 12
+        {"id": "beatificacao", "pericias": ["religiao"], "dt": 8,
+         "completo": "Para canonizar alguém é preciso antes que a Igreja a reconheça como beata, por virtudes. Ao que tudo indica, não era o caso de Lygia."},
+        {"id": "padrao", "pericias": ["religiao"], "dt": 12,
+         "completo": "Já houve outros pedidos de Santa das Flores com o mesmo padrão: uma cidade pequena da Europa tentando canonizar uma mulher sem passar pela beatificação."}]
     _pista(d, p, "mapa_antigo", 12.7, 6.2,
            "Um recorte de jornal de 1977: \"Os Sete Desaparecidos, o mistério que continua a assolar Aurora\". Sete moradores sumiram ao longo de um mês; o investigador do caso era o jovem Geraldo Munch. A última desaparecida foi Maria Cabral, nascida em 1º de junho de 1948.",
            inspecao="mapa_antigo")
@@ -236,7 +255,21 @@ def biblioteca(d, p, ret):
            "A chave gira no armário do acervo restrito. Entre livros embrulhados em plástico, a bibliotecária guardava suprimentos de emergência e um relógio de bolso parado à meia-noite.",
            da=[("bandagem", 2), ("antidoto", 1), ("municao_escopeta", 4), ("relogio_quebrado", 1)],
            chave="chave_acervo", trancado="Trancado. O armário do acervo restrito precisa de uma chave.")
-    d["cena_ao_chegar"] = {"cena": "biblioteca_julia", "marca": "biblioteca_julia"}  # a Ju recebe o grupo (22/11)
+    d["cena_ao_chegar"] = {"cena": "biblioteca_julia", "marca": "biblioteca_julia"}  # a JÃºlia recebe o grupo (22/11)
+    # A JÃºlia (roteiro 3a; testes do mapa de 20/11): Intuição DT 8 para notar que ela está aflita e, pressionada, Diplomacia ou
+    # Intimidação DT 12 para ela contar o que viu. Conversa: falhou = informação superficial ou negativa (Léo, 26/11).
+    d["inicio"]["npcs"] = [{"id": "julia", "pos": p(6.9, 6.9)}]
+    _pista(d, p, "julia_conversa", 8.9, 6.9,
+           "A JÃºlia olha o relógio e arruma papéis sem necessidade. Vale conversar com ela.", raio=70, bolinha=(0, -90))
+    d["gatilhos"].append({"id": "julia_1", "apos": "julia_conversa", "tipo": "cena", "cena": "julia_aflita", "marca": "julia_aflita",
+                          "teste": {"pericias": ["intuicao"], "dt": 8, "cena_falha": "julia_aflita_nada"}})
+    _pista(d, p, "julia_pressionar", 5.0, 6.9,
+           "A JÃºlia foge do olhar do grupo. Talvez dê para insistir com ela.", raio=70, bolinha=(0, -90))
+    d["pistas"][-1]["requer"] = "julia_aflita"
+    d["pistas"][-1]["texto_antes"] = "A JÃºlia ainda está se fechando. Melhor começar por uma conversa."
+    d["gatilhos"].append({"id": "julia_2", "apos": "julia_pressionar", "tipo": "cena", "cena": "julia_revela", "marca": "julia_revela",
+                          "teste": {"pericias": ["diplomacia", "intimidacao"], "dt": 12, "cena_falha": "julia_revela_nada"}})
+    d["objetivos"].insert(1, {"texto": "Conversar com a JÃºlia", "pista": "julia_conversa", "provisorio": True})
     d["zonas"].append({"id": "saida", "ret": ret(-1.5, 12.4, 22.5, 2.1), "acao": "destinos",
                        "texto": "O grupo sai da biblioteca.", "provisorio": True})
 

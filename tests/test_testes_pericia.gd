@@ -15,7 +15,9 @@ func _run() -> void:
 	Progresso.autosave_ativo = false
 	TestePericia.animar = false  # a tela do dado tem teste próprio (test_testes_pericia)
 	_regra()
+	_classes()
 	await _no_jogo()
+	await _testes_novos()
 	print("Falhas: %d" % failures if failures > 0 else "OK: test_testes_pericia")
 	quit(1 if failures > 0 else 0)
 
@@ -184,6 +186,69 @@ func _no_jogo() -> void:
 	room.queue_free()
 	await process_frame
 	Engine.time_scale = 1.0
+
+
+# Diferença por classe (Léo, 26/11): cada classe soma +2 numa perícia, e o Miguel não é o melhor em tudo.
+func _classes() -> void:
+	var g := [{"nome": "Fernando", "atributos": {"INT": 1, "PRE": 1}, "classe": "combatente"},
+		{"nome": "Miguel", "atributos": {"INT": 3, "PRE": 2}, "classe": "ocultista"},
+		{"nome": "Nikolai", "atributos": {"INT": 2, "PRE": 1}, "classe": "especialista"}]
+	_check(TestePericia.melhor(["intimidacao"], g)["quem"] == "Fernando" and TestePericia.melhor(["intimidacao"], g)["bonus"] == 3, "Combatente soma +2 em Intimidação e vence o Miguel")
+	_check(TestePericia.melhor(["tecnologia"], g)["quem"] == "Nikolai" and TestePericia.melhor(["tecnologia"], g)["bonus"] == 4, "Especialista soma +2 em Tecnologia e vence o Miguel")
+	_check(TestePericia.melhor(["ocultismo"], g)["quem"] == "Miguel" and TestePericia.melhor(["ocultismo"], g)["bonus"] == 5, "Ocultista soma +2 em Ocultismo")
+	_check(TestePericia.bonus("ocultismo", {"INT": 2}, "combatente") == 2, "fora da perícia da classe só vale o atributo")
+
+
+# Os testes do mapa de 20/11 que entraram no jogo (26/11): árvore (duas camadas), livro da cidade (duas camadas), computador,
+# gravador, livro do subsolo e a JÃºlia (conversa: falhou = superficial ou negativo).
+func _testes_novos() -> void:
+	Missao1.reiniciar()
+	var parque = load("res://scenes/exploration/parque.tscn").instantiate()
+	root.add_child(parque)
+	await process_frame
+	Missao1.marcar("teste_%s_arvore_simbolo_rastros_passou" % Missao1.local)
+	Missao1.marcar("teste_%s_arvore_simbolo_invocacao_falhou" % Missao1.local)
+	parque.seen_clues.append("caio")  # a árvore só abre depois do Caio
+	parque._inspect("arvore_simbolo")
+	var t: String = parque.dialog_text.text
+	_check(t.contains("giz e cinzas") and t.contains("DT 12") and t.contains("DT 15") and not t.contains("símbolos de Invocação"), "árvore: passou a primeira camada e falhou a segunda")
+	parque.queue_free()
+	await process_frame
+	var casos := [
+		["biblioteca", "mesa_leitura", ["beatificacao_passou", "padrao_passou"], "beata", "mesmo padrão"],
+		["delegacia_17h", "computador_recepcao", ["passou"], "apagado", ""],
+		["delegacia_21h", "gravador_ghular", ["passou"], "gravava a delegacia", ""],
+		["subsolo", "livro_faltando", ["passou"], "sete sacrifícios", ""]]
+	for caso in casos:
+		for passou in [true, false]:
+			Missao1.reiniciar()
+			for m in caso[2]:
+				var marca: String = m
+				if not passou:
+					marca = marca.replace("passou", "falhou")
+				if marca == "passou" or marca == "falhou":
+					marca = "teste_%s_%s_%s" % [caso[0], caso[1], marca]
+				else:
+					marca = "teste_%s_%s_%s" % [caso[0], caso[1], marca]
+				Missao1.marcar(marca)
+			var room = await _abrir(str(caso[0]))
+			room._inspect(str(caso[1]))
+			var txt: String = room.dialog_text.text
+			if passou:
+				_check(txt.contains(str(caso[3])) and (str(caso[4]) == "" or txt.contains(str(caso[4]))), "%s: passou = texto completo" % caso[1])
+			else:
+				_check(txt.contains("DT") and not txt.contains(str(caso[3])), "%s: falhou = só o superficial" % caso[1])
+			room.queue_free()
+			await process_frame
+	# A JÃºlia: Intuição DT 8 e, pressionada, Diplomacia ou Intimidação DT 12; falhou = ela diz pouco ou se fecha.
+	for cena in ["julia_aflita", "julia_aflita_nada", "julia_revela", "julia_revela_nada"]:
+		_check(CenaRoteiro.existe(cena), "a cena %s existe" % cena)
+	Missao1.reiniciar()
+	var bib = await _abrir("biblioteca")
+	bib._inspect("julia_pressionar")
+	_check(bib.dialog_text.text.contains("começar por uma conversa"), "a JÃºlia: só dá para pressionar depois da conversa")
+	bib.queue_free()
+	await process_frame
 
 
 func _check(ok: bool, name: String) -> void:
