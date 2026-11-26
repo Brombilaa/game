@@ -27,6 +27,7 @@ func _run() -> void:
 	await _porta_com_chave()
 	await _baus()
 	await _armario_cameras_gravador()
+	await _ajuste_destaque()
 	await _tapete_e_alcapao()
 	await _invasao()
 	await _celeiro()
@@ -536,3 +537,22 @@ func _armario_cameras_gravador() -> void:
 	for cid in ["gravador_ghular", "quadro_flor_vermelha"]:
 		_check(r21.scenario.clues.has(cid), "21h: a sala do Ghular tem " + cid)
 	await _fechar(r21)
+
+
+func _ajuste_destaque() -> void:
+	# Pistas fundidas ao cenário levam a borda numa caixa invisível; a ferramenta F9 mexe nela (Léo, 26/11).
+	Missao1.reiniciar()
+	var room = await _abrir("delegacia_17h")
+	var c: Dictionary = room.scenario.clues["livro_ocorrencias"]
+	_check(c.destaque.has("proxy"), "17h: o livro de ocorrências leva a borda numa caixa")
+	var aj = room.get_node("AjusteDestaque")
+	aj._alternar()
+	_check(aj.ativo and aj.ids.has("livro_ocorrencias"), "17h: F9 liga a ferramenta com as pistas de caixa")
+	var antes: Vector3 = aj._caixa("livro_ocorrencias").global_position
+	aj.valores["livro_ocorrencias"]["dx"] = 0.5
+	aj._aplicar("livro_ocorrencias")
+	_check(absf(aj._caixa("livro_ocorrencias").global_position.x - antes.x - 0.5) < 0.001, "17h: o ajuste move a caixa")
+	var com := AjusteDestaque.com_ajuste({"proxy": {"y": 0.2, "tam": [1, 1, 1]}}, "nao_existe", "nada")
+	_check(com["proxy"]["y"] == 0.2, "17h: sem ajuste gravado vale o valor dos dados")
+	aj._alternar()
+	await _fechar(room)

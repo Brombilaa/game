@@ -1311,8 +1311,14 @@
    "provisorio": true,
    "inspecao": "res://assets/sprites/pistas/livro_ocorrencias.png",
    "destaque": {
-    "raio": 0.8,
-    "max": 2.5
+    "proxy": {
+     "y": 0.25,
+     "tam": [
+      0.7,
+      0.5,
+      0.6
+     ]
+    }
    }
   },
   {
@@ -1337,8 +1343,14 @@
    ],
    "sem_diario": true,
    "destaque": {
-    "raio": 0.8,
-    "max": 2.5
+    "proxy": {
+     "y": 0.25,
+     "tam": [
+      0.6,
+      0.5,
+      0.6
+     ]
+    }
    }
   },
   {
@@ -1444,8 +1456,14 @@
    ],
    "inspecao": "res://assets/sprites/pistas/ficha_07.png",
    "destaque": {
-    "raio": 0.8,
-    "max": 2.5
+    "proxy": {
+     "y": 0.5,
+     "tam": [
+      0.8,
+      1.0,
+      0.8
+     ]
+    }
    },
    "chave": "chave_armario",
    "texto_trancado": "Uma placa na porta diz \"Armário de Evidências\". Está trancado, e as chaves da delegacia não abrem. As do armário devem estar por aqui."
@@ -1486,8 +1504,14 @@
    "texto": "As paredes da cela estão marcadas por arranhões fundos, feitos de dentro para fora. Desenhado com o que parece sangue, o mesmo símbolo da árvore do parque.",
    "provisorio": true,
    "destaque": {
-    "raio": 0.8,
-    "max": 2.5
+    "proxy": {
+     "y": 0.4,
+     "tam": [
+      0.8,
+      0.8,
+      0.8
+     ]
+    }
    }
   },
   {
@@ -1511,8 +1535,14 @@
     }
    ],
    "destaque": {
-    "raio": 0.8,
-    "max": 2.5
+    "proxy": {
+     "y": 0.25,
+     "tam": [
+      0.6,
+      0.5,
+      0.6
+     ]
+    }
    },
    "essencial": true,
    "resumo": "Sem tempo para revirar a recepção, o grupo deduz que a chave do escritório do Ghular deve estar no chaveiro, e que a sala foi trancada de propósito."
@@ -1537,8 +1567,14 @@
     "provisorio": true
    },
    "destaque": {
-    "raio": 0.8,
-    "max": 2.5
+    "proxy": {
+     "y": 0.25,
+     "tam": [
+      0.6,
+      0.5,
+      0.6
+     ]
+    }
    }
   },
   {
@@ -1622,8 +1658,14 @@
    ],
    "sem_diario": true,
    "destaque": {
-    "raio": 0.8,
-    "max": 2.5
+    "proxy": {
+     "y": 0.6,
+     "tam": [
+      0.8,
+      1.2,
+      0.8
+     ]
+    }
    }
   },
   {

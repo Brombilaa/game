@@ -72,6 +72,10 @@ func _ready() -> void:
 		DiarioMiguel.esteve(SCENARIO_ID)  # a página do parque aparece no caderno do Miguel
 	pathfinder = _novo_pathfinder()
 	scenario = Scenario.load_id(_scenario_id())
+	if _tem_pista_proxy():
+		var aj := AjusteDestaque.new()
+		aj.name = "AjusteDestaque"
+		add_child(aj)
 	assert(scenario.ok(), "\n".join(scenario.errors))
 	room_descanso.load_points(scenario.descansos)  # a Van é o ponto de descanso (Léo, 20/11)
 	if scenario.backdrop_path != "":
@@ -912,6 +916,13 @@ func _draw_npc(font: Font, npc_id: String) -> void:
 
 # Brilho dourado sobre as pistas que ainda não foram vistas, quando o controlado está perto.
 # Cada pista ainda não vista e já liberada ganha uma bolinha acima do objeto; é nela que se clica.
+func _tem_pista_proxy() -> bool:
+	for cid in scenario.clues:
+		if scenario.clues[cid].get("destaque", {}).has("proxy"):
+			return true
+	return false
+
+
 func _dot_pos(cid: String) -> Vector2:
 	var c: Dictionary = scenario.clues[cid]
 	return _iso(c.pos) + c.bolinha
@@ -963,7 +974,7 @@ func _pista_bolinha(at: Vector2, ativa: bool, locked: bool, perto: bool, pulse: 
 func _malhas_pista(cid: String) -> Array:
 	if not pista_malhas.has(cid):
 		var c: Dictionary = scenario.clues[cid]
-		var d: Dictionary = c.get("destaque", {})
+		var d: Dictionary = AjusteDestaque.com_ajuste(c.get("destaque", {}), _scenario_id(), cid)
 		pista_malhas[cid] = world3d.malhas_em(Vector3(c.pos.x / 64.0, 0.0, c.pos.y / 64.0), d) if world3d != null and world3d.has_method("malhas_em") and not d.is_empty() else []
 	return pista_malhas[cid]
 

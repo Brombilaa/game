@@ -94,11 +94,30 @@ DEST_ITEM = {"raio": 0.8, "max": 2.5}  # malhas do objeto a até 0,6 m do ponto 
 
 
 def borda(d):
-    """Borda do objeto como no parque (Léo, 26/11), no lugar da bolinha: as malhas próprias a até 0,8 m do ponto da pista.
-    Objeto fundido ao cenário (sem malha própria) segue com a bolinha, porque o destaque só enxerga malhas separadas."""
+    """Borda do objeto como no parque (Léo, 26/11), no lugar da bolinha: as malhas próprias a até 0,8 m do ponto da
+    pista; objeto fundido ao cenário usa uma caixa invisível (PROXY)."""
     for c in d["pistas"]:
-        if "destaque" not in c or c["destaque"] == DEST_ITEM:
+        if "destaque" in c and c["destaque"] != DEST_ITEM:
+            continue
+        if c["id"] in PROXY:
+            y, tam = PROXY[c["id"]]
+            c["destaque"] = {"proxy": {"y": y, "tam": tam}}
+        else:
             c["destaque"] = dict(DEST_ITEM)
+
+
+# Objetos fundidos ao cenário (sem malha própria): caixa invisível que leva a borda, no ponto da pista (que fica no chão,
+# por baixo do objeto). id -> (altura do centro, [largura, altura, profundidade]) em metros. Provisório: o Léo encaixa cada
+# caixa no objeto com a ferramenta do jogo (F9) e os valores vão para data/ajustes_destaque.json.
+PROXY = {
+    "livro_ocorrencias": (0.25, [0.7, 0.5, 0.6]),
+    "chaves_armario": (0.25, [0.6, 0.5, 0.6]),
+    "cameras_recepcao": (0.25, [0.6, 0.5, 0.6]),
+    "ficha_desaparecidos": (0.5, [0.8, 1.0, 0.8]),
+    "cela_arranhoes": (0.4, [0.8, 0.8, 0.8]),
+    "chaveiro_recepcao": (0.25, [0.6, 0.5, 0.6]),
+    "geladeira_pave": (0.6, [0.8, 1.2, 0.8]),
+}
 
 
 def _pt(d):

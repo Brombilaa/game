@@ -21,6 +21,18 @@ func selecionar(raizes: Array, p: Vector3, spec: Dictionary) -> Array:
 	if spec.has("decalque"):  # marcas pintadas no chão, sem malha própria: um contorno pronto (PNG) sobre o chão
 		var dec := _decalque(raizes[0] as Node, spec["decalque"])
 		return [dec] if dec != null else []
+	if spec.has("proxy"):  # objeto fundido ao cenário, sem malha própria: uma caixa invisível leva a borda (ajustada com a ferramenta F9)
+		var px: Dictionary = spec["proxy"]
+		var tam: Array = px["tam"]
+		var caixa := MeshInstance3D.new()
+		var bm := BoxMesh.new()
+		bm.size = Vector3(float(tam[0]), float(tam[1]), float(tam[2]))
+		caixa.mesh = bm
+		caixa.visible = false
+		caixa.set_meta("proxy", true)
+		(raizes[0] as Node).add_child(caixa)
+		caixa.global_position = Vector3(p.x + float(px.get("dx", 0.0)), float(px["y"]), p.z + float(px.get("dz", 0.0)))
+		return [caixa]
 	for no in raizes:
 		for m in (no as Node).find_children("*", "MeshInstance3D", true, false):
 			var mi := m as MeshInstance3D
