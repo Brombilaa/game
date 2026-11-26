@@ -47,6 +47,9 @@ const GHOSTS := {"principal": "arma", "secundaria": "arma", "colete": "colete", 
 # Textos provisórios dos itens (o GDD ainda não os define).
 const BLURBS := {
 	"pulseira_amizade": "Acessório: miçangas coloridas que amarram a mente ao que o Caio deixou.",
+	"caderninho_caio": "Caderninho de capa mole do Caio: horários, nomes e anotações de campo, tudo com letra pequena e apertada.",
+	"chave_van": "Chave da van do grupo, com um chaveiro gasto de pelúcia.",
+	"celular_caio": "Celular do Caio, com a tela trincada. O Tristan costuma ligar para ele.",
 	"livro_sanguis_orchid": "Livro do culto Sanguis Orchid, de páginas rasgadas.",
 	"fertilizante": "Saco de fertilizante tirado do celeiro.",
 	"agrotoxico": "Veneno de lavoura guardado no celeiro.",

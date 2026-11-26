@@ -3,15 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://wpycbgvpip1n"
-path="res://.godot/imported/pagina_flavum.png-24b3d29ec5e6c77afc6f851b223ff1d3.ctex"
-metadata={
-"vram_texture": false
-}
+valid=false
 
 [deps]
 
 source_file="res://assets/sprites/pistas/pagina_flavum.png"
-dest_files=["res://.godot/imported/pagina_flavum.png-24b3d29ec5e6c77afc6f851b223ff1d3.ctex"]
 
 [params]
 

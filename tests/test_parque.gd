@@ -41,6 +41,7 @@ func _run() -> void:
 	var msg: String = room.collect_items(room.scenario.clues["caio"]["da"])
 	_check(room.inventory.count("escopeta") == 1 and room.inventory.count("municao_escopeta") == 6 and room.inventory.count("bandagem") == 2 and room.inventory.count("pulseira_amizade") == 1, "inspecionar o Caio dá escopeta, balas, bandagens e a pulseira")
 	_check(msg.begins_with("Achou: 1x Escopeta"), "o aviso nomeia a escopeta")
+	_check(room.inventory.count("caderninho_caio") == 1 and room.inventory.count("chave_van") == 1 and room.inventory.count("celular_caio") == 1, "o Caio também passa o caderninho, a chave da van e o celular")
 	# Pulseira: +2 de SAN máxima no acessório; escopeta equipada começa vazia e recarrega da mochila.
 	var san0 := fernando.max_san
 	var pul := -1
@@ -175,6 +176,10 @@ func _run() -> void:
 	_check(room.mode == room.Mode.EXPLORATION, "as pistas iniciais não disparam combate")
 
 	# Esconderijo com saque (16/11, provisório): só depois das pistas iniciais, e o saque vai para a mochila.
+	# O teste já pegou o que o Caio dá mais de uma vez; devolve as cópias dos itens que não empilham para a mochila ter vaga.
+	for extra in ["caderninho_caio", "chave_van", "celular_caio", "pulseira_amizade"]:
+		while room.inventory.count(extra) > 1:
+			room.inventory.remove(extra)
 	var antes_mochila: int = room.inventory.count("curativo")
 	room._inspect("mochila_piquenique")
 	room._close_dialog()

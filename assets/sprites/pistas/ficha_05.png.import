@@ -3,15 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dfsp6b3fuw2x7"
-path="res://.godot/imported/ficha_05.png-766463fa8d5a41007fb4dee3ac04bd89.ctex"
-metadata={
-"vram_texture": false
-}
+valid=false
 
 [deps]
 
 source_file="res://assets/sprites/pistas/ficha_05.png"
-dest_files=["res://.godot/imported/ficha_05.png-766463fa8d5a41007fb4dee3ac04bd89.ctex"]
 
 [params]
 

@@ -3,15 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://hfukstk2b1qk"
-path="res://.godot/imported/pagina_parasitagem.png-a85cdb7dffa3a74be6452d38e9c3ceb3.ctex"
-metadata={
-"vram_texture": false
-}
+valid=false
 
 [deps]
 
 source_file="res://assets/sprites/pistas/pagina_parasitagem.png"
-dest_files=["res://.godot/imported/pagina_parasitagem.png-a85cdb7dffa3a74be6452d38e9c3ceb3.ctex"]
 
 [params]
 
