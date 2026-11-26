@@ -30,7 +30,7 @@ const NOMES := {
 	"ghular": "Ghular", "tulio": "Túlio",
 	# Roberto Ghular de manto (cripta, retrato v2 de 22/11); o de farda é "ghular"
 	"ghular_manto": "Ghular",
-	# Velho Geraldo Munch (retrato v2 pronto, 22/11); ainda sem fala no jogo
+	# Velho Geraldo Munch (casa do Geraldo, roteiro 3c; retrato v2 de 22/11)
 	"geraldo": "Geraldo",
 }
 const ARQUIVO_FALAS := "res://data/falas.json"

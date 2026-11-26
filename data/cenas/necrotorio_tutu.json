@@ -1,0 +1,150 @@
+{
+	"_nota": "A cena do Tutu (roteiro 3b, Léo 20/11): a Letícia mostra o corpo, tira as sementes de orquídea das costas e uma gaveta arrebenta com um zumbi de sangue (combate 2, só um susto). Falas do Léo; a Letícia se esconde perto da porta durante o combate. O estado 'arrombada' liga a gaveta aberta no cenário.",
+	"passos": [
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.7,
+			"junto": true
+		},
+		{
+			"faz": "andar",
+			"quem": "leticia",
+			"ate": [
+				672.0,
+				422.4
+			],
+			"perto": 6
+		},
+		{
+			"faz": "camera",
+			"em": [
+				748.8,
+				352.0
+			],
+			"tempo": 0.8,
+			"zoom": 1.8
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "leticia",
+					"texto": "Vocês precisam ver isso. Quando o legista me falou eu não acreditei."
+				}
+			]
+		},
+		{
+			"faz": "legenda",
+			"texto": "Ela puxa o pano branco. Um homem de uns quarenta anos, cabelo e barba sujos e desgrenhados.",
+			"tempo": 2.4
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "leticia",
+					"texto": "Esse é o Tutu, um homem que morava na praça. Perdeu tudo depois que ficou viciado em bebida e jogos de azar, e começou a morar na rua."
+				},
+				{
+					"quem": "leticia",
+					"texto": "Ele foi encontrado no parque, mas a polícia não havia registrado a morte dele. O registro daqui diz que morreu na porta do hospital. Alguém deve ter levado ele pra lá."
+				},
+				{
+					"quem": "leticia",
+					"texto": "Mas olhem isso aqui..."
+				}
+			]
+		},
+		{
+			"faz": "legenda",
+			"texto": "Ela veste luvas, vira o corpo de lado e abre com dois dedos uma pequena incisão nas costas.",
+			"tempo": 2.4
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "leticia",
+					"texto": "Sabem o que é isso? São sementes de orquídea."
+				}
+			]
+		},
+		{
+			"faz": "esperar",
+			"tempo": 0.8
+		},
+		{
+			"faz": "tremor",
+			"forca": 4,
+			"tempo": 0.6
+		},
+		{
+			"faz": "legenda",
+			"texto": "Pancadas em metal, vindas das gavetas.",
+			"tempo": 1.6
+		},
+		{
+			"faz": "tremor",
+			"forca": 9,
+			"tempo": 0.8
+		},
+		{
+			"faz": "flash",
+			"forca": 0.35
+		},
+		{
+			"faz": "estado",
+			"nome": "arrombada",
+			"valor": true
+		},
+		{
+			"faz": "legenda",
+			"texto": "Uma das portas das gavetas se deforma de dentro para fora e é arremessada para o outro lado da sala.",
+			"tempo": 2.4
+		},
+		{
+			"faz": "sangue",
+			"em": [
+				768.0,
+				243.2
+			],
+			"qtd": 22,
+			"altura": 40
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "leticia",
+					"texto": "Para trás!"
+				}
+			]
+		},
+		{
+			"faz": "andar",
+			"quem": "leticia",
+			"ate": [
+				454.4,
+				480.0
+			],
+			"vel": 300,
+			"correr": true
+		},
+		{
+			"faz": "acordar",
+			"trecho": 2
+		},
+		{
+			"faz": "camera",
+			"em": "lider",
+			"tempo": 0.5,
+			"zoom": "jogador"
+		},
+		{
+			"faz": "cinema",
+			"estado": "sair",
+			"tempo": 0.7
+		}
+	]
+}
