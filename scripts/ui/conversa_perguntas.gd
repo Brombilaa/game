@@ -1,6 +1,6 @@
 class_name ConversaPerguntas
 extends CanvasLayer
-# Lista de perguntas de uma conversa (bar, Léo 20/11/2026): painel à direita com as perguntas em qualquer ordem, as já
+# Lista de perguntas de uma conversa (bar, Léo 20/11/2026): painel na parte inferior central (onde fica a caixa de fala), sem cabeçalho, com as perguntas em qualquer ordem, as já
 # feitas em cinza escuro e, no fim, a saída ("Já perguntei o bastante"). Clique, setas + Enter ou os números escolhem.
 # Emite `escolheu(id)` com o id da pergunta, ou "" quando o jogador encerra a conversa.
 
@@ -11,13 +11,15 @@ const OURO := Color(0.82, 0.68, 0.4)
 const TEXTO := Color(0.94, 0.9, 0.83)
 const FEITA := Color(0.34, 0.31, 0.29)  # cinza escuro: pergunta já feita (Léo, 22/11)
 const TELA := Vector2(960, 540)
-const PAINEL := Rect2(496, 78, 440, 308)
+const LARGURA := 600.0
+const ALTURA_ITEM := 29.0
+const BASE := 22.0  # folga até a borda de baixo da tela, como a caixa de fala
 
 var conversa_id := ""
 var dados := {}
 var botoes: Array[Button] = []  # um por pergunta, mais o da saída no fim
 var ids: Array[String] = []  # id de cada botão ("" = sair)
-var _cabecalho: Label
+var painel_rect := Rect2()  # onde a lista fica: parte inferior central, no lugar da caixa de fala
 
 
 func abrir(conversa_id_: String, dados_: Dictionary) -> void:
@@ -28,25 +30,23 @@ func abrir(conversa_id_: String, dados_: Dictionary) -> void:
 	fundo.set_anchors_preset(Control.PRESET_FULL_RECT)
 	fundo.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(fundo)
+	var altura := ALTURA_ITEM * float(dados.get("perguntas", []).size() + 1) + 20.0
+	painel_rect = Rect2((TELA.x - LARGURA) * 0.5, TELA.y - BASE - altura, LARGURA, altura)
 	var placa := ColorRect.new()
 	placa.color = Color(0.03, 0.022, 0.02, 0.92)
-	placa.position = PAINEL.position
-	placa.size = PAINEL.size
+	placa.position = painel_rect.position
+	placa.size = painel_rect.size
 	placa.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fundo.add_child(placa)
 	var borda := ColorRect.new()
 	borda.color = Color(OURO, 0.7)
-	borda.position = PAINEL.position
-	borda.size = Vector2(PAINEL.size.x, 1)
+	borda.position = painel_rect.position
+	borda.size = Vector2(painel_rect.size.x, 1)
 	borda.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fundo.add_child(borda)
-	_cabecalho = _rotulo(15, OURO)
-	_cabecalho.text = str(dados.get("titulo", "PERGUNTAS")).to_upper()
-	_cabecalho.position = PAINEL.position + Vector2(14, 8)
-	fundo.add_child(_cabecalho)
 	var lista := VBoxContainer.new()
-	lista.position = PAINEL.position + Vector2(10, 34)
-	lista.size = Vector2(PAINEL.size.x - 20, PAINEL.size.y - 40)
+	lista.position = painel_rect.position + Vector2(10, 10)
+	lista.size = Vector2(painel_rect.size.x - 20, painel_rect.size.y - 20)
 	lista.add_theme_constant_override("separation", 1)
 	fundo.add_child(lista)
 	var n := 1
