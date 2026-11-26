@@ -1,0 +1,60 @@
+{
+	"_nota": "Perguntas à Letícia no bar (roteiro-missao1.md, seção BAR). Léo 22/11: ficam só a 2 (responsavel), a 4 (ordo) e a 6 (chamou); o conteúdo das outras (desaparecidos, cena do crime, tempo na cidade, guarda, delegado) entra aos poucos dentro dessas respostas. A 6 é PROVISÓRIA do Claude; 'hoje à noite' virou 'hoje à tarde' porque a praça é às 16h.",
+	"bar_leticia": {
+		"titulo": "Perguntas à Letícia",
+		"quem": "leticia",
+		"sair": "Já perguntei o bastante.",
+		"perguntas": [
+			{
+				"id": "responsavel",
+				"texto": "Você é a responsável pelo caso?",
+				"respostas": [
+					{
+						"quem": "leticia",
+						"texto": "Não, e é isso que me incomoda. Eu não tenho os dados completos: está tudo num armário de provas na delegacia."
+					},
+					{
+						"quem": "leticia",
+						"texto": "Quem investiga é o delegado Roberto Ghular. O Beto, meu superior. Eu gostava dele, sabe? Até ele me pedir que eu não me envolvesse nos desaparecimentos."
+					}
+				],
+				"diario": {
+					"titulo": "Quem conduz o caso",
+					"texto": "A Letícia não é a responsável. Os dados completos estão num armário de provas da delegacia. Quem investiga é o delegado Roberto Ghular, o Beto, superior dela, que lhe pediu para não se envolver. (Letícia, no bar)"
+				}
+			},
+			{
+				"id": "ordo",
+				"texto": "Como você conhece a Ordo?",
+				"respostas": [
+					{
+						"quem": "leticia",
+						"texto": "Faz muitos anos. Eu era criança e morava num orfanato, em outra cidade. O lugar era assombrado por um espectro."
+					},
+					{
+						"quem": "leticia",
+						"texto": "Um Agente da Ordo Realitas o destruiu. Eu nunca esqueci. Quando começaram a sumir pessoas aqui, eu soube a quem pedir ajuda."
+					}
+				],
+				"diario": {
+					"titulo": "Como a Letícia conhece a Ordo",
+					"texto": "Quando criança, num orfanato de outra cidade, a Letícia viu um Agente da Ordo Realitas destruir um espectro que assombrava o lugar. Por isso pediu ajuda à Ordem. (Letícia, no bar)"
+				}
+			},
+			{
+				"id": "chamou",
+				"texto": "Por que você nos chamou?",
+				"respostas": [
+					{
+						"quem": "leticia",
+						"texto": "Porque eu acho que tem algo sobrenatural por trás disso, e a polícia da cidade não vai investigar isso. Eu não consigo explicar, mas sinto."
+					}
+				],
+				"diario": {
+					"titulo": "Por que a Letícia chamou a Ordem",
+					"texto": "A Letícia acredita que há algo sobrenatural por trás dos desaparecimentos e não confia que a polícia da cidade vá investigar isso. [provisório]"
+				}
+			}
+		]
+	}
+}

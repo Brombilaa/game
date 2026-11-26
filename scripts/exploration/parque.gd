@@ -4,7 +4,7 @@ extends "res://scripts/exploration/test_room.gd"
 # colisões, as pistas e o gatilho do combate vêm de `data/cenarios/parque.json` (Scenario).
 # O fundo tem projeção própria (48 × 18,13 px por unidade), por isso `_iso` e `_uniso` mudam.
 # Pistas: clique no objeto, o grupo anda até perto e o texto aparece; a árvore só depois das
-# outras. Depois da árvore, duas Criaturas de Sangue atacam; na vitória toca a cena da morte do Caio (CenaRoteiro,
+# outras. Depois da árvore, dois Zumbis de Sangue atacam; na vitória toca a cena da morte do Caio (CenaRoteiro,
 # data/cenas). Os diálogos dos NPCs ainda não existem.
 
 const SCENARIO_ID := "parque"
@@ -247,10 +247,11 @@ func _ir_para(local: String, chegada: String, texto: String, espera := 0.0) -> v
 	t.tween_property(rotulo, "theme_override_colors/font_color:a", 1.0, 0.4)
 	t.tween_interval(1.1)
 	await t.finished
-	Missao1.local = local
+	var ao_parque := local == "parque"  # o bar leva à praça: o parque é a cena própria, sem lugar em Missao1.local
+	Missao1.local = "" if ao_parque else local
 	Missao1.chegada = chegada
 	if is_inside_tree() and get_tree().current_scene == self:
-		Scenes.go(get_tree(), Missao1.CENA_LOCAL)
+		Scenes.go(get_tree(), Missao1.CENA_PARQUE if ao_parque else Missao1.CENA_LOCAL)
 
 
 # Paredes e coberturas a partir das colisões do cenário; o grupo começa na entrada.
@@ -295,7 +296,7 @@ func _diario_lugar() -> String:
 
 
 func _enemy_variant(_i: int) -> String:
-	return CREATURE_VARIANT  # Criatura de Sangue no lugar dos cultistas (Léo, 5/11)
+	return CREATURE_VARIANT  # Zumbi de Sangue no lugar dos cultistas (Léo, 5/11)
 
 
 # Os NPCs também bloqueiam o caminho.
@@ -547,7 +548,7 @@ const GOLPE_3D := {
 	"rifle_fire": [0.12, 0.45, 1.0],
 	"punch": [0.27, 0.6, 1.0],
 	"kick": [0.375, 0.7, 1.0],
-	"attack": [0.5, 0.78, 1.33],  # Criatura de Sangue: o segundo golpe, o mais forte
+	"attack": [0.5, 0.78, 1.33],  # Zumbi de Sangue: o segundo golpe, o mais forte
 }
 var golpes := {}  # Combatant -> {"anim", "inicio" (ms), "mira" (s), "duracao" (s do clipe), "alvo"}
 
@@ -580,7 +581,7 @@ func _attack_started(attacker: Combatant, target: Combatant, aim: float) -> void
 	golpes[attacker] = {"anim": anim, "inicio": Time.get_ticks_msec(), "mira": aim, "duracao": dur, "alvo": target}
 
 
-# Altura do peito dos modelos 3D em px do desenho (medida nas capturas: agente ~78, Criatura de Sangue ~100).
+# Altura do peito dos modelos 3D em px do desenho (medida nas capturas: agente ~78, Zumbi de Sangue ~100).
 func _chest_px(u: Combatant) -> float:
 	return 100.0 if _has_creatures() and enemies.has(u) else 78.0
 
@@ -678,6 +679,36 @@ func tocar_cena(cena_id: String) -> void:
 	mode = antes if antes != Mode.COMBAT else Mode.EXPLORATION
 	busy = false
 	queue_redraw()
+
+
+# Conversa por perguntas (data/conversas.json, ex.: o bar): a lista fica na tela até o jogador encerrar. Cada pergunta é
+# dita pelo controlado, a resposta toca na caixa de fala e vira entrada do diário (Conversa.registrar). `camada`: a
+# camada do painel (a cena de cinema fica acima do jogo, então ela passa uma maior).
+func conversa(conversa_id: String, camada := 97) -> void:
+	var dados_c := Conversa.carregar(conversa_id)
+	if dados_c.is_empty():
+		return
+	var painel := ConversaPerguntas.new()
+	add_child(painel)
+	painel.abrir(conversa_id, dados_c)
+	painel.layer = camada
+	while true:
+		var esc: String = await painel.escolheu
+		if esc == "":
+			break
+		var perg := Conversa.pergunta(dados_c, esc)
+		var primeira := Conversa.registrar(conversa_id, dados_c, esc, _diario_lugar())
+		painel.visible = false
+		var falas: Array = [{"quem": player.name.to_lower(), "texto": str(perg["texto"])}]
+		falas.append_array(perg.get("respostas", []))
+		await caixa.sequencia(falas)
+		if primeira:
+			audio.play_sfx("clue_found")
+		painel.atualizar()
+		painel.visible = true
+		if not CaixaFala.pular:
+			painel.botoes[painel.ids.find(esc)].grab_focus()
+	painel.queue_free()
 
 
 func cena_pos(quem: Variant) -> Vector2:

@@ -2,7 +2,7 @@ extends SceneTree
 # Junta as animações do Mixamo (FBX sem pele, na pasta assets/3d/animacoes/fonte_mx/, fora do Git) numa
 # biblioteca só, assets/3d/animacoes/mixamo.res, usada pelos modelos 3D do jogo (Agente3D).
 #   godot --headless --path . -s tools/mixamo_biblioteca.gd
-# A Criatura de Sangue tem animações próprias (fonte_criatura/cr_<nome>.fbx, With Skin do Mixamo) e vira
+# O Zumbi de Sangue tem animações próprias (fonte_criatura/cr_<nome>.fbx, With Skin do Mixamo) e vira
 # assets/3d/animacoes/criatura.res com os nomes da CreatureSheet:
 #   godot --headless --path . -s tools/mixamo_biblioteca.gd -- criatura
 # O Caio foi exportado em metros (os outros em centésimos): as mesmas animações, com as posições na escala dele:

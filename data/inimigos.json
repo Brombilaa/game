@@ -85,7 +85,7 @@
   },
   {
     "id": "criatura_sangue",
-    "nome": "Criatura de Sangue",
+    "nome": "Zumbi de Sangue",
     "provisorio": true,
     "pv": 20,
     "pa": 3,

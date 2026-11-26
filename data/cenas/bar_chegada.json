@@ -1,0 +1,158 @@
+{
+	"_nota": "Cena do bar (roteiro-missao1.md, cena 5; Léo 20/11: o bar pode ser cinemática até 'Alguma dúvida sobre o caso?' e dali em diante as perguntas são no jogo). Léo 22/11: ao chegar só uma fala do Nikolai e eles vão direto para a mesa; a introdução na van é o vídeo do Blender. Falas do Léo: Caio e Letícia (abertura e fim). A fala do Nikolai ao chegar e a do Fernando vêm das falas provisórias do roteiro; a do Caio no fim ('Bilhar fica para depois') e o texto do cartão de viagem são PROVISÓRIOS do Claude.",
+	"passos": [
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.8,
+			"junto": true
+		},
+		{
+			"faz": "camera",
+			"em": "lider",
+			"zoom": 1.2,
+			"tempo": 0.6
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "nikolai",
+					"texto": "Cidade pequena. Todo mundo se conhece. Alguém viu alguma coisa."
+				}
+			]
+		},
+		{
+			"faz": "andar",
+			"quem": "Fernando",
+			"ate": [
+				596,
+				104
+			],
+			"junto": true
+		},
+		{
+			"faz": "andar",
+			"quem": "Nikolai",
+			"ate": [
+				552,
+				190
+			],
+			"junto": true
+		},
+		{
+			"faz": "andar",
+			"quem": "Miguel",
+			"ate": [
+				474,
+				190
+			],
+			"junto": true
+		},
+		{
+			"faz": "andar",
+			"quem": "caio",
+			"ate": [
+				196,
+				300
+			],
+			"junto": true
+		},
+		{
+			"faz": "camera",
+			"em": [
+				400,
+				200
+			],
+			"zoom": 1.2,
+			"tempo": 2.5
+		},
+		{
+			"faz": "andar",
+			"quem": "leticia",
+			"ate": [
+				512,
+				52
+			]
+		},
+		{
+			"faz": "camera",
+			"em": "leticia",
+			"zoom": 1.55,
+			"tempo": 0.8
+		},
+		{
+			"faz": "olhar",
+			"quem": "caio",
+			"para": [
+				330,
+				288
+			]
+		},
+		{
+			"faz": "olhar",
+			"quem": "leticia",
+			"para": [
+				512,
+				190
+			]
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "caio",
+					"texto": "Bons tempos... Quando tudo isso acabar, podemos voltar aqui para uma jogatina, hein? Sabiam que fui campeão do torneio da Ordem?"
+				},
+				{
+					"quem": "fernando",
+					"texto": "O Caio vai querer a revanche."
+				},
+				{
+					"quem": "leticia",
+					"texto": "Espero poder ajudá-los nessa investigação. Tenho certeza que tem algo de inexplicável nesse caso. Vocês podem me perguntar o que quiserem e vou responder como puder."
+				},
+				{
+					"quem": "leticia",
+					"texto": "Alguma dúvida sobre o caso?"
+				}
+			]
+		},
+		{
+			"faz": "perguntas",
+			"id": "bar_leticia"
+		},
+		{
+			"faz": "camera",
+			"em": "leticia",
+			"zoom": 1.55,
+			"tempo": 0.5
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "leticia",
+					"texto": "Acho que já disse tudo que poderia para ajudá-los a entender o caso. Mas há algo que vocês precisam ver. Algo que vai fazê-los entender por que os chamei aqui."
+				},
+				{
+					"quem": "leticia",
+					"texto": "Precisamos ir para a praça da cidade. E precisamos ir agora."
+				},
+				{
+					"quem": "caio",
+					"texto": "Bilhar fica para depois. Vamos."
+				}
+			]
+		},
+		{
+			"faz": "marca",
+			"id": "bar_conversou"
+		},
+		{
+			"faz": "ir",
+			"para": "parque",
+			"texto": "Praça de Aurora, 16h"
+		}
+	]
+}
