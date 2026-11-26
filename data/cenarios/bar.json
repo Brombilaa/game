@@ -1,0 +1,235 @@
+{
+	"_comentario": "Escrito à mão (o bar não nasce de protótipo three.js nem de gerar_dados.py). O cenário 3D vem de tools/cenarios3d/missao1/gerar_bar.gd; medidas em px do plano (64 px = 1 m), planta 10 x 7 m. PROVISÓRIO do Claude (22/11/2026): o local do bar não está no GDD, só no roteiro ('um bar próximo' à delegacia, mesa no fundo, bilhar).",
+	"id": "bar",
+	"rotulo": "BAR",
+	"hora": 15,
+	"tamanho": [
+		640,
+		448
+	],
+	"fundo": {
+		"escala_tela": [
+			48.0,
+			18.13
+		],
+		"_nota": "sem imagem: o fundo é a cena 3D; a escala é a da câmera do parque"
+	},
+	"cena3d": {
+		"id": "bar",
+		"origem": [
+			0,
+			0
+		]
+	},
+	"inicio": {
+		"grupo": [
+			[
+				575,
+				290
+			],
+			[
+				588,
+				330
+			],
+			[
+				560,
+				358
+			]
+		],
+		"npcs": [
+			{
+				"id": "leticia",
+				"pos": [
+					545,
+					312
+				]
+			},
+			{
+				"id": "caio",
+				"pos": [
+					522,
+					352
+				]
+			}
+		]
+	},
+	"colisoes": [
+		{
+			"id": "parede_norte",
+			"rect": [
+				0,
+				0,
+				640,
+				16
+			]
+		},
+		{
+			"id": "parede_oeste",
+			"rect": [
+				0,
+				0,
+				16,
+				448
+			]
+		},
+		{
+			"id": "parede_leste",
+			"rect": [
+				626,
+				0,
+				14,
+				448
+			]
+		},
+		{
+			"id": "parede_sul",
+			"rect": [
+				0,
+				434,
+				640,
+				14
+			]
+		},
+		{
+			"id": "balcao",
+			"rect": [
+				16,
+				83,
+				86,
+				282
+			]
+		},
+		{
+			"id": "banqueta1",
+			"rect": [
+				110,
+				116,
+				24,
+				24
+			]
+		},
+		{
+			"id": "banqueta2",
+			"rect": [
+				110,
+				183,
+				24,
+				24
+			]
+		},
+		{
+			"id": "banqueta3",
+			"rect": [
+				110,
+				250,
+				24,
+				24
+			]
+		},
+		{
+			"id": "banqueta4",
+			"rect": [
+				110,
+				318,
+				24,
+				24
+			]
+		},
+		{
+			"id": "jukebox",
+			"rect": [
+				91,
+				6,
+				61,
+				38
+			]
+		},
+		{
+			"id": "barril",
+			"rect": [
+				15,
+				34,
+				41,
+				41
+			]
+		},
+		{
+			"id": "caixote",
+			"rect": [
+				16,
+				394,
+				45,
+				38
+			]
+		},
+		{
+			"id": "bilhar",
+			"rect": [
+				240,
+				237,
+				186,
+				102
+			]
+		},
+		{
+			"id": "mesa_fundo",
+			"rect": [
+				461,
+				69,
+				102,
+				61
+			]
+		},
+		{
+			"id": "cadeira1",
+			"rect": [
+				459,
+				142,
+				30,
+				30
+			]
+		},
+		{
+			"id": "cadeira2",
+			"rect": [
+				536,
+				142,
+				30,
+				30
+			]
+		},
+		{
+			"id": "mesa_redonda1",
+			"rect": [
+				155,
+				346,
+				113,
+				51
+			]
+		},
+		{
+			"id": "mesa_redonda2",
+			"rect": [
+				475,
+				346,
+				113,
+				51
+			]
+		}
+	],
+	"pistas": [],
+	"gatilhos": [],
+	"zonas": [],
+	"inimigos": [],
+	"objetivos": [
+		{
+			"texto": "Conversar com a Letícia no bar",
+			"provisorio": true
+		}
+	],
+	"marca_ao_chegar": "bar_visitado",
+	"cena_ao_chegar": {
+		"cena": "bar_chegada",
+		"marca": "bar_conversou"
+	}
+}

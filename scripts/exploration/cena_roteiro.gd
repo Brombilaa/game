@@ -26,6 +26,8 @@ extends Node
 #   surgir   {"id": nome, "tipo": "criatura_sangue", "pos": [x, y]}  criatura que só existe na cena
 #   sumir    {"quem": ator}                                          tira o ator da cena (NPC ou criatura da cena)
 #   marca    {"id": nome}                                            Missao1.marcar
+#   perguntas {"id": conversa}                                       lista de perguntas (data/conversas.json) até o jogador encerrar
+#   ir       {"para": lugar, "chegada": ponto, "texto": cartão}      escurece e abre o próximo lugar ("parque" = a praça)
 # Atores: id de NPC do cenário ("caio", "leticia"), nome do membro do grupo ("Fernando", "Nikolai", "Miguel"),
 # "lider" (o controlado), "inimigo:N" (N-ésimo inimigo do gatilho) ou o id de algo que surgiu na cena.
 
@@ -165,6 +167,14 @@ func _executar(p: Dictionary) -> void:
 			room.cena_sumir(_ator(p["quem"]))
 		"marca":
 			Missao1.marcar(str(p["id"]))
+		"perguntas":
+			var caixa: CaixaFala = room.caixa
+			var camada := caixa.layer
+			caixa.layer = cinema.layer + 1
+			await room.conversa(str(p["id"]), cinema.layer + 2)
+			caixa.layer = camada
+		"ir":
+			await room._ir_para(str(p["para"]), str(p.get("chegada", "")), str(p.get("texto", "")))
 		_:
 			push_warning("cena %s: passo desconhecido %s" % [id, p])
 
