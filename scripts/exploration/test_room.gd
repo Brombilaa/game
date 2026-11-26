@@ -63,7 +63,7 @@ const POPUP_STYLES := {
 # Velocidade de andar = 180 px/s, então ciclo/180 = segundos por passo completo.
 const WALK_FRAME_PIXELS := 20.0  # Fernando e demais folhas 2D de 6 quadros: ciclo de 120 px = 0,67 s (antes 90 px = 0,5 s)
 const NIKOLAI_WALK_CYCLE_PIXELS := 144.0  # Nikolai 3D: 0,8 s por passo completo (antes 0,5 s)
-const CREATURE_WALK_CYCLE_PIXELS := 180.0  # Criatura de Sangue: 1,0 s por ciclo (antes 0,5 s)
+const CREATURE_WALK_CYCLE_PIXELS := 180.0  # Zumbi de Sangue: 1,0 s por ciclo (antes 0,5 s)
 const NIKOLAI_ATTACK_SECONDS := 0.8  # mira/golpe do Nikolai (antes 0,6 s)
 const CREATURE_ATTACK_SECONDS := 1.2  # golpe da Criatura, 16 quadros (antes 0,6 s = 27 quadros/s)
 
@@ -269,7 +269,7 @@ var agent_sheets: Array[CharacterSheet] = []
 
 var enemy_sheets := {}  # variante -> CharacterSheet
 
-var creature := CreatureSheet.new()  # Criatura de Sangue (parque)
+var creature := CreatureSheet.new()  # Zumbi de Sangue (parque)
 var nikolai_clock := {}  # Combatant -> {"anim": String, "start": ms}: dano, morte ou levantar do Nikolai 3D
 var creature_clock := {}  # inimigo -> segundo (ms) em que a morte começou
 var combat_started_ms := -100000

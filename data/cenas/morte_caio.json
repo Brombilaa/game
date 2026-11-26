@@ -1,5 +1,5 @@
 {
-	"_nota": "Morte do Caio (Léo, 15/11/2026): no início do combate da árvore, a Criatura de Sangue perto da van ataca o Caio pelas costas, saltando em cima dele; a Letícia se afasta de costas e entra em choque. Depois o combate começa (emboscada). Falas, tempos e posições são provisórios do Claude.",
+	"_nota": "Morte do Caio (Léo, 15/11/2026): no início do combate da árvore, o Zumbi de Sangue perto da van ataca o Caio pelas costas, saltando em cima dele; a Letícia se afasta de costas e entra em choque. Depois o combate começa (emboscada). Falas, tempos e posições são provisórios do Claude.",
 	"passos": [
 		{"faz": "cinema", "estado": "entrar", "tempo": 0.6, "junto": true},
 		{"faz": "camera", "em": "caio", "zoom": 1.35, "tempo": 0.9},
