@@ -496,7 +496,7 @@ def cripta(d, p, ret):
     # e a morte dele; o combate continua (Dama, Letícia, celeiro e cutscene de fim de capítulo vêm depois). Limite e legenda são provisórios do Claude.
     # Passada de balanceamento (19/11): 20% em vez de 30%, para Nikolai e Miguel não ficarem com 36 PV de Dama sozinhos.
     # Léo (20/11): a morte do Fernando dispara com a Dama em 15% de PV ou menos, logo depois do turno dele, sempre.
-    d["fim"] = {"limite": 0.15, "legenda": "Fernando não se levanta.", "provisorio": True}
+    d["fim"] = {"limite": 0.15, "legenda": "Fernando não se levanta.", "cena_morte": "dama_morte", "provisorio": True}  # cena_morte: roteiro 5d
     d["grupos"] = {"corredor": {"marca": "cripta_corredor_limpo"}, "salao": {"marca": "cripta_vencida", "requer": "dama_surgiu"}}
     # Letícia ferida e desmaiada no altar: só acorda ao interagir depois do combate com a Dama (Léo). Textos provisórios.
     alt = [g for g in P["gatilhos"] if g["nome"].startswith("altar")][0]["ret"]

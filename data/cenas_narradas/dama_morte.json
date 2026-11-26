@@ -1,0 +1,65 @@
+{
+	"_nota": "Morte da Dama de Sangue (roteiro 5d). Narração do Léo quebrada em momentos; toca ao fim do combate, com o Fernando já morto. As falas finais são provisórias do Claude: fecham a história do salão (o Ghular, o ciclo dos sete, os pendurados) e levam à Letícia, que é o gatilho seguinte.",
+	"passos": [
+		{
+			"faz": "esperar",
+			"tempo": 0.6
+		},
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.8
+		},
+		{
+			"faz": "narrar",
+			"texto": "O corpo da criatura parece se expandir e contrair violentamente, diminuindo sua massa corporal cada vez mais, como se estivesse sendo sugada de volta para onde surgiu.",
+			"tempo": 6.0,
+			"tremor": 8
+		},
+		{
+			"faz": "narrar",
+			"texto": "Ele toma uma consistência cada vez mais gosmenta e líquida, enquanto os pulsos deformam as vinhas que se expandiram para fora do corpo sacrificado.",
+			"tempo": 6.0,
+			"tremor": 5
+		},
+		{
+			"faz": "narrar",
+			"texto": "Guinchos ensurdecedores são emanados pela criatura tenebrosa enquanto ela se dissolve em uma massa de dor e agonia.",
+			"tempo": 5.0,
+			"tremor": 10,
+			"flash": 0.4
+		},
+		{
+			"faz": "narrar",
+			"texto": "Eventualmente ela é reduzida por completo, deixando apenas os restos mortais desfigurados do corpo que originou a criatura e manchas de sangue fedorento e podre por todo lugar.",
+			"tempo": 6.5
+		},
+		{
+			"faz": "narrar",
+			"texto": "O silêncio é um alívio. Vocês venceram.",
+			"tempo": 4.0
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "miguel",
+					"texto": "O Ghular acreditava até o fim. Sete almas, a Santa das Flores, o Serafim Vermelho. No fim, a Santa foi só ele, de dentro para fora."
+				},
+				{
+					"quem": "nikolai",
+					"texto": "Os pendurados ainda respiram. E a Letícia... a Letícia primeiro."
+				},
+				{
+					"quem": "miguel",
+					"texto": "O Fernando abriu o caminho até aqui. A gente leva todo mundo para fora, por ele."
+				}
+			]
+		},
+		{
+			"faz": "cinema",
+			"estado": "sair",
+			"tempo": 0.7
+		}
+	]
+}
