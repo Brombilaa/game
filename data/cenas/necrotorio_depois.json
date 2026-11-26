@@ -1,0 +1,79 @@
+{
+	"_nota": "Depois do combate 2 (Léo 20/11): o grupo comenta que os cultistas têm acesso aos corpos do necrotério; a Letícia sai do esconderijo, passa mal e pede que continuem. Falas do grupo provisórias do Claude.",
+	"passos": [
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.7,
+			"junto": true
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "fernando",
+					"texto": "Um corpo daqui, morto e de pé. É assim que eles têm zumbis de sobra na praça."
+				},
+				{
+					"quem": "miguel",
+					"texto": "Os cultistas entram e saem do necrotério como quem vai à padaria."
+				},
+				{
+					"quem": "nikolai",
+					"texto": "E as sementes são o que levanta os corpos. Isso foi só um aviso."
+				}
+			]
+		},
+		{
+			"faz": "andar",
+			"quem": "leticia",
+			"ate": [
+				672.0,
+				422.4
+			],
+			"perto": 6
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "leticia",
+					"texto": "Mais zumbis."
+				}
+			]
+		},
+		{
+			"faz": "legenda",
+			"texto": "Ela se apoia na mesa de autópsia e senta numa cadeira do legista.",
+			"tempo": 2.4
+		},
+		{
+			"faz": "andar",
+			"quem": "leticia",
+			"ate": [
+				313.6,
+				313.6
+			]
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "leticia",
+					"texto": "Vocês me desculpem, mas eu não estou nada bem. Parece que tudo está ficando cada vez pior... Eu vou sentar aqui um pouquinho, tá? Por favor, continuem a investigação."
+				}
+			]
+		},
+		{
+			"faz": "camera",
+			"em": "lider",
+			"tempo": 0.6,
+			"zoom": "jogador"
+		},
+		{
+			"faz": "cinema",
+			"estado": "sair",
+			"tempo": 0.7
+		}
+	]
+}

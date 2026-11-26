@@ -1,5 +1,5 @@
 extends SceneTree
-# Teste headless das folhas da Criatura de Sangue. Rodar com:
+# Teste headless das folhas do Zumbi de Sangue. Rodar com:
 #   godot --headless --path . -s tests/test_creature_sheet.gd
 
 var failures := 0
@@ -17,9 +17,9 @@ func _init() -> void:
 			_check(tex != null and tex.get_width() == sheet.frame_count(anim) * fs, "%s_%s: largura é múltiplo do quadro" % [anim, d])
 	var cfg := CombatConfig.load_file()
 	var e := cfg.make_enemy("criatura_sangue", Vector2.ZERO)
-	_check(e != null and e.max_pv == 20, "ficha da Criatura de Sangue existe")
+	_check(e != null and e.max_pv == 20, "ficha do Zumbi de Sangue existe")
 	if failures == 0:
-		print("OK: Criatura de Sangue")
+		print("OK: Zumbi de Sangue")
 	quit(failures)
 
 

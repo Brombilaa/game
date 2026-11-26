@@ -1,5 +1,5 @@
 {
-	"_nota": "O delegado Roberto Ghular chega depois de o grupo mexer na agenda dele (roteiro 'O Delegado Ghular chega'; Léo 20/11): fingido, simpático, o 'tio do pavê'; não deixa transparecer que é o chefe do culto. Depois toca a mensagem da Letícia na caixa postal, que manda o grupo à biblioteca (o necrotério e a casa do Velho Geraldo, também citados no roteiro, ainda não existem no jogo). Falas provisórias do Claude a partir dos textos do Léo (Larissa virou Letícia).",
+	"_nota": "O delegado Roberto Ghular chega depois de o grupo mexer na agenda dele (roteiro 'O Delegado Ghular chega'; Léo 20/11): fingido, simpático, o 'tio do pavê'; não deixa transparecer que é o chefe do culto. Depois toca a mensagem da Letícia na caixa postal, que manda o grupo à biblioteca, ao necrotério e à casa do Velho Geraldo (os três, em qualquer ordem; os dois últimos entraram em 22/11). Falas provisórias do Claude a partir dos textos do Léo (Larissa virou Letícia).",
 	"passos": [
 		{
 			"faz": "cinema",
@@ -73,15 +73,15 @@
 			"falas": [
 				{
 					"quem": "leticia",
-					"texto": "Oi, aqui é a Letícia. Espero que tenham achado alguma coisa. Falei com a Juliana, a bibliotecária: ela tem informações do arquivo público."
+					"texto": "Oi, aqui é a Letícia. Espero que tenham achado alguma coisa. Tenho três pontas soltas: a Juliana, a bibliotecária, que tem o arquivo público; o legista, no necrotério, onde eu estarei; e o Velho Geraldo, na Rua das Bromélias, que investigou um caso parecido há muitos anos."
 				},
 				{
 					"quem": "leticia",
-					"texto": "Vão até a biblioteca. E, por favor, apaguem esta mensagem."
+					"texto": "Vão na ordem que preferirem. E, por favor, apaguem esta mensagem."
 				},
 				{
 					"quem": "fernando",
-					"texto": "Biblioteca, então. E ninguém comenta isto com o delegado."
+					"texto": "Biblioteca, necrotério e a casa do Geraldo. E ninguém comenta isto com o delegado."
 				}
 			]
 		}

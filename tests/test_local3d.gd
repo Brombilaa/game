@@ -17,6 +17,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	Progresso.autosave_ativo = false  # não mexe nos saves de quem roda os testes
+	TestePericia.animar = false  # a tela do dado tem teste próprio (test_testes_pericia)
 	_pathfinder_grade()
 	for id in LOCAIS:
 		var s := Scenario.load_id(id)
@@ -39,7 +40,7 @@ func _run() -> void:
 
 # Marcas das cenas de diálogo que tocam sozinhas ao chegar (as falas novas de 22/11): os testes de alcance, saque e
 # combate não as esperam. `_cenas_de_dialogo` testa as cenas de verdade.
-const MARCAS_DAS_CENAS := ["delegacia17_chegada", "ghular_17h", "ghular_21h", "biblioteca_julia", "ligacao_juliana", "cripta_ghular"]
+const MARCAS_DAS_CENAS := ["delegacia17_chegada", "ghular_17h", "ghular_21h", "biblioteca_julia", "biblioteca_saida", "ligacao_juliana", "delegacia_tulio_morte", "cripta_ghular", "necrotorio_chegada", "geraldo_chegada"]
 
 
 func _abrir(id: String, chegada := "", com_cenas := false) -> Node:
@@ -105,10 +106,18 @@ func _investigacao() -> void:
 			var c: Dictionary = room.scenario.clues[cid]
 			_check(str(c.texto).length() > 20, id + ": a pista %s tem texto" % cid)
 			_check(Pathfinder.is_free(c.pos, room._obstacles(room.player), room.player.radius), id + ": a pista %s fica em ponto livre" % cid)
+		for m in ["necrotorio_depois", "geraldo_chegada", "geraldo_conversa", "geraldo_1977", "julia_aflita", "julia_revela"]:
+			Missao1.marcar(m)  # pistas que só abrem depois de uma cena (a Letícia, o Geraldo)
 		var antes: int = room.inventory.count("kit_primeiros_socorros") + room.inventory.count("municao_pistola") + room.inventory.count("curativo")
-		for cid in room.scenario.clues:
-			room._inspect(cid)
-			room._close_dialog()
+		for _volta in 2:  # duas voltas: o armário de evidências (fichas) só abre depois do chaveiro
+			for cid in room.scenario.clues:
+				room._inspect(cid)
+				for i in 4:  # pista com teste de perícia: o jogador escolhe quem rola, uma vez por camada (22/11, 26/11)
+					if room.menu_teste == null:
+						break
+					room.menu_teste.find_children("*", "Button", true, false)[0].pressed.emit()
+					await process_frame
+				room._close_dialog()
 		_check(room.seen_clues.size() == room.scenario.clues.size(), id + ": todas as pistas podem ser lidas")
 		var depois: int = room.inventory.count("kit_primeiros_socorros") + room.inventory.count("municao_pistola") + room.inventory.count("curativo")
 		_check(depois > antes, id + ": achar itens nas pistas enche a mochila")
@@ -116,29 +125,31 @@ func _investigacao() -> void:
 
 
 func _porta_com_chave() -> void:
+	# Roteiro (Léo, 20/11): a sala do Ghular fica trancada às 17h e só abre às 21h; a chave da recepção abre o armário de evidências.
 	Missao1.reiniciar()
 	var room = await _abrir("delegacia_17h")
 	var pt: Dictionary = room.portas["escritorio_ghular"]
 	var r: Rect2 = pt["rect"]
 	_check(room.walls.has(r), "17h: a porta do escritório começa trancada (sólida)")
 	_check(pt["no"] != null, "17h: a porta trancada aparece no cenário")
-	var pista: Vector2 = room.scenario.clues["agenda_ghular"].pos
-	_check(room.pathfinder.find_path(room.player.pos, pista, room._obstacles(room.player), room.player.radius).size() < 2, "17h: sem a chave não dá para chegar ao escritório")
+	_check(not room.scenario.clues.has("agenda_ghular") and not room.scenario.clues.has("cofre_ghular"), "17h: agenda e cofre não estão mais no escritório das 17h")
 	for i in room.party.size():
 		room.party[i].pos = r.get_center() + Vector2(-40.0 + 40.0 * i, 40)
 	room._portas()
 	_check(room.dialog_layer.visible and room.walls.has(r), "17h: sem a chave aparece o aviso de porta trancada")
 	room.dialog_layer.visible = false
+	room._inspect("ficha_desaparecidos")
+	room._close_dialog()
+	_check(not room.seen_clues.has("ficha_desaparecidos"), "17h: o armário de evidências está trancado sem a chave")
 	room._inspect("chaveiro_recepcao")
 	room._close_dialog()
-	_check(room.inventory.count("chave_escritorio") == 1, "17h: o chaveiro dá a chave")
+	_check(room.inventory.count("chave_armario") == 1 and room.inventory.count("chave_escritorio") == 0, "17h: o chaveiro dá a chave do armário, não a do escritório")
 	room._portas()
-	_check(not room.walls.has(r) and Missao1.tem("porta_escritorio_ghular"), "17h: com a chave a porta abre sozinha e fica marcada")
-	_check(room.pathfinder.find_path(room.player.pos, pista, room._obstacles(room.player), room.player.radius).size() > 1, "17h: com a porta aberta dá para chegar ao escritório")
+	_check(room.walls.has(r) and not Missao1.tem("porta_escritorio_ghular"), "17h: a chave do armário não abre a sala do Ghular")
+	room._inspect("ficha_desaparecidos")
+	room._close_dialog()
+	_check(room.seen_clues.has("ficha_desaparecidos"), "17h: com a chave o armário abre e dá as fichas")
 	await _fechar(room)
-	var room2 = await _abrir("delegacia_17h")
-	_check(not room2.walls.has(r) and room2.portas.is_empty(), "17h: porta aberta continua aberta ao voltar")
-	await _fechar(room2)
 
 
 func _baus() -> void:
@@ -169,16 +180,6 @@ func _baus() -> void:
 		var depois: int = room.inventory.count("curativo") + room.inventory.count("bandagem") + room.inventory.count("kit_primeiros_socorros") + room.inventory.count("municao_pistola") + room.inventory.count("municao_escopeta")
 		_check(depois > antes, id + ": o saque do baú entra na mochila")
 		await _fechar(room)
-	# Delegacia: o cofre fica atrás da porta trancada do escritório (a chave do chaveiro vale pelas duas coisas).
-	Missao1.reiniciar()
-	var del = await _abrir("delegacia_17h")
-	var cofre: Vector2 = del.scenario.clues["cofre_ghular"].pos
-	_check(del.pathfinder.find_path(del.player.pos, cofre, del._obstacles(del.player), del.player.radius).size() < 2, "17h: sem a chave do escritório o cofre é inalcançável")
-	del.inventory.add("chave_escritorio", 1)
-	del.party[0].pos = (del.portas["escritorio_ghular"]["rect"] as Rect2).get_center() + Vector2(0, 40)
-	del._portas()
-	_check(del.pathfinder.find_path(del.player.pos, cofre, del._obstacles(del.player), del.player.radius).size() > 1, "17h: com a porta aberta o cofre é alcançável")
-	await _fechar(del)
 	# Todos os itens do saque existem nos dados.
 	var dados_jogo := GameData.new()
 	dados_jogo.load_dir()
@@ -314,7 +315,7 @@ func _cripta() -> void:
 	_check(not room.seen_clues.has("leticia"), "cripta: antes do combate a Letícia não acorda")
 	# Roberto com pouca vida: ele cai e a Dama de Sangue entra no mesmo combate.
 	room._start_combat()
-	roberto.pv = 8
+	roberto.pv = 5
 	room._show_attack(room.player, roberto, {"ok": true, "hit": true, "damage": 3, "crit": false, "blocked": false})
 	var dama: Combatant = null
 	for e in room.enemies:

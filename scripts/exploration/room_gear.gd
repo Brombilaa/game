@@ -189,7 +189,7 @@ func gear_use(m: Combatant, bag_index: int) -> String:
 		return "O kit reanima um aliado caído (barra de combate)"
 	if room.item_rules.is_combat_item(id):
 		return "Use em combate, pela barra (tecla numérica da casa)"
-	var heal := effect == "curar_pv"
+	var heal := effect == "curar_pv" or effect == "curar_pv_fixo"
 	if not cures.has(effect) and not heal:
 		return "Sem efeito por enquanto"
 	if heal and (not m.is_alive() or m.pv >= m.max_pv):
@@ -204,7 +204,8 @@ func gear_use(m: Combatant, bag_index: int) -> String:
 			room._reject("no_pa")
 			return "PA insuficientes"
 	if heal:  # curativo: recupera uma fração do PV máximo (valor em itens.json; provisório)
-		var cura := maxi(floori(m.max_pv * float(room.cfg.game_data.get_entry("itens", id)["valor"])), 1)
+		var valor := float(room.cfg.game_data.get_entry("itens", id)["valor"])
+		var cura := maxi(int(valor) if effect == "curar_pv_fixo" else floori(m.max_pv * valor), 1)  # pavê: valor é PV fixo (roteiro)
 		m.pv = mini(m.pv + cura, m.max_pv)
 		room._popup(m.pos, "+%d" % cura, "heal")
 	else:

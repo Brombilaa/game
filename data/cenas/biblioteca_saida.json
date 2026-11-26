@@ -1,0 +1,129 @@
+{
+	"_nota": "Saída da biblioteca (roteiro, seção 3, 'Saída da biblioteca' [LÉO]): a Ju olha o relógio, pede para sair por causa da ronda do segurança, agradece pela Lari, tranca a porta e vai embora de moto, com um leve sorriso. Falas do Léo mantidas; o resto é provisório do Claude. A Ju ainda não tem modelo 3D (figura simples) e a moto é o estado 'moto' do cenário (tools/cenarios3d/missao1/moto.py).",
+	"passos": [
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.7,
+			"junto": true
+		},
+		{
+			"faz": "camera",
+			"em": "julia",
+			"zoom": 1.7,
+			"tempo": 0.8
+		},
+		{
+			"faz": "legenda",
+			"texto": "A Ju olha o relógio de novo. É a quarta vez em dois minutos.",
+			"tempo": 2.4
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "julia",
+					"texto": "Desculpa gente, mas temos que sair. O segurança que faz a ronda deve estar chegando logo e eu não deveria estar aqui. Deixem as coisas em cima da minha mesa e vamos sair logo!"
+				}
+			]
+		},
+		{
+			"faz": "legenda",
+			"texto": "Ela arruma os documentos o mais rápido que pode e segue para a porta com os Agentes.",
+			"tempo": 2.6,
+			"junto": true
+		},
+		{
+			"faz": "andar",
+			"quem": "julia",
+			"ate": [
+				908.8,
+				857.6
+			]
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "julia",
+					"texto": "Gente, obrigada por ajudarem a Lari. Ela é uma excelente policial, mas não pode fazer tudo sozinha. Eu tentei ajudar, mas não tenho nenhum treinamento pra isso. Obrigada, de coração."
+				}
+			]
+		},
+		{
+			"faz": "legenda",
+			"texto": "Ela tranca a porta e vai até a moto, na calçada.",
+			"tempo": 2.4,
+			"junto": true
+		},
+		{
+			"faz": "andar",
+			"quem": "julia",
+			"ate": [
+				646.4,
+				908.8
+			]
+		},
+		{
+			"faz": "camera",
+			"em": [
+				646.4,
+				908.8
+			],
+			"zoom": 1.9,
+			"tempo": 0.9
+		},
+		{
+			"faz": "olhar",
+			"quem": "julia",
+			"para": "lider"
+		},
+		{
+			"faz": "legenda",
+			"texto": "Antes de pôr o capacete, ela olha de novo para os Agentes e dá um leve sorriso.",
+			"tempo": 2.6
+		},
+		{
+			"faz": "sumir",
+			"quem": "julia"
+		},
+		{
+			"faz": "estado",
+			"nome": "moto",
+			"valor": false,
+			"deslizar": [
+				-15.5,
+				3.9
+			],
+			"tempo": 2.2
+		},
+		{
+			"faz": "legenda",
+			"texto": "A moto some na noite escura.",
+			"tempo": 2.0
+		},
+		{
+			"faz": "camera",
+			"em": "lider",
+			"zoom": "jogador",
+			"tempo": 0.5
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "nikolai",
+					"texto": "Ela sabe mais do que contou. Viu o símbolo nas fotos e ficou calada até quase não aguentar."
+				},
+				{
+					"quem": "fernando",
+					"texto": "Depois a gente pergunta. Agora, vamos."
+				}
+			]
+		},
+		{
+			"faz": "marca",
+			"id": "biblioteca_saida_fim"
+		}
+	]
+}

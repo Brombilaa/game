@@ -2,7 +2,7 @@ extends SceneTree
 # Junta as animações do Mixamo (FBX sem pele, na pasta assets/3d/animacoes/fonte_mx/, fora do Git) numa
 # biblioteca só, assets/3d/animacoes/mixamo.res, usada pelos modelos 3D do jogo (Agente3D).
 #   godot --headless --path . -s tools/mixamo_biblioteca.gd
-# A Criatura de Sangue tem animações próprias (fonte_criatura/cr_<nome>.fbx, With Skin do Mixamo) e vira
+# O Zumbi de Sangue tem animações próprias (fonte_criatura/cr_<nome>.fbx, With Skin do Mixamo) e vira
 # assets/3d/animacoes/criatura.res com os nomes da CreatureSheet:
 #   godot --headless --path . -s tools/mixamo_biblioteca.gd -- criatura
 # O Caio foi exportado em metros (os outros em centésimos): as mesmas animações, com as posições na escala dele:
@@ -27,6 +27,61 @@ const SAIDA_CAIO := "res://assets/3d/animacoes/caio.res"
 const SAIDA_MIGUEL := "res://assets/3d/animacoes/miguel.res"
 const MODELO_MIGUEL := "res://assets/3d/personagens/miguel.fbx"
 const MODELO_CAIO := "res://assets/3d/personagens/caio.fbx"
+# Letícia (Léo, 21/11): o idle e as poses deitada vêm dos FBX With Skin dela (Standing Idle, Laying Nodding, Sleeping
+# Idle; ficam fora do Git, em /mnt/project-files/arte/modelo3d/leticia/anim/); as demais animações são as do
+# Nikolai/Fernando (mixamo.res) com as posições na escala do esqueleto dela.
+#   godot --headless --path . -s tools/mixamo_biblioteca.gd -- leticia <pasta dos FBX dela>
+const SAIDA_LETICIA := "res://assets/3d/animacoes/leticia.res"
+const MODELO_LETICIA := "res://assets/3d/personagens/leticia.fbx"
+const PROPRIAS_LETICIA := {"idle": "Standing_Idle", "laying_nodding": "Laying_Nodding", "sleeping_idle": "Sleeping_Idle"}
+
+
+func _animacao_do_fbx(caminho: String) -> Animation:
+	var cena: Node = (load(caminho) as PackedScene).instantiate()
+	var ap: AnimationPlayer = cena.find_children("*", "AnimationPlayer", true, false)[0]
+	var a: Animation = ap.get_animation("mixamo_com").duplicate(true)
+	cena.free()
+	return a
+
+
+func _zerar_quadril(a: Animation) -> void:
+	for t in a.get_track_count():
+		if a.track_get_type(t) == Animation.TYPE_POSITION_3D and String(a.track_get_path(t)).ends_with(":mixamorig_Hips"):
+			var p0: Vector3 = a.track_get_key_value(t, 0)
+			for k in a.track_get_key_count(t):
+				var p: Vector3 = a.track_get_key_value(t, k)
+				a.track_set_key_value(t, k, Vector3(p0.x, p.y, p0.z))
+
+
+func _biblioteca_leticia() -> void:
+	var pasta := "res://assets/3d/animacoes/fonte_leticia"
+	var args := OS.get_cmdline_user_args()
+	if args.size() > 1:
+		pasta = args[1]
+	var lib := AnimationLibrary.new()
+	var base := load(SAIDA) as AnimationLibrary
+	var escala := 0.0
+	for nome in base.get_animation_list():
+		var a: Animation = base.get_animation(nome).duplicate(true)
+		if escala == 0.0:
+			escala = _escala(MODELO_LETICIA, a)
+		for t in a.get_track_count():
+			if a.track_get_type(t) == Animation.TYPE_POSITION_3D:
+				for k in a.track_get_key_count(t):
+					a.track_set_key_value(t, k, (a.track_get_key_value(t, k) as Vector3) * escala)
+		lib.add_animation(nome, a)
+	for nome in PROPRIAS_LETICIA:
+		var fbx: String = pasta.path_join(PROPRIAS_LETICIA[nome] + ".fbx")
+		var a := _animacao_do_fbx(fbx)
+		a.loop_mode = Animation.LOOP_LINEAR
+		_zerar_quadril(a)
+		if lib.has_animation(nome):
+			lib.remove_animation(nome)
+		lib.add_animation(nome, a)
+		print("ok   - ", nome, " ", snappedf(a.length, 0.01), " s")
+	var err := ResourceSaver.save(lib, SAIDA_LETICIA, ResourceSaver.FLAG_COMPRESS)
+	print("salvo " if err == OK else "ERRO ", SAIDA_LETICIA, " escala ", escala)
+	quit()
 
 
 # Altura do quadril em repouso do modelo dividida pela da animação (primeira chave).
@@ -40,6 +95,9 @@ func _escala(modelo: String, a: Animation) -> float:
 
 
 func _initialize() -> void:
+	if "leticia" in OS.get_cmdline_user_args():
+		_biblioteca_leticia()
+		return
 	var criatura := "criatura" in OS.get_cmdline_user_args()
 	var miguel := "miguel" in OS.get_cmdline_user_args()
 	var caio := "caio" in OS.get_cmdline_user_args() or miguel  # o Miguel segue o mesmo caminho do Caio

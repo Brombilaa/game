@@ -28,6 +28,10 @@ const NOMES := {
 	"tristan": "Tristan", "mark": "Mark", "julia": "Júlia", "medico": "Socorrista",
 	# Delegacia (roteiro da missão 1, 20/11): o delegado Roberto Ghular e o escrivão Túlio (sem retrato: aparece a inicial)
 	"ghular": "Ghular", "tulio": "Túlio",
+	# Roberto Ghular de manto (cripta, retrato v2 de 22/11); o de farda é "ghular"
+	"ghular_manto": "Ghular",
+	# Velho Geraldo Munch (casa do Geraldo, roteiro 3c; retrato v2 de 22/11)
+	"geraldo": "Geraldo",
 }
 const ARQUIVO_FALAS := "res://data/falas.json"
 

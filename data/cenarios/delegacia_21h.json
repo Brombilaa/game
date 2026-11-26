@@ -1321,6 +1321,87 @@
    },
    "texto": "O tapete do canto está torto, como se alguém o tivesse puxado às pressas. Embaixo dele há um alçapão.",
    "provisorio": true
+  },
+  {
+   "id": "agenda_ghular",
+   "pos": [
+    992.0,
+    313.6
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Na agenda do delegado Ghular, sete datas do último mês estão circuladas, cada uma com uma orquídea vermelha desenhada a caneta. A sétima é de ontem.",
+   "provisorio": true
+  },
+  {
+   "id": "cofre_ghular",
+   "pos": [
+    876.8,
+    185.6
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Atrás da estante do escritório há um cofre de parede. A combinação está colada por baixo da gaveta da escrivaninha, e dentro ficam um colete, munição e duas baterias de rádio guardados pelo delegado.",
+   "provisorio": true,
+   "da": [
+    {
+     "item": "colete_leve",
+     "qtd": 1
+    },
+    {
+     "item": "municao_pistola",
+     "qtd": 6
+    },
+    {
+     "item": "bateria",
+     "qtd": 2
+    }
+   ]
+  },
+  {
+   "id": "gravador_ghular",
+   "pos": [
+    915.2,
+    288.0
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Cabos finos saem de trás da estante e seguem até um gravador escondido, ainda com a fita girando. O Ghular gravava tudo o que se dizia na delegacia, inclusive a conversa do grupo.",
+   "provisorio": true,
+   "teste": {
+    "pericias": [
+     "tecnologia"
+    ],
+    "dt": 12,
+    "completo": "O aparelho mostra que o delegado gravava a delegacia inteira, com as mesmas imagens da recepção. Dá para apagar os traços da presença do grupo."
+   }
+  },
+  {
+   "id": "quadro_flor",
+   "pos": [
+    812.8,
+    224.0
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Na parede, um quadro com uma orquídea vermelha pintada à mão, no mesmo desenho das datas circuladas na agenda.",
+   "provisorio": true
   }
  ],
  "gatilhos": [
@@ -1414,6 +1495,7 @@
  },
  "invasao": {
   "quando": "zona",
+  "cena_antes": "delegacia_tulio_morte",
   "marca": "invasao_vencida",
   "cena_depois": "ligacao_juliana",
   "flashbang": [

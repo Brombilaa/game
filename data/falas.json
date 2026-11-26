@@ -76,7 +76,7 @@
 			"texto": "Ou a polícia é incompetente, ou mandaram olhar para o outro lado."
 		}
 	],
-	"delegacia_17h/agenda_ghular": [
+	"delegacia_21h/agenda_ghular": [
 		{
 			"quem": "miguel",
 			"texto": "Sete datas, sete orquídeas desenhadas à mão. Caprichoso, para um delegado."
@@ -128,7 +128,7 @@
 			"texto": "O resto do chaveiro está vazio. Alguém limpou antes de sair."
 		}
 	],
-	"delegacia_17h/cofre_ghular": [
+	"delegacia_21h/cofre_ghular": [
 		{
 			"quem": "miguel",
 			"texto": "Colete, munição, bateria de rádio. O delegado se prepara para uma guerra."
@@ -182,6 +182,10 @@
 	],
 	"biblioteca/mesa_leitura": [
 		{
+			"quem": "nikolai",
+			"texto": "Fundada em 1817, por imigrantes. Cidade das Flores desde 1917. O culto às flores é velho aqui."
+		},
+		{
 			"quem": "miguel",
 			"texto": "Pediram uma santa ao Vaticano e a Igreja disse não. Já vi esse roteiro."
 		},
@@ -192,6 +196,16 @@
 		{
 			"quem": "nikolai",
 			"texto": "E a lápis, na margem: só se desfaz com o próprio Outro Lado. Quem anotou sabia."
+		}
+	],
+	"biblioteca/fotos_simbolo": [
+		{
+			"quem": "miguel",
+			"texto": "O símbolo aberto por dentro do tronco. Não é pichação. Alguém o marcou como se marca uma oferenda."
+		},
+		{
+			"quem": "fernando",
+			"texto": "A Ju viu isso e ficou calada. Tinha medo de parecer louca."
 		}
 	],
 	"biblioteca/mapa_antigo": [

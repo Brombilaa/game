@@ -47,20 +47,22 @@
 		{"id": "pneus_arvore", "rect": [1112, 312, 78, 75], "_nota": "pilha de dois pneus ao lado da árvore; medido sobre o fundo em 5/11"}
 	],
 	"pistas": [
-		{"id": "caio", "pos": [330, 740], "raio": 80, "ordem": 1, "bolinha": [0, -90], "texto": "O Caio abre o porta-malas da van e separa o equipamento do grupo: uma escopeta, balas e bandagens. Do pulso, tira uma pulseira de miçangas, torta, feita por mãos de criança, e a entrega ao grupo: \"Da minha filha. Dá sorte.\"", "da": [{"item": "escopeta", "qtd": 1}, {"item": "municao_escopeta", "qtd": 6}, {"item": "bandagem", "qtd": 2}, {"item": "pulseira_amizade", "qtd": 1}]},
+		{"id": "caio", "essencial": true, "pos": [330, 740], "raio": 80, "ordem": 1, "bolinha": [0, -90], "texto": "O Caio abre o porta-malas da van e separa as bandagens do grupo. Do pulso, tira uma pulseira de miçangas, torta, feita por mãos de criança, e a entrega ao grupo: \"Da minha filha. Dá sorte.\"", "da": [{"item": "bandagem", "qtd": 2}, {"item": "pulseira_amizade", "qtd": 1}]},
 		{"id": "marcas_pneu", "pos": [226, 520], "raio": 70, "ordem": 1, "bolinha": [0, -28], "destaque": {"decalque": {"png": "res://assets/3d/parque/marcas_pneu_contorno.png", "min": [-3.0, 3.0], "max": [9.0, 12.0], "y": 0.03}}, "texto": "Marcas largas de pneu, fundas: um veículo grande e pesado parou aqui. Os sulcos vão da terra central até a entrada, como se um corpo tivesse sido arrastado até ele."},
 		{"id": "balanco", "pos": [1200, 700], "raio": 100, "ordem": 1, "bolinha": [0, -125], "destaque": {"nomes": ["Mesh42", "Mesh43", "Mesh44"]}, "texto": "O balanço range com o vento. Na areia embaixo, o chão foi revolvido por uma briga, e alguém foi arrastado dali em direção às moitas."},
 		{"id": "banco_quebrado", "pos": [900, 400], "raio": 85, "ordem": 1, "perda_san": 1, "bolinha": [0, -62], "destaque": {"nomes": ["Mesh28", "Mesh30"]}, "texto": "As tábuas do banco foram quebradas por um corpo arremessado contra elas. Há sangue seco na madeira, marcas de garra, buracos de bala e um pedaço de tecido escuro e rústico preso numa lasca."},
 		{"id": "banco_velho", "pos": [440, 100], "raio": 85, "ordem": 1, "bolinha": [0, -62], "texto": "Um banco velho, coberto de limo.", "destaque": {"nomes": ["Mesh25", "Mesh26", "Mesh27"], "caixa": {"min": [5.5, 0.0, 0.7], "max": [8.5, 1.4, 2.6]}}},
 		{"id": "mochila_piquenique", "pos": [700, 300], "raio": 80, "ordem": 2, "bolinha": [0, -50], "provisorio": true, "texto": "Entre as moitas da trilha, uma mochila de piquenique abandonada às pressas. Dentro, o que sobrou: um curativo e algumas balas de pistola.", "da": [{"item": "curativo", "qtd": 1}, {"item": "municao_pistola", "qtd": 6}]},
-		{"id": "arvore_simbolo", "pos": [1130, 235], "raio": 80, "ordem": 2, "perturbadora": true, "bolinha": [6, -74], "areas": [[29, -250, 170, 150], [20, -70, 45, 75]], "_areas": "clique na árvore inteira: elipses [cx, cy, rx, ry] em px do desenho, relativas ao pé da pista (copa e tronco)", "texto": "Um símbolo pintado em vermelho no tronco. Parece sangrar.", "inspecao": "res://assets/sprites/cenario/parque/inspecao_simbolo.png", "destaque": {"nomes": ["Mesh10"]}}
+		{"id": "arvore_simbolo", "pos": [1130, 235], "raio": 80, "ordem": 2, "perturbadora": true, "bolinha": [6, -74], "areas": [[29, -250, 170, 150], [20, -70, 45, 75]], "_areas": "clique na árvore inteira: elipses [cx, cy, rx, ry] em px do desenho, relativas ao pé da pista (copa e tronco)", "texto": "Um símbolo pintado em vermelho no tronco. Parece sangrar.", "inspecao": "res://assets/sprites/cenario/parque/inspecao_simbolo.png", "destaque": {"nomes": ["Mesh10"]}, "testes": [
+			{"id": "rastros", "pericias": ["ocultismo"], "dt": 12, "completo": "Dentro da árvore há rastros de componentes ritualísticos: marcas de giz e cinzas."},
+			{"id": "invocacao", "pericias": ["ocultismo"], "dt": 15, "completo": "É claramente um ritual de Sangue, mas parece haver algo a mais: os rastros incluem símbolos de Invocação."}]}
 	],
 	"_recortes": "caixas do mundo 3D de onde se tiram triângulos da folhagem (sem mexer no glb): o arbusto que tapava o tronco da árvore (Léo, 13/11)",
 	"recortes": [
 		{"min": [16.2, 0.0, 1.5], "max": [19.2, 1.8, 4.5], "excluir": ["Mesh3", "Mesh4", "Mesh10", "Mesh11", "Mesh12", "Mesh13", "Mesh22", "Mesh23"]}
 	],
 	"objetivos": [
-		{ "texto": "Investigar o parque", "pistas": ["caio", "marcas_pneu", "balanco", "banco_quebrado", "banco_velho"], "provisorio": true },
+		{ "texto": "Investigar o parque", "pistas": ["caio"], "opcionais": ["marcas_pneu", "balanco", "banco_quebrado", "banco_velho"], "provisorio": true },
 		{ "texto": "Examinar o símbolo", "pista": "arvore_simbolo", "trancado": true, "provisorio": true }
 	],
 	"gatilhos": [
@@ -85,5 +87,5 @@
 		{"id": "pneus_oeste", "arquivo": "res://assets/sprites/cenario/parque/oclusao/pneus_oeste.png", "pos": [529, 514]},
 		{"id": "pneus_arvore", "arquivo": "res://assets/sprites/cenario/parque/oclusao/pneus_arvore.png", "pos": [1319, 534]}
 	],
-	"_pendencias": ["Criatura de Sangue no lugar do cultista (feito em 5/11); ficha provisória igual à do cultista", "pistas de ordem 2 só liberam depois de todas as de ordem 1"]
+	"_pendencias": ["Zumbi de Sangue no lugar do cultista (feito em 5/11); ficha provisória igual à do cultista", "pistas de ordem 2 só liberam depois de todas as de ordem 1"]
 }

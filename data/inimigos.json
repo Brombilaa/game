@@ -13,9 +13,7 @@
       "faca_cultista"
     ],
     "comportamento": "cerca",
-    "resistencias": [
-      "ritual"
-    ],
+    "resistencias": [],
     "fraquezas": [],
     "chefe": false,
     "fases": [],
@@ -87,7 +85,7 @@
   },
   {
     "id": "criatura_sangue",
-    "nome": "Criatura de Sangue",
+    "nome": "Zumbi de Sangue",
     "provisorio": true,
     "pv": 20,
     "pa": 3,
@@ -139,12 +137,8 @@
       "tiro_atirador"
     ],
     "comportamento": "atirador",
-    "resistencias": [
-      "corpo_a_corpo"
-    ],
-    "fraquezas": [
-      "ritual"
-    ],
+    "resistencias": [],
+    "fraquezas": [],
     "chefe": true,
     "fases": [],
     "drops": [
@@ -158,7 +152,8 @@
         "qtd": 6,
         "chance": 1.0
       }
-    ]
+    ],
+    "_comment": "Léo (26/11): Roberto é um homem, sem afinidades; a resistência a corpo a corpo era invenção e saiu."
   },
   {
     "id": "dama_sangue",
@@ -179,12 +174,10 @@
       "atordoado",
       "corpo_a_corpo"
     ],
-    "fraquezas": [
-      "ritual"
-    ],
+    "fraquezas": [],
     "chefe": true,
     "fases": [],
     "drops": [],
-    "_comment": "Léo (20/11): 100 PV, pancada de tentáculo e disparar espinhos; as 7 flores, os corpos e as habilidades ficam em data/dama_sangue.json (ChefeDama). Defesa 10%, dano e PA provisórios do Claude."
+    "_comment": "Léo (20/11): 100 PV, pancada de tentáculo e disparar espinhos; as 7 flores, os corpos e as habilidades ficam em data/dama_sangue.json (ChefeDama). Defesa 10%, dano e PA provisórios do Claude. Resistência a corpo a corpo = as 'Resistências a Dano 5' do roteiro: some quando a flor Vermelha murcha (Léo, 26/11)."
   }
 ]

@@ -25,6 +25,10 @@ const MODELOS := {
 			"anims": ["walk", "run", "crouch_walk", "crouch_idle"], "junto": {"idle": 8.0, "walk": -4.0, "run": -4.0, "crouch_walk": 6.0}}},
 	# Caio: remodelado pelo Léo (08/11, versão corrigida v2, só com o idle do Mixamo; as outras animações vêm da biblioteca).
 	"caio3d": {"modelo": "res://assets/3d/personagens/caio.fbx", "biblioteca": "res://assets/3d/animacoes/caio.res"},  # versão corrigida v2 (08/11): já de frente, posições na escala dele (caio.res)
+	# Letícia (Léo, 21/11): policial da missão 1, 1,65 m (o Fernando tem 1,80 m). Idle próprio, deitada no altar e dormindo
+	# (leticia.res, tools/mixamo_biblioteca.gd -- leticia); textura de 1024 px no mesmo acabamento de PC antigo dos outros.
+	"leticia3d": {"modelo": "res://assets/3d/personagens/leticia.fbx", "biblioteca": "res://assets/3d/animacoes/leticia.res",
+		"textura": "res://assets/3d/personagens/leticia_textura.tga", "altura": 2.017},
 	# Léo, 08/11: Criatura e Caio no mesmo nível do Nikolai e do Fernando. Textura A (aprovada em 05/11); 2,0 m contra 1,8 m dos agentes.
 	"criatura": {"modelo": "res://assets/3d/personagens/criatura.fbx", "biblioteca": "res://assets/3d/animacoes/criatura.res",
 		"textura": "res://assets/3d/personagens/criatura_textura.png", "altura": 2.45},

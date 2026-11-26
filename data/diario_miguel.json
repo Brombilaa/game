@@ -131,8 +131,16 @@
 					"t": "Silêncio de biblioteca, mas pesado. Alguém saiu daqui com pressa."
 				},
 				{
+					"t": "Aurora: fundada em 1817 por imigrantes europeus, [u]Cidade das Flores[/u] desde 1917.",
+					"requer": "pista:mesa_leitura"
+				},
+				{
 					"t": "Em 1970 a cidade pediu ao Vaticano uma \"Santa das Flores\": Lygia Virgínia do Rosário. [u]Negaram.[/u] Um desses pedidos que não acabam bem.",
 					"requer": "pista:mesa_leitura"
+				},
+				{
+					"t": "Fotos da praça que a Letícia levou para casa: o símbolo da árvore, [color=#8e1b12]aberto por dentro do tronco[/color]. A Ju viu e não disse nada.",
+					"requer": "pista:fotos_simbolo"
 				},
 				{
 					"t": "O Sanguis Orchid: doado em 1979, lido por Frederico Ghular em 87 e 97, [color=#8e1b12]confiscado pelo Roberto[/color] há poucos dias.",
@@ -311,10 +319,13 @@
 		"livro_ocorrencias": "delegacia",
 		"cela_arranhoes": "celas",
 		"agenda_ghular": "delegacia",
+		"gravador_ghular": "delegacia",
+		"quadro_flor": "delegacia",
 		"ficha_desaparecidos": "delegacia",
 		"mesa_leitura": "biblioteca",
 		"fichario": "biblioteca",
 		"mapa_antigo": "biblioteca",
+		"fotos_simbolo": "simbolo",
 		"diario_bibliotecaria": "biblioteca",
 		"tapete": "subsolo",
 		"livro_faltando": "subsolo",

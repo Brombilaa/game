@@ -1,6 +1,6 @@
 class_name CreatureSheet
 extends RefCounted
-# Criatura de Sangue em 3D renderizado como pixel art (Mixamo + render do Claude), mesma ideia do AnimSheet.
+# Zumbi de Sangue em 3D renderizado como pixel art (Mixamo + render do Claude), mesma ideia do AnimSheet.
 # Folhas `criatura_<animação>_<s|se|e|ne|n>.png`, quadros em fila. A maioria tem quadros de 384 px
 # (pivô 192,358); o ataque tem quadros de 448 px (pivô 224,398). Escala 0,5 na tela. SO, O e NO espelham SE, E e NE.
 

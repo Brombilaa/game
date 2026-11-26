@@ -4,17 +4,17 @@ extends "res://scripts/exploration/test_room.gd"
 # colisões, as pistas e o gatilho do combate vêm de `data/cenarios/parque.json` (Scenario).
 # O fundo tem projeção própria (48 × 18,13 px por unidade), por isso `_iso` e `_uniso` mudam.
 # Pistas: clique no objeto, o grupo anda até perto e o texto aparece; a árvore só depois das
-# outras. Depois da árvore, duas Criaturas de Sangue atacam; na vitória toca a cena da morte do Caio (CenaRoteiro,
+# outras. Depois da árvore, dois Zumbis de Sangue atacam; na vitória toca a cena da morte do Caio (CenaRoteiro,
 # data/cenas). Os diálogos dos NPCs ainda não existem.
 
 const SCENARIO_ID := "parque"
 const BOUNDS_PAD := 64.0  # espessura das paredes invisíveis na borda do plano
 const BIG_PROPS := ["van", "lago", "lago_2", "lago_3", "lago_4", "arvore", "mata_1", "mata_2", "arbusto_4"]  # paredes: bloqueiam também a visão (Léo: van e arbustos atrás da árvore)
 const NPC_RADIUS := 14.0
-const NPC_NAMES := {"caio": "Caio", "leticia": "Letícia", "tristan": "Tristan", "mark": "Mark", "julia": "Júlia", "medico": "Socorrista"}
+const NPC_NAMES := {"caio": "Caio", "leticia": "Letícia", "tristan": "Tristan", "mark": "Mark", "julia": "Júlia", "medico": "Socorrista", "geraldo": "Geraldo"}
 # Figuras provisórias. O pessoal do celeiro (Léo, 19/11) tem cores diferentes até ganhar modelo 3D.
 const NPC_COLORS := {"caio": Color("#46628a"), "leticia": Color("#885050"), "tristan": Color("#4a4d52"), "mark": Color("#5d5a3a"),
-	"julia": Color("#6a4f78"), "medico": Color("#c9c2b0")}
+	"julia": Color("#6a4f78"), "medico": Color("#c9c2b0"), "geraldo": Color("#7a766c")}
 var caio3d := IdleSheet.new("caio3d", "caio3d")  # Caio: só a animação de parado (morre no primeiro mapa)
 
 const DOT_RADIUS := 6.0  # bolinha da pista, em px do desenho
@@ -49,6 +49,9 @@ var pista_malhas := {}
 var pending_clue := ""
 var dialog_layer: CanvasLayer
 var dialog_clue := ""
+var dialog_paginas: Array = []  # pista com várias imagens (as 7 fichas): o clique vira a página até a última
+var dialog_pg := 0
+var dialog_base := ""
 var falas: FalasSoltas  # quando o grupo fala sozinho na exploração (Léo, 15/11)
 var caixa: CaixaFala  # falas curtas com retrato depois das pistas (Léo, modelo C, 15/11)
 var dialog_text: Label
@@ -217,6 +220,8 @@ func _ir_para(local: String, chegada: String, texto: String, espera := 0.0) -> v
 	if indo_para != "":
 		return
 	indo_para = local
+	for cid in scenario.deducoes(seen_clues):  # o que ficou sem examinar vira dedução do grupo no diário
+		Diario.deduzir(_diario_lugar(), cid, str(scenario.clues[cid]["resumo"]))
 	busy = true
 	path = PackedVector2Array()
 	var camada := CanvasLayer.new()
@@ -242,10 +247,11 @@ func _ir_para(local: String, chegada: String, texto: String, espera := 0.0) -> v
 	t.tween_property(rotulo, "theme_override_colors/font_color:a", 1.0, 0.4)
 	t.tween_interval(1.1)
 	await t.finished
-	Missao1.local = local
+	var ao_parque := local == "parque"  # o bar leva à praça: o parque é a cena própria, sem lugar em Missao1.local
+	Missao1.local = "" if ao_parque else local
 	Missao1.chegada = chegada
 	if is_inside_tree() and get_tree().current_scene == self:
-		Scenes.go(get_tree(), Missao1.CENA_LOCAL)
+		Scenes.go(get_tree(), Missao1.CENA_PARQUE if ao_parque else Missao1.CENA_LOCAL)
 
 
 # Paredes e coberturas a partir das colisões do cenário; o grupo começa na entrada.
@@ -290,7 +296,7 @@ func _diario_lugar() -> String:
 
 
 func _enemy_variant(_i: int) -> String:
-	return CREATURE_VARIANT  # Criatura de Sangue no lugar dos cultistas (Léo, 5/11)
+	return CREATURE_VARIANT  # Zumbi de Sangue no lugar dos cultistas (Léo, 5/11)
 
 
 # Os NPCs também bloqueiam o caminho.
@@ -542,7 +548,7 @@ const GOLPE_3D := {
 	"rifle_fire": [0.12, 0.45, 1.0],
 	"punch": [0.27, 0.6, 1.0],
 	"kick": [0.375, 0.7, 1.0],
-	"attack": [0.5, 0.78, 1.33],  # Criatura de Sangue: o segundo golpe, o mais forte
+	"attack": [0.5, 0.78, 1.33],  # Zumbi de Sangue: o segundo golpe, o mais forte
 }
 var golpes := {}  # Combatant -> {"anim", "inicio" (ms), "mira" (s), "duracao" (s do clipe), "alvo"}
 
@@ -575,7 +581,7 @@ func _attack_started(attacker: Combatant, target: Combatant, aim: float) -> void
 	golpes[attacker] = {"anim": anim, "inicio": Time.get_ticks_msec(), "mira": aim, "duracao": dur, "alvo": target}
 
 
-# Altura do peito dos modelos 3D em px do desenho (medida nas capturas: agente ~78, Criatura de Sangue ~100).
+# Altura do peito dos modelos 3D em px do desenho (medida nas capturas: agente ~78, Zumbi de Sangue ~100).
 func _chest_px(u: Combatant) -> float:
 	return 100.0 if _has_creatures() and enemies.has(u) else 78.0
 
@@ -673,6 +679,36 @@ func tocar_cena(cena_id: String) -> void:
 	mode = antes if antes != Mode.COMBAT else Mode.EXPLORATION
 	busy = false
 	queue_redraw()
+
+
+# Conversa por perguntas (data/conversas.json, ex.: o bar): a lista fica na tela até o jogador encerrar. Cada pergunta é
+# dita pelo controlado, a resposta toca na caixa de fala e vira entrada do diário (Conversa.registrar). `camada`: a
+# camada do painel (a cena de cinema fica acima do jogo, então ela passa uma maior).
+func conversa(conversa_id: String, camada := 97) -> void:
+	var dados_c := Conversa.carregar(conversa_id)
+	if dados_c.is_empty():
+		return
+	var painel := ConversaPerguntas.new()
+	add_child(painel)
+	painel.abrir(conversa_id, dados_c)
+	painel.layer = camada
+	while true:
+		var esc: String = await painel.escolheu
+		if esc == "":
+			break
+		var perg := Conversa.pergunta(dados_c, esc)
+		var primeira := Conversa.registrar(conversa_id, dados_c, esc, _diario_lugar())
+		painel.visible = false
+		var falas: Array = [{"quem": player.name.to_lower(), "texto": str(perg["texto"])}]
+		falas.append_array(perg.get("respostas", []))
+		await caixa.sequencia(falas)
+		if primeira:
+			audio.play_sfx("clue_found")
+		painel.atualizar()
+		painel.visible = true
+		if not CaixaFala.pular:
+			painel.botoes[painel.ids.find(esc)].grab_focus()
+	painel.queue_free()
 
 
 func cena_pos(quem: Variant) -> Vector2:
@@ -852,7 +888,18 @@ func _objectives() -> Array[Dictionary]:
 	return Objectives.from_data(scenario.objetivos, seen_clues, Missao1.tem, mode == Mode.COMBAT)
 
 
-# Caio tem a folha de parado em 3D; a Letícia ainda é figura provisória (corpo, cabeça e nome).
+# Animação da Letícia (Léo, 21/11): parada nos mapas; na cripta, no altar (Laying Nodding) até a luta com a Dama e deitada
+# (Sleeping Idle) durante a luta e na cena depois dela. Duração de cada clipe em segundos (leticia.res).
+const LETICIA_DURACAO := {"idle": 6.0, "laying_nodding": 2.83, "sleeping_idle": 6.87}
+
+
+func _anim_leticia() -> String:
+	if _scenario_id() != "cripta":
+		return "idle"
+	return "sleeping_idle" if mode == Mode.COMBAT or Missao1.tem("cripta_vencida") else "laying_nodding"
+
+
+# Caio e a Letícia têm modelo 3D; os outros NPCs ainda são figura provisória (corpo, cabeça e nome).
 func _draw_npc(font: Font, npc_id: String) -> void:
 	if npc_fora.has(npc_id):
 		return
@@ -877,6 +924,15 @@ func _draw_npc(font: Font, npc_id: String) -> void:
 		drawing_key = null
 		queue_redraw()  # a respiração anima
 		return
+	if npc_id == "leticia" and _modelos_3d() and Agente3D.tem_modelo("leticia3d"):  # Letícia 3D (Léo, 21/11)
+		drawing_key = npc_id
+		var anim := _anim_leticia()
+		var fase := fmod(Time.get_ticks_msec() / 1000.0 / float(LETICIA_DURACAO[anim]), 1.0)
+		var ok := _model3d("leticia3d", at, anim, fase, npc_dir.get(npc_id, CharacterSheet.Dir.SE))
+		drawing_key = null
+		if ok:
+			queue_redraw()  # a respiração anima
+			return
 	draw_rect(Rect2(at + Vector2(-11, -66), Vector2(22, 60)), NPC_COLORS[npc_id])
 	draw_rect(Rect2(at + Vector2(-8, -86), Vector2(16, 18)), Color("#d6b292"))
 	var name_text: String = NPC_NAMES[npc_id]
@@ -1202,6 +1258,114 @@ func _falas_soltas(delta: float) -> void:
 		caixa.sequencia(f["falas"], true)
 
 
+signal teste_escolhido(escolha: Dictionary)
+var menu_teste: CanvasLayer  # a escolha de quem rola o teste de perícia (nulo = fechada)
+
+
+# Texto da pista com as camadas de teste de perícia (d20), no parque e nos outros lugares. O texto do cenário é o
+# superficial (guardado em "texto_base" para não trocar duas vezes). Uma pista tem `teste` (uma camada) ou `testes` (várias,
+# da mais fácil à mais difícil): cada camada tem {"id", "pericias", "dt", "completo"}; passou = soma o texto completo e
+# segue para a próxima camada; falhou = para aí (uma tentativa por camada, resultado salvo).
+func _texto_com_testes(cid: String, c: Dictionary) -> String:
+	var camadas: Array = []
+	if not c.get("teste", {}).is_empty():
+		camadas.append(c["teste"])
+	camadas.append_array(c.get("testes", []))
+	if camadas.is_empty():
+		return str(c["texto"])
+	if not c.has("texto_base"):
+		c["texto_base"] = c["texto"]
+	var base := str(c["texto_base"])
+	if camadas.size() == 1:
+		var r1: Dictionary = await _tentar_teste("%s_%s" % [Missao1.local, cid], camadas[0])
+		return "%s\n\n%s" % [TestePericia.texto(r1), str(camadas[0]["completo"]) if r1.get("passou", false) else base]
+	var partes: Array = [base]
+	for i in camadas.size():
+		var t: Dictionary = camadas[i]
+		var r: Dictionary = await _tentar_teste("%s_%s_%s" % [Missao1.local, cid, str(t.get("id", i))], t)
+		partes.append(TestePericia.texto(r) + ("\n" + str(t["completo"]) if r.get("passou", false) else ""))
+		if not r.get("passou", false):
+			break
+	return "\n\n".join(partes)
+
+
+# Rola (uma vez) o teste de `t` ({"pericias": [...], "dt": n}). O jogador escolhe quem rola antes do dado, vendo a DT e o
+# bônus de cada agente (Léo, 22/11). Se o teste já foi feito, devolve o resultado salvo sem perguntar.
+func _tentar_teste(id: String, t: Dictionary) -> Dictionary:
+	var grupo: Array = []
+	for u in party:
+		grupo.append({"nome": u.name, "atributos": u.atributos, "classe": Ficha.classe_de(rules.cfg.game_data, u.personagem)})
+	var pericias: Array = t.get("pericias", [])
+	var dt := int(t.get("dt", 12))
+	var escolha := {}
+	if not TestePericia.feito(id) and not grupo.is_empty():
+		escolha = await _escolher_quem_rola(pericias, dt, grupo)
+	var r := TestePericia.tentar(id, pericias, dt, grupo, _rng_teste(), 0, escolha)
+	if TestePericia.animar and r.has("dado") and not r.get("salvo", false):
+		await _mostrar_dado(r)
+	return r
+
+
+# A tela do d20 rolando (TelaD20): o jogador vê o dado parar e a conta antes de ler o texto da pista.
+func _mostrar_dado(r: Dictionary) -> void:
+	busy = true
+	var tela := TelaD20.new()
+	add_child(tela)
+	tela.montar(r)
+	await tela.fechada
+	busy = false
+
+
+func _escolher_quem_rola(pericias: Array, dt: int, grupo: Array) -> Dictionary:
+	if menu_teste != null:
+		return {}
+	busy = true
+	path = PackedVector2Array()
+	moving_unit = null
+	menu_teste = CanvasLayer.new()
+	menu_teste.layer = 86
+	add_child(menu_teste)
+	var fundo := ColorRect.new()
+	fundo.color = Color(0, 0, 0, 0.62)
+	fundo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fundo.mouse_filter = Control.MOUSE_FILTER_STOP
+	menu_teste.add_child(fundo)
+	var centro := CenterContainer.new()
+	centro.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fundo.add_child(centro)
+	var caixa := VBoxContainer.new()
+	caixa.add_theme_constant_override("separation", 8)
+	caixa.custom_minimum_size = Vector2(460, 0)
+	centro.add_child(caixa)
+	var nomes: Array = []
+	for p in pericias:
+		nomes.append("%s (%s)" % [TestePericia.PERICIAS[str(p)]["nome"], TestePericia.PERICIAS[str(p)]["atr"]])
+	var tit := Label.new()
+	tit.text = "Teste de %s · DT %d\nQuem rola o d20?" % [" ou ".join(nomes), dt]
+	tit.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tit.add_theme_font_size_override("font_size", 20)
+	tit.add_theme_color_override("font_color", Color(0.93, 0.89, 0.8))
+	caixa.add_child(tit)
+	for o in TestePericia.opcoes(pericias, grupo):
+		var b := Button.new()
+		b.text = "%s · %s  (bônus %+d)" % [o["quem"], TestePericia.PERICIAS[o["pericia"]]["nome"], int(o["bonus"])]
+		b.custom_minimum_size = Vector2(0, 40)
+		b.pressed.connect(func(): teste_escolhido.emit(o))
+		caixa.add_child(b)
+	var escolha: Dictionary = await teste_escolhido
+	menu_teste.queue_free()
+	menu_teste = null
+	busy = false
+	return escolha
+
+
+func _rng_teste() -> RandomNumberGenerator:
+	var g := RandomNumberGenerator.new()
+	g.randomize()
+	return g
+
+
+
 func _inspect(cid: String) -> void:
 	var c: Dictionary = scenario.clues[cid]
 	if not scenario.available_clues(seen_clues).has(cid):
@@ -1210,6 +1374,7 @@ func _inspect(cid: String) -> void:
 	if _trancada(c):
 		_show_dialog("", c.texto_trancado, "")
 		return
+	c["texto"] = await _texto_com_testes(cid, c)
 	_show_dialog(c.inspecao, c.texto, cid)
 
 
@@ -1226,9 +1391,36 @@ func _pista_oculta(_cid: String) -> bool:
 func _show_dialog(image_path: String, text: String, cid: String) -> void:
 	dialog_clue = cid
 	dialog_text.text = text
-	dialog_image.texture = load(image_path) if image_path != "" else null
-	dialog_image.visible = image_path != ""
+	dialog_base = text
+	dialog_paginas = []
+	dialog_pg = 0
+	dialog_image.texture = load(image_path) if image_path != "" and ResourceLoader.exists(image_path) else null
+	dialog_image.visible = dialog_image.texture != null
+	_ajustar_imagem_dialogo()
+	if cid != "" and scenario.clues.has(cid) and scenario.clues[cid].get("inspecoes", []).size() > 1:
+		dialog_paginas = scenario.clues[cid]["inspecoes"]
+		_pagina_dialogo()
 	dialog_layer.visible = true
+
+
+# Imagem quadrada: caixa de 360x360; ficha ou página (bem mais larga que alta): 600 de largura, na altura da proporção.
+func _ajustar_imagem_dialogo() -> void:
+	var t := dialog_image.texture
+	if t != null and t.get_width() > t.get_height() * 1.2:
+		var h := 600.0 * t.get_height() / t.get_width()
+		dialog_image.position = Vector2(180, 28 + (360.0 - h) * 0.5)
+		dialog_image.size = Vector2(600, h)
+	else:
+		dialog_image.position = Vector2(300, 28)
+		dialog_image.size = Vector2(360, 360)
+
+
+func _pagina_dialogo() -> void:
+	var pg: Dictionary = dialog_paginas[dialog_pg]
+	dialog_image.texture = load(str(pg["imagem"]))
+	dialog_image.visible = true
+	_ajustar_imagem_dialogo()
+	dialog_text.text = dialog_base + "\n(%d/%d · clique para %s)" % [dialog_pg + 1, dialog_paginas.size(), "a próxima" if dialog_pg + 1 < dialog_paginas.size() else "fechar"]
 
 
 # Fecha a caixa de texto. Se era uma pista nova, registra e dispara o que vem depois dela.
@@ -1246,7 +1438,11 @@ func _close_dialog() -> void:
 	Dicas.marcar("examinar")
 	audio.play_sfx("clue_found")
 	var c: Dictionary = scenario.clues[cid]
-	Diario.anotar(_diario_lugar(), cid, c["texto"], c["inspecao"])
+	var fichas: Array = c["inspecoes"]
+	for i in range(fichas.size() - 1):  # uma entrada do diário por ficha; a última é a da pista (a mais recente)
+		Diario.anotar(_diario_lugar(), "%s_%d" % [cid, i + 1], str(fichas[i]["texto"]), str(fichas[i]["imagem"]), str(fichas[i]["titulo"]))
+	if not c["sem_diario"]:  # saque simples (geladeira, caixa) não é pista: não entra no diário
+		Diario.anotar(_diario_lugar(), cid, c["texto"], c["inspecao"])
 	if c["perda_san"] > 0 or c["perturbadora"]:  # pista que perturba: quem leu (o líder) perde SAN
 		room_combat._san_report({player: san.clue_read(player, {"perda_san": c["perda_san"]} if c["perda_san"] > 0 else c)}, "lê a pista")
 	var achou := collect_items(c["da"])
@@ -1290,6 +1486,10 @@ func _run_trigger(trigger: Dictionary) -> void:
 
 func _on_dialog_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if dialog_pg + 1 < dialog_paginas.size():
+			dialog_pg += 1
+			_pagina_dialogo()
+			return
 		_close_dialog()
 
 

@@ -12,9 +12,23 @@ Valores marcados com "provisorio" são escolhas do Claude que ainda não passara
 import json
 import math
 import os
+import sys
+
+# As sete fichas dos desaparecidos (Apêndice B do roteiro; imagens em assets/sprites/pistas, tools/pistas_imagens/
+# importar_roteiro.py). Texto do caderno = resumo das "informações coletadas"; a Lisandra é provisória.
+FICHAS = [
+    ("ficha_01", "Bruno Rouxinol", "Bruno Rouxinol, 04/03/1983. Antiquário, Rua Íris, 520. Sumiu trabalhando; um cliente achou pétalas manchadas de sangue no balcão. Especialistas: \"Caladenia purpura\"."),
+    ("ficha_02", "Jurema Couto", "Jurema Couto, 06/01/1960. Loja Eletrônicos Couto, Rua das Rosas, 601. As luzes se apagaram durante o atendimento. Pétalas de uma flor azul desconhecida no painel elétrico, algumas em contato com fios ativos."),
+    ("ficha_03", "Marcos Paixão", "Marcos Paixão, 03/04/1957. Supermercado Família, Passeio dos Crisântemos, 160. As compras ficaram na calçada ao lado de uma construção abandonada, com o saco de carvão aberto e brasa e cinzas ainda quentes lá dentro."),
+    ("ficha_04", "Ramiro Turi", "Ramiro Turi, 02/05/1972. Bar do Longo, Avenida Central, 304. Visto pela última vez no beco ao lado do bar: flores alaranjadas cortadas junto a um símbolo feito com o sangue dele."),
+    ("ficha_05", "Ruth Santos", "Ruth Santos, 06/01/1965. Em casa, Rua das Camélias, 700. Sem arrombamento, mas com sinais de luta. Sacos de fertilizante abertos pela sala, com pétalas rosas de uma flor que ela não cultivava."),
+    ("ficha_06", "Selena Schaefer", "Selena Schaefer, 05/02/1992. Seu apartamento, Rua das Tulipas, 34. Banheira com a torneira aberta, água transbordando e pétalas murchas de \"Caladenia viridis\". Pizza que ela não pediu, pedido anônimo."),
+    ("ficha_07", "Lisandra de Sá", "Lisandra de Sá, 38 anos, funcionária de farmácia. Sumiu ontem à noite na praça, voltando do trabalho. É a mais recente."),
+]
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 RAIZ = os.path.abspath(os.path.join(AQUI, "..", "..", ".."))
+IMG = "res://assets/sprites/pistas/%s.png"
 U = 64.0  # unidades da sala por metro (1 unidade 3D do cenário = 1 losango)
 
 
@@ -85,7 +99,7 @@ def _ret4(ret, r):  # [x0, z0, x1, z1] em metros -> retângulo da sala
     return ret(r[0], r[1], r[2] - r[0], r[3] - r[1])
 
 
-def _pista(d, p, cid, x, z, texto, da=None, raio=75, bolinha=(0, -30), chave=None, trancado=None, trecho=None):
+def _pista(d, p, cid, x, z, texto, da=None, raio=75, bolinha=(0, -30), chave=None, trancado=None, trecho=None, inspecao=None, inspecoes=None):
     """Pista de investigação (documento, gaveta, item no chão). Textos, posições e itens são provisórios (Claude, 15/11).
     Baú ou esconderijo com saque (16/11): `da` é o saque; `chave` (um item) o deixa trancado até o grupo ter a chave na
     mochila, com `trancado` como aviso; `trecho` o esconde até esse trecho da cripta ser revelado."""
@@ -97,50 +111,66 @@ def _pista(d, p, cid, x, z, texto, da=None, raio=75, bolinha=(0, -30), chave=Non
         c["texto_trancado"] = trancado or "Trancado. Falta a chave."
     if trecho:
         c["trecho"] = trecho
+    if inspecao:  # imagem da pista na caixa de texto e no diário (22/11, modelo A do Léo; tools/pistas_imagens/gerar.py)
+        c["inspecao"] = IMG % inspecao
+    if inspecoes:  # várias imagens (as 7 fichas): o clique vira a página; cada uma vira uma entrada do diário
+        c["inspecoes"] = [{"imagem": IMG % i["arquivo"], "titulo": i["titulo"], "texto": i["texto"]} for i in inspecoes]
+        c["inspecao"] = c["inspecoes"][-1]["imagem"]
     d["pistas"].append(c)
 
 
 def delegacia17(d, p, ret):
     P = _pt(d)
     d["objetivos"] = [{"texto": "Ler o livro de ocorrências", "pista": "livro_ocorrencias", "provisorio": True},
-                      {"texto": "Procurar pistas no escritório do Ghular", "pista": "agenda_ghular", "provisorio": True},
-                      {"texto": "Seguir para a biblioteca", "provisorio": True}]
+                      {"texto": "Ler as fichas dos desaparecidos", "pista": "ficha_desaparecidos", "provisorio": True},
+                      {"texto": "Escolher o próximo destino (biblioteca, necrotério ou casa do Geraldo)", "provisorio": True}]
     d["cena3d"]["estados"] = {"tapete": True, "alcapao": False}
     _pista(d, p, "livro_ocorrencias", 12.6, 14.6,
-           "O livro de ocorrências está aberto no balcão. Nas últimas três semanas, a mesma anotação: \"Barulho na Fazenda Ghular\". Nenhuma viatura foi enviada. A última página foi arrancada.")
-    _pista(d, p, "agenda_ghular", 14.0, 3.4,
-           "Na agenda do delegado Ghular, sete datas do último mês estão circuladas, cada uma com uma orquídea vermelha desenhada a caneta. A sétima é de ontem. Na margem de todo sábado, a mesma anotação seca: \"treino\".")
+           "O livro de ocorrências está aberto no balcão. Nas últimas três semanas, a mesma anotação: \"Barulho na Fazenda Ghular\". Nenhuma viatura foi enviada. A última página foi arrancada.",
+           inspecao="livro_ocorrencias")
     _pista(d, p, "gaveta_provas", 14.8, 9.8,
-           "A gaveta da sala de provas foi forçada. Dentro, entre papéis manchados, ainda restam algumas balas soltas e um celular de tela rachada, num saco de provas.",
+           "A gaveta da sala de provas foi forçada. Dentro, entre papéis manchados, ainda restam algumas balas de pistola soltas e um celular de tela rachada, num saco de provas. Ao lado, o saco etiquetado como fuzil de caça está vazio.",
            da=[("municao_pistola", 6), ("celular_quebrado", 1)])
     _pista(d, p, "ficha_desaparecidos", 2.7, 4.8,
-           "No arquivo, uma pasta com sete fichas de desaparecidos de Aurora. Nada liga uma à outra: idades, bairros e lugares do sumiço são todos diferentes. A mais recente é de ontem à noite: Lisandra de Sá, 38 anos, funcionária de farmácia, vista pela última vez perto da praça.")
+           "No arquivo, uma pasta com sete fichas de desaparecidos de Aurora. Nada liga uma à outra: idades, bairros e lugares do sumiço são todos diferentes. A mais recente é de ontem à noite: Lisandra de Sá, 38 anos, funcionária de farmácia, vista pela última vez perto da praça.",
+           chave="chave_armario", trancado="O armário de evidências está trancado. A chave deve estar em algum lugar da recepção.",
+           inspecoes=[{"arquivo": a, "titulo": "Ficha %d/7 · %s" % (i, n), "texto": t} for i, (a, n, t) in enumerate(FICHAS, 1)])
     _pista(d, p, "cela_arranhoes", 1.5, 8.2,
            "As paredes da cela estão marcadas por arranhões fundos, feitos de dentro para fora. Desenhado com o que parece sangue, o mesmo símbolo da árvore do parque.")
-    # Porta trancada (GDD #19: só abre com a chave achada no cenário; com a chave no grupo abre sozinha ao chegar).
+    # Porta trancada (GDD #19). Roteiro (Léo, 20/11, item 11 da conferência): a sala do Ghular só abre às 21h; às 17h a porta
+    # fica trancada e ninguém tem a chave (a chave da recepção é a do armário de evidências).
     d["portas"] = [{"id": "escritorio_ghular", "ret": ret(11.7, 5.7, 1.7, 0.45), "chave": "chave_escritorio",
-                    "texto": "Trancada. A porta do escritório do Ghular precisa de uma chave.", "provisorio": True}]
+                    "texto": "Trancada. A porta do escritório do Ghular não cede, e a chave não está à vista.", "provisorio": True}]
     _pista(d, p, "chaveiro_recepcao", 7.4, 15.0,
-           "O chaveiro da recepção está quase vazio. Sobrou uma chave presa com uma etiqueta: \"Escritório do Delegado\".",
-           da=[("chave_escritorio", 1)])
-    d["objetivos"].insert(1, {"texto": "Achar a chave do escritório", "pista": "chaveiro_recepcao", "provisorio": True})
-    # Cofre do delegado, dentro do escritório trancado: o saque é a razão de achar a chave (provisório, 16/11).
-    _pista(d, p, "cofre_ghular", 12.2, 1.4,
-           "Atrás da estante do escritório há um cofre de parede. A combinação está colada por baixo da gaveta da escrivaninha, e dentro ficam um colete, munição e duas baterias de rádio guardados pelo delegado.",
-           da=[("colete_leve", 1), ("municao_pistola", 6), ("bateria", 2)])
+           "O chaveiro da recepção está quase vazio. Sobrou uma chave presa com uma etiqueta: \"Armário de evidências\". A do escritório do Delegado não está ali.",
+           da=[("chave_armario", 1)])
+    d["objetivos"].insert(1, {"texto": "Achar a chave do armário de evidências", "pista": "chaveiro_recepcao", "provisorio": True})
     # Garrafa de água (Léo, 20/11: material da flor Verde, junto com o balde do poço). Posição e texto provisórios.
     _pista(d, p, "bebedouro_recepcao", 5.0, 15.0,
            "Ao lado do bebedouro da recepção, uma garrafa de água fechada. Pode servir.",
            da=[("garrafa_agua", 1)])
-    _pista(d, p, "kit_recepcao", 3.0, 15.0,
-           "Debaixo de um banco da recepção, esquecido por alguém com pressa, há um kit com curativos e uma bandagem.",
+    d["pistas"][-1]["sem_diario"] = True  # saque simples, não é pista
+    # Pavê (roteiro: o Ghular manda comer o pavê da geladeira dos fundos; 1 a 3 porções de 5 PV). Posição provisória.
+    _pista(d, p, "geladeira_pave", 4.0, 14.0,
+           "Na geladeira dos fundos, o pavê do aniversário da Ribeiro, feito pela mãe dela. Duas fatias já cortadas, uma intacta: é bom mesmo.",
+           da=[("pave", 3)])
+    d["pistas"][-1]["sem_diario"] = True  # a geladeira não é pista: só dá o pavê, sem entrada no diário
+    _pista(d, p, "kit_recepcao", 13.9, 14.95,
+           "Sobre a mesa da recepção, esquecido por alguém com pressa, há um kit com curativos e uma bandagem.",
            da=[("curativo", 1), ("bandagem", 1)])
-    # Cenas com roteiro (22/11, roteiro da missão 1): a chegada (o bilhete da Letícia) e, depois da agenda no escritório,
+    d["pistas"][-1]["sem_diario"] = True  # saque simples, não é pista
+    # Computador da recepção (roteiro 2: câmeras; Tecnologia DT 10 -> 8 no mapa de 20/11). Posição provisória.
+    _pista(d, p, "computador_recepcao", 10.6, 15.0,
+           "O computador da recepção está ligado a um aparelho que controla as câmeras da delegacia. Sem saber mexer, o grupo só vê uma tela de senha.",
+           bolinha=(0, -30))
+    d["pistas"][-1]["teste"] = {"pericias": ["tecnologia"], "dt": 8,
+                                "completo": "A pasta de gravações guarda a delegacia por dentro, mas tudo é apagado depois de um ou dois dias, provavelmente por falta de espaço. Dá para apagar os traços da presença do grupo."}
+    # Cenas com roteiro (22/11, roteiro da missão 1): a chegada (o bilhete da Letícia) e, depois das fichas do armário,
     # a chegada do delegado Ghular, simpático, e a mensagem da Letícia na caixa postal. Falas provisórias.
     d["cena_ao_chegar"] = {"cena": "delegacia_17h_chegada", "marca": "delegacia17_chegada"}
-    d["gatilhos"].append({"id": "ghular_chega", "apos": "agenda_ghular", "tipo": "cena", "cena": "ghular_17h", "marca": "ghular_17h"})
-    d["zonas"].append({"id": "saida", "ret": _ret4(ret, P["saida"]), "acao": "ir", "para": "biblioteca",
-                       "texto": "O grupo segue para a biblioteca.", "provisorio": True})
+    d["gatilhos"].append({"id": "ghular_chega", "apos": "ficha_desaparecidos", "tipo": "cena", "cena": "ghular_17h", "marca": "ghular_17h"})
+    d["zonas"].append({"id": "saida", "ret": _ret4(ret, P["saida"]), "acao": "destinos", "provisorio": True,
+                       "texto": "O grupo sai da delegacia."})
 
 
 def delegacia21(d, p, ret):
@@ -153,6 +183,20 @@ def delegacia21(d, p, ret):
                         "destaque": {"estado": "tapete"},
                         "texto": "O tapete do canto está torto, como se alguém o tivesse puxado às pressas. Embaixo dele há um alçapão.",
                         "provisorio": True})
+    # A sala do Ghular abre só às 21h (roteiro): a agenda e o cofre que ficavam no 17h passam para cá, com o gravador e o quadro.
+    _pista(d, p, "agenda_ghular", 14.0, 3.4,
+           "Na agenda do delegado Ghular, sete datas do último mês estão circuladas, cada uma com uma orquídea vermelha desenhada a caneta. A sétima é de ontem.")
+    # Cofre do delegado, dentro do escritório trancado: o saque é a razão de achar a chave (provisório, 16/11).
+    _pista(d, p, "cofre_ghular", 12.2, 1.4,
+           "Atrás da estante do escritório há um cofre de parede. A combinação está colada por baixo da gaveta da escrivaninha, e dentro ficam um colete, munição e duas baterias de rádio guardados pelo delegado.",
+           da=[("colete_leve", 1), ("municao_pistola", 6), ("bateria", 2)])
+    _pista(d, p, "gravador_ghular", 12.8, 3.0,
+           "Cabos finos saem de trás da estante e seguem até um gravador escondido, ainda com a fita girando. O Ghular gravava tudo o que se dizia na delegacia, inclusive a conversa do grupo.")
+    # Gravador escondido (roteiro 2, sala do Ghular; Tecnologia DT 15 -> 12): o texto acima é o superficial.
+    d["pistas"][-1]["teste"] = {"pericias": ["tecnologia"], "dt": 12,
+                                "completo": "O aparelho mostra que o delegado gravava a delegacia inteira, com as mesmas imagens da recepção. Dá para apagar os traços da presença do grupo."}
+    _pista(d, p, "quadro_flor", 11.2, 2.0,
+           "Na parede, um quadro com uma orquídea vermelha pintada à mão, no mesmo desenho das datas circuladas na agenda.")
     d["gatilhos"].append({"id": "revelar_alcapao", "apos": "tapete", "tipo": "estado", "estados": {"tapete": False, "alcapao": True},
                           "marca": "alcapao"})
     d["zonas"].append({"id": "alcapao", "ret": _ret4(ret, P["alcapao"]), "acao": "ir", "para": "subsolo", "requer": "alcapao",
@@ -165,7 +209,7 @@ def delegacia21(d, p, ret):
     d["zonas"].append({"id": "invasao", "ret": _ret4(ret, [5.6, 13.3, 13.8, 15.0]), "acao": "invasao",
                        "requer": "subsolo_visitado", "provisorio": True})
     d["cena_ao_chegar"] = {"cena": "delegacia_ghular_21h", "marca": "ghular_21h"}  # Túlio, o Ghular "aliado" e o motivo de olhar a sala dele
-    d["invasao"] = {"quando": "zona", "marca": "invasao_vencida", "cena_depois": "ligacao_juliana", "flashbang": p(9.75, 18.2), "inimigos": [
+    d["invasao"] = {"quando": "zona", "cena_antes": "delegacia_tulio_morte", "marca": "invasao_vencida", "cena_depois": "ligacao_juliana", "flashbang": p(9.75, 18.2), "inimigos": [
         {"tipo": "atirador", "pos": p(*c), "provisorio": True} for c in [(9.75, 17.4), (7.7, 17.7), (11.8, 17.6)]]}
 
 
@@ -174,7 +218,11 @@ def subsolo(d, p, ret):
     d["objetivos"] = [{"texto": "Investigar o subsolo", "pista": "livro_faltando"}, {"texto": "Voltar ao escritório"}]
     d["pistas"].append({"id": "livro_faltando", "pos": p(1.0, 3.4), "raio": 70, "ordem": 1, "bolinha": [0, -40],
                         "destaque": {"nomes": ["Mesh33"]},  # a mesa (tampo) onde fica o retângulo limpo
-                        "texto": "Sobre a mesa do subsolo, aberto, está o livro Sanguis Orchid: capa vermelha, uma orquídea dourada. Foi deixado ali de propósito. Sob ele, um mapa antigo da região com uma fazenda a leste marcada com uma orquídea vermelha e a anotação \"Ghular\".",
+                        "texto": "Sobre a mesa do subsolo, aberto, está o livro Sanguis Orchid: capa vermelha, uma orquídea dourada. Foi deixado ali de propósito. Sob ele, um mapa antigo da região com uma fazenda a leste marcada com uma orquídea vermelha e a anotação \"Ghular\". Entre as páginas do livro, uma nota solta: \"A Senhora do Sangue não se toca com as mãos. Quem chega perto dela sangra antes de ferir.\"",
+                        "da": [{"item": "livro_sanguis_orchid", "qtd": 1}],
+                        # Roteiro 3d: quem lê precisa de Ocultismo ou Religião para entender os detalhes. DT 8 (fácil, provisório): a pista é essencial.
+                        "teste": {"pericias": ["ocultismo", "religiao"], "dt": 8,
+                                  "completo": "O livro conta as origens do culto da Orquídea de Sangue. Para iniciar a invocação, o símbolo da Orquídea precisava tocar sete sacrifícios, em sete condições específicas, com sete flores que representam os sete milagres da Santa das Flores. Cada Orquídea Amaldiçoada tem uma cor e murcha ao reagir a uma condição própria. Se o sangue do escolhido jorrasse das marcações, o corpo era aceito por Serafim Vermelho e servia à invocação da Santa, agora chamada de Dama de Sangue."},
                         "provisorio": True})
     d["zonas"].append({"id": "escada", "ret": ret(4.2, 0.13, 1.27, 0.9), "acao": "ir", "para": "delegacia_21h", "chegada": "subsolo",
                        "texto": "O grupo sobe de volta para o escritório."})
@@ -182,18 +230,33 @@ def subsolo(d, p, ret):
 
 def biblioteca(d, p, ret):
     d["objetivos"] = [{"texto": "Descobrir o que o Ghular pesquisava", "pista": "fichario", "provisorio": True},
-                      {"texto": "Voltar para a delegacia", "provisorio": True}]
+                      {"texto": "Escolher o próximo destino", "provisorio": True}]
+    d["marca_ao_chegar"] = "visitou_biblioteca"
     _pista(d, p, "fichario", 11.4, 6.3,
-           "Nas fichas de empréstimo, dois livros chamam a atenção. \"Sanguis Orchid\": doado em 1979 por Geraldo Munch, retirado só em 1987 e em 1997, as duas vezes por Frederico Ghular. Na última linha, em letra recente: confiscado como evidência por Roberto Ghular, há poucos dias.")
+           "Nas fichas de empréstimo, dois livros chamam a atenção. \"Sanguis Orchid\": doado em 1979 por Geraldo Munch, retirado só em 1987 e em 1997, as duas vezes por Frederico Ghular. Na última linha, em letra recente: confiscado como evidência por Roberto Ghular, há poucos dias.",
+           inspecao="fichario")
     _pista(d, p, "mesa_leitura", 2.6, 5.6,
-           "O livro \"Aurora, a Cidade das Flores\" está aberto na mesa de leitura. Um parágrafo foi sublinhado: em 1970 a cidade pediu ao Vaticano que canonizasse Lygia Virgínia do Rosário como a Santa das Flores, e o pedido foi negado. Na margem, a lápis: \"carne feita de sangue só se desfaz com o próprio Outro Lado\".")
+           "O livro \"Aurora, a Cidade das Flores\" está aberto nas páginas que a Juliana separou: a fundação em 1817, o título de Cidade das Flores em 1917 e, em 1970, o pedido ao Vaticano pela Santa das Flores, negado. Na margem, a lápis: \"carne feita de sangue só se desfaz com o próprio Outro Lado\".",
+           inspecao="livro_cidade")
+    d["pistas"][-1]["testes"] = [  # mapa de testes de 20/11 (Religião, PRE): DT 10 -> 8 e 15 -> 12
+        {"id": "beatificacao", "pericias": ["religiao"], "dt": 8,
+         "completo": "Para canonizar alguém é preciso antes que a Igreja a reconheça como beata, por virtudes. Ao que tudo indica, não era o caso de Lygia."},
+        {"id": "padrao", "pericias": ["religiao"], "dt": 12,
+         "completo": "Já houve outros pedidos de Santa das Flores com o mesmo padrão: uma cidade pequena da Europa tentando canonizar uma mulher sem passar pela beatificação."}]
     _pista(d, p, "mapa_antigo", 12.7, 6.2,
-           "Um recorte de jornal de 1977: \"Os Sete Desaparecidos, o mistério que continua a assolar Aurora\". Sete moradores sumiram ao longo de um mês; o investigador do caso era o jovem Geraldo Munch. A última desaparecida foi Maria Cabral, nascida em 1º de junho de 1948.")
+           "Um recorte de jornal de 1977: \"Os Sete Desaparecidos, o mistério que continua a assolar Aurora\". Sete moradores sumiram ao longo de um mês; o investigador do caso era o jovem Geraldo Munch. A última desaparecida foi Maria Cabral, nascida em 1º de junho de 1948.",
+           inspecao="mapa_antigo")
+    # As fotos da cena da praça que a Letícia levou para casa (roteiro, seção 3: a Juliana viu o símbolo dentro da árvore). Provisório.
+    _pista(d, p, "fotos_simbolo", 10.3, 6.3,
+           "Entre os papéis, duas fotos da cena da praça, as que a Letícia levou para casa. Na árvore manchada de sangue, o mesmo símbolo que o grupo viu, mas aqui ele está aberto por dentro do tronco. Anotado na margem, com a letra da Juliana: \"o símbolo está DENTRO da árvore\".",
+           inspecao="fotos_simbolo")
     _pista(d, p, "diario_bibliotecaria", 15.3, 3.4,
-           "O diário da Juliana termina de repente: \"O delegado levou o Sanguis Orchid como evidência de um caso em aberto. Mas o caso não tem relatório, e eu sei o que esse livro diz. Preciso contar à Lari.\"")
+           "O diário da Juliana termina de repente: \"O delegado levou o Sanguis Orchid como evidência de um caso em aberto. Mas o caso não tem relatório, e eu sei o que esse livro diz. Preciso contar à Lari.\"",
+           inspecao="diario_bibliotecaria")
     _pista(d, p, "caixa_arquivo", 17.2, 6.4,
            "Uma caixa de arquivo morto foi deixada no canto. Dentro, escondido sob relatórios velhos, há um kit de primeiros socorros.",
            da=[("kit_primeiros_socorros", 1)])
+    d["pistas"][-1]["sem_diario"] = True  # saque simples, não é pista
     # Acervo restrito (16/11, provisório): a chave está na gaveta do balcão de empréstimos.
     _pista(d, p, "gaveta_balcao", 12.4, 9.0,
            "Na gaveta do balcão de empréstimos, junto de carimbos secos, há uma chave pequena com uma etiqueta: \"Acervo restrito\".",
@@ -203,8 +266,138 @@ def biblioteca(d, p, ret):
            da=[("bandagem", 2), ("antidoto", 1), ("municao_escopeta", 4), ("relogio_quebrado", 1)],
            chave="chave_acervo", trancado="Trancado. O armário do acervo restrito precisa de uma chave.")
     d["cena_ao_chegar"] = {"cena": "biblioteca_julia", "marca": "biblioteca_julia"}  # a Ju recebe o grupo (22/11)
-    d["zonas"].append({"id": "saida", "ret": ret(-1.5, 12.4, 22.5, 2.1), "acao": "ir", "para": "delegacia_21h",
-                       "texto": "O grupo volta para a delegacia.", "provisorio": True})
+    d["inicio"]["npcs"] = [{"id": "julia", "pos": p(15.3, 5.6)}]  # sem modelo 3D ainda: aparece como figura simples, com o nome
+    # A Júlia (roteiro 3a; testes do mapa de 20/11): Intuição DT 8 para notar que ela está aflita e, pressionada, Diplomacia ou
+    # Intimidação DT 12 para ela contar o que viu. Conversa: falhou = informação superficial ou negativa (Léo, 26/11).
+    _pista(d, p, "julia_conversa", 15.3, 7.1625,
+           "A Júlia olha o relógio e arruma papéis sem necessidade. Vale conversar com ela.", raio=70, bolinha=(0, -90))
+    d["gatilhos"].append({"id": "julia_1", "apos": "julia_conversa", "tipo": "cena", "cena": "julia_aflita", "marca": "julia_aflita",
+                          "teste": {"pericias": ["intuicao"], "dt": 8, "cena_falha": "julia_aflita_nada"}})
+    _pista(d, p, "julia_pressionar", 16.7, 6.4,
+           "A Júlia foge do olhar do grupo. Talvez dê para insistir com ela.", raio=70, bolinha=(0, -90))
+    d["pistas"][-1]["requer"] = "julia_aflita"
+    d["pistas"][-1]["texto_antes"] = "A Júlia ainda está se fechando. Melhor começar por uma conversa."
+    d["gatilhos"].append({"id": "julia_2", "apos": "julia_pressionar", "tipo": "cena", "cena": "julia_revela", "marca": "julia_revela",
+                          "teste": {"pericias": ["diplomacia", "intimidacao"], "dt": 12, "cena_falha": "julia_revela_nada"}})
+    d["objetivos"].insert(1, {"texto": "Conversar com a Júlia", "pista": "julia_conversa", "provisorio": True})
+    # Saída (roteiro, seção 3): a Ju tranca a porta e vai embora de moto. A moto é o estado "moto" do cenário (moto.py).
+    d["zonas"].append({"id": "saida", "ret": ret(-1.5, 12.4, 22.5, 2.1), "acao": "destinos", "cena": "biblioteca_saida",
+                       "texto": "O grupo sai da biblioteca.", "provisorio": True})
+
+
+def necrotorio(d, p, ret):
+    """Necrotério de Aurora (Léo, 20/11; roteiro 3b): Letícia espera no banco, mostra o corpo do Tutu e uma gaveta arrebenta
+    com um zumbi de sangue (combate 2, só um susto). Cenário novo montado a partir do mapa de referência do Léo.
+    Posições, textos das pistas e a hora (18h, primeiro dos três locais livres) são provisórios do Claude."""
+    P = _pt(d)
+    d["marca_ao_chegar"] = "visitou_necrotorio"
+    d["cena3d"]["estados"] = {"arrombada": False}
+    d["inicio"]["npcs"] = [{"id": "leticia", "pos": p(*P["leticia"])}]
+    d["objetivos"] = [{"texto": "Ouvir o que a Letícia descobriu", "marca": "necrotorio_chegada", "provisorio": True},
+                      {"texto": "Examinar o corpo do Tutu", "pista": "tutu_corpo", "provisorio": True},
+                      {"texto": "Investigar a mesa do legista", "pista": "mesa_legista", "provisorio": True},
+                      {"texto": "Se despedir da Letícia", "pista": "leticia_despedida", "requer": "necrotorio_depois", "provisorio": True},
+                      {"texto": "Escolher o próximo destino", "marca": "necrotorio_despedida", "provisorio": True}]
+    # A cena do Tutu começa quando o líder entra na sala de autópsia; a gaveta cede no meio dela (estado "arrombada").
+    d["zonas"].append({"id": "sala_autopsia", "ret": _ret4(ret, P["sala_autopsia"]), "acao": "estado", "estados": {"arrombada": True},
+                       "estados_pela_cena": True, "trecho": 2, "marca": "necrotorio_trecho2", "cena": "necrotorio_tutu", "provisorio": True})
+    d["zonas"].append({"id": "saida", "ret": _ret4(ret, P["saida"]), "acao": "destinos", "requer": "necrotorio_despedida",
+                       "texto": "O grupo deixa o necrotério.", "provisorio": True})
+    # Combate 2 (Léo, 20/11): 1 zumbi de sangue só, para mostrar que os cultistas têm acesso aos corpos. Ele só entra depois da cena.
+    d["inimigos"].append({"tipo": "criatura_sangue", "pos": p(*P["zumbi"]), "trecho": 2, "grupo": "zumbi", "provisorio": True})
+    d["grupos"] = {"zumbi": {"marca": "necrotorio_vencido"}}
+    d["cena_apos_combate"] = {"cena": "necrotorio_depois", "marca": "necrotorio_depois", "requer": "necrotorio_trecho2"}
+    d["cena_ao_chegar"] = {"cena": "necrotorio_chegada", "marca": "necrotorio_chegada"}
+    _pista(d, p, "tutu_corpo", 10.2, 5.05,
+           "O corpo do Tutu, morador de rua. Uma pancada forte na coluna rompeu algo por dentro: morreu de hemorragia interna. Na incisão das costas há sementes de orquídea, e são as mesmas que os zumbis de sangue trazem nas costas.",
+           raio=90)
+    _pista(d, p, "mesa_legista", 4.1, 2.1,
+           "Nos papéis do legista, os registros de armazenamento mostram que alguns corpos de moradores antigos foram exumados e levados daqui há pouco, por ordem da Delegacia de Aurora. O legista estava lendo um livro sobre orquídeas: elas se reproduzem de duas formas, a sexuada, rara, que só germina num ambiente preparado, e a assexuada, comum, por mudas.",
+           raio=90, bolinha=(0, -40))
+    _pista(d, p, "gaveta_zumbi", *P["gaveta"],
+           "Dentro da gaveta de onde saiu o zumbi está riscado o mesmo símbolo da árvore da praça. Desta vez, sem sangue jorrando.",
+           raio=80, bolinha=(0, -20))
+    d["pistas"][-1]["requer"] = "necrotorio_depois"
+    d["pistas"][-1]["texto_antes"] = "As gavetas estão fechadas e geladas. Melhor esperar a Letícia mostrar o que tem."
+    _pista(d, p, "armario_instrumentos", 13.9, 2.9,
+           "No armário alto, bisturis, serras e um estojo de socorro esquecido pelo legista.",
+           da=[("curativo", 1), ("bandagem", 1)], raio=80, bolinha=(0, -50))
+    # Páginas rasgadas do livro do legista (Apêndice B, Léo 20/11): aparecem depois de a mesa e o corpo serem vistos.
+    pg = [("pagina_parasitagem", .9, 1.5, "Parasitagem (p. 89)", "Algumas orquídeas se comportam como parasitas, sugando nutrientes de outras plantas próximas. Outras acabam por se fixar no tronco de grandes árvores e ficam sugando os nutrientes lentamente e de maneira quase imperceptível."),
+          ("pagina_caladenia_purpura", .9, 2.3, "Caladenia purpura", "Algumas orquídeas com cores não usuais também apresentam comportamento fora do padrão esperado. A Caladenia purpura é um tipo de orquídea roxa que murcha quando entra em contato com Bravo purpulis, uma flor roxa que nasce entre pedras magmáticas."),
+          ("pagina_caladenia_viridis", 1.7, 3.1, "Caladenia viridis", "A compreensão de que água é um componente necessário na vida de todas as plantas não se aplica a Caladenia viridis, a orquídea caladenia esverdeada que tanto enfeita as casas da cidade de Aurora."),
+          ("pagina_caladenia_flavum", 3.6, 3.1, "Caladenia flavum", "Por fim, temos a Caladenia flavum, que é altamente sensível a todo tipo de calor. Conhecida comumente como a \"Espanta Cigarro\", por recolher e murchar na presença da brasa mais leve, como a de um cigarro.")]
+    for pid, x, z, _t, texto in pg:
+        _pista(d, p, pid, x, z, texto, raio=45, bolinha=(0, -36))
+        d["pistas"][-1]["ordem"] = 2
+        d["pistas"][-1]["inspecao"] = "res://assets/sprites/cenario/necrotorio/%s.png" % pid
+    # Pontos no pescoço dos corpos (roteiro 3b): Ocultismo (INT) DT 12, mapa provisório do Claude (20/11). Falhou = só o que se vê.
+    _pista(d, p, "tutu_pescoco", 9.3, 5.1,
+           "No pescoço do Tutu há uma fileira de pontos escuros e pequenos, como marcas de agulha. Ninguém aqui saberia dizer de quê.",
+           raio=60, bolinha=(0, -30))
+    d["pistas"][-1]["ordem"] = 2
+    d["pistas"][-1]["teste"] = {"pericias": ["ocultismo"], "dt": 12,
+                                "completo": "Os pontos no pescoço foram marcados por rituais de Sangue e de Morte, feitos para o corpo se levantar de novo. Quem fez isso sabia exatamente o que fazia."}
+    _pista(d, p, "leticia_despedida", *P["leticia_dentro"],
+           "Letícia está sentada na cadeira do legista, pálida. Talvez seja hora de se despedir.", raio=110, bolinha=(0, -96))
+    d["pistas"][-1]["requer"] = "necrotorio_depois"
+    d["pistas"][-1]["texto_antes"] = "Letícia espera perto da entrada, apoiada na parede."
+    d["gatilhos"].append({"id": "despedida", "apos": "leticia_despedida", "tipo": "cena", "cena": "necrotorio_despedida", "marca": "necrotorio_despedida"})
+
+
+def casa_geraldo(d, p, ret):
+    """Casa do Velho Geraldo (Léo, 20/11; roteiro 3c): propriedade cercada na Rua das Bromélias, casa velha e vermelha, janelas
+    tapadas, buracos na cerca. Geraldo Munch, ex-policial de 1977, na cadeira de balanço da varanda. Tudo é exterior.
+    A conversa sobe a atitude dele por três etapas (Inamistoso -> Indiferente -> Amistoso e Prestativo); o teste de
+    Diplomacia DT 20 do roteiro ainda não existe no jogo, então a subida é fixa (provisório). Hora provisória: 20h."""
+    P = _pt(d)
+    d["marca_ao_chegar"] = "visitou_casa_geraldo"
+    # A porta da casa não aparece no mapa de colisão (as portas ficam livres): fechada, a casa não se explora por dentro.
+    d["colisoes"].append({"id": "porta_casa", "rect": ret(10.3, 7.7, 1.5, 1.0)})
+    d["inicio"]["npcs"] = [{"id": "geraldo", "pos": p(11.05, 9.1)}]
+    d["objetivos"] = [{"texto": "Falar com o Velho Geraldo", "pista": "geraldo_conversa", "provisorio": True},
+                      {"texto": "Perguntar sobre 1977", "pista": "geraldo_1977", "requer": "geraldo_conversa", "provisorio": True},
+                      {"texto": "Escolher o próximo destino", "marca": "geraldo_despedida", "requer": "geraldo_1977", "provisorio": True}]
+    d["cena_ao_chegar"] = {"cena": "geraldo_chegada", "marca": "geraldo_chegada"}
+    d["zonas"].append({"id": "saida", "ret": _ret4(ret, P["saida"]), "acao": "destinos", "requer": "geraldo_despedida",
+                       "texto": "O grupo deixa a casa do Geraldo.", "provisorio": True})
+    _pista(d, p, "geraldo_conversa", 12.4, 9.9,
+           "O Velho Geraldo está sentado na cadeira de balanço, na varanda, tentando retomar o fôlego. Talvez agora seja um bom momento para questioná-lo.",
+           raio=70, bolinha=(0, -90))
+    d["pistas"][-1]["requer"] = "geraldo_chegada"
+    d["gatilhos"].append({"id": "conversa_1", "apos": "geraldo_conversa", "tipo": "cena", "cena": "geraldo_conversa", "marca": "geraldo_conversa"})
+    _pista(d, p, "geraldo_1977", 13.9, 9.9,
+           "Com o Geraldo mais calmo, vale perguntar sobre 1977.", raio=70, bolinha=(0, -90))
+    d["pistas"][-1]["requer"] = "geraldo_conversa"
+    d["pistas"][-1]["texto_antes"] = "O Geraldo ainda não quer falar. Melhor começar por uma conversa."
+    d["gatilhos"].append({"id": "conversa_2", "apos": "geraldo_1977", "tipo": "cena", "cena": "geraldo_1977", "marca": "geraldo_1977",
+                         # Teste único do roteiro 3c (Léo 20/11; mapa provisório: Diplomacia ou Intimidação, PRE, DT 15): falhou = ele conta pouco
+                         "teste": {"pericias": ["diplomacia", "intimidacao"], "dt": 15, "cena_falha": "geraldo_1977_pouco"}})
+    _pista(d, p, "geraldo_despedida", 12.0, 8.8,
+           "Geraldo voltou a se balançar, perdido nos pensamentos.", raio=60, bolinha=(0, -80))
+    d["pistas"][-1]["requer"] = "geraldo_1977"
+    d["pistas"][-1]["texto_antes"] = "Ainda há o que perguntar ao Geraldo."
+    d["gatilhos"].append({"id": "despedida", "apos": "geraldo_despedida", "tipo": "cena", "cena": "geraldo_despedida", "marca": "geraldo_despedida"})
+    _pista(d, p, "geraldo_pescoco", 14.4, 9.4,
+           "Uma cicatriz fina e antiga contorna o pescoço do Geraldo: marca de corda que queimou a pele por fricção. Em alguns pontos, os sinais ao redor lembram marcas de Sangue e Morte.",
+           raio=45, bolinha=(0, -86))
+    d["pistas"][-1]["ordem"] = 2
+    _pista(d, p, "geraldo_tique", 12.0, 9.3,
+           "Do lado direito do corpo dele há um tique involuntário: o músculo tensiona e relaxa sem parar. Ele está tentando se controlar, e custa um grande esforço.",
+           raio=45, bolinha=(0, -86))
+    d["pistas"][-1]["ordem"] = 2
+    _pista(d, p, "cerca_buracos", 4.0, 19.5,
+           "A cerca está cheia de buracos e as janelas da casa, vedadas com tábuas. Atrás do mourão, latas vazias e restos de fogueira: a molecada vem fazer festinha aqui à noite, e é por isso que o velho enxota todo mundo.",
+           raio=80, bolinha=(0, -30))
+    d["pistas"][-1]["ordem"] = 2
+    _pista(d, p, "arma_chumbinho", 8.0, 9.0,
+           "Encostada na parede da varanda, uma espingarda de chumbinho bem cuidada. É para espantar curiosos, não para matar.",
+           raio=70, bolinha=(0, -30))
+    d["pistas"][-1]["ordem"] = 2
+    _pista(d, p, "caixote_varanda", 14.3, 10.3,
+           "Num caixote da varanda, um estojo de socorro do tempo em que o Geraldo ainda era policial.",
+           da=[("curativo", 1), ("bandagem", 1)], raio=70, bolinha=(0, -40))
+    d["pistas"][-1]["ordem"] = 2
 
 
 def fazenda(d, p, ret):
@@ -292,9 +485,9 @@ def cripta(d, p, ret):
             e["ritual"] = True  # Léo (19/11): focados no ritual, só lutam se forem atacados
         d["inimigos"].append(e)
     d["inimigos"].append({"tipo": "roberto_ghular", "pos": p(*P["roberto"]), "trecho": 4, "grupo": "salao"})
-    # Roberto se mata com pouca vida e a Dama de Sangue surge dele (Léo). O limite de 50% é provisório
-    # (passada de balanceamento de 19/11; era 25%).
-    d["chefe"] = {"tipo": "roberto_ghular", "limite": 0.5, "vira": "dama_sangue", "marca": "dama_surgiu",
+    # Roberto se mata com pouca vida e a Dama de Sangue surge dele (Léo). O limite de 25% é provisório
+    # (Léo, 26/11: opção B, volta ao roteiro; ficou 50% na passada de 19/11).
+    d["chefe"] = {"tipo": "roberto_ghular", "limite": 0.25, "vira": "dama_sangue", "marca": "dama_surgiu",
                   "texto": "Roberto Ghular crava a adaga no próprio peito. Do sangue dele se ergue a Dama de Sangue.", "provisorio": True,
                   # Os seis pendurados vivos (Léo, 20/11; ChefeDama), na ordem em que ela devora (do mais jovem ao mais velho):
                   # fora do fosso, aos pares entre as três pontes, a 9,5 x 8,5 m do centro do altar. Posições provisórias.
@@ -307,6 +500,8 @@ def cripta(d, p, ret):
     d["grupos"] = {"corredor": {"marca": "cripta_corredor_limpo"}, "salao": {"marca": "cripta_vencida", "requer": "dama_surgiu"}}
     # Letícia ferida e desmaiada no altar: só acorda ao interagir depois do combate com a Dama (Léo). Textos provisórios.
     alt = [g for g in P["gatilhos"] if g["nome"].startswith("altar")][0]["ret"]
+    # Letícia 3D deitada no altar (Léo, 21/11): Laying Nodding até a luta, Sleeping Idle durante e depois (parque.gd, _anim_leticia).
+    d["inicio"]["npcs"] = [{"id": "leticia", "pos": p((alt[0] + alt[2]) / 2, (alt[1] + alt[3]) / 2)}]
     d["pistas"].append({"id": "leticia", "pos": p((alt[0] + alt[2]) / 2, (alt[1] + alt[3]) / 2), "raio": 150, "ordem": 1, "bolinha": [0, -96],
                         "requer": "cripta_vencida", "texto_antes": "Letícia está sobre o altar, ferida e desmaiada. Não dá para chegar até ela agora.",
                         "texto": "Letícia abre os olhos devagar. Está ferida, mas viva.", "provisorio": True})
@@ -351,18 +546,42 @@ def celeiro(d, p, ret):
                          "marca": "capitulo1_fim", "provisorio": True}
 
 
+# Pistas essenciais por lugar (Léo, 22/11: a investigação não é obrigatória). Só elas contam no HUD; as demais são extras.
+# "resumo": o que o grupo deduz (entra no diário como dedução) se sair do lugar sem examinar a pista. Provisório.
+ESSENCIAIS = {
+    "delegacia_17h": {
+        "chaveiro_recepcao": "Sem tempo para revirar a recepção, o grupo deduz que a chave do armário de evidências está no chaveiro, e que a sala do Ghular foi trancada de propósito.",
+        "ficha_desaparecidos": "O grupo deduz que o armário de evidências guarda as fichas dos sete desaparecidos, e que nada as liga à primeira vista.",
+    },
+    "biblioteca": {"fichario": "O grupo deduz que o livro Sanguis Orchid passou pela biblioteca, que um Ghular o retirou e que agora está com Roberto Ghular."},
+    "subsolo": {"livro_faltando": "O grupo deduz que o livro foi deixado de propósito no subsolo, junto de um mapa que aponta a Fazenda Ghular, a leste."},
+    "fazenda": {"poco": "O grupo deduz que o poço antigo é a entrada: uma corda desce para o escuro."},
+}
+
+
+def marcar_essenciais(cid, dados):
+    for p in dados.get("pistas", []):
+        resumo = ESSENCIAIS.get(cid, {}).get(p["id"])
+        if resumo:
+            p["essencial"] = True
+            p["resumo"] = resumo
+
+
 def main():
     lista = [
         ("delegacia_17h", "delegacia_17h", "delegacia_17h", 17, "DELEGACIA", [(7.2, 15.5), (6.5, 16.0), (7.9, 16.1)], delegacia17, (-0.15, -0.15, 19.45, 22.25)),
         ("delegacia_21h", "delegacia_21h", "delegacia_21h", 21, "DELEGACIA", [(7.2, 15.5), (6.5, 16.0), (7.9, 16.1)], delegacia21, (-0.15, -0.15, 19.45, 22.25)),
         ("subsolo", "subsolo", "subsolo", 21, "SUBSOLO", [(3.4, 2.6), (2.7, 2.9), (3.9, 3.3)], subsolo, None),
         ("biblioteca", "biblioteca", "biblioteca", 19, "BIBLIOTECA", [(12.7, 11.2), (12.0, 11.7), (13.4, 11.7)], biblioteca, (-0.15, -0.15, 18.15, 13.2)),
+        ("necrotorio", "necrotorio", "necrotorio", 18, "NECROTÉRIO", [(2.6, 10.7), (3.5, 11.1), (1.8, 11.2)], necrotorio, (-1.5, -1.5, 17.1, 12.6)),
+        ("casa_geraldo", "casa_geraldo", "casa_geraldo", 20, "CASA DO GERALDO", [(11.0, 19.2), (10.1, 19.8), (11.9, 19.8)], casa_geraldo, (-3.0, -2.0, 25.0, 23.4)),
         ("fazenda", "fazenda", "fazenda", 23, "FAZENDA GHULAR", [(6.2, 17.8), (5.5, 18.3), (6.9, 18.4)], fazenda, (-3.5, -2.5, 16.0, 19.0)),
         ("cripta", "cripta", "cripta", 23, "CRIPTA", [(-1.2, 53.8), (-2.8, 53.0), (-2.9, 54.7)], cripta, None),
         ("celeiro", "fazenda", "fazenda", 1, "CELEIRO", [(6.0, 9.9), (6.6, 10.4), (7.2, 9.9)], celeiro, (-3.5, -2.5, 16.0, 19.0)),
     ]
     for cid, glb, col, hora, rotulo, grupo, extras, limite in lista:
         dados = cenario(cid, glb, carregar(col), hora, rotulo, grupo, extras, limite)
+        marcar_essenciais(cid, dados)
         with open(os.path.join(RAIZ, "data", "cenarios", cid + ".json"), "w") as f:
             json.dump(dados, f, ensure_ascii=False, indent=1)
         print(cid, len(dados["colisoes"]), "colisões")

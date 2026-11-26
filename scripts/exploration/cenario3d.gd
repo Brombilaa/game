@@ -70,6 +70,17 @@ func estado(nome: String, ligado: bool) -> void:
 		(n as Node3D).visible = ligado
 
 
+# Desliza uma parte do cenário (a moto indo embora) `desloc` metros em `tempo` segundos, acelerando.
+func deslizar(nome: String, desloc: Vector3, tempo: float) -> void:
+	var nos: Array = estados.get(nome, [])
+	if nos.is_empty():
+		return
+	var tw := create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	for n in nos:
+		tw.tween_property(n, "position", (n as Node3D).position + desloc, tempo)
+	await tw.finished
+
+
 func tem_estado(nome: String) -> bool:
 	return estados.has(nome)
 

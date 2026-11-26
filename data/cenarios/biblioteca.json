@@ -35,6 +35,15 @@
     953.6,
     844.8
    ]
+  ],
+  "npcs": [
+   {
+    "id": "julia",
+    "pos": [
+     1075.2,
+     454.4
+    ]
+   }
   ]
  },
  "colisoes": [
@@ -1160,7 +1169,10 @@
     -30
    ],
    "texto": "Nas fichas de empréstimo, dois livros chamam a atenção. \"Sanguis Orchid\": doado em 1979 por Geraldo Munch, retirado só em 1987 e em 1997, as duas vezes por Frederico Ghular. Na última linha, em letra recente: confiscado como evidência por Roberto Ghular, há poucos dias.",
-   "provisorio": true
+   "provisorio": true,
+   "inspecao": "res://assets/sprites/pistas/fichario.png",
+   "essencial": true,
+   "resumo": "O grupo deduz que o livro Sanguis Orchid passou pela biblioteca, que um Ghular o retirou e que agora está com Roberto Ghular."
   },
   {
    "id": "mesa_leitura",
@@ -1174,8 +1186,27 @@
     0,
     -30
    ],
-   "texto": "O livro \"Aurora, a Cidade das Flores\" está aberto na mesa de leitura. Um parágrafo foi sublinhado: em 1970 a cidade pediu ao Vaticano que canonizasse Lygia Virgínia do Rosário como a Santa das Flores, e o pedido foi negado. Na margem, a lápis: \"carne feita de sangue só se desfaz com o próprio Outro Lado\".",
-   "provisorio": true
+   "texto": "O livro \"Aurora, a Cidade das Flores\" está aberto nas páginas que a Juliana separou: a fundação em 1817, o título de Cidade das Flores em 1917 e, em 1970, o pedido ao Vaticano pela Santa das Flores, negado. Na margem, a lápis: \"carne feita de sangue só se desfaz com o próprio Outro Lado\".",
+   "provisorio": true,
+   "inspecao": "res://assets/sprites/pistas/livro_cidade.png",
+   "testes": [
+    {
+     "id": "beatificacao",
+     "pericias": [
+      "religiao"
+     ],
+     "dt": 8,
+     "completo": "Para canonizar alguém é preciso antes que a Igreja a reconheça como beata, por virtudes. Ao que tudo indica, não era o caso de Lygia."
+    },
+    {
+     "id": "padrao",
+     "pericias": [
+      "religiao"
+     ],
+     "dt": 12,
+     "completo": "Já houve outros pedidos de Santa das Flores com o mesmo padrão: uma cidade pequena da Europa tentando canonizar uma mulher sem passar pela beatificação."
+    }
+   ]
   },
   {
    "id": "mapa_antigo",
@@ -1190,7 +1221,24 @@
     -30
    ],
    "texto": "Um recorte de jornal de 1977: \"Os Sete Desaparecidos, o mistério que continua a assolar Aurora\". Sete moradores sumiram ao longo de um mês; o investigador do caso era o jovem Geraldo Munch. A última desaparecida foi Maria Cabral, nascida em 1º de junho de 1948.",
-   "provisorio": true
+   "provisorio": true,
+   "inspecao": "res://assets/sprites/pistas/mapa_antigo.png"
+  },
+  {
+   "id": "fotos_simbolo",
+   "pos": [
+    755.2,
+    499.2
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Entre os papéis, duas fotos da cena da praça, as que a Letícia levou para casa. Na árvore manchada de sangue, o mesmo símbolo que o grupo viu, mas aqui ele está aberto por dentro do tronco. Anotado na margem, com a letra da Juliana: \"o símbolo está DENTRO da árvore\".",
+   "provisorio": true,
+   "inspecao": "res://assets/sprites/pistas/fotos_simbolo.png"
   },
   {
    "id": "diario_bibliotecaria",
@@ -1205,7 +1253,8 @@
     -30
    ],
    "texto": "O diário da Juliana termina de repente: \"O delegado levou o Sanguis Orchid como evidência de um caso em aberto. Mas o caso não tem relatório, e eu sei o que esse livro diz. Preciso contar à Lari.\"",
-   "provisorio": true
+   "provisorio": true,
+   "inspecao": "res://assets/sprites/pistas/diario_bibliotecaria.png"
   },
   {
    "id": "caixa_arquivo",
@@ -1226,7 +1275,8 @@
      "item": "kit_primeiros_socorros",
      "qtd": 1
     }
-   ]
+   ],
+   "sem_diario": true
   },
   {
    "id": "gaveta_balcao",
@@ -1283,9 +1333,71 @@
    ],
    "chave": "chave_acervo",
    "texto_trancado": "Trancado. O armário do acervo restrito precisa de uma chave."
+  },
+  {
+   "id": "julia_conversa",
+   "pos": [
+    1075.2,
+    554.4
+   ],
+   "raio": 70,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -90
+   ],
+   "texto": "A Júlia olha o relógio e arruma papéis sem necessidade. Vale conversar com ela.",
+   "provisorio": true
+  },
+  {
+   "id": "julia_pressionar",
+   "pos": [
+    1164.8,
+    505.6
+   ],
+   "raio": 70,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -90
+   ],
+   "texto": "A Júlia foge do olhar do grupo. Talvez dê para insistir com ela.",
+   "provisorio": true,
+   "requer": "julia_aflita",
+   "texto_antes": "A Júlia ainda está se fechando. Melhor começar por uma conversa."
   }
  ],
- "gatilhos": [],
+ "gatilhos": [
+  {
+   "id": "julia_1",
+   "apos": "julia_conversa",
+   "tipo": "cena",
+   "cena": "julia_aflita",
+   "marca": "julia_aflita",
+   "teste": {
+    "pericias": [
+     "intuicao"
+    ],
+    "dt": 8,
+    "cena_falha": "julia_aflita_nada"
+   }
+  },
+  {
+   "id": "julia_2",
+   "apos": "julia_pressionar",
+   "tipo": "cena",
+   "cena": "julia_revela",
+   "marca": "julia_revela",
+   "teste": {
+    "pericias": [
+     "diplomacia",
+     "intimidacao"
+    ],
+    "dt": 12,
+    "cena_falha": "julia_revela_nada"
+   }
+  }
+ ],
  "zonas": [
   {
    "id": "saida",
@@ -1295,9 +1407,9 @@
     1440.0,
     134.3
    ],
-   "acao": "ir",
-   "para": "delegacia_21h",
-   "texto": "O grupo volta para a delegacia.",
+   "acao": "destinos",
+   "cena": "biblioteca_saida",
+   "texto": "O grupo sai da biblioteca.",
    "provisorio": true
   }
  ],
@@ -1309,10 +1421,16 @@
    "provisorio": true
   },
   {
-   "texto": "Voltar para a delegacia",
+   "texto": "Conversar com a Júlia",
+   "pista": "julia_conversa",
+   "provisorio": true
+  },
+  {
+   "texto": "Escolher o próximo destino",
    "provisorio": true
   }
  ],
+ "marca_ao_chegar": "visitou_biblioteca",
  "cena_ao_chegar": {
   "cena": "biblioteca_julia",
   "marca": "biblioteca_julia"

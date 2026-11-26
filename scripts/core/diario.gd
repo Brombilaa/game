@@ -16,19 +16,46 @@ const TITULOS := {
 	"leticia": "Letícia está viva",
 	"tapete": "Tapete fora do lugar",
 	"poco": "O poço da fazenda",
-	"livro_faltando": "O livro que faltava",
+	"livro_faltando": "O livro Sanguis Orchid",
 	"livro_ocorrencias": "Livro de ocorrências",
 	"agenda_ghular": "A agenda do delegado",
+	"quadro_flor": "Quadro da flor vermelha",
+	"cofre_ghular": "Cofre do delegado",
 	"gaveta_provas": "Gaveta de provas forçada",
 	"ficha_desaparecidos": "Fichas de desaparecidos",
 	"cela_arranhoes": "Arranhões na cela",
 	"chaveiro_recepcao": "Chaveiro da recepção",
 	"kit_recepcao": "Kit esquecido",
-	"fichario": "Ficha arrancada",
+	"fichario": "Fichas de empréstimo",
 	"mesa_leitura": "Livro de história",
-	"mapa_antigo": "Mapa antigo",
+	"mapa_antigo": "Recorte de 1977",
+	"fotos_simbolo": "Fotos da árvore da praça",
 	"diario_bibliotecaria": "Diário da bibliotecária",
 	"caixa_arquivo": "Caixa de arquivo",
+	# Necrotério e casa do Velho Geraldo (22/11)
+	"tutu_corpo": "O corpo do Tutu",
+	"tutu_pescoco": "Pontos no pescoço do Tutu",
+	"mesa_legista": "A mesa do legista",
+	"gaveta_zumbi": "A gaveta do zumbi",
+	"armario_instrumentos": "Armário de instrumentos",
+	"pagina_parasitagem": "Página: Parasitagem",
+	"pagina_caladenia_purpura": "Página: Caladenia purpura",
+	"pagina_caladenia_viridis": "Página: Caladenia viridis",
+	"pagina_caladenia_flavum": "Página: Caladenia flavum",
+	"leticia_despedida": "A Letícia no necrotério",
+	"geraldo_conversa": "O Velho Geraldo",
+	"geraldo_1977": "O caso de 1977",
+	"geraldo_despedida": "O que o Geraldo ficou de contar",
+	"geraldo_pescoco": "Cicatrizes no pescoço",
+	"geraldo_tique": "O tique do Geraldo",
+	"cerca_buracos": "Cerca cheia de buracos",
+	"arma_chumbinho": "Arma de chumbinho",
+	"caixote_varanda": "Caixote da varanda",
+	# Testes de perícia (26/11)
+	"computador_recepcao": "Computador da recepção",
+	"gravador_ghular": "Gravador escondido",
+	"julia_conversa": "A Júlia aflita",
+	"julia_pressionar": "O que a Júlia viu",
 }
 
 
@@ -44,7 +71,20 @@ static func anotar(lugar: String, id: String, texto: String, imagem := "", titul
 	for e in Missao1.diario:
 		if e["id"] == id and e["lugar"] == lugar:
 			return false
+	for i in range(Missao1.diario.size() - 1, -1, -1):  # examinar de verdade substitui a dedução do grupo
+		if Missao1.diario[i]["id"] == "ded_" + id and Missao1.diario[i]["lugar"] == lugar:
+			Missao1.diario.remove_at(i)
 	Missao1.diario.append({"id": id, "lugar": lugar, "titulo": titulo_proprio if titulo_proprio != "" else titulo(id), "texto": texto, "imagem": imagem})
+	return true
+
+
+# Dedução do grupo (Léo, 22/11): pista essencial que ficou sem examinar entra como resumo superficial, no estilo
+# "falhou no teste" do roteiro. Não repete se a pista já foi examinada ou deduzida; examinar depois a substitui.
+static func deduzir(lugar: String, id: String, resumo: String) -> bool:
+	for e in Missao1.diario:
+		if e["lugar"] == lugar and (e["id"] == id or e["id"] == "ded_" + id):
+			return false
+	Missao1.diario.append({"id": "ded_" + id, "lugar": lugar, "titulo": "Dedução: " + titulo(id), "texto": resumo, "imagem": ""})
 	return true
 
 
