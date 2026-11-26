@@ -70,7 +70,7 @@ const BLURBS := {
 	"pave": "Pavê do aniversário da Ribeiro, feito pela mãe dela. Recupera 5 PV por porção.",
 	"sinalizador": "Luz vermelha no chão por alguns turnos: o grupo acerta melhor quem está nela. Só em combate.",
 	"componente_ritual": "Material usado nos rituais.",
-	"sangue_coagulado": "Componente de Sangue. Tirado da Criatura de Sangue.",
+	"sangue_coagulado": "Componente de Sangue. Tirado do Zumbi de Sangue.",
 	"prego_enferrujado": "Componente de Sangue: a ferrugem lembra o sangue.",
 	"frasco_orgao": "Componente de Sangue.",
 	"bateria": "Componente de Energia.",

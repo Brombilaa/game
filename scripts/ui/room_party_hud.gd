@@ -381,7 +381,7 @@ func _draw_face(u: Combatant, rect: Rect2) -> void:
 		return
 	var variant := room._enemy_variant(i)
 	var face := _enemy_face(variant)
-	if face:  # retrato próprio (Criatura de Sangue, Atirador)
+	if face:  # retrato próprio (Zumbi de Sangue, Atirador)
 		room.draw_texture_rect(face, rect, false)
 		return
 	if room.enemy_sheets.has(variant):

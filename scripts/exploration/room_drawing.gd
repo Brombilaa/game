@@ -396,7 +396,7 @@ func _has_creatures() -> bool:
 	return not room.enemies.is_empty() and room._enemy_variant(0) == TestRoom.CREATURE_VARIANT
 
 
-# Escolhe a animação da Criatura de Sangue: morte, ataque (durante a mira), transição ao entrar em
+# Escolhe a animação do Zumbi de Sangue: morte, ataque (durante a mira), transição ao entrar em
 # combate, andar ou parada.
 func _draw_creature(u: Combatant, at: Vector2, walking: bool, dist: float) -> void:
 	var now := Time.get_ticks_msec()
