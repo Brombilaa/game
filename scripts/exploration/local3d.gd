@@ -399,6 +399,9 @@ func _zonas() -> void:
 		if z.has("requer") and not Missao1.tem(str(z["requer"])):
 			continue
 		if str(z.get("acao", "")) == "ir":
+			if z.has("cena") and CenaRoteiro.existe(str(z["cena"])) and not Missao1.tem(str(z["cena"])):  # a Ju tranca a biblioteca e sai de moto antes da volta
+				Missao1.marcar(str(z["cena"]))
+				await tocar_cena(str(z["cena"]))
 			_ir_para(str(z["para"]), str(z.get("chegada", "")), str(z.get("texto", "")))
 			return
 		if str(z.get("acao", "")) == "estado":  # revela um trecho do cenário (cripta)

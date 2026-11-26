@@ -216,10 +216,15 @@ def biblioteca(d, p, ret):
            "Nas fichas de empréstimo, dois livros chamam a atenção. \"Sanguis Orchid\": doado em 1979 por Geraldo Munch, retirado só em 1987 e em 1997, as duas vezes por Frederico Ghular. Na última linha, em letra recente: confiscado como evidência por Roberto Ghular, há poucos dias.",
            inspecao="fichario")
     _pista(d, p, "mesa_leitura", 2.6, 5.6,
-           "O livro \"Aurora, a Cidade das Flores\" está aberto na mesa de leitura. Um parágrafo foi sublinhado: em 1970 a cidade pediu ao Vaticano que canonizasse Lygia Virgínia do Rosário como a Santa das Flores, e o pedido foi negado. Na margem, a lápis: \"carne feita de sangue só se desfaz com o próprio Outro Lado\".")
+           "O livro \"Aurora, a Cidade das Flores\" está aberto nas páginas que a Juliana separou: a fundação em 1817, o título de Cidade das Flores em 1917 e, em 1970, o pedido ao Vaticano pela Santa das Flores, negado. Na margem, a lápis: \"carne feita de sangue só se desfaz com o próprio Outro Lado\".",
+           inspecao="livro_cidade")
     _pista(d, p, "mapa_antigo", 12.7, 6.2,
            "Um recorte de jornal de 1977: \"Os Sete Desaparecidos, o mistério que continua a assolar Aurora\". Sete moradores sumiram ao longo de um mês; o investigador do caso era o jovem Geraldo Munch. A última desaparecida foi Maria Cabral, nascida em 1º de junho de 1948.",
            inspecao="mapa_antigo")
+    # As fotos da cena da praça que a Letícia levou para casa (roteiro, seção 3: a Juliana viu o símbolo dentro da árvore). Provisório.
+    _pista(d, p, "fotos_simbolo", 10.3, 6.3,
+           "Entre os papéis, duas fotos da cena da praça, as que a Letícia levou para casa. Na árvore manchada de sangue, o mesmo símbolo que o grupo viu, mas aqui ele está aberto por dentro do tronco. Anotado na margem, com a letra da Juliana: \"o símbolo está DENTRO da árvore\".",
+           inspecao="fotos_simbolo")
     _pista(d, p, "diario_bibliotecaria", 15.3, 3.4,
            "O diário da Juliana termina de repente: \"O delegado levou o Sanguis Orchid como evidência de um caso em aberto. Mas o caso não tem relatório, e eu sei o que esse livro diz. Preciso contar à Lari.\"",
            inspecao="diario_bibliotecaria")
@@ -236,7 +241,9 @@ def biblioteca(d, p, ret):
            da=[("bandagem", 2), ("antidoto", 1), ("municao_escopeta", 4), ("relogio_quebrado", 1)],
            chave="chave_acervo", trancado="Trancado. O armário do acervo restrito precisa de uma chave.")
     d["cena_ao_chegar"] = {"cena": "biblioteca_julia", "marca": "biblioteca_julia"}  # a Ju recebe o grupo (22/11)
-    d["zonas"].append({"id": "saida", "ret": ret(-1.5, 12.4, 22.5, 2.1), "acao": "ir", "para": "delegacia_21h",
+    d["inicio"]["npcs"] = [{"id": "julia", "pos": p(15.3, 5.6)}]  # sem modelo 3D ainda: aparece como figura simples, com o nome
+    # Saída (roteiro, seção 3): a Ju tranca a porta e vai embora de moto. A moto é o estado "moto" do cenário (moto.py).
+    d["zonas"].append({"id": "saida", "ret": ret(-1.5, 12.4, 22.5, 2.1), "acao": "ir", "para": "delegacia_21h", "cena": "biblioteca_saida",
                        "texto": "O grupo volta para a delegacia.", "provisorio": True})
 
 
