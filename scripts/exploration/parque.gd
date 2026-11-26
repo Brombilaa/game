@@ -193,6 +193,16 @@ func _on_combat_ended(result: TurnManager.Result) -> void:
 	if cena_depois != "" and CenaRoteiro.existe(cena_depois):
 		var c := cena_depois
 		cena_depois = ""
+		if not teste_depois.is_empty():  # restos dos zumbis: passou = a versão completa da cena, falhou = a superficial
+			var t := teste_depois
+			teste_depois = {}
+			await get_tree().create_timer(1.0).timeout
+			var r: Dictionary = await _tentar_teste("parque_restos_zumbis", t)
+			_show_dialog("", TestePericia.texto(r), "")
+			while dialog_layer.visible:
+				await get_tree().process_frame
+			if not r.get("passou", false) and CenaRoteiro.existe(str(t.get("cena_falha", ""))):
+				c = str(t["cena_falha"])
 		await get_tree().create_timer(1.0).timeout  # o último golpe termina antes de a cena começar
 		await tocar_cena(c)
 		espera = 0.0
@@ -204,6 +214,7 @@ func _proximo_apos_vitoria() -> String:
 	return Missao1.DEPOIS_DO_PARQUE
 
 
+var teste_depois := {}  # teste de perícia que decide a versão da cena de depois (restos dos zumbis)
 var cena_depois := ""  # cena (data/cenas) que toca quando o combate do gatilho termina em vitória
 var cena: CenaRoteiro  # cena com roteiro tocando agora
 var npc_pose := {}  # id do NPC -> {"anim", "inicio" (ms), "dur" (s)}: animação pedida pela cena
@@ -1467,6 +1478,7 @@ func _run_trigger(trigger: Dictionary) -> void:
 	if trigger["tipo"] != "combate":
 		return
 	cena_depois = str(trigger.get("cutscene_depois", ""))
+	teste_depois = trigger.get("teste_depois", {})
 	for spec in trigger["inimigos"]:
 		var p: Array = spec["pos"]
 		enemies.append(cfg.make_enemy(spec["tipo"], Vector2(p[0], p[1])))
