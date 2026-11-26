@@ -16,7 +16,7 @@ const TITULOS := {
 	"leticia": "Letícia está viva",
 	"tapete": "Tapete fora do lugar",
 	"poco": "O poço da fazenda",
-	"livro_faltando": "O livro que faltava",
+	"livro_faltando": "O livro Sanguis Orchid",
 	"livro_ocorrencias": "Livro de ocorrências",
 	"agenda_ghular": "A agenda do delegado",
 	"gaveta_provas": "Gaveta de provas forçada",
@@ -24,9 +24,9 @@ const TITULOS := {
 	"cela_arranhoes": "Arranhões na cela",
 	"chaveiro_recepcao": "Chaveiro da recepção",
 	"kit_recepcao": "Kit esquecido",
-	"fichario": "Ficha arrancada",
+	"fichario": "Fichas de empréstimo",
 	"mesa_leitura": "Livro de história",
-	"mapa_antigo": "Mapa antigo",
+	"mapa_antigo": "Recorte de 1977",
 	"diario_bibliotecaria": "Diário da bibliotecária",
 	"caixa_arquivo": "Caixa de arquivo",
 	# Necrotério e casa do Velho Geraldo (22/11)
@@ -63,7 +63,20 @@ static func anotar(lugar: String, id: String, texto: String, imagem := "", titul
 	for e in Missao1.diario:
 		if e["id"] == id and e["lugar"] == lugar:
 			return false
+	for i in range(Missao1.diario.size() - 1, -1, -1):  # examinar de verdade substitui a dedução do grupo
+		if Missao1.diario[i]["id"] == "ded_" + id and Missao1.diario[i]["lugar"] == lugar:
+			Missao1.diario.remove_at(i)
 	Missao1.diario.append({"id": id, "lugar": lugar, "titulo": titulo_proprio if titulo_proprio != "" else titulo(id), "texto": texto, "imagem": imagem})
+	return true
+
+
+# Dedução do grupo (Léo, 22/11): pista essencial que ficou sem examinar entra como resumo superficial, no estilo
+# "falhou no teste" do roteiro. Não repete se a pista já foi examinada ou deduzida; examinar depois a substitui.
+static func deduzir(lugar: String, id: String, resumo: String) -> bool:
+	for e in Missao1.diario:
+		if e["lugar"] == lugar and (e["id"] == id or e["id"] == "ded_" + id):
+			return false
+	Missao1.diario.append({"id": "ded_" + id, "lugar": lugar, "titulo": "Dedução: " + titulo(id), "texto": resumo, "imagem": ""})
 	return true
 
 

@@ -44,6 +44,10 @@ func _init() -> void:
 	var dama := load("res://assets/sprites/retratos/dama_64.png") as Texture2D
 	_check(dama != null and dama.get_width() == 64, "dama de sangue: retrato de 64 px")
 
+	for f in ["ghular_64", "ghular_128", "ghular_manto_64", "ghular_manto_128", "ghular_manto_ferido_64", "ghular_manto_ferido_128"]:
+		var g := load("res://assets/sprites/retratos/%s.png" % f) as Texture2D
+		_check(g != null and g.get_width() == int(f.rsplit("_", true, 1)[1]), "Ghular: retrato %s" % f)
+
 	print("Falhas: %d" % failures)
 	quit(1 if failures > 0 else 0)
 

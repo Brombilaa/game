@@ -49,6 +49,9 @@ var pista_malhas := {}
 var pending_clue := ""
 var dialog_layer: CanvasLayer
 var dialog_clue := ""
+var dialog_paginas: Array = []  # pista com várias imagens (as 7 fichas): o clique vira a página até a última
+var dialog_pg := 0
+var dialog_base := ""
 var falas: FalasSoltas  # quando o grupo fala sozinho na exploração (Léo, 15/11)
 var caixa: CaixaFala  # falas curtas com retrato depois das pistas (Léo, modelo C, 15/11)
 var dialog_text: Label
@@ -217,6 +220,8 @@ func _ir_para(local: String, chegada: String, texto: String, espera := 0.0) -> v
 	if indo_para != "":
 		return
 	indo_para = local
+	for cid in scenario.deducoes(seen_clues):  # o que ficou sem examinar vira dedução do grupo no diário
+		Diario.deduzir(_diario_lugar(), cid, str(scenario.clues[cid]["resumo"]))
 	busy = true
 	path = PackedVector2Array()
 	var camada := CanvasLayer.new()
@@ -852,7 +857,18 @@ func _objectives() -> Array[Dictionary]:
 	return Objectives.from_data(scenario.objetivos, seen_clues, Missao1.tem, mode == Mode.COMBAT)
 
 
-# Caio tem a folha de parado em 3D; a Letícia ainda é figura provisória (corpo, cabeça e nome).
+# Animação da Letícia (Léo, 21/11): parada nos mapas; na cripta, no altar (Laying Nodding) até a luta com a Dama e deitada
+# (Sleeping Idle) durante a luta e na cena depois dela. Duração de cada clipe em segundos (leticia.res).
+const LETICIA_DURACAO := {"idle": 6.0, "laying_nodding": 2.83, "sleeping_idle": 6.87}
+
+
+func _anim_leticia() -> String:
+	if _scenario_id() != "cripta":
+		return "idle"
+	return "sleeping_idle" if mode == Mode.COMBAT or Missao1.tem("cripta_vencida") else "laying_nodding"
+
+
+# Caio e a Letícia têm modelo 3D; os outros NPCs ainda são figura provisória (corpo, cabeça e nome).
 func _draw_npc(font: Font, npc_id: String) -> void:
 	if npc_fora.has(npc_id):
 		return
@@ -877,6 +893,15 @@ func _draw_npc(font: Font, npc_id: String) -> void:
 		drawing_key = null
 		queue_redraw()  # a respiração anima
 		return
+	if npc_id == "leticia" and _modelos_3d() and Agente3D.tem_modelo("leticia3d"):  # Letícia 3D (Léo, 21/11)
+		drawing_key = npc_id
+		var anim := _anim_leticia()
+		var fase := fmod(Time.get_ticks_msec() / 1000.0 / float(LETICIA_DURACAO[anim]), 1.0)
+		var ok := _model3d("leticia3d", at, anim, fase, npc_dir.get(npc_id, CharacterSheet.Dir.SE))
+		drawing_key = null
+		if ok:
+			queue_redraw()  # a respiração anima
+			return
 	draw_rect(Rect2(at + Vector2(-11, -66), Vector2(22, 60)), NPC_COLORS[npc_id])
 	draw_rect(Rect2(at + Vector2(-8, -86), Vector2(16, 18)), Color("#d6b292"))
 	var name_text: String = NPC_NAMES[npc_id]
@@ -1226,9 +1251,36 @@ func _pista_oculta(_cid: String) -> bool:
 func _show_dialog(image_path: String, text: String, cid: String) -> void:
 	dialog_clue = cid
 	dialog_text.text = text
-	dialog_image.texture = load(image_path) if image_path != "" else null
-	dialog_image.visible = image_path != ""
+	dialog_base = text
+	dialog_paginas = []
+	dialog_pg = 0
+	dialog_image.texture = load(image_path) if image_path != "" and ResourceLoader.exists(image_path) else null
+	dialog_image.visible = dialog_image.texture != null
+	_ajustar_imagem_dialogo()
+	if cid != "" and scenario.clues.has(cid) and scenario.clues[cid].get("inspecoes", []).size() > 1:
+		dialog_paginas = scenario.clues[cid]["inspecoes"]
+		_pagina_dialogo()
 	dialog_layer.visible = true
+
+
+# Imagem quadrada: caixa de 360x360; ficha ou página (bem mais larga que alta): 600 de largura, na altura da proporção.
+func _ajustar_imagem_dialogo() -> void:
+	var t := dialog_image.texture
+	if t != null and t.get_width() > t.get_height() * 1.2:
+		var h := 600.0 * t.get_height() / t.get_width()
+		dialog_image.position = Vector2(180, 28 + (360.0 - h) * 0.5)
+		dialog_image.size = Vector2(600, h)
+	else:
+		dialog_image.position = Vector2(300, 28)
+		dialog_image.size = Vector2(360, 360)
+
+
+func _pagina_dialogo() -> void:
+	var pg: Dictionary = dialog_paginas[dialog_pg]
+	dialog_image.texture = load(str(pg["imagem"]))
+	dialog_image.visible = true
+	_ajustar_imagem_dialogo()
+	dialog_text.text = dialog_base + "\n(%d/%d · clique para %s)" % [dialog_pg + 1, dialog_paginas.size(), "a próxima" if dialog_pg + 1 < dialog_paginas.size() else "fechar"]
 
 
 # Fecha a caixa de texto. Se era uma pista nova, registra e dispara o que vem depois dela.
@@ -1246,6 +1298,9 @@ func _close_dialog() -> void:
 	Dicas.marcar("examinar")
 	audio.play_sfx("clue_found")
 	var c: Dictionary = scenario.clues[cid]
+	var fichas: Array = c["inspecoes"]
+	for i in range(fichas.size() - 1):  # uma entrada do diário por ficha; a última é a da pista (a mais recente)
+		Diario.anotar(_diario_lugar(), "%s_%d" % [cid, i + 1], str(fichas[i]["texto"]), str(fichas[i]["imagem"]), str(fichas[i]["titulo"]))
 	Diario.anotar(_diario_lugar(), cid, c["texto"], c["inspecao"])
 	if c["perda_san"] > 0 or c["perturbadora"]:  # pista que perturba: quem leu (o líder) perde SAN
 		room_combat._san_report({player: san.clue_read(player, {"perda_san": c["perda_san"]} if c["perda_san"] > 0 else c)}, "lê a pista")
@@ -1290,6 +1345,10 @@ func _run_trigger(trigger: Dictionary) -> void:
 
 func _on_dialog_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if dialog_pg + 1 < dialog_paginas.size():
+			dialog_pg += 1
+			_pagina_dialogo()
+			return
 		_close_dialog()
 
 

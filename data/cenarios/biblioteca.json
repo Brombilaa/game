@@ -1160,7 +1160,10 @@
     -30
    ],
    "texto": "Nas fichas de empréstimo, dois livros chamam a atenção. \"Sanguis Orchid\": doado em 1979 por Geraldo Munch, retirado só em 1987 e em 1997, as duas vezes por Frederico Ghular. Na última linha, em letra recente: confiscado como evidência por Roberto Ghular, há poucos dias.",
-   "provisorio": true
+   "provisorio": true,
+   "inspecao": "res://assets/sprites/pistas/fichario.png",
+   "essencial": true,
+   "resumo": "O grupo deduz que o livro Sanguis Orchid passou pela biblioteca, que um Ghular o retirou e que agora está com Roberto Ghular."
   },
   {
    "id": "mesa_leitura",
@@ -1190,7 +1193,8 @@
     -30
    ],
    "texto": "Um recorte de jornal de 1977: \"Os Sete Desaparecidos, o mistério que continua a assolar Aurora\". Sete moradores sumiram ao longo de um mês; o investigador do caso era o jovem Geraldo Munch. A última desaparecida foi Maria Cabral, nascida em 1º de junho de 1948.",
-   "provisorio": true
+   "provisorio": true,
+   "inspecao": "res://assets/sprites/pistas/mapa_antigo.png"
   },
   {
    "id": "diario_bibliotecaria",
@@ -1205,7 +1209,8 @@
     -30
    ],
    "texto": "O diário da Juliana termina de repente: \"O delegado levou o Sanguis Orchid como evidência de um caso em aberto. Mas o caso não tem relatório, e eu sei o que esse livro diz. Preciso contar à Lari.\"",
-   "provisorio": true
+   "provisorio": true,
+   "inspecao": "res://assets/sprites/pistas/diario_bibliotecaria.png"
   },
   {
    "id": "caixa_arquivo",
