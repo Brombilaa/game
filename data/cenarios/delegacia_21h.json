@@ -1449,6 +1449,7 @@
  },
  "invasao": {
   "quando": "zona",
+  "cena_antes": "delegacia_tulio_morte",
   "marca": "invasao_vencida",
   "cena_depois": "ligacao_juliana",
   "flashbang": [

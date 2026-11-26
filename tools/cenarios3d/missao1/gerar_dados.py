@@ -135,7 +135,7 @@ def delegacia17(d, p, ret):
     _pista(d, p, "agenda_ghular", 14.0, 3.4,
            "Na agenda do delegado Ghular, sete datas do último mês estão circuladas, cada uma com uma orquídea vermelha desenhada a caneta. A sétima é de ontem. Na margem de todo sábado, a mesma anotação seca: \"treino\".")
     _pista(d, p, "gaveta_provas", 14.8, 9.8,
-           "A gaveta da sala de provas foi forçada. Dentro, entre papéis manchados, ainda restam algumas balas soltas e um celular de tela rachada, num saco de provas.",
+           "A gaveta da sala de provas foi forçada. Dentro, entre papéis manchados, ainda restam algumas balas de pistola soltas e um celular de tela rachada, num saco de provas. Ao lado, o saco etiquetado como fuzil de caça está vazio.",
            da=[("municao_pistola", 6), ("celular_quebrado", 1)])
     _pista(d, p, "ficha_desaparecidos", 2.7, 4.8,
            "No armário de evidências, uma pasta com sete fichas de desaparecidos de Aurora. Nada liga uma à outra: idades, bairros e lugares do sumiço são todos diferentes. A mais recente é de ontem à noite: Lisandra de Sá, 38 anos, funcionária de farmácia, vista pela última vez perto da praça.",
@@ -214,7 +214,7 @@ def delegacia21(d, p, ret):
     d["zonas"].append({"id": "invasao", "ret": _ret4(ret, [5.6, 13.3, 13.8, 15.0]), "acao": "invasao",
                        "requer": "subsolo_visitado", "provisorio": True})
     d["cena_ao_chegar"] = {"cena": "delegacia_ghular_21h", "marca": "ghular_21h"}  # Túlio, o Ghular "aliado" e o motivo de olhar a sala dele
-    d["invasao"] = {"quando": "zona", "marca": "invasao_vencida", "cena_depois": "ligacao_juliana", "flashbang": p(9.75, 18.2), "inimigos": [
+    d["invasao"] = {"quando": "zona", "cena_antes": "delegacia_tulio_morte", "marca": "invasao_vencida", "cena_depois": "ligacao_juliana", "flashbang": p(9.75, 18.2), "inimigos": [
         {"tipo": "atirador", "pos": p(*c), "provisorio": True} for c in [(9.75, 17.4), (7.7, 17.7), (11.8, 17.6)]]}
 
 
