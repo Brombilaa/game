@@ -6,7 +6,7 @@ extends SceneTree
 
 var failures := 0
 const PASSOS := ["cinema", "camera", "andar", "olhar", "anim", "cair", "fala", "legenda", "esperar", "tremor", "flash", "saltar", "choque",
-	"sangue", "poca", "surgir", "sumir", "marca", "dialogo"]
+	"sangue", "poca", "surgir", "sumir", "marca", "dialogo", "dar"]
 const ATORES := ["caio", "leticia", "Fernando", "Nikolai", "Miguel", "lider", "inimigo:0", "inimigo:1", "tristan", "mark", "julia", "medico"]
 
 
