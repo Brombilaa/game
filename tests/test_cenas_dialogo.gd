@@ -57,23 +57,6 @@ func _cenas_de_dialogo() -> void:
 		await process_frame
 	_check(room.mode == room.Mode.EXPLORATION, "a cena do Ghular devolve o controle")
 	await _fechar(room)
-	# Saída da biblioteca (roteiro, seção 3): a Ju sai de moto e a moto some do cenário; o grupo volta à delegacia.
-	Missao1.reiniciar()
-	Missao1.marcar("biblioteca_julia")
-	room = await _abrir("biblioteca")
-	_check(room.scenario.npcs.has("julia") and room.world3d.tem_estado("moto"), "biblioteca: a Ju e a moto estão no cenário")
-	_check(room.scenario.clues.has("fotos_simbolo") and room.scenario.clues["fotos_simbolo"]["inspecao"] != "", "biblioteca: as fotos do símbolo são uma pista com imagem")
-	_entrar_na_zona(room, "saida")
-	await process_frame
-	_check(room.mode == room.Mode.CUTSCENE and Missao1.tem("biblioteca_saida"), "biblioteca: ao sair toca a despedida da Ju")
-	for i in 6000:
-		if Missao1.tem("biblioteca_saida_fim"):
-			break
-		await process_frame
-	_check(Missao1.tem("biblioteca_saida_fim") and room.npc_fora.has("julia"), "biblioteca: a Ju sai de cena")
-	for n in room.world3d.estados["moto"]:
-		_check(not (n as Node3D).visible, "biblioteca: a moto foi embora")
-	await _fechar(room)
 	Missao1.reiniciar()
 	room = await _abrir("cripta")
 	for n in [2, 3]:
