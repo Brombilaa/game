@@ -20,7 +20,7 @@ const GRUPO := ["fernando", "nikolai", "miguel"]
 # surpresa: lado que age todo primeiro na rodada 1 (como no jogo). chefe: Roberto vira a Dama a 25% do PV e o
 # Fernando morre na cena do tentáculo quando a Dama chega ao limite do fim (cripta.json); a luta segue até a Dama morrer.
 const ENCONTROS := {
-	"parque": {"nome": "Parque: 2 Criaturas de Sangue", "inimigos": ["criatura_sangue", "criatura_sangue"], "dist_m": 8.0, "surpresa": Combatant.Side.ENEMY},
+	"parque": {"nome": "Parque: 2 Zumbis de Sangue", "inimigos": ["criatura_sangue", "criatura_sangue"], "dist_m": 8.0, "surpresa": Combatant.Side.ENEMY},
 	"delegacia": {"nome": "Delegacia 21h: invasão de 3 atiradores", "inimigos": ["atirador", "atirador", "atirador"], "dist_m": 9.0, "surpresa": Combatant.Side.ENEMY},
 	"fazenda": {"nome": "Fazenda: 3 atiradores", "inimigos": ["atirador", "atirador", "atirador"], "dist_m": 10.0, "surpresa": -1},
 	"corredor": {"nome": "Cripta, corredor: 2 cultistas", "inimigos": ["cultista", "cultista"], "dist_m": 7.0, "surpresa": -1},

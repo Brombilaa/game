@@ -4,7 +4,7 @@ extends "res://scripts/exploration/test_room.gd"
 # colisões, as pistas e o gatilho do combate vêm de `data/cenarios/parque.json` (Scenario).
 # O fundo tem projeção própria (48 × 18,13 px por unidade), por isso `_iso` e `_uniso` mudam.
 # Pistas: clique no objeto, o grupo anda até perto e o texto aparece; a árvore só depois das
-# outras. Depois da árvore, duas Criaturas de Sangue atacam; na vitória toca a cena da morte do Caio (CenaRoteiro,
+# outras. Depois da árvore, dois Zumbis de Sangue atacam; na vitória toca a cena da morte do Caio (CenaRoteiro,
 # data/cenas). Os diálogos dos NPCs ainda não existem.
 
 const SCENARIO_ID := "parque"
@@ -296,7 +296,7 @@ func _diario_lugar() -> String:
 
 
 func _enemy_variant(_i: int) -> String:
-	return CREATURE_VARIANT  # Criatura de Sangue no lugar dos cultistas (Léo, 5/11)
+	return CREATURE_VARIANT  # Zumbi de Sangue no lugar dos cultistas (Léo, 5/11)
 
 
 # Os NPCs também bloqueiam o caminho.
@@ -548,7 +548,7 @@ const GOLPE_3D := {
 	"rifle_fire": [0.12, 0.45, 1.0],
 	"punch": [0.27, 0.6, 1.0],
 	"kick": [0.375, 0.7, 1.0],
-	"attack": [0.5, 0.78, 1.33],  # Criatura de Sangue: o segundo golpe, o mais forte
+	"attack": [0.5, 0.78, 1.33],  # Zumbi de Sangue: o segundo golpe, o mais forte
 }
 var golpes := {}  # Combatant -> {"anim", "inicio" (ms), "mira" (s), "duracao" (s do clipe), "alvo"}
 
@@ -581,7 +581,7 @@ func _attack_started(attacker: Combatant, target: Combatant, aim: float) -> void
 	golpes[attacker] = {"anim": anim, "inicio": Time.get_ticks_msec(), "mira": aim, "duracao": dur, "alvo": target}
 
 
-# Altura do peito dos modelos 3D em px do desenho (medida nas capturas: agente ~78, Criatura de Sangue ~100).
+# Altura do peito dos modelos 3D em px do desenho (medida nas capturas: agente ~78, Zumbi de Sangue ~100).
 func _chest_px(u: Combatant) -> float:
 	return 100.0 if _has_creatures() and enemies.has(u) else 78.0
 

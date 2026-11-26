@@ -85,5 +85,5 @@
 		{"id": "pneus_oeste", "arquivo": "res://assets/sprites/cenario/parque/oclusao/pneus_oeste.png", "pos": [529, 514]},
 		{"id": "pneus_arvore", "arquivo": "res://assets/sprites/cenario/parque/oclusao/pneus_arvore.png", "pos": [1319, 534]}
 	],
-	"_pendencias": ["Criatura de Sangue no lugar do cultista (feito em 5/11); ficha provisória igual à do cultista", "pistas de ordem 2 só liberam depois de todas as de ordem 1"]
+	"_pendencias": ["Zumbi de Sangue no lugar do cultista (feito em 5/11); ficha provisória igual à do cultista", "pistas de ordem 2 só liberam depois de todas as de ordem 1"]
 }
