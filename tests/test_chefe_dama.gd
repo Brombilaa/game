@@ -130,10 +130,12 @@ func _luta() -> void:
 	await _turno_da_dama(room, ch)
 	_check(rosa["estado"] == "aberta" and (rosa["unit"] as Combatant).protegido, "a flor da rodada anterior fecha a janela")
 	_check(room.rules.attack_blocker(nikolai, rosa["unit"], [] as Array[Rect2], []) == "requirement", "flor fora da janela não pode ser atacada")
-	# Fase 2: com 50% ou menos, todas as flores de pé se abrem, vulneráveis.
+	# Fase 2 só com os corpos acabando (roteiro; Léo, 26/11): a 50% de PV a Dama segue na fase 1.
 	dama.pv = int(dama.max_pv * 0.5)
 	ch.ao_impacto(dama)
-	_check(ch.fase == 2, "fase 2 com a Dama a 50%")
+	_check(ch.fase == 1, "fase 1 segue com a Dama a 50% de PV")
+	ch._entrar_fase2()
+	_check(ch.fase == 2, "fase 2 quando os corpos acabam")
 	_check(ch.flores.all(func(f: Dictionary) -> bool: return f["estado"] == "murcha" or (f["estado"] == "aberta" and not (f["unit"] as Combatant).protegido)), "fase 2: todas as flores de pé abertas e vulneráveis")
 	# Prisão de Tentáculos: prende quem está perto; destruir o tentáculo solta.
 	for m in room.party:

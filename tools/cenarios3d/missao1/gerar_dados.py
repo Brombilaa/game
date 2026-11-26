@@ -325,9 +325,9 @@ def cripta(d, p, ret):
             e["ritual"] = True  # Léo (19/11): focados no ritual, só lutam se forem atacados
         d["inimigos"].append(e)
     d["inimigos"].append({"tipo": "roberto_ghular", "pos": p(*P["roberto"]), "trecho": 4, "grupo": "salao"})
-    # Roberto se mata com pouca vida e a Dama de Sangue surge dele (Léo). O limite de 50% é provisório
-    # (passada de balanceamento de 19/11; era 25%).
-    d["chefe"] = {"tipo": "roberto_ghular", "limite": 0.5, "vira": "dama_sangue", "marca": "dama_surgiu",
+    # Roberto se mata com pouca vida e a Dama de Sangue surge dele (Léo). O limite de 25% é provisório
+    # (Léo, 26/11: opção B, volta ao roteiro; ficou 50% na passada de 19/11).
+    d["chefe"] = {"tipo": "roberto_ghular", "limite": 0.25, "vira": "dama_sangue", "marca": "dama_surgiu",
                   "texto": "Roberto Ghular crava a adaga no próprio peito. Do sangue dele se ergue a Dama de Sangue.", "provisorio": True,
                   # Os seis pendurados vivos (Léo, 20/11; ChefeDama), na ordem em que ela devora (do mais jovem ao mais velho):
                   # fora do fosso, aos pares entre as três pontes, a 9,5 x 8,5 m do centro do altar. Posições provisórias.
