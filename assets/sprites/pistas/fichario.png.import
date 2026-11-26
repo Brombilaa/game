@@ -3,11 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cw76f6sjvw03h"
-valid=false
+path="res://.godot/imported/fichario.png-f642f3663c24983d219a22341af811fc.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/sprites/pistas/fichario.png"
+dest_files=["res://.godot/imported/fichario.png-f642f3663c24983d219a22341af811fc.ctex"]
 
 [params]
 

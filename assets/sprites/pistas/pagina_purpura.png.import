@@ -3,11 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://drtjwtfbfccs0"
-valid=false
+path="res://.godot/imported/pagina_purpura.png-d85b19a731e70e23a5e864c88f57e78e.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/sprites/pistas/pagina_purpura.png"
+dest_files=["res://.godot/imported/pagina_purpura.png-d85b19a731e70e23a5e864c88f57e78e.ctex"]
 
 [params]
 
