@@ -26,6 +26,7 @@ func _run() -> void:
 	await _investigacao()
 	await _porta_com_chave()
 	await _baus()
+	await _armario_cameras_gravador()
 	await _tapete_e_alcapao()
 	await _invasao()
 	await _celeiro()
@@ -511,3 +512,27 @@ func _check(cond: bool, msg: String) -> void:
 	if not cond:
 		failures += 1
 		print("FAIL: " + msg)
+
+
+func _armario_cameras_gravador() -> void:
+	# Armário de evidências, câmeras, gravador e quadro (22/11, provisório): as chaves do armário ficam na recepção.
+	Missao1.reiniciar()
+	var room = await _abrir("delegacia_17h")
+	var arm: Dictionary = room.scenario.clues["ficha_desaparecidos"]
+	_check(arm.chave == "chave_armario" and room.scenario.clues["armario_livros"].chave == "chave_armario", "17h: o armário de evidências é trancado com a chave do armário")
+	_check(room.scenario.clues["chaves_armario"].sem_diario and not room.scenario.clues["cameras_recepcao"].sem_diario, "17h: a chave não é pista, as câmeras são")
+	room._inspect("ficha_desaparecidos")
+	_check(room.dialog_layer.visible and not room.seen_clues.has("ficha_desaparecidos"), "17h: sem a chave o armário não abre")
+	room._close_dialog()
+	room._inspect("chaves_armario")
+	room._close_dialog()
+	_check(room.inventory.count("chave_armario") == 1, "17h: a chave do armário está na recepção")
+	room._inspect("ficha_desaparecidos")
+	room._close_dialog()
+	_check(room.seen_clues.has("ficha_desaparecidos"), "17h: com a chave o armário abre")
+	await _fechar(room)
+	Missao1.reiniciar()
+	var r21 = await _abrir("delegacia_21h")
+	for cid in ["gravador_ghular", "quadro_flor_vermelha"]:
+		_check(r21.scenario.clues.has(cid), "21h: a sala do Ghular tem " + cid)
+	await _fechar(r21)

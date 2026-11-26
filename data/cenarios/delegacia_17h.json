@@ -1312,6 +1312,28 @@
    "inspecao": "res://assets/sprites/pistas/livro_ocorrencias.png"
   },
   {
+   "id": "chaves_armario",
+   "pos": [
+    697.6,
+    1052.8
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Presas por uma etiqueta no painel de chaves da recepção, as chaves do armário de evidências.",
+   "provisorio": true,
+   "da": [
+    {
+     "item": "chave_armario",
+     "qtd": 1
+    }
+   ],
+   "sem_diario": true
+  },
+  {
    "id": "agenda_ghular",
    "pos": [
     992.0,
@@ -1365,9 +1387,8 @@
     0,
     -30
    ],
-   "texto": "No arquivo, uma pasta com sete fichas de desaparecidos de Aurora. Nada liga uma à outra: idades, bairros e lugares do sumiço são todos diferentes. A mais recente é de ontem à noite: Lisandra de Sá, 38 anos, funcionária de farmácia, vista pela última vez perto da praça.",
+   "texto": "No armário de evidências, uma pasta com sete fichas de desaparecidos de Aurora. Nada liga uma à outra: idades, bairros e lugares do sumiço são todos diferentes. A mais recente é de ontem à noite: Lisandra de Sá, 38 anos, funcionária de farmácia, vista pela última vez perto da praça.",
    "provisorio": true,
-   "inspecao": "res://assets/sprites/pistas/ficha_07.png",
    "inspecoes": [
     {
      "imagem": "res://assets/sprites/pistas/ficha_01.png",
@@ -1404,7 +1425,27 @@
      "titulo": "Ficha 7/7 · Lisandra de Sá",
      "texto": "Lisandra de Sá, 38 anos, funcionária de farmácia. Sumiu ontem à noite na praça, voltando do trabalho. É a mais recente."
     }
-   ]
+   ],
+   "inspecao": "res://assets/sprites/pistas/ficha_07.png",
+   "chave": "chave_armario",
+   "texto_trancado": "Uma placa na porta diz \"Armário de Evidências\". Está trancado, e as chaves da delegacia não abrem. As do armário devem estar por aqui."
+  },
+  {
+   "id": "armario_livros",
+   "pos": [
+    243.2,
+    275.2
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Entre as caixas do armário de evidências há um espaço vazio do tamanho de uns livros. No registro, o nome de quem os retirou foi apagado, e a anotação diz só: \"livros do arquivo público\".",
+   "provisorio": true,
+   "chave": "chave_armario",
+   "texto_trancado": "O armário de evidências está trancado."
   },
   {
    "id": "cela_arranhoes",
@@ -1443,6 +1484,26 @@
    ],
    "essencial": true,
    "resumo": "Sem tempo para revirar a recepção, o grupo deduz que a chave do escritório do Ghular deve estar no chaveiro, e que a sala foi trancada de propósito."
+  },
+  {
+   "id": "cameras_recepcao",
+   "pos": [
+    838.4,
+    1052.8
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "O computador da recepção controla câmeras instaladas em todos os cômodos da delegacia. Há uma pasta de gravações, apagadas a cada um ou dois dias, e dá para apagar também os traços da presença do grupo. O delegado pode estar vendo tudo.",
+   "provisorio": true,
+   "pericia": {
+    "nome": "Tecnologia",
+    "dt": 8,
+    "provisorio": true
+   }
   },
   {
    "id": "cofre_ghular",
