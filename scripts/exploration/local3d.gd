@@ -367,11 +367,11 @@ func _diario_lugar() -> String:
 
 
 # Variante pelo nome da ficha (Léo, 13/11: todos atiradores); o atirador usa a figura do cultista e o retrato próprio.
-# A Dama de Sangue usa a figura da Criatura de Sangue e Roberto Ghular a do atirador, até os modelos deles existirem.
+# A Dama de Sangue usa a figura do Zumbi de Sangue e Roberto Ghular a do atirador, até os modelos deles existirem.
 func _enemy_variant(i: int) -> String:
 	if i >= enemies.size():
 		return "cultista"
-	if enemies[i].name == "Dama de Sangue" or enemies[i].name == "Criatura de Sangue":  # o zumbi do necrotério (22/11)
+	if enemies[i].name == "Dama de Sangue" or enemies[i].name == "Zumbi de Sangue":  # o zumbi do necrotério (22/11)
 		return CREATURE_VARIANT
 	return "atirador" if enemies[i].name == "Atirador" or enemies[i].name == "Roberto Ghular" else "cultista"
 

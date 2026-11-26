@@ -1,5 +1,5 @@
 {
-	"_comentario": "Fraquezas e resistências dos inimigos (sugestão 6 da segunda leva, aprovada pelo Léo em 16/11). Quais inimigos têm o quê fica em inimigos.json (campos 'fraquezas' e 'resistencias', com os tipos de dano abaixo; 'atordoado' em resistencias continua sendo imunidade a atordoar). Rituais só mexem com a Criatura de Sangue (fraqueza); cultista, Roberto e Dama não têm afinidade com ritual (Léo, 22/11). Aqui ficam os multiplicadores e como o grupo descobre cada uma. TUDO PROVISÓRIO do Claude, para o Léo revisar jogando.",
+	"_comentario": "Fraquezas e resistências dos inimigos (sugestão 6 da segunda leva, aprovada pelo Léo em 16/11). Quais inimigos têm o quê fica em inimigos.json (campos 'fraquezas' e 'resistencias', com os tipos de dano abaixo; 'atordoado' em resistencias continua sendo imunidade a atordoar). Rituais só mexem com o Zumbi de Sangue (fraqueza); cultista, Roberto e Dama não têm afinidade com ritual (Léo, 22/11). Roberto Ghular não tem afinidade nenhuma (Léo, 26/11); a Dama resiste a corpo a corpo porque é a 'Resistência a Dano' que a flor Vermelha tira quando murcha. Aqui ficam os multiplicadores e como o grupo descobre cada uma. TUDO PROVISÓRIO do Claude, para o Léo revisar jogando.",
 	"provisorio": true,
 	"_tipos": "tipos de dano: 'balistico' (qualquer arma de fogo, mesmo a queima-roupa), 'corpo_a_corpo' (soco, espada, faca, garra; \"de perto\" aqui nunca inclui tiro) e 'ritual' (Eletrocussão). 'fogo' é o dano do coquetel do Fernando (item de uso em combate). Sem 'sal': o jogo não usa sal nem cruzes (Léo, 19/11).",
 	"tipos": {
@@ -19,9 +19,9 @@
 			"pistas": [
 				"banco_quebrado"
 			],
-			"texto": "Há buracos de bala na madeira, ao lado das marcas de garra, e o sangue seco não é de gente. Alguém atirou na coisa que fez isso e não a parou: bala mal arranha a Criatura de Sangue.",
-			"combate": "As balas entram na Criatura de Sangue e o corpo dela se fecha em volta. Tiro faz pouco efeito.",
-			"miguel": "Descarreguei a pistola nela e o corpo fechou em volta das balas. Não gasto mais munição assim."
+			"texto": "Há buracos de bala na madeira, ao lado das marcas de garra, e o sangue seco não é de gente. Alguém atirou na coisa que fez isso e não a parou: bala mal arranha o Zumbi de Sangue.",
+			"combate": "As balas entram no Zumbi de Sangue e o corpo dele se fecha em volta. Tiro faz pouco efeito.",
+			"miguel": "Descarreguei a pistola nele e o corpo fechou em volta das balas. Não gasto mais munição assim."
 		},
 		{
 			"inimigo": "criatura_sangue",
@@ -29,9 +29,9 @@
 			"pistas": [
 				"mesa_leitura"
 			],
-			"texto": "Na margem do livro de história, alguém anotou a lápis: carne feita de sangue só se desfaz com o próprio Outro Lado. Rituais ferem a Criatura de Sangue muito mais que armas.",
-			"combate": "O ritual rasga a Criatura de Sangue por dentro. Ela sente muito mais do que sente bala.",
-			"miguel": "O que é feito do Outro Lado só se desfaz com o Outro Lado. Eletrocussão nela, sempre."
+			"texto": "Na margem do livro de história, alguém anotou a lápis: carne feita de sangue só se desfaz com o próprio Outro Lado. Rituais ferem o Zumbi de Sangue muito mais que armas.",
+			"combate": "O ritual rasga o Zumbi de Sangue por dentro. Ele sente muito mais do que sente bala.",
+			"miguel": "O que é feito do Outro Lado só se desfaz com o Outro Lado. Eletrocussão nele, sempre."
 		},
 		{
 			"inimigo": "atirador",
@@ -44,24 +44,14 @@
 			"miguel": "Fuzil longo não serve de perto. Se alguém chegar colado no atirador, ele não tem o que fazer."
 		},
 		{
-			"inimigo": "roberto_ghular",
-			"tipo": "corpo_a_corpo",
-			"pistas": [
-				"agenda_ghular"
-			],
-			"texto": "Todo sábado da agenda do delegado diz apenas \"treino\". Quem treina assim, semana após semana, aguenta pancada que derrubaria um homem: golpes corpo a corpo quase não afetam Roberto Ghular.",
-			"combate": "Roberto Ghular nem sente o golpe. O que está dentro dele aguenta pancada.",
-			"miguel": "Roberto não sente pancada. Não é mais o corpo de um homem que está ali."
-		},
-		{
 			"inimigo": "dama_sangue",
 			"tipo": "corpo_a_corpo",
 			"pistas": [
 				"livro_faltando"
 			],
-			"texto": "Entre as páginas do Sanguis Orchid, uma nota solta: \"A Senhora do Sangue não se toca com as mãos. Quem chega perto dela sangra antes de ferir.\" A Dama de Sangue resiste a golpes corpo a corpo.",
-			"combate": "O golpe afunda no sangue da Dama como em água. De perto ela quase não se fere.",
-			"miguel": "Quem chega perto dela sangra antes de ferir. De longe, sempre de longe."
+			"texto": "Entre as páginas do Sanguis Orchid, uma nota solta: \"A Senhora do Sangue não se toca com as mãos. Quem chega perto dela sangra antes de ferir.\" A pele da Dama de Sangue resiste a golpes corpo a corpo, até a flor vermelha murchar.",
+			"combate": "O golpe afunda no sangue da Dama como em água. De perto ela quase não se fere, e a flor vermelha, aberta desde o início, parece sustentar isso.",
+			"miguel": "Quem chega perto dela sangra antes de ferir. A flor vermelha está aberta desde o começo: aposto que é ela que segura isso."
 		}
 	],
 	"_criaturas": "Seção CRIATURAS do diário, escrita como o caderno do Miguel. Uma criatura aparece quando o grupo a encontra num combate ou descobre algo dela numa pista. 'nota' é a primeira impressão do Miguel; 'retrato' é o nome em assets/sprites/retratos (vazio = sem retrato). Textos provisórios do Claude.",
@@ -76,11 +66,11 @@
 		},
 		"criatura_sangue": {
 			"retrato": "criatura",
-			"nota": "Não tenho nome melhor para isso. Um corpo feito de sangue que anda e tem garras. Olhar para ela pesa na cabeça. Foi uma dessas que abriu o banco do parque."
+			"nota": "Zumbi é o nome mais perto que eu tenho. Um corpo feito de sangue que anda e tem garras. Olhar para ele pesa na cabeça. Foi um desses que abriu o banco do parque."
 		},
 		"roberto_ghular": {
 			"retrato": "",
-			"nota": "Roberto Ghular, da família da fazenda. Delegado de Aurora, da família mais antiga da cidade, e o chefe do culto local. Ainda atira como homem, mas o fanatismo dele não recua: aguenta o que vier até o ritual terminar."
+			"nota": "Roberto Ghular, da família da fazenda. Delegado de Aurora, da família mais antiga da cidade, e o chefe do culto local. Atira como homem e sangra como homem, mas o fanatismo dele não recua até o ritual terminar."
 		},
 		"dama_sangue": {
 			"retrato": "dama",

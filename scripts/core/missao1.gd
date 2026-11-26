@@ -1,12 +1,13 @@
 class_name Missao1
 extends RefCounted
-# Caminho da missão 1 entre os lugares (história #8): parque 16h, delegacia 17h, biblioteca 19h, volta à
+# Caminho da missão 1 entre os lugares (história #8): bar 15h (depois do vídeo da van, feito no Blender pelo Léo), parque 16h, delegacia 17h, biblioteca 19h, volta à
 # delegacia 21h (subsolo e invasão), Fazenda Ghular 23h; depois viriam a cripta e as ruínas (ainda não construídas).
 # Guarda, entre uma cena e outra, para onde o grupo vai, por onde chega e o que já aconteceu (marcas).
 # Vai para o save pelo Progresso (local, chegada e marcas); carregar abre o lugar pela mesma chegada.
 
 const CENA_PARQUE := "res://scenes/exploration/parque.tscn"
 const CENA_LOCAL := "res://scenes/exploration/local3d.tscn"
+const PRIMEIRO_LUGAR := "bar"  # o jogo novo abre no bar com a Letícia (15h), e dele para a praça (parque, 16h)
 const DEPOIS_DO_PARQUE := "delegacia_17h"
 # Depois da delegacia das 17h o grupo escolhe livremente entre três lugares (Léo, 20/11); cada um só conta uma vez, e
 # quando os três foram visitados a saída leva de volta à delegacia (21h). A hora de cada um vem do cenário (provisório:

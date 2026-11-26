@@ -64,7 +64,7 @@ func _necroterio_e_geraldo() -> void:
 		if room.enemies.size() > 0:
 			break
 		await process_frame
-	_check(room.enemies.size() == 1 and room.enemies[0].name == "Criatura de Sangue", "necrotério: depois da gaveta entra 1 zumbi de sangue (combate 2)")
+	_check(room.enemies.size() == 1 and room.enemies[0].name == "Zumbi de Sangue", "necrotério: depois da gaveta entra 1 zumbi de sangue (combate 2)")
 	_check(Missao1.tem("necrotorio_trecho2") and Missao1.tem("necrotorio_tutu"), "necrotério: a cena fica marcada")
 	room.enemies[0].pv = 0
 	room.enemies[0].dead = true

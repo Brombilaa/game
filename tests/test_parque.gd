@@ -40,8 +40,18 @@ func _run() -> void:
 	_check(room.gear[fernando]["secundaria"] == "" and not fernando.mag.has("escopeta"), "missão: o Fernando ainda não tem a escopeta")
 	_check(room.scenario.clues["balanco"]["da"].is_empty() and room.scenario.clues["marcas_pneu"]["da"].is_empty(), "as pistas que já existiam não dão nada")
 	var msg: String = room.collect_items(room.scenario.clues["caio"]["da"])
-	_check(room.inventory.count("escopeta") == 1 and room.inventory.count("municao_escopeta") == 6 and room.inventory.count("bandagem") == 2 and room.inventory.count("pulseira_amizade") == 1, "inspecionar o Caio dá escopeta, balas, bandagens e a pulseira")
+	_check(room.inventory.count("bandagem") == 2 and room.inventory.count("pulseira_amizade") == 1, "inspecionar o Caio vivo dá bandagens e a pulseira")
+	_check(room.inventory.count("escopeta") == 0 and room.inventory.count("municao_escopeta") == 0 and room.inventory.count("caderninho_caio") == 0 and room.inventory.count("chave_van") == 0 and room.inventory.count("celular_caio") == 0, "o Caio vivo não entrega escopeta, balas, caderninho, chave da van nem celular (Léo 26/11)")
+	# A escopeta e o resto do equipamento saem só na cena depois da morte dele (passo "dar" de pos_praca.json).
+	var cena: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/cenas/pos_praca.json"))
+	var dar: Array = []
+	for passo in cena["passos"]:
+		if passo.get("faz", "") == "dar":
+			dar = passo["itens"]
+	msg = room.collect_items(dar)
+	_check(room.inventory.count("escopeta") == 1 and room.inventory.count("municao_escopeta") == 6, "depois da morte do Caio o grupo recebe a escopeta e as balas")
 	_check(msg.begins_with("Achou: 1x Escopeta"), "o aviso nomeia a escopeta")
+	_check(room.inventory.count("caderninho_caio") == 1 and room.inventory.count("chave_van") == 1 and room.inventory.count("celular_caio") == 1, "e também o caderninho, a chave da van e o celular")
 	# Pulseira: +2 de SAN máxima no acessório; escopeta equipada começa vazia e recarrega da mochila.
 	var san0 := fernando.max_san
 	var pul := -1
@@ -176,6 +186,10 @@ func _run() -> void:
 	_check(room.mode == room.Mode.EXPLORATION, "as pistas iniciais não disparam combate")
 
 	# Esconderijo com saque (16/11, provisório): só depois das pistas iniciais, e o saque vai para a mochila.
+	# O teste já pegou o que o Caio dá mais de uma vez; devolve as cópias dos itens que não empilham para a mochila ter vaga.
+	for extra in ["pulseira_amizade"]:
+		while room.inventory.count(extra) > 1:
+			room.inventory.remove(extra)
 	var antes_mochila: int = room.inventory.count("curativo")
 	room._inspect("mochila_piquenique")
 	room._close_dialog()
