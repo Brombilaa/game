@@ -112,15 +112,23 @@
     ]
    },
    "texto": "Sobre a mesa do subsolo, aberto, está o livro Sanguis Orchid: capa vermelha, uma orquídea dourada. Foi deixado ali de propósito. Sob ele, um mapa antigo da região com uma fazenda a leste marcada com uma orquídea vermelha e a anotação \"Ghular\". Entre as páginas do livro, uma nota solta: \"A Senhora do Sangue não se toca com as mãos. Quem chega perto dela sangra antes de ferir.\"",
-   "provisorio": true,
-   "essencial": true,
-   "resumo": "O grupo deduz que o livro foi deixado de propósito no subsolo, junto de um mapa que aponta a Fazenda Ghular, a leste.",
    "da": [
     {
      "item": "livro_sanguis_orchid",
      "qtd": 1
     }
-   ]
+   ],
+   "teste": {
+    "pericias": [
+     "ocultismo",
+     "religiao"
+    ],
+    "dt": 8,
+    "completo": "O livro conta as origens do culto da Orquídea de Sangue. Para iniciar a invocação, o símbolo da Orquídea precisava tocar sete sacrifícios, em sete condições específicas, com sete flores que representam os sete milagres da Santa das Flores. Cada Orquídea Amaldiçoada tem uma cor e murcha ao reagir a uma condição própria. Se o sangue do escolhido jorrasse das marcações, o corpo era aceito por Serafim Vermelho e servia à invocação da Santa, agora chamada de Dama de Sangue."
+   },
+   "provisorio": true,
+   "essencial": true,
+   "resumo": "O grupo deduz que o livro foi deixado de propósito no subsolo, junto de um mapa que aponta a Fazenda Ghular, a leste."
   }
  ],
  "gatilhos": [],

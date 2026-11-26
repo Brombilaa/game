@@ -1379,7 +1379,14 @@
     -30
    ],
    "texto": "Cabos finos saem de trás da estante e seguem até um gravador escondido, ainda com a fita girando. O Ghular gravava tudo o que se dizia na delegacia, inclusive a conversa do grupo.",
-   "provisorio": true
+   "provisorio": true,
+   "teste": {
+    "pericias": [
+     "tecnologia"
+    ],
+    "dt": 12,
+    "completo": "O aparelho mostra que o delegado gravava a delegacia inteira, com as mesmas imagens da recepção. Dá para apagar os traços da presença do grupo."
+   }
   },
   {
    "id": "quadro_flor",
