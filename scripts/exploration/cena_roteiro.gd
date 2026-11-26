@@ -25,9 +25,13 @@ extends Node
 #   poca     {"em": ator, "tamanho": m}                              poça de sangue que cresce no chão
 #   surgir   {"id": nome, "tipo": "criatura_sangue", "pos": [x, y]}  criatura que só existe na cena
 #   sumir    {"quem": ator}                                          tira o ator da cena (NPC ou criatura da cena)
-#   estado   {"nome": est, "ligado": bool, "deslizar": [dx, dz], "tempo": s}  liga/desliga uma parte do cenário 3D (ex.: a moto da Júlia);
-#                                                                    "deslizar" a move dx, dz metros antes de aplicar o estado
+#   dar      {"itens": [{"item": id, "qtd": n}]}                     o grupo recebe itens na mochila (aviso "Achou: ...")
 #   marca    {"id": nome}                                            Missao1.marcar
+#   estado   {"nome": estado, "valor": bool, "deslizar": [dx, dz], "tempo": s}  liga/desliga um estado do cenário 3D (local3d);
+#                                                                    "deslizar" move a parte dx, dz metros antes (a moto da Júlia indo embora)
+#   acordar  {"trecho": n}                                           os inimigos que esperavam o trecho n entram em cena (local3d)
+#   perguntas {"id": conversa}                                       lista de perguntas (data/conversas.json) até o jogador encerrar
+#   ir       {"para": lugar, "chegada": ponto, "texto": cartão}      escurece e abre o próximo lugar ("parque" = a praça)
 # Atores: id de NPC do cenário ("caio", "leticia"), nome do membro do grupo ("Fernando", "Nikolai", "Miguel"),
 # "lider" (o controlado), "inimigo:N" (N-ésimo inimigo do gatilho) ou o id de algo que surgiu na cena.
 
@@ -165,14 +169,30 @@ func _executar(p: Dictionary) -> void:
 			_surgidos[str(p["id"])] = c
 		"sumir":
 			room.cena_sumir(_ator(p["quem"]))
-		"estado":
-			var w = room.get("world3d")
-			if w != null and w.tem_estado(str(p["nome"])):
-				if p.has("deslizar"):
-					await w.deslizar(str(p["nome"]), Vector3(float(p["deslizar"][0]), 0.0, float(p["deslizar"][1])), float(p.get("tempo", 1.5)))
-				w.estado(str(p["nome"]), bool(p.get("ligado", true)))
+		"dar":
+			var achou: String = room.collect_items(p.get("itens", []))
+			if achou != "":
+				cinema.legenda(achou, 2.6)
+				await _esperar(3.0)
 		"marca":
 			Missao1.marcar(str(p["id"]))
+		"estado":  # liga ou desliga um estado do cenário 3D no meio da cena (a gaveta do necrotério que arrebenta)
+			if room.get("world3d") != null:
+				if p.has("deslizar") and room.world3d.tem_estado(str(p["nome"])):
+					await room.world3d.deslizar(str(p["nome"]), Vector3(float(p["deslizar"][0]), 0.0, float(p["deslizar"][1])), float(p.get("tempo", 1.5)))
+				room.world3d.estado(str(p["nome"]), bool(p.get("valor", true)))
+				room.queue_redraw()
+		"acordar":  # os inimigos que esperavam um trecho escondido entram em cena (o zumbi, depois da gaveta)
+			if room.has_method("_acordar"):
+				room._acordar(int(p.get("trecho", 0)))
+		"perguntas":
+			var caixa: CaixaFala = room.caixa
+			var camada := caixa.layer
+			caixa.layer = cinema.layer + 1
+			await room.conversa(str(p["id"]), cinema.layer + 2)
+			caixa.layer = camada
+		"ir":
+			await room._ir_para(str(p["para"]), str(p.get("chegada", "")), str(p.get("texto", "")))
 		_:
 			push_warning("cena %s: passo desconhecido %s" % [id, p])
 

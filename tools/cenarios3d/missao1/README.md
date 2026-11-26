@@ -65,6 +65,27 @@ O Léo escolheu o modelo C (Fosso de sangue) entre três, na 3ª rodada. As font
   entre o alto e o chão) e `visao` é o que barra a visão (sem parapeito, fosso, altar, sarcófago e banco, marcados
   com `userData.baixo`). `pontos.niveis` leva as áreas elevadas, que no jogo só mudam a altura do desenho.
 
+### Necrotério e casa do Velho Geraldo (22/11/2026)
+
+Dois lugares novos, livres depois da delegacia das 17h (o grupo escolhe a ordem, em qualquer sequência). As fontes ficam
+em `/mnt/project-files/arte/cenarios-missao1/fonte/` (`necrotorio.js`, `casa_geraldo.js`; o `kit.js` ganhou as horas 18 e 20
+e a cor opcional em `glow`). O `cena.html` precisa do `ni_lp.glb` ao lado (está em `/mnt/project-files/arte/estilo-pc-antigo/`).
+
+    node exp.js necrotorio dentro 18 necrotorio        # base + necrotorio_arrombada (gaveta aberta, porta amassada, sangue)
+    node exp.js casa_geraldo fora 20 casa_geraldo      # exterior inteiro; a casa não se explora por dentro
+    node finalizar.mjs exp/<nome>.glb exp/f_<nome>.glb # para cada glb
+    node colnew.js                                     # colisão dos dois (a casa usa a vista `fora`)
+
+- **Necrotério (18h):** escritório do legista (mesa, arquivos, estante) e sala de autópsia montada a partir do mapa de referência do
+  Léo (`historia/referencias/mapa-necroterio.jpg`): seis gavetas de inox no fundo, mesa com pia, três banquinhos, armário alto, carrinho
+  tombado, bancada e o balde rosado de luz verde. O estado `arrombada` entra no meio da cena do Tutu (passo `estado` do CenaRoteiro).
+- **Casa do Geraldo (20h):** terreno cercado com buracos, casa vermelha de janelas tapadas, varanda com cadeira de balanço e lampião,
+  árvores secas. A porta da casa é um retângulo de colisão extra (as portas ficam livres no mapa).
+- **Escolha de destino:** zonas `acao: "destinos"` (delegacia 17h, biblioteca, necrotério, casa) abrem o menu `Missao1.DESTINOS_LIVRES`;
+  cada lugar marca `visitou_<id>` ao chegar; com os três vistos a saída leva à delegacia das 21h.
+- **Provisório:** horas fixas (necrotério 18h, biblioteca 19h, casa 20h, não pela ordem de visita), subida de atitude do Geraldo fixa
+  (o teste de Diplomacia DT 20 não existe), textos das pistas, posições, despedida da Letícia.
+
 ## 3. No jogo
 
 - `scripts/exploration/cenario3d.gd`: carrega o glb e o json, monta luzes, névoa e o filtro PC antigo.

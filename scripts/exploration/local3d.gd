@@ -32,6 +32,9 @@ var chefe_virou := false  # a Dama de Sangue já surgiu
 var chefe_dama: ChefeDama  # a luta da Dama (flores, pendurados, fases); nulo até ela surgir
 var portas := {}  # id -> {"rect": Rect2, "chave": item, "no": MeshInstance3D}: portas trancadas que ainda não abriram
 var porta_avisada := ""  # a porta cujo aviso "Trancada" já apareceu nesta aproximação
+signal teste_escolhido(escolha: Dictionary)
+var menu_teste: CanvasLayer  # a escolha de quem rola o teste de perícia (nulo = fechada)
+var menu_destinos: CanvasLayer  # a escolha entre os três lugares livres (nulo = fechada)
 var fim_tocou := false  # a cutscene do tentáculo (fim da missão 1) já começou
 var fim_capitulo: FimCapitulo  # cutscene externa e cartão AURORA, no fim do celeiro
 const CENA_MENU := "res://scenes/menu/main_menu.tscn"
@@ -354,7 +357,7 @@ func _uniso(s: Vector2) -> Vector2:
 
 # Fora de casa (fazenda) o passo é de terra e grama; delegacia, biblioteca e cripta são piso duro.
 func _step_surface() -> String:
-	return "grass" if local_id == "fazenda" else "floor"
+	return "grass" if local_id == "fazenda" or local_id == "casa_geraldo" else "floor"
 
 
 func _place_label() -> String:
@@ -366,11 +369,11 @@ func _diario_lugar() -> String:
 
 
 # Variante pelo nome da ficha (Léo, 13/11: todos atiradores); o atirador usa a figura do cultista e o retrato próprio.
-# A Dama de Sangue usa a figura da Criatura de Sangue e Roberto Ghular a do atirador, até os modelos deles existirem.
+# A Dama de Sangue usa a figura do Zumbi de Sangue e Roberto Ghular a do atirador, até os modelos deles existirem.
 func _enemy_variant(i: int) -> String:
 	if i >= enemies.size():
 		return "cultista"
-	if enemies[i].name == "Dama de Sangue":
+	if enemies[i].name == "Dama de Sangue" or enemies[i].name == "Zumbi de Sangue":  # o zumbi do necrotério (22/11)
 		return CREATURE_VARIANT
 	return "atirador" if enemies[i].name == "Atirador" or enemies[i].name == "Roberto Ghular" else "cultista"
 
@@ -398,11 +401,14 @@ func _zonas() -> void:
 			continue
 		if z.has("requer") and not Missao1.tem(str(z["requer"])):
 			continue
+		if str(z.get("acao", "")) in ["ir", "destinos"] and z.has("cena") and CenaRoteiro.existe(str(z["cena"])) and not Missao1.tem(str(z["cena"])):
+			Missao1.marcar(str(z["cena"]))  # a Ju tranca a biblioteca e sai de moto antes de o grupo seguir
+			await tocar_cena(str(z["cena"]))
 		if str(z.get("acao", "")) == "ir":
-			if z.has("cena") and CenaRoteiro.existe(str(z["cena"])) and not Missao1.tem(str(z["cena"])):  # a Ju tranca a biblioteca e sai de moto antes da volta
-				Missao1.marcar(str(z["cena"]))
-				await tocar_cena(str(z["cena"]))
 			_ir_para(str(z["para"]), str(z.get("chegada", "")), str(z.get("texto", "")))
+			return
+		if str(z.get("acao", "")) == "destinos":  # saída para a escolha dos três lugares livres (Léo, 20/11)
+			_saida_para_destinos(str(z.get("texto", "")))
 			return
 		if str(z.get("acao", "")) == "estado":  # revela um trecho do cenário (cripta)
 			if z.has("marca") and Missao1.tem(str(z["marca"])):
@@ -426,8 +432,9 @@ func _zonas() -> void:
 
 # Revela o trecho, toca a cena da zona e só então acorda os inimigos dele (o combate não atropela o discurso).
 func _revelar_com_cena(z: Dictionary) -> void:
-	for e in z["estados"]:
-		world3d.estado(e, z["estados"][e])
+	if not bool(z.get("estados_pela_cena", false)):  # com "estados_pela_cena" a própria cena muda o estado (passo "estado")
+		for e in z["estados"]:
+			world3d.estado(e, z["estados"][e])
 	if z.has("marca"):
 		Missao1.marcar(str(z["marca"]))
 	Missao1.marcar(str(z["cena"]))
@@ -451,7 +458,91 @@ func _inspect(cid: String) -> void:
 	if _trancada(c):
 		_show_dialog("", c.texto_trancado, "")
 		return
+	for bruto in dados.get("pistas", []):  # "teste": camada com teste de perícia (d20); passou = texto completo, falhou = o superficial
+		if str(bruto["id"]) == cid and bruto.has("teste"):
+			var t: Dictionary = bruto["teste"]
+			if not t.has("texto_base"):
+				t["texto_base"] = c["texto"]  # o texto do cenário é o superficial; guarda para não trocar duas vezes
+			var r: Dictionary = await _tentar_teste("%s_%s" % [local_id, cid], t)
+			c["texto"] = ("%s\n\n%s" % [TestePericia.texto(r), str(t["completo"]) if r.get("passou", false) else str(t["texto_base"])])
+			break
 	_show_dialog(c.inspecao, c.texto, cid)
+
+
+# Rola (uma vez) o teste de `t` ({"pericias": [...], "dt": n}). O jogador escolhe quem rola antes do dado, vendo a DT e o
+# bônus de cada agente (Léo, 22/11). Se o teste já foi feito, devolve o resultado salvo sem perguntar.
+func _tentar_teste(id: String, t: Dictionary) -> Dictionary:
+	var grupo: Array = []
+	for u in party:
+		grupo.append({"nome": u.name, "atributos": u.atributos, "ocultista": Ficha.classe_de(rules.cfg.game_data, u.personagem) == "ocultista"})
+	var pericias: Array = t.get("pericias", [])
+	var dt := int(t.get("dt", 12))
+	var escolha := {}
+	if not TestePericia.feito(id) and not grupo.is_empty():
+		escolha = await _escolher_quem_rola(pericias, dt, grupo)
+	var r := TestePericia.tentar(id, pericias, dt, grupo, _rng_teste(), 0, escolha)
+	if TestePericia.animar and r.has("dado") and not r.get("salvo", false):
+		await _mostrar_dado(r)
+	return r
+
+
+# A tela do d20 rolando (TelaD20): o jogador vê o dado parar e a conta antes de ler o texto da pista.
+func _mostrar_dado(r: Dictionary) -> void:
+	busy = true
+	var tela := TelaD20.new()
+	add_child(tela)
+	tela.montar(r)
+	await tela.fechada
+	busy = false
+
+
+func _escolher_quem_rola(pericias: Array, dt: int, grupo: Array) -> Dictionary:
+	if menu_teste != null:
+		return {}
+	busy = true
+	path = PackedVector2Array()
+	moving_unit = null
+	menu_teste = CanvasLayer.new()
+	menu_teste.layer = 86
+	add_child(menu_teste)
+	var fundo := ColorRect.new()
+	fundo.color = Color(0, 0, 0, 0.62)
+	fundo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fundo.mouse_filter = Control.MOUSE_FILTER_STOP
+	menu_teste.add_child(fundo)
+	var centro := CenterContainer.new()
+	centro.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fundo.add_child(centro)
+	var caixa := VBoxContainer.new()
+	caixa.add_theme_constant_override("separation", 8)
+	caixa.custom_minimum_size = Vector2(460, 0)
+	centro.add_child(caixa)
+	var nomes: Array = []
+	for p in pericias:
+		nomes.append("%s (%s)" % [TestePericia.PERICIAS[str(p)]["nome"], TestePericia.PERICIAS[str(p)]["atr"]])
+	var tit := Label.new()
+	tit.text = "Teste de %s · DT %d\nQuem rola o d20?" % [" ou ".join(nomes), dt]
+	tit.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tit.add_theme_font_size_override("font_size", 20)
+	tit.add_theme_color_override("font_color", Color(0.93, 0.89, 0.8))
+	caixa.add_child(tit)
+	for o in TestePericia.opcoes(pericias, grupo):
+		var b := Button.new()
+		b.text = "%s · %s  (bônus %+d)" % [o["quem"], TestePericia.PERICIAS[o["pericia"]]["nome"], int(o["bonus"])]
+		b.custom_minimum_size = Vector2(0, 40)
+		b.pressed.connect(func(): teste_escolhido.emit(o))
+		caixa.add_child(b)
+	var escolha: Dictionary = await teste_escolhido
+	menu_teste.queue_free()
+	menu_teste = null
+	busy = false
+	return escolha
+
+
+func _rng_teste() -> RandomNumberGenerator:
+	var g := RandomNumberGenerator.new()
+	g.randomize()
+	return g
 
 
 # Baú num trecho que ainda não foi revelado (cripta) fica invisível até o líder pisar na faixa do trecho.
@@ -469,6 +560,13 @@ func _run_trigger(trigger: Dictionary) -> void:
 		if CenaRoteiro.existe(cena_id) and (m == "" or not Missao1.tem(m)):
 			if m != "":
 				Missao1.marcar(m)
+			if trigger.has("teste"):  # a cena depende de um teste de perícia (Geraldo): falhou = a versão curta ("cena_falha")
+				var r: Dictionary = await _tentar_teste("%s_%s" % [local_id, cena_id], trigger["teste"])
+				_show_dialog("", TestePericia.texto(r), "")
+				while dialog_layer.visible:
+					await get_tree().process_frame
+				if not r.get("passou", false) and CenaRoteiro.existe(str(trigger["teste"].get("cena_falha", ""))):
+					cena_id = str(trigger["teste"]["cena_falha"])
 			await tocar_cena(cena_id)
 		return
 	if str(trigger["tipo"]) == "ir":  # depois da pista, o grupo segue para outro lugar (o poço leva à cripta)
@@ -483,6 +581,70 @@ func _run_trigger(trigger: Dictionary) -> void:
 	if trigger.has("marca"):
 		Missao1.marcar(str(trigger["marca"]))
 	queue_redraw()
+
+
+# Saída de um lugar livre (ou da delegacia das 17h): o grupo escolhe o próximo destino entre os que ainda não visitou;
+# quando não sobra nenhum, volta à delegacia (21h). Com um só restante, vai direto.
+func _saida_para_destinos(texto_saida: String) -> void:
+	var livres := Missao1.destinos_livres()
+	if livres.is_empty():
+		_ir_para("delegacia_21h", "", "O grupo volta para a delegacia.")
+		return
+	if livres.size() == 1:
+		_ir_para(str(livres[0]["id"]), "", str(livres[0]["texto"]))
+		return
+	_abrir_menu_destinos(livres, texto_saida)
+
+
+func _abrir_menu_destinos(livres: Array, titulo: String) -> void:
+	if menu_destinos != null:
+		return
+	busy = true
+	path = PackedVector2Array()
+	moving_unit = null
+	menu_destinos = CanvasLayer.new()
+	menu_destinos.layer = 85
+	add_child(menu_destinos)
+	var fundo := ColorRect.new()
+	fundo.color = Color(0, 0, 0, 0.62)
+	fundo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fundo.mouse_filter = Control.MOUSE_FILTER_STOP
+	menu_destinos.add_child(fundo)
+	var centro := CenterContainer.new()
+	centro.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fundo.add_child(centro)
+	var caixa := VBoxContainer.new()
+	caixa.add_theme_constant_override("separation", 10)
+	caixa.custom_minimum_size = Vector2(420, 0)
+	centro.add_child(caixa)
+	var t := Label.new()
+	t.text = "Para onde o grupo vai agora?"
+	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	t.add_theme_font_size_override("font_size", 20)
+	t.add_theme_color_override("font_color", Color(0.93, 0.89, 0.8))
+	caixa.add_child(t)
+	for d in livres:
+		var b := Button.new()
+		b.text = "%s\n%s" % [str(d["rotulo"]), str(d["detalhe"])]
+		b.custom_minimum_size = Vector2(0, 56)
+		b.pressed.connect(_escolher_destino.bind(d))
+		caixa.add_child(b)
+	var ficar := Button.new()
+	ficar.text = "Ficar mais um pouco"
+	ficar.pressed.connect(_fechar_menu_destinos)
+	caixa.add_child(ficar)
+
+
+func _escolher_destino(d: Dictionary) -> void:
+	_fechar_menu_destinos()
+	_ir_para(str(d["id"]), "", str(d["texto"]))
+
+
+func _fechar_menu_destinos() -> void:
+	if menu_destinos != null:
+		menu_destinos.queue_free()
+		menu_destinos = null
+	busy = false
 
 
 # Invasão da delegacia às 21h (Léo, 13/11): depois do subsolo, ao entrar na recepção, uma flashbang estoura pela
@@ -532,6 +694,12 @@ func _on_combat_ended(result: TurnManager.Result) -> void:
 		Missao1.marcar(str(inv["marca"]))
 	if result == TurnManager.Result.VICTORY:
 		_marcar_grupos()
+	var apos: Dictionary = dados.get("cena_apos_combate", {})  # o grupo comenta o zumbi (necrotério, 22/11)
+	if result == TurnManager.Result.VICTORY and not apos.is_empty() and CenaRoteiro.existe(str(apos["cena"])) \
+			and not Missao1.tem(str(apos["marca"])) and (not apos.has("requer") or Missao1.tem(str(apos["requer"]))):
+		Missao1.marcar(str(apos["marca"]))
+		await get_tree().create_timer(1.0).timeout
+		await tocar_cena(str(apos["cena"]))
 	var depois := str(inv.get("cena_depois", ""))  # a ligação da Juliana, logo depois do ataque
 	if result == TurnManager.Result.VICTORY and depois != "" and CenaRoteiro.existe(depois) and not Missao1.tem("ligacao_juliana"):
 		Missao1.marcar("ligacao_juliana")

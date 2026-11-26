@@ -90,7 +90,7 @@
 		{
 			"faz": "estado",
 			"nome": "moto",
-			"ligado": false,
+			"valor": false,
 			"deslizar": [
 				-15.5,
 				3.9
@@ -117,7 +117,7 @@
 				},
 				{
 					"quem": "fernando",
-					"texto": "Depois a gente pergunta. Agora é a delegacia: o Ghular já deve estar de volta."
+					"texto": "Depois a gente pergunta. Agora, vamos."
 				}
 			]
 		},

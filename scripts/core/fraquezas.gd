@@ -76,7 +76,7 @@ static func _descoberta(kind: String, tipo: String) -> Dictionary:
 	return {}
 
 
-# Título da entrada no diário: "Criatura de Sangue: rituais ferem mais" (sem gênero, serve para todos).
+# Título da entrada no diário: "Zumbi de Sangue: rituais ferem mais" (sem gênero, serve para todos).
 static func titulo(game_data: GameData, kind: String, tipo: String) -> String:
 	var nome := kind
 	if game_data != null:

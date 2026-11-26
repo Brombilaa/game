@@ -9,7 +9,6 @@ extends Control
 const AGENTES := ["fernando", "nikolai", "miguel"]
 const FONT := preload("res://assets/fonts/SpecialElite-Regular.ttf")
 const CENA_MENU := "res://scenes/menu/main_menu.tscn"
-const CENA_PARQUE := "res://scenes/exploration/parque.tscn"
 
 const INK := Color("ece3d2")
 const MUTED := Color("a99d8b")
@@ -90,13 +89,15 @@ func trocar(delta: int) -> void:
 	queue_redraw()
 
 
-# Grava as escolhas e começa a missão no parque. false se faltar ponto ou a troca já estiver em curso.
+# Grava as escolhas e começa a missão no bar (que leva ao parque). A introdução na van será o vídeo 3D do Blender, antes do bar. false se faltar ponto ou a troca já estiver em curso.
 func comecar() -> bool:
 	if saindo or not pronto():
 		return false
 	Ficha.escolhas = fichas.duplicate(true)
 	saindo = true
-	if not Scenes.go(get_tree(), CENA_PARQUE):
+	Missao1.local = Missao1.PRIMEIRO_LUGAR
+	Missao1.chegada = ""
+	if not Scenes.go(get_tree(), Missao1.CENA_LOCAL):
 		saindo = false
 		return false
 	return true

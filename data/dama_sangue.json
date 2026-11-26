@@ -1,12 +1,12 @@
 {
   "_comment": "Luta da Dama de Sangue (Léo, 20/11/2026: roteiro-missao1.md seção 5c, tabela das sete flores e decisões da luta). Lido por scripts/combat/chefe_dama.gd. A ficha básica (PV, PA, defesa, pancada e espinhos) fica em inimigos.json e armas.json. Tudo marcado provisorio é do Claude, para testar e ajustar.",
   "fase2": {
-    "abaixo_de": 0.5,
+    "abaixo_de": 0.0,
     "dano_mult": 1.25,
     "texto": "A DAMA ABRE TODAS AS FLORES",
     "registro": "A Dama de Sangue não tem mais o que devorar: todas as flores que restam se abrem.",
     "provisorio": true,
-    "_efeito": "Fase 2 quando os corpos acabam (devorados ou salvos) ou a Dama cai a 50% do PV, o que vier primeiro. Todas as flores de pé se abrem e ficam vulneráveis até o fim; ela usa UMA habilidade (ação padrão, 2 PA) por turno e bate 25% mais forte."
+    "_efeito": "Fase 2 só quando os corpos acabam (devorados ou salvos), como no roteiro (Léo, 26/11; antes entrava também a 50% do PV; abaixo_de > 0 reativa essa regra). Todas as flores de pé se abrem e ficam vulneráveis até o fim; ela usa UMA habilidade (ação padrão, 2 PA) por turno e bate 25% mais forte."
   },
   "fase1": {
     "pa_devorar": 3,

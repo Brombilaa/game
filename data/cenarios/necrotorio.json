@@ -1,0 +1,1120 @@
+{
+ "_comentario": "Gerado por tools/cenarios3d/missao1/gerar_dados.py a partir do mapa de colisão da cena 3D (não editar à mão).",
+ "id": "necrotorio",
+ "rotulo": "NECROTÉRIO",
+ "hora": 18,
+ "tamanho": [
+  1190.4,
+  902.4
+ ],
+ "fundo": {
+  "escala_tela": [
+   48.0,
+   18.13
+  ],
+  "_nota": "sem imagem: o fundo é a cena 3D; a escala é a da câmera do parque"
+ },
+ "cena3d": {
+  "id": "necrotorio",
+  "origem": [
+   -1.5,
+   -1.5
+  ],
+  "estados": {
+   "arrombada": false
+  }
+ },
+ "inicio": {
+  "grupo": [
+   [
+    243.2,
+    537.6
+   ],
+   [
+    294.4,
+    563.2
+   ],
+   [
+    198.4,
+    563.2
+   ]
+  ],
+  "npcs": [
+   {
+    "id": "leticia",
+    "pos": [
+     371.2,
+     524.8
+    ]
+   }
+  ]
+ },
+ "colisoes": [
+  {
+   "id": "c0",
+   "rect": [
+    204.8,
+    0.0,
+    51.1,
+    6.4
+   ]
+  },
+  {
+   "id": "c1",
+   "rect": [
+    486.4,
+    0.0,
+    12.8,
+    6.4
+   ]
+  },
+  {
+   "id": "c2",
+   "rect": [
+    524.8,
+    0.0,
+    38.4,
+    6.4
+   ]
+  },
+  {
+   "id": "c3",
+   "rect": [
+    275.2,
+    0.0,
+    38.4,
+    12.7
+   ]
+  },
+  {
+   "id": "c4",
+   "rect": [
+    204.8,
+    6.4,
+    57.5,
+    6.4
+   ]
+  },
+  {
+   "id": "c5",
+   "rect": [
+    480.0,
+    6.4,
+    25.6,
+    6.4
+   ]
+  },
+  {
+   "id": "c6",
+   "rect": [
+    531.2,
+    6.4,
+    25.5,
+    6.4
+   ]
+  },
+  {
+   "id": "c7",
+   "rect": [
+    537.6,
+    12.8,
+    12.8,
+    6.4
+   ]
+  },
+  {
+   "id": "c8",
+   "rect": [
+    972.8,
+    0.0,
+    38.3,
+    25.5
+   ]
+  },
+  {
+   "id": "c9",
+   "rect": [
+    211.2,
+    12.8,
+    51.1,
+    12.7
+   ]
+  },
+  {
+   "id": "c10",
+   "rect": [
+    268.8,
+    12.8,
+    44.8,
+    12.7
+   ]
+  },
+  {
+   "id": "c11",
+   "rect": [
+    473.6,
+    12.8,
+    38.3,
+    12.7
+   ]
+  },
+  {
+   "id": "c12",
+   "rect": [
+    211.2,
+    25.6,
+    57.6,
+    6.3
+   ]
+  },
+  {
+   "id": "c13",
+   "rect": [
+    300.8,
+    25.6,
+    12.8,
+    6.3
+   ]
+  },
+  {
+   "id": "c14",
+   "rect": [
+    480.0,
+    25.6,
+    25.6,
+    6.3
+   ]
+  },
+  {
+   "id": "c15",
+   "rect": [
+    979.2,
+    25.6,
+    25.6,
+    6.3
+   ]
+  },
+  {
+   "id": "c16",
+   "rect": [
+    217.6,
+    32.0,
+    51.2,
+    6.3
+   ]
+  },
+  {
+   "id": "c17",
+   "rect": [
+    486.4,
+    32.0,
+    12.8,
+    6.3
+   ]
+  },
+  {
+   "id": "c18",
+   "rect": [
+    217.6,
+    38.4,
+    32.0,
+    6.3
+   ]
+  },
+  {
+   "id": "c19",
+   "rect": [
+    217.6,
+    44.8,
+    12.8,
+    6.3
+   ]
+  },
+  {
+   "id": "c20",
+   "rect": [
+    0.0,
+    57.6,
+    96.0,
+    31.9
+   ]
+  },
+  {
+   "id": "c21",
+   "rect": [
+    166.4,
+    83.2,
+    95.9,
+    6.3
+   ]
+  },
+  {
+   "id": "c22",
+   "rect": [
+    0.0,
+    89.6,
+    1094.4,
+    6.4
+   ]
+  },
+  {
+   "id": "c23",
+   "rect": [
+    0.0,
+    96.0,
+    1100.8,
+    6.4
+   ]
+  },
+  {
+   "id": "c24",
+   "rect": [
+    166.4,
+    102.4,
+    102.4,
+    6.3
+   ]
+  },
+  {
+   "id": "c25",
+   "rect": [
+    307.2,
+    108.8,
+    96.0,
+    25.6
+   ]
+  },
+  {
+   "id": "c26",
+   "rect": [
+    915.2,
+    102.4,
+    140.7,
+    44.7
+   ]
+  },
+  {
+   "id": "c27",
+   "rect": [
+    1088.0,
+    102.4,
+    12.7,
+    44.7
+   ]
+  },
+  {
+   "id": "c28",
+   "rect": [
+    441.6,
+    102.4,
+    153.6,
+    51.1
+   ]
+  },
+  {
+   "id": "c29",
+   "rect": [
+    915.2,
+    147.2,
+    185.6,
+    6.4
+   ]
+  },
+  {
+   "id": "c30",
+   "rect": [
+    608.0,
+    102.4,
+    300.7,
+    57.6
+   ]
+  },
+  {
+   "id": "c31",
+   "rect": [
+    998.4,
+    172.8,
+    19.2,
+    6.3
+   ]
+  },
+  {
+   "id": "c32",
+   "rect": [
+    998.4,
+    179.2,
+    25.6,
+    12.8
+   ]
+  },
+  {
+   "id": "c33",
+   "rect": [
+    998.4,
+    192.0,
+    19.2,
+    6.4
+   ]
+  },
+  {
+   "id": "c34",
+   "rect": [
+    192.0,
+    172.8,
+    134.3,
+    64.0
+   ]
+  },
+  {
+   "id": "c35",
+   "rect": [
+    224.0,
+    236.8,
+    12.8,
+    6.4
+   ]
+  },
+  {
+   "id": "c36",
+   "rect": [
+    275.2,
+    236.8,
+    6.4,
+    6.4
+   ]
+  },
+  {
+   "id": "c37",
+   "rect": [
+    665.6,
+    256.0,
+    19.2,
+    6.3
+   ]
+  },
+  {
+   "id": "c38",
+   "rect": [
+    800.0,
+    256.0,
+    19.2,
+    6.3
+   ]
+  },
+  {
+   "id": "c39",
+   "rect": [
+    665.6,
+    262.4,
+    25.6,
+    12.8
+   ]
+  },
+  {
+   "id": "c40",
+   "rect": [
+    800.0,
+    262.4,
+    25.6,
+    12.8
+   ]
+  },
+  {
+   "id": "c41",
+   "rect": [
+    665.6,
+    275.2,
+    19.2,
+    6.4
+   ]
+  },
+  {
+   "id": "c42",
+   "rect": [
+    800.0,
+    275.2,
+    19.2,
+    6.4
+   ]
+  },
+  {
+   "id": "c43",
+   "rect": [
+    243.2,
+    249.6,
+    38.4,
+    38.4
+   ]
+  },
+  {
+   "id": "c44",
+   "rect": [
+    0.0,
+    102.4,
+    102.4,
+    191.9
+   ]
+  },
+  {
+   "id": "c45",
+   "rect": [
+    1030.4,
+    153.6,
+    70.3,
+    192.0
+   ]
+  },
+  {
+   "id": "c46",
+   "rect": [
+    665.6,
+    320.0,
+    166.3,
+    64.0
+   ]
+  },
+  {
+   "id": "c47",
+   "rect": [
+    0.0,
+    294.4,
+    108.8,
+    115.2
+   ]
+  },
+  {
+   "id": "c48",
+   "rect": [
+    409.6,
+    102.4,
+    12.8,
+    339.1
+   ]
+  },
+  {
+   "id": "c49",
+   "rect": [
+    108.8,
+    409.6,
+    51.2,
+    38.3
+   ]
+  },
+  {
+   "id": "c50",
+   "rect": [
+    889.6,
+    448.0,
+    6.3,
+    6.3
+   ]
+  },
+  {
+   "id": "c51",
+   "rect": [
+    921.6,
+    460.8,
+    12.7,
+    6.3
+   ]
+  },
+  {
+   "id": "c52",
+   "rect": [
+    902.4,
+    467.2,
+    51.2,
+    12.8
+   ]
+  },
+  {
+   "id": "c53",
+   "rect": [
+    896.0,
+    480.0,
+    51.2,
+    6.3
+   ]
+  },
+  {
+   "id": "c54",
+   "rect": [
+    908.8,
+    486.4,
+    38.3,
+    6.3
+   ]
+  },
+  {
+   "id": "c55",
+   "rect": [
+    915.2,
+    492.8,
+    32.0,
+    6.3
+   ]
+  },
+  {
+   "id": "c56",
+   "rect": [
+    908.8,
+    499.2,
+    32.0,
+    6.3
+   ]
+  },
+  {
+   "id": "c57",
+   "rect": [
+    422.4,
+    505.6,
+    32.0,
+    6.3
+   ]
+  },
+  {
+   "id": "c58",
+   "rect": [
+    928.0,
+    505.6,
+    12.7,
+    6.3
+   ]
+  },
+  {
+   "id": "c59",
+   "rect": [
+    422.4,
+    512.0,
+    38.3,
+    6.3
+   ]
+  },
+  {
+   "id": "c60",
+   "rect": [
+    108.8,
+    492.8,
+    51.2,
+    38.4
+   ]
+  },
+  {
+   "id": "c61",
+   "rect": [
+    409.6,
+    518.4,
+    51.1,
+    70.3
+   ]
+  },
+  {
+   "id": "c62",
+   "rect": [
+    748.8,
+    569.6,
+    25.6,
+    25.6
+   ]
+  },
+  {
+   "id": "c63",
+   "rect": [
+    409.6,
+    588.8,
+    44.8,
+    6.4
+   ]
+  },
+  {
+   "id": "c64",
+   "rect": [
+    1088.0,
+    345.6,
+    12.7,
+    281.6
+   ]
+  },
+  {
+   "id": "c65",
+   "rect": [
+    0.0,
+    409.6,
+    102.4,
+    217.6
+   ]
+  },
+  {
+   "id": "c66",
+   "rect": [
+    524.8,
+    576.0,
+    192.0,
+    51.2
+   ]
+  },
+  {
+   "id": "c67",
+   "rect": [
+    409.6,
+    595.2,
+    12.8,
+    32.0
+   ]
+  },
+  {
+   "id": "c68",
+   "rect": [
+    0.0,
+    627.2,
+    236.8,
+    6.3
+   ]
+  },
+  {
+   "id": "c69",
+   "rect": [
+    326.4,
+    627.2,
+    774.4,
+    6.3
+   ]
+  },
+  {
+   "id": "c70",
+   "rect": [
+    96.0,
+    633.6,
+    140.8,
+    6.3
+   ]
+  },
+  {
+   "id": "c71",
+   "rect": [
+    326.4,
+    633.6,
+    768.0,
+    6.3
+   ]
+  },
+  {
+   "id": "c72",
+   "rect": [
+    147.2,
+    646.4,
+    12.8,
+    6.3
+   ]
+  },
+  {
+   "id": "c73",
+   "rect": [
+    409.6,
+    646.4,
+    12.8,
+    6.3
+   ]
+  },
+  {
+   "id": "c74",
+   "rect": [
+    140.8,
+    652.8,
+    25.5,
+    6.3
+   ]
+  },
+  {
+   "id": "c75",
+   "rect": [
+    403.2,
+    652.8,
+    25.6,
+    6.3
+   ]
+  },
+  {
+   "id": "c76",
+   "rect": [
+    134.4,
+    659.2,
+    38.4,
+    12.7
+   ]
+  },
+  {
+   "id": "c77",
+   "rect": [
+    396.8,
+    659.2,
+    38.3,
+    12.7
+   ]
+  },
+  {
+   "id": "c78",
+   "rect": [
+    25.6,
+    652.8,
+    25.5,
+    25.6
+   ]
+  },
+  {
+   "id": "c79",
+   "rect": [
+    140.8,
+    672.0,
+    25.5,
+    6.3
+   ]
+  },
+  {
+   "id": "c80",
+   "rect": [
+    403.2,
+    672.0,
+    25.6,
+    6.3
+   ]
+  },
+  {
+   "id": "c81",
+   "rect": [
+    147.2,
+    678.4,
+    12.8,
+    6.3
+   ]
+  },
+  {
+   "id": "c82",
+   "rect": [
+    409.6,
+    678.4,
+    12.8,
+    6.3
+   ]
+  },
+  {
+   "id": "c83",
+   "rect": [
+    614.4,
+    691.2,
+    12.7,
+    6.3
+   ]
+  },
+  {
+   "id": "c84",
+   "rect": [
+    608.0,
+    697.6,
+    25.6,
+    12.7
+   ]
+  },
+  {
+   "id": "c85",
+   "rect": [
+    614.4,
+    710.4,
+    12.7,
+    6.3
+   ]
+  },
+  {
+   "id": "c86",
+   "rect": [
+    441.6,
+    691.2,
+    128.0,
+    32.0
+   ]
+  },
+  {
+   "id": "c87",
+   "rect": [
+    0.0,
+    774.4,
+    96.0,
+    32.0
+   ]
+  }
+ ],
+ "pistas": [
+  {
+   "id": "tutu_corpo",
+   "pos": [
+    748.8,
+    419.2
+   ],
+   "raio": 90,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "O corpo do Tutu, morador de rua. Uma pancada forte na coluna rompeu algo por dentro: morreu de hemorragia interna. Na incisão das costas há sementes de orquídea, e são as mesmas que os zumbis de sangue trazem nas costas.",
+   "provisorio": true
+  },
+  {
+   "id": "mesa_legista",
+   "pos": [
+    358.4,
+    230.4
+   ],
+   "raio": 90,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -40
+   ],
+   "texto": "Nos papéis do legista, os registros de armazenamento mostram que alguns corpos de moradores antigos foram exumados e levados daqui há pouco, por ordem da Delegacia de Aurora. O legista estava lendo um livro sobre orquídeas: elas se reproduzem de duas formas, a sexuada, rara, que só germina num ambiente preparado, e a assexuada, comum, por mudas.",
+   "provisorio": true
+  },
+  {
+   "id": "gaveta_zumbi",
+   "pos": [
+    768.0,
+    172.8
+   ],
+   "raio": 80,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -20
+   ],
+   "texto": "Dentro da gaveta de onde saiu o zumbi está riscado o mesmo símbolo da árvore da praça. Desta vez, sem sangue jorrando.",
+   "provisorio": true,
+   "requer": "necrotorio_depois",
+   "texto_antes": "As gavetas estão fechadas e geladas. Melhor esperar a Letícia mostrar o que tem."
+  },
+  {
+   "id": "armario_instrumentos",
+   "pos": [
+    985.6,
+    281.6
+   ],
+   "raio": 80,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -50
+   ],
+   "texto": "No armário alto, bisturis, serras e um estojo de socorro esquecido pelo legista.",
+   "provisorio": true,
+   "da": [
+    {
+     "item": "curativo",
+     "qtd": 1
+    },
+    {
+     "item": "bandagem",
+     "qtd": 1
+    }
+   ]
+  },
+  {
+   "id": "pagina_parasitagem",
+   "pos": [
+    153.6,
+    192.0
+   ],
+   "raio": 45,
+   "ordem": 2,
+   "bolinha": [
+    0,
+    -36
+   ],
+   "texto": "Algumas orquídeas se comportam como parasitas, sugando nutrientes de outras plantas próximas. Outras acabam por se fixar no tronco de grandes árvores e ficam sugando os nutrientes lentamente e de maneira quase imperceptível.",
+   "provisorio": true,
+   "inspecao": "res://assets/sprites/cenario/necrotorio/pagina_parasitagem.png"
+  },
+  {
+   "id": "pagina_caladenia_purpura",
+   "pos": [
+    153.6,
+    243.2
+   ],
+   "raio": 45,
+   "ordem": 2,
+   "bolinha": [
+    0,
+    -36
+   ],
+   "texto": "Algumas orquídeas com cores não usuais também apresentam comportamento fora do padrão esperado. A Caladenia purpura é um tipo de orquídea roxa que murcha quando entra em contato com Bravo purpulis, uma flor roxa que nasce entre pedras magmáticas.",
+   "provisorio": true,
+   "inspecao": "res://assets/sprites/cenario/necrotorio/pagina_caladenia_purpura.png"
+  },
+  {
+   "id": "pagina_caladenia_viridis",
+   "pos": [
+    204.8,
+    294.4
+   ],
+   "raio": 45,
+   "ordem": 2,
+   "bolinha": [
+    0,
+    -36
+   ],
+   "texto": "A compreensão de que água é um componente necessário na vida de todas as plantas não se aplica a Caladenia viridis, a orquídea caladenia esverdeada que tanto enfeita as casas da cidade de Aurora.",
+   "provisorio": true,
+   "inspecao": "res://assets/sprites/cenario/necrotorio/pagina_caladenia_viridis.png"
+  },
+  {
+   "id": "pagina_caladenia_flavum",
+   "pos": [
+    326.4,
+    294.4
+   ],
+   "raio": 45,
+   "ordem": 2,
+   "bolinha": [
+    0,
+    -36
+   ],
+   "texto": "Por fim, temos a Caladenia flavum, que é altamente sensível a todo tipo de calor. Conhecida comumente como a \"Espanta Cigarro\", por recolher e murchar na presença da brasa mais leve, como a de um cigarro.",
+   "provisorio": true,
+   "inspecao": "res://assets/sprites/cenario/necrotorio/pagina_caladenia_flavum.png"
+  },
+  {
+   "id": "tutu_pescoco",
+   "pos": [
+    691.2,
+    422.4
+   ],
+   "raio": 60,
+   "ordem": 2,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "No pescoço do Tutu há uma fileira de pontos escuros e pequenos, como marcas de agulha. Ninguém aqui saberia dizer de quê.",
+   "provisorio": true,
+   "teste": {
+    "pericias": [
+     "ocultismo"
+    ],
+    "dt": 12,
+    "completo": "Os pontos no pescoço foram marcados por rituais de Sangue e de Morte, feitos para o corpo se levantar de novo. Quem fez isso sabia exatamente o que fazia."
+   }
+  },
+  {
+   "id": "leticia_despedida",
+   "pos": [
+    313.6,
+    313.6
+   ],
+   "raio": 110,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -96
+   ],
+   "texto": "Letícia está sentada na cadeira do legista, pálida. Talvez seja hora de se despedir.",
+   "provisorio": true,
+   "requer": "necrotorio_depois",
+   "texto_antes": "Letícia espera perto da entrada, apoiada na parede."
+  }
+ ],
+ "gatilhos": [
+  {
+   "id": "despedida",
+   "apos": "leticia_despedida",
+   "tipo": "cena",
+   "cena": "necrotorio_despedida",
+   "marca": "necrotorio_despedida"
+  }
+ ],
+ "zonas": [
+  {
+   "id": "sala_autopsia",
+   "ret": [
+    448.0,
+    115.2,
+    627.1,
+    499.2
+   ],
+   "acao": "estado",
+   "estados": {
+    "arrombada": true
+   },
+   "estados_pela_cena": true,
+   "trecho": 2,
+   "marca": "necrotorio_trecho2",
+   "cena": "necrotorio_tutu",
+   "provisorio": true
+  },
+  {
+   "id": "saida",
+   "ret": [
+    236.8,
+    608.0,
+    102.3,
+    64.0
+   ],
+   "acao": "destinos",
+   "requer": "necrotorio_despedida",
+   "texto": "O grupo deixa o necrotério.",
+   "provisorio": true
+  }
+ ],
+ "inimigos": [
+  {
+   "tipo": "criatura_sangue",
+   "pos": [
+    768.0,
+    224.0
+   ],
+   "trecho": 2,
+   "grupo": "zumbi",
+   "provisorio": true
+  }
+ ],
+ "objetivos": [
+  {
+   "texto": "Ouvir o que a Letícia descobriu",
+   "marca": "necrotorio_chegada",
+   "provisorio": true
+  },
+  {
+   "texto": "Examinar o corpo do Tutu",
+   "pista": "tutu_corpo",
+   "provisorio": true
+  },
+  {
+   "texto": "Investigar a mesa do legista",
+   "pista": "mesa_legista",
+   "provisorio": true
+  },
+  {
+   "texto": "Se despedir da Letícia",
+   "pista": "leticia_despedida",
+   "requer": "necrotorio_depois",
+   "provisorio": true
+  },
+  {
+   "texto": "Escolher o próximo destino",
+   "marca": "necrotorio_despedida",
+   "provisorio": true
+  }
+ ],
+ "marca_ao_chegar": "visitou_necrotorio",
+ "grupos": {
+  "zumbi": {
+   "marca": "necrotorio_vencido"
+  }
+ },
+ "cena_apos_combate": {
+  "cena": "necrotorio_depois",
+  "marca": "necrotorio_depois",
+  "requer": "necrotorio_trecho2"
+ },
+ "cena_ao_chegar": {
+  "cena": "necrotorio_chegada",
+  "marca": "necrotorio_chegada"
+ }
+}

@@ -1327,10 +1327,9 @@
     1440.0,
     134.3
    ],
-   "acao": "ir",
-   "para": "delegacia_21h",
+   "acao": "destinos",
    "cena": "biblioteca_saida",
-   "texto": "O grupo volta para a delegacia.",
+   "texto": "O grupo sai da biblioteca.",
    "provisorio": true
   }
  ],
@@ -1342,10 +1341,11 @@
    "provisorio": true
   },
   {
-   "texto": "Voltar para a delegacia",
+   "texto": "Escolher o próximo destino",
    "provisorio": true
   }
  ],
+ "marca_ao_chegar": "visitou_biblioteca",
  "cena_ao_chegar": {
   "cena": "biblioteca_julia",
   "marca": "biblioteca_julia"
