@@ -1,0 +1,35 @@
+{
+	"_nota": "Diplomacia ou Intimidação DT 12 falhou: ela se fecha (informação negativa, Léo 26/11). Falas provisórias do Claude.",
+	"passos": [
+		{
+			"faz": "cinema",
+			"estado": "entrar",
+			"tempo": 0.7,
+			"junto": true
+		},
+		{
+			"faz": "legenda",
+			"texto": "A Ju cruza os braços.",
+			"tempo": 2.0
+		},
+		{
+			"faz": "dialogo",
+			"falas": [
+				{
+					"quem": "julia",
+					"texto": "Não sei o que vocês querem que eu diga. Li coisa demais, só isso. Não me façam parecer louca."
+				},
+				{
+					"quem": "nikolai",
+					"texto": "Tudo bem. Qualquer coisa, a gente volta a falar."
+				}
+			]
+		},
+		{
+			"faz": "cinema",
+			"estado": "sair",
+			"tempo": 0.6,
+			"junto": true
+		}
+	]
+}

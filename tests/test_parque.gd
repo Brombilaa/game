@@ -12,6 +12,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	Progresso.autosave_ativo = false  # não mexe nos saves de quem roda os testes
+	TestePericia.animar = false  # a tela do dado tem teste próprio (test_testes_pericia)
 	var room = load("res://scenes/exploration/parque.tscn").instantiate()
 	root.add_child(room)
 	await process_frame
@@ -181,6 +182,11 @@ func _run() -> void:
 	_check(room.seen_clues.has("mochila_piquenique") and room.inventory.count("curativo") == antes_mochila + 1, "o esconderijo do parque dá o saque")
 
 	room._inspect("arvore_simbolo")
+	for i in 4:  # a árvore tem camadas de teste de perícia (26/11): o jogador escolhe quem rola, uma vez por camada
+		if room.menu_teste == null:
+			break
+		room.menu_teste.find_children("*", "Button", true, false)[0].pressed.emit()
+		await process_frame
 	_check(room.dialog_clue == "arvore_simbolo" and room.dialog_image.visible, "a árvore abre a inspeção com imagem")
 	room._close_dialog()
 	# A morte do Caio (cena com roteiro) toca antes do combate: acelera e espera ela acabar.

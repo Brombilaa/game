@@ -1,5 +1,5 @@
 {
-	"_nota": "A Ju recebe o grupo na biblioteca (roteiro, seção 3: ela acha que são detetives particulares, está aflita e tem medo de parecer louca; é entusiasta do ocultismo). A biblioteca não tinha nenhuma fala. Falas provisórias do Claude a partir das falas do Léo.",
+	"_nota": "A Ju recebe o grupo na biblioteca (roteiro, seção 3: ela acha que são detetives particulares, está aflita e tem medo de parecer louca; é entusiasta do ocultismo). A biblioteca não tinha nenhuma fala. Falas provisórias do Claude a partir das falas do Léo. Atualização 26/11: perceber que ela está com medo virou o teste de Intuição (cenas julia_aflita e julia_aflita_nada).",
 	"passos": [
 		{
 			"faz": "cinema",
@@ -21,15 +21,7 @@
 				},
 				{
 					"quem": "julia",
-					"texto": "Os policiais não ajudam em quase nada. Reuni o que achei sobre a cidade e o caso. A biblioteca devia estar fechada, então vamos depressa."
-				},
-				{
-					"quem": "nikolai",
-					"texto": "Você não está só nervosa. Está com medo."
-				},
-				{
-					"quem": "julia",
-					"texto": "Estou. Leio sobre essas coisas há anos e nunca achei prova de nada. Agora tenho pavor de achar. Olhem a pasta, por favor."
+					"texto": "Os policiais não ajudam em quase nada. Reuni o que achei sobre a cidade e o caso na mesa. A biblioteca devia estar fechada, então vamos depressa."
 				}
 			]
 		}
