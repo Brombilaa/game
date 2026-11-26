@@ -200,7 +200,7 @@ func _classes() -> void:
 
 
 # Os testes do mapa de 20/11 que entraram no jogo (26/11): árvore (duas camadas), livro da cidade (duas camadas), computador,
-# gravador, livro do subsolo e a Ju (conversa: falhou = superficial ou negativo).
+# gravador, livro do subsolo e a JÃºlia (conversa: falhou = superficial ou negativo).
 func _testes_novos() -> void:
 	Missao1.reiniciar()
 	var parque = load("res://scenes/exploration/parque.tscn").instantiate()
@@ -240,13 +240,13 @@ func _testes_novos() -> void:
 				_check(txt.contains("DT") and not txt.contains(str(caso[3])), "%s: falhou = só o superficial" % caso[1])
 			room.queue_free()
 			await process_frame
-	# A Ju: Intuição DT 8 e, pressionada, Diplomacia ou Intimidação DT 12; falhou = ela diz pouco ou se fecha.
+	# A JÃºlia: Intuição DT 8 e, pressionada, Diplomacia ou Intimidação DT 12; falhou = ela diz pouco ou se fecha.
 	for cena in ["julia_aflita", "julia_aflita_nada", "julia_revela", "julia_revela_nada"]:
 		_check(CenaRoteiro.existe(cena), "a cena %s existe" % cena)
 	Missao1.reiniciar()
 	var bib = await _abrir("biblioteca")
 	bib._inspect("julia_pressionar")
-	_check(bib.dialog_text.text.contains("começar por uma conversa"), "a Ju: só dá para pressionar depois da conversa")
+	_check(bib.dialog_text.text.contains("começar por uma conversa"), "a JÃºlia: só dá para pressionar depois da conversa")
 	bib.queue_free()
 	await process_frame
 

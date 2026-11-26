@@ -1,5 +1,5 @@
 {
-	"_nota": "Diplomacia ou Intimidação DT 12 passou (roteiro 3a): a Ju conta o que acha e o símbolo da foto. Falas provisórias do Claude.",
+	"_nota": "Diplomacia ou Intimidação DT 12 passou (roteiro 3a): a JÃºlia conta o que acha e o símbolo da foto. Falas provisórias do Claude.",
 	"passos": [
 		{
 			"faz": "cinema",
@@ -9,7 +9,7 @@
 		},
 		{
 			"faz": "legenda",
-			"texto": "A Ju respira fundo.",
+			"texto": "A JÃºlia respira fundo.",
 			"tempo": 2.0
 		},
 		{
@@ -25,7 +25,7 @@
 				},
 				{
 					"quem": "miguel",
-					"texto": "O mesmo símbolo do tronco. Obrigado, Ju."
+					"texto": "O mesmo símbolo do tronco. Obrigado, JÃºlia."
 				}
 			]
 		},

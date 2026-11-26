@@ -1,5 +1,5 @@
 {
-	"_nota": "A Ju recebe o grupo na biblioteca (roteiro, seção 3: ela acha que são detetives particulares, está aflita e tem medo de parecer louca; é entusiasta do ocultismo). A biblioteca não tinha nenhuma fala. Falas provisórias do Claude a partir das falas do Léo. Atualização 26/11: perceber que ela está com medo virou o teste de Intuição (cenas julia_aflita e julia_aflita_nada).",
+	"_nota": "A JÃºlia recebe o grupo na biblioteca (roteiro, seção 3: ela acha que são detetives particulares, está aflita e tem medo de parecer louca; é entusiasta do ocultismo). A biblioteca não tinha nenhuma fala. Falas provisórias do Claude a partir das falas do Léo. Atualização 26/11: perceber que ela está com medo virou o teste de Intuição (cenas julia_aflita e julia_aflita_nada).",
 	"passos": [
 		{
 			"faz": "cinema",
@@ -17,7 +17,7 @@
 			"falas": [
 				{
 					"quem": "julia",
-					"texto": "Boa noite, eu sou a Ju. A Lari falou de vocês, né? Eu também acho que tem algo muito estranho acontecendo."
+					"texto": "Boa noite, eu sou a JÃºlia. A Lari falou de vocês, né? Eu também acho que tem algo muito estranho acontecendo."
 				},
 				{
 					"quem": "julia",

@@ -1329,7 +1329,7 @@
     0,
     -90
    ],
-   "texto": "A Ju olha o relógio e arruma papéis sem necessidade. Vale conversar com ela.",
+   "texto": "A JÃºlia olha o relógio e arruma papéis sem necessidade. Vale conversar com ela.",
    "provisorio": true
   },
   {
@@ -1344,10 +1344,10 @@
     0,
     -90
    ],
-   "texto": "A Ju foge do olhar do grupo. Talvez dê para insistir com ela.",
+   "texto": "A JÃºlia foge do olhar do grupo. Talvez dê para insistir com ela.",
    "provisorio": true,
    "requer": "julia_aflita",
-   "texto_antes": "A Ju ainda está se fechando. Melhor começar por uma conversa."
+   "texto_antes": "A JÃºlia ainda está se fechando. Melhor começar por uma conversa."
   }
  ],
  "gatilhos": [
@@ -1403,7 +1403,7 @@
    "provisorio": true
   },
   {
-   "texto": "Conversar com a Ju",
+   "texto": "Conversar com a JÃºlia",
    "pista": "julia_conversa",
    "provisorio": true
   },

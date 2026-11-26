@@ -51,8 +51,8 @@ const TITULOS := {
 	# Testes de perícia (26/11)
 	"computador_recepcao": "Computador da recepção",
 	"gravador_ghular": "Gravador escondido",
-	"julia_conversa": "A Ju aflita",
-	"julia_pressionar": "O que a Ju viu",
+	"julia_conversa": "A JÃºlia aflita",
+	"julia_pressionar": "O que a JÃºlia viu",
 }
 
 
