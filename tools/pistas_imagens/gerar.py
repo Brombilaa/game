@@ -427,6 +427,64 @@ def a_recorte():
     return pousa(recorta(f, m), -2)
 
 
+def a_livro_cidade():
+    """Página do livro \"Aurora, a Cidade das Flores\" com a linha do tempo (roteiro, seção 3: 1817, 1917, 1970). Provisório."""
+    w, h = 580, 640
+    f = papel(w, h, (226, 214, 184), 6, 101)
+    d = ImageDraw.Draw(f)
+    tinta = (44, 38, 32)
+    d.text((40, 26), "AURORA, A CIDADE DAS FLORES", font=fonte(MAQ, 22), fill=(90, 78, 64))
+    d.line((40, 58, w - 40, 58), fill=tinta, width=2)
+    y = 82
+    for ano, tx in (("1817", "Fundada por imigrantes europeus em busca de uma vida melhor no Brasil."),
+                    ("1917", "Recebe o título oficial de Cidade das Flores."),
+                    ("1970", "Pede ao Vaticano que canonize Lygia Virgínia do Rosário como a Santa das Flores. O pedido é negado.")):
+        d.text((40, y), ano, font=fonte(MAQ, 34), fill=(120, 40, 30))
+        y = escreve(d, (150, y + 6), tx, fonte(MAQ, 20), tinta, larg=380, esp=1.3) + 34
+    d.text((40, y + 8), "A cidade ficou decepcionada, mas continuou a se chamar", font=fonte(MAQ, 17), fill=tinta)
+    d.text((40, y + 32), "Cidade das Flores, com a sua Santa reconhecida por todos.", font=fonte(MAQ, 17), fill=tinta)
+    d.rectangle((52, 528, w - 60, 612), fill=(240, 234, 214, 255))  # tira de papel para a nota a lápis
+    d.text((70, 538), "carne feita de sangue só se desfaz\ncom o próprio Outro Lado", font=fonte(MAO, 30), fill=(70, 70, 78))
+    mancha_cafe(f, (470, 90), 40, 60, 5)
+    m = borda_irregular(w, h, 103, rasgo=("esq",), amp=10, fundo=40, passo=6)
+    return pousa(recorta(f, m), -1.5)
+
+
+def a_fotos_simbolo():
+    """Fotos da cena da praça que a Letícia levou para casa: o símbolo dentro da árvore sangrando (roteiro, seção 3). Provisório."""
+    w, h = 600, 600
+    mesa = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    r = random.Random(131)
+    for i, (cx, cy, g, tam) in enumerate(((190, 200, -6, 300), (400, 360, 4, 300))):
+        foto = Image.new("RGBA", (tam, int(tam * 0.82)), (46, 56, 48, 255))
+        ruido(foto, 7, 40 + i)
+        d = ImageDraw.Draw(foto)
+        fw, fh = foto.size
+        d.rectangle((0, int(fh * 0.7), fw, fh), fill=(34, 40, 30, 255))  # chão
+        d.polygon([(fw * 0.44, fh * 0.9), (fw * 0.47, fh * 0.35), (fw * 0.55, fh * 0.35), (fw * 0.6, fh * 0.9)], fill=(24, 20, 18, 255))  # tronco
+        d.ellipse((fw * 0.18, fh * 0.02, fw * 0.82, fh * 0.5), fill=(22, 34, 26, 255))  # copa
+        zoom = i == 1
+        if zoom:  # a segunda foto é um detalhe: o símbolo aberto no tronco
+            d.rectangle((0, 0, fw, fh), fill=(26, 20, 18, 255))
+            for k in range(0, fw, 22):
+                d.line((k, 0, k + r.randint(-6, 6), fh), fill=(40, 32, 28, 255), width=5)
+            orquidea(d, fw // 2, int(fh * 0.46), 62, (150, 20, 16, 255))
+            for k in range(7):
+                x = fw // 2 + r.randint(-70, 70)
+                sangue(foto, x, int(fh * 0.5), r.randint(30, 90), 5, semente=k)
+        else:
+            orquidea(d, int(fw * 0.51), int(fh * 0.56), 22, (150, 20, 16, 255))
+            sangue(foto, int(fw * 0.51), int(fh * 0.6), 80, 6, semente=2)
+        quadro = Image.new("RGBA", (fw + 24, fh + 60), (232, 228, 216, 255))
+        quadro.alpha_composite(foto, (12, 12))
+        quadro = quadro.rotate(g, expand=True, resample=Image.BICUBIC)
+        mesa.alpha_composite(sombra(quadro), (cx - quadro.width // 2, cy - quadro.height // 2)) if False else None
+        mesa.alpha_composite(quadro, (cx - quadro.width // 2, cy - quadro.height // 2))
+    d = ImageDraw.Draw(mesa)
+    d.text((28, 520), "o símbolo está DENTRO da árvore", font=fonte(MAO, 36), fill=(130, 24, 18))
+    return mesa
+
+
 FUNCOES = {
     "A": {"ficha_desaparecidos": a_ficha, "livro_ocorrencias": a_pagina},
     "B": {"ficha_desaparecidos": b_ficha, "livro_ocorrencias": b_pagina},
@@ -436,7 +494,7 @@ FUNCOES = {
 def gerar_jogo(pasta):
     """Imagens finais (modelo A escolhido pelo Léo em 22/11): livro_ocorrencias, fichario, diario_bibliotecaria, mapa_antigo."""
     os.makedirs(pasta, exist_ok=True)
-    for nome, fn in (("livro_ocorrencias", a_pagina), ("fichario", a_fichario), ("diario_bibliotecaria", a_diario_bibliotecaria), ("mapa_antigo", a_recorte)):
+    for nome, fn in (("livro_ocorrencias", a_pagina), ("fichario", a_fichario), ("diario_bibliotecaria", a_diario_bibliotecaria), ("mapa_antigo", a_recorte), ("livro_cidade", a_livro_cidade), ("fotos_simbolo", a_fotos_simbolo)):
         fn().save(os.path.join(pasta, nome + ".png"))
     print("ok jogo", pasta)
 

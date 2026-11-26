@@ -30,6 +30,7 @@ const TITULOS := {
 	"fichario": "Fichas de empréstimo",
 	"mesa_leitura": "Livro de história",
 	"mapa_antigo": "Recorte de 1977",
+	"fotos_simbolo": "Fotos da árvore da praça",
 	"diario_bibliotecaria": "Diário da bibliotecária",
 	"caixa_arquivo": "Caixa de arquivo",
 	# Necrotério e casa do Velho Geraldo (22/11)

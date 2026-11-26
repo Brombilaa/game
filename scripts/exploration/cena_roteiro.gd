@@ -27,7 +27,8 @@ extends Node
 #   sumir    {"quem": ator}                                          tira o ator da cena (NPC ou criatura da cena)
 #   dar      {"itens": [{"item": id, "qtd": n}]}                     o grupo recebe itens na mochila (aviso "Achou: ...")
 #   marca    {"id": nome}                                            Missao1.marcar
-#   estado   {"nome": estado, "valor": bool}                          liga/desliga um estado do cenário 3D (local3d)
+#   estado   {"nome": estado, "valor": bool, "deslizar": [dx, dz], "tempo": s}  liga/desliga um estado do cenário 3D (local3d);
+#                                                                    "deslizar" move a parte dx, dz metros antes (a moto da Júlia indo embora)
 #   acordar  {"trecho": n}                                           os inimigos que esperavam o trecho n entram em cena (local3d)
 #   perguntas {"id": conversa}                                       lista de perguntas (data/conversas.json) até o jogador encerrar
 #   ir       {"para": lugar, "chegada": ponto, "texto": cartão}      escurece e abre o próximo lugar ("parque" = a praça)
@@ -177,6 +178,8 @@ func _executar(p: Dictionary) -> void:
 			Missao1.marcar(str(p["id"]))
 		"estado":  # liga ou desliga um estado do cenário 3D no meio da cena (a gaveta do necrotério que arrebenta)
 			if room.get("world3d") != null:
+				if p.has("deslizar") and room.world3d.tem_estado(str(p["nome"])):
+					await room.world3d.deslizar(str(p["nome"]), Vector3(float(p["deslizar"][0]), 0.0, float(p["deslizar"][1])), float(p.get("tempo", 1.5)))
 				room.world3d.estado(str(p["nome"]), bool(p.get("valor", true)))
 				room.queue_redraw()
 		"acordar":  # os inimigos que esperavam um trecho escondido entram em cena (o zumbi, depois da gaveta)

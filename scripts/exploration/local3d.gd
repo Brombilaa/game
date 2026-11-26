@@ -401,6 +401,9 @@ func _zonas() -> void:
 			continue
 		if z.has("requer") and not Missao1.tem(str(z["requer"])):
 			continue
+		if str(z.get("acao", "")) in ["ir", "destinos"] and z.has("cena") and CenaRoteiro.existe(str(z["cena"])) and not Missao1.tem(str(z["cena"])):
+			Missao1.marcar(str(z["cena"]))  # a Ju tranca a biblioteca e sai de moto antes de o grupo seguir
+			await tocar_cena(str(z["cena"]))
 		if str(z.get("acao", "")) == "ir":
 			_ir_para(str(z["para"]), str(z.get("chegada", "")), str(z.get("texto", "")))
 			return

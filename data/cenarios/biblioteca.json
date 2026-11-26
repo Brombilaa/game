@@ -35,6 +35,15 @@
     953.6,
     844.8
    ]
+  ],
+  "npcs": [
+   {
+    "id": "julia",
+    "pos": [
+     1075.2,
+     454.4
+    ]
+   }
   ]
  },
  "colisoes": [
@@ -1177,8 +1186,9 @@
     0,
     -30
    ],
-   "texto": "O livro \"Aurora, a Cidade das Flores\" está aberto na mesa de leitura. Um parágrafo foi sublinhado: em 1970 a cidade pediu ao Vaticano que canonizasse Lygia Virgínia do Rosário como a Santa das Flores, e o pedido foi negado. Na margem, a lápis: \"carne feita de sangue só se desfaz com o próprio Outro Lado\".",
-   "provisorio": true
+   "texto": "O livro \"Aurora, a Cidade das Flores\" está aberto nas páginas que a Juliana separou: a fundação em 1817, o título de Cidade das Flores em 1917 e, em 1970, o pedido ao Vaticano pela Santa das Flores, negado. Na margem, a lápis: \"carne feita de sangue só se desfaz com o próprio Outro Lado\".",
+   "provisorio": true,
+   "inspecao": "res://assets/sprites/pistas/livro_cidade.png"
   },
   {
    "id": "mapa_antigo",
@@ -1195,6 +1205,22 @@
    "texto": "Um recorte de jornal de 1977: \"Os Sete Desaparecidos, o mistério que continua a assolar Aurora\". Sete moradores sumiram ao longo de um mês; o investigador do caso era o jovem Geraldo Munch. A última desaparecida foi Maria Cabral, nascida em 1º de junho de 1948.",
    "provisorio": true,
    "inspecao": "res://assets/sprites/pistas/mapa_antigo.png"
+  },
+  {
+   "id": "fotos_simbolo",
+   "pos": [
+    755.2,
+    499.2
+   ],
+   "raio": 75,
+   "ordem": 1,
+   "bolinha": [
+    0,
+    -30
+   ],
+   "texto": "Entre os papéis, duas fotos da cena da praça, as que a Letícia levou para casa. Na árvore manchada de sangue, o mesmo símbolo que o grupo viu, mas aqui ele está aberto por dentro do tronco. Anotado na margem, com a letra da Juliana: \"o símbolo está DENTRO da árvore\".",
+   "provisorio": true,
+   "inspecao": "res://assets/sprites/pistas/fotos_simbolo.png"
   },
   {
    "id": "diario_bibliotecaria",
@@ -1302,6 +1328,7 @@
     134.3
    ],
    "acao": "destinos",
+   "cena": "biblioteca_saida",
    "texto": "O grupo sai da biblioteca.",
    "provisorio": true
   }
