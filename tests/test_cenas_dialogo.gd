@@ -46,10 +46,11 @@ func _cenas_de_dialogo() -> void:
 	Missao1.reiniciar()
 	Missao1.marcar("delegacia17_chegada")
 	var room = await _abrir("delegacia_17h")
-	room._inspect("agenda_ghular")
+	room.inventory.add("chave_armario", 1)
+	room._inspect("ficha_desaparecidos")
 	room._close_dialog()
 	await process_frame
-	_check(room.mode == room.Mode.CUTSCENE and Missao1.tem("ghular_17h"), "depois da agenda o delegado Ghular chega (cena)")
+	_check(room.mode == room.Mode.CUTSCENE and Missao1.tem("ghular_17h"), "depois das fichas o delegado Ghular chega (cena)")
 	await _esperar_cena(room, "ghular_17h")
 	for i in 1200:
 		if room.mode == room.Mode.EXPLORATION:
